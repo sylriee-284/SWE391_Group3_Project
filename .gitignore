@@ -1,6 +1,50 @@
-HELP.md
+# VS Code
+.vscode/
+
+# Node.js
+node_modules/
+
+# Logs
+*.log
+*.log.*
+
+# Mac System files
+.DS_Store
+
+# Windows system files
+Thumbs.db
+
+# npm package-lock and yarn.lock files (use only one depending on the package manager)
+package-lock.json
+yarn.lock
+
+# Environment files
+.env
+
+# IDE settings
+.idea/
+
+# Coverage directories (e.g., for test coverage reports)
+coverage/
+
+# Build output (for projects using build tools)
+dist/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Temporary files
+*.swp
+*.swo
+
+# Dependency directories
+jspm_packages/
+
+# Yarn Integrity file
+.yarn-integrity
+
+### Maven ###
 target/
-.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
@@ -28,6 +72,3 @@ target/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
-
-### VS Code ###
-.vscode/
