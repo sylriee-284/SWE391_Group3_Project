@@ -14,17 +14,74 @@
 
             <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
+            <title>Dashboard</title>
+            <style>
+                /* Nội dung chính */
+                .content {
+                    flex-grow: 1;
+                    padding: 20px;
+                    background-color: #ecf0f1;
+                    margin-left: 0;
+                    transition: margin-left 0.3s ease;
+                }
+
+                .content.shifted {
+                    margin-left: 250px;
+                    /* Đẩy nội dung sang phải khi sidebar bật */
+                }
+
+                .content h1 {
+                    font-size: 28px;
+                    color: #2c3e50;
+                }
+
+                /* Responsive Design */
+                @media (max-width: 768px) {
+                    .content {
+                        margin-left: 200px;
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    .content {
+                        margin-left: 150px;
+                    }
+                }
+            </style>
+
         </head>
 
         <body>
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-12">
-                        <h2 class="text-center">Spring MVC Hello World Example</h2>
-                        <h1>Hello, Iam Syl1!</h1>
 
+            <!-- Include Navbar -->
+            <%@ include file="navbar.jsp" %>
+
+                <!-- Include Sidebar -->
+                <%@ include file="sidebar.jsp" %>
+
+                    <!-- Nội dung chính -->
+                    <div class="content" id="content">
+                        <h1>Dashboard</h1>
+                        <p>Tổng cộng: 0 bản ghi</p>
+
+                        <!-- Thêm nội dung khác tại đây -->
+                        <p>Thông tin dashboard sẽ hiển thị ở đây.</p>
                     </div>
-                </div>
+
+                    <script>
+                        // Toggle sidebar khi nhấn vào nút
+                        function toggleSidebar() {
+                            var sidebar = document.getElementById('sidebar');
+                            var content = document.getElementById('content');
+
+                            // Toggle class 'active' cho sidebar
+                            sidebar.classList.toggle('active');
+
+                            // Toggle margin-left cho nội dung chính khi sidebar thay đổi trạng thái
+                            content.classList.toggle('shifted');
+                        }
+                    </script>
+
         </body>
 
         </html>
