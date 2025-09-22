@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class TestController {
     @GetMapping("/")
     public String getMethodName() {
-        return "hello";
+        return "dashboard";
     }
 
 }
