@@ -26,7 +26,7 @@ public abstract class BaseEntity {
 
     @CreatedBy
     @Column(name = "created_by", updatable = false)
-    private String createdBy;
+    private Long createdBy;
 
     @LastModifiedDate
     @Column(name = "updated_at")
@@ -36,5 +36,24 @@ public abstract class BaseEntity {
     private Boolean isDeleted = false;
 
     @Column(name = "deleted_by")
-    private String deletedBy;
+    private Long deletedBy;
+
+    // Business methods for soft delete
+    public void softDelete(Long deletedByUserId) {
+        this.isDeleted = true;
+        this.deletedBy = deletedByUserId;
+    }
+
+    public void restore() {
+        this.isDeleted = false;
+        this.deletedBy = null;
+    }
+
+    public boolean isDeleted() {
+        return Boolean.TRUE.equals(this.isDeleted);
+    }
+
+    public boolean isActive() {
+        return !isDeleted();
+    }
 }
