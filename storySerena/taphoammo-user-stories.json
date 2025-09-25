@@ -1,0 +1,491 @@
+{
+  "project": "TaphoaMMO Marketplace",
+  "description": "Digital marketplace for MMO services and products based on taphoammo.net research and database analysis",
+  "userStories": [
+    {
+      "id": "US-001",
+      "epic": "User Authentication & Account Management",
+      "title": "User Registration",
+      "asA": "new visitor to TaphoaMMO",
+      "iWant": "to create an account with username, email, and password",
+      "soThat": "I can access the marketplace and start buying or selling digital products",
+      "acceptanceCriteria": [
+        "User can register with unique username and email",
+        "Password must meet security requirements",
+        "Email verification is required before account activation",
+        "User profile includes optional fields: phone, full_name, avatar_url, date_of_birth, gender",
+        "Account status is set to 'active' by default",
+        "System creates a wallet automatically upon registration"
+      ],
+      "affectedFiles": [
+        "User registration controller",
+        "User entity/model (users table)",
+        "Wallet entity/model (wallets table)",
+        "Email service"
+      ],
+      "priority": "High",
+      "storyPoints": 8
+    },
+    {
+      "id": "US-002",
+      "epic": "User Authentication & Account Management",
+      "title": "User Login & Authentication",
+      "asA": "registered user",
+      "iWant": "to log into my account securely",
+      "soThat": "I can access my dashboard and perform marketplace activities",
+      "acceptanceCriteria": [
+        "User can login with username/email and password",
+        "System validates credentials against password_hash",
+        "Account status checks: enabled, account_non_locked, account_non_expired, credentials_non_expired",
+        "Failed login attempts are tracked for security",
+        "Session management with appropriate timeout",
+        "Remember me functionality available"
+      ],
+      "affectedFiles": [
+        "Authentication controller",
+        "Security configuration",
+        "User service (users table)"
+      ],
+      "priority": "High",
+      "storyPoints": 5
+    },
+    {
+      "id": "US-003",
+      "epic": "User Authentication & Account Management",
+      "title": "Role-Based Access Control",
+      "asA": "system administrator",
+      "iWant": "to assign roles and permissions to users",
+      "soThat": "I can control access to different features based on user type",
+      "acceptanceCriteria": [
+        "Users can be assigned multiple roles (buyer, seller, admin, moderator)",
+        "Roles have specific permissions (create_product, manage_orders, moderate_disputes)",
+        "Permission checks are enforced at API and UI level",
+        "Role assignments are auditable with created_by tracking",
+        "Default role assignment for new users"
+      ],
+      "affectedFiles": [
+        "Role management controller",
+        "Permission service (roles, permissions, user_roles, role_permissions tables)",
+        "Security interceptors"
+      ],
+      "priority": "High",
+      "storyPoints": 13
+    },
+    {
+      "id": "US-004",
+      "epic": "Seller Store Management",
+      "title": "Create Seller Store",
+      "asA": "registered user",
+      "iWant": "to create a seller store with required deposit",
+      "soThat": "I can start selling digital products on the marketplace",
+      "acceptanceCriteria": [
+        "User can create store with name and description",
+        "Minimum deposit of 5,000,000 VND required for active status",
+        "Maximum listing price calculated as deposit_amount / 10",
+        "Store status defaults to 'active' when deposit requirement met",
+        "Only one store per user allowed",
+        "Store creation requires sufficient wallet balance"
+      ],
+      "affectedFiles": [
+        "Seller store controller",
+        "Store entity/model (seller_stores table)",
+        "Wallet transaction service (wallets, wallet_transactions tables)",
+        "Deposit validation service"
+      ],
+      "priority": "High",
+      "storyPoints": 8
+    },
+    {
+      "id": "US-005",
+      "epic": "Seller Store Management",
+      "title": "Manage Store Products",
+      "asA": "store owner",
+      "iWant": "to add, edit, and manage my digital products",
+      "soThat": "I can offer my services to potential buyers",
+      "acceptanceCriteria": [
+        "Store owner can create products with name, description, price, category",
+        "Product slug auto-generated from name (unique within store)",
+        "Stock management for digital products",
+        "Product status management (active, inactive, out_of_stock)",
+        "Price cannot exceed store's max_listing_price",
+        "Product categorization using predefined categories",
+        "Bulk product operations available"
+      ],
+      "affectedFiles": [
+        "Product controller",
+        "Product entity/model (products table)",
+        "Category service (categories table)",
+        "File upload service"
+      ],
+      "priority": "High",
+      "storyPoints": 13
+    },
+    {
+      "id": "US-006",
+      "epic": "Product Storage & Inventory",
+      "title": "Digital Product Storage",
+      "asA": "store owner",
+      "iWant": "to upload and store digital product data securely",
+      "soThat": "buyers receive their purchased items automatically",
+      "acceptanceCriteria": [
+        "Product data stored as JSON payload in product_storage",
+        "Sensitive data masked with payload_mask for security",
+        "Support for various digital product types (accounts, keys, files)",
+        "Automatic inventory tracking based on available storage items",
+        "Reserved items have expiration time (reserved_until)",
+        "Delivered items marked with delivered_at timestamp"
+      ],
+      "affectedFiles": [
+        "Product storage controller",
+        "Storage entity/model (product_storage table)",
+        "JSON processing service",
+        "Encryption service"
+      ],
+      "priority": "High",
+      "storyPoints": 13
+    },
+    {
+      "id": "US-007",
+      "epic": "Product Storage & Inventory",
+      "title": "Automated Product Delivery",
+      "asA": "buyer",
+      "iWant": "to receive my digital products automatically after payment",
+      "soThat": "I can access my purchased items immediately",
+      "acceptanceCriteria": [
+        "System automatically assigns available product_storage to orders",
+        "Product data delivered to buyer upon payment confirmation",
+        "Storage item status updated to 'delivered'",
+        "Delivery notification sent to buyer",
+        "Order includes snapshot of delivered product data",
+        "Fallback mechanism for manual delivery if automation fails"
+      ],
+      "affectedFiles": [
+        "Order processing service",
+        "Product delivery service (orders, product_storage tables)",
+        "Notification service (notifications table)",
+        "Storage management service"
+      ],
+      "priority": "High",
+      "storyPoints": 21
+    },
+    {
+      "id": "US-008",
+      "epic": "Order Management & Transactions",
+      "title": "Place Order",
+      "asA": "buyer",
+      "iWant": "to purchase digital products using my wallet balance",
+      "soThat": "I can acquire the services I need",
+      "acceptanceCriteria": [
+        "Buyer can add products to cart and checkout",
+        "Order total calculated including any fees",
+        "Sufficient wallet balance required for purchase",
+        "Order captures product details at time of purchase",
+        "Automatic product assignment from available storage",
+        "Order status tracking (pending, confirmed, delivered, completed)"
+      ],
+      "affectedFiles": [
+        "Order controller",
+        "Cart service",
+        "Order entity/model (orders table)",
+        "Wallet transaction service (wallets, wallet_transactions tables)"
+      ],
+      "priority": "High",
+      "storyPoints": 13
+    },
+    {
+      "id": "US-009",
+      "epic": "Order Management & Transactions",
+      "title": "Escrow System",
+      "asA": "marketplace participant",
+      "iWant": "transactions to be held in escrow for 3 days",
+      "soThat": "both buyers and sellers are protected from fraud",
+      "acceptanceCriteria": [
+        "Payment held in escrow upon order creation",
+        "Automatic release after 3 days (hold_until)",
+        "Manual release possible for early completion",
+        "Dispute mechanism during escrow period",
+        "Escrow status tracking (held, released, disputed)",
+        "Automatic seller payment upon release"
+      ],
+      "affectedFiles": [
+        "Escrow service",
+        "Escrow entity/model (escrow_transactions table)",
+        "Payment processing service",
+        "Scheduled task service"
+      ],
+      "priority": "High",
+      "storyPoints": 21
+    },
+    {
+      "id": "US-010",
+      "epic": "Order Management & Transactions",
+      "title": "Wallet Management",
+      "asA": "user",
+      "iWant": "to manage my wallet balance and view transaction history",
+      "soThat": "I can track my earnings and spending on the platform",
+      "acceptanceCriteria": [
+        "Users can view current wallet balance",
+        "Complete transaction history with type and amount",
+        "Transaction types: deposit, withdrawal, purchase, sale, refund",
+        "Reference to related orders where applicable",
+        "Transaction notes for additional context",
+        "Balance calculations are accurate and auditable"
+      ],
+      "affectedFiles": [
+        "Wallet controller",
+        "Wallet entity/model (wallets table)",
+        "Transaction entity/model (wallet_transactions table)",
+        "Payment gateway integration (payment_gateways table)"
+      ],
+      "priority": "High",
+      "storyPoints": 8
+    }
+    {
+      "id": "US-011",
+      "epic": "Communication & Support",
+      "title": "Buyer-Seller Messaging",
+      "asA": "buyer or seller",
+      "iWant": "to communicate with the other party",
+      "soThat": "I can clarify product details or resolve issues",
+      "acceptanceCriteria": [
+        "Direct messaging between buyers and sellers",
+        "Conversation threads maintained per buyer-seller pair",
+        "Message types: text, image, file attachments",
+        "Read receipts and timestamps",
+        "Message history preserved",
+        "Notification system for new messages"
+      ],
+      "affectedFiles": [
+        "Conversation controller",
+        "Message entity/model (conversations, messages tables)",
+        "Real-time messaging service",
+        "File upload service"
+      ],
+      "priority": "Medium",
+      "storyPoints": 13
+    },
+    {
+      "id": "US-012",
+      "epic": "Communication & Support",
+      "title": "Dispute Resolution",
+      "asA": "buyer or seller",
+      "iWant": "to open disputes for problematic transactions",
+      "soThat": "I can get help resolving issues with orders",
+      "acceptanceCriteria": [
+        "Either party can open dispute during escrow period",
+        "Dispute reasons categorized (product not as described, not delivered, etc.)",
+        "Admin/moderator assignment for dispute resolution",
+        "Evidence submission (messages, screenshots)",
+        "Resolution tracking with notes",
+        "Automatic escrow handling based on resolution"
+      ],
+      "affectedFiles": [
+        "Dispute controller",
+        "Dispute entity/model (disputes table)",
+        "Admin panel integration",
+        "Evidence management service"
+      ],
+      "priority": "High",
+      "storyPoints": 21
+    },
+    {
+      "id": "US-013",
+      "epic": "Review & Rating System",
+      "title": "Product Reviews",
+      "asA": "buyer",
+      "iWant": "to leave reviews and ratings for products I purchased",
+      "soThat": "I can help other buyers make informed decisions",
+      "acceptanceCriteria": [
+        "Buyers can review products after successful delivery",
+        "Rating scale 1-5 stars with optional text review",
+        "One review per order allowed",
+        "Reviews visible to all users",
+        "Review aggregation for product ratings",
+        "Review moderation capabilities"
+      ],
+      "affectedFiles": [
+        "Review controller",
+        "Product review entity/model (product_reviews table)",
+        "Rating calculation service",
+        "Moderation service"
+      ],
+      "priority": "Medium",
+      "storyPoints": 8
+    },
+    {
+      "id": "US-014",
+      "epic": "Review & Rating System",
+      "title": "Seller Reviews",
+      "asA": "buyer",
+      "iWant": "to rate sellers based on my experience",
+      "soThat": "I can help others identify trustworthy sellers",
+      "acceptanceCriteria": [
+        "Separate rating system for sellers/stores",
+        "Rating based on communication, delivery speed, product quality",
+        "Seller rating aggregation and display",
+        "Review response capability for sellers",
+        "Impact on seller store visibility and ranking"
+      ],
+      "affectedFiles": [
+        "Seller review controller",
+        "Seller review entity/model (seller_reviews table)",
+        "Store ranking service",
+        "Reputation system"
+      ],
+      "priority": "Medium",
+      "storyPoints": 8
+    },
+    {
+      "id": "US-015",
+      "epic": "System Administration",
+      "title": "System Configuration",
+      "asA": "system administrator",
+      "iWant": "to configure marketplace settings",
+      "soThat": "I can control platform behavior and policies",
+      "acceptanceCriteria": [
+        "Configurable settings stored in system_settings table",
+        "Settings categories: payment, security, marketplace rules",
+        "Settings validation and type checking",
+        "Audit trail for setting changes",
+        "Environment-specific configurations",
+        "Hot-reload capability for non-critical settings"
+      ],
+      "affectedFiles": [
+        "Admin settings controller",
+        "System settings entity/model (system_settings table)",
+        "Configuration service",
+        "Settings validation service"
+      ],
+      "priority": "Medium",
+      "storyPoints": 13
+    },
+    {
+      "id": "US-016",
+      "epic": "Notification System",
+      "title": "Real-time Notifications",
+      "asA": "user",
+      "iWant": "to receive notifications about important events",
+      "soThat": "I stay informed about my marketplace activities",
+      "acceptanceCriteria": [
+        "Notifications for order status changes",
+        "New message alerts",
+        "Dispute updates and resolutions",
+        "Payment confirmations and escrow releases",
+        "System announcements and maintenance notices",
+        "Email and in-app notification options",
+        "Notification preferences management"
+      ],
+      "affectedFiles": [
+        "Notification controller",
+        "Notification entity/model (notifications table)",
+        "Email service",
+        "Real-time notification service",
+        "User preference service"
+      ],
+      "priority": "Medium",
+      "storyPoints": 13
+    },
+    {
+      "id": "US-017",
+      "epic": "Payment Integration",
+      "title": "Payment Gateway Integration",
+      "asA": "user",
+      "iWant": "to deposit and withdraw funds using various payment methods",
+      "soThat": "I can manage my wallet balance conveniently",
+      "acceptanceCriteria": [
+        "Support for multiple payment gateways (bank transfer, e-wallets, cards)",
+        "Secure payment processing with encryption",
+        "Payment gateway configuration management",
+        "Transaction fee calculation and display",
+        "Payment status tracking and confirmation",
+        "Refund processing capabilities"
+      ],
+      "affectedFiles": [
+        "Payment controller",
+        "Payment gateway service (payment_gateways table)",
+        "Wallet transaction service",
+        "Security service"
+      ],
+      "priority": "High",
+      "storyPoints": 21
+    },
+    {
+      "id": "US-018",
+      "epic": "Advanced Features",
+      "title": "Category Management",
+      "asA": "system administrator",
+      "iWant": "to manage product categories",
+      "soThat": "products are properly organized for buyers",
+      "acceptanceCriteria": [
+        "Create, edit, and delete product categories",
+        "Category hierarchy support (parent-child relationships)",
+        "Category-based product filtering and search",
+        "Category statistics and analytics",
+        "Bulk category operations",
+        "Category SEO optimization"
+      ],
+      "affectedFiles": [
+        "Category controller",
+        "Category entity/model (categories table)",
+        "Search service",
+        "Analytics service"
+      ],
+      "priority": "Low",
+      "storyPoints": 8
+    },
+    {
+      "id": "US-019",
+      "epic": "Advanced Features",
+      "title": "Search and Filtering",
+      "asA": "buyer",
+      "iWant": "to search and filter products effectively",
+      "soThat": "I can find exactly what I need quickly",
+      "acceptanceCriteria": [
+        "Full-text search across product names and descriptions",
+        "Filter by category, price range, seller rating",
+        "Sort by price, popularity, newest, rating",
+        "Search suggestions and autocomplete",
+        "Advanced search with multiple criteria",
+        "Search result pagination and performance optimization"
+      ],
+      "affectedFiles": [
+        "Search controller",
+        "Search service",
+        "Product indexing service",
+        "Filter service"
+      ],
+      "priority": "Medium",
+      "storyPoints": 13
+    },
+    {
+      "id": "US-020",
+      "epic": "Advanced Features",
+      "title": "Analytics and Reporting",
+      "asA": "store owner or administrator",
+      "iWant": "to view detailed analytics and reports",
+      "soThat": "I can make informed business decisions",
+      "acceptanceCriteria": [
+        "Sales analytics with charts and graphs",
+        "Product performance metrics",
+        "Customer behavior analysis",
+        "Revenue tracking and forecasting",
+        "Export capabilities for reports",
+        "Real-time dashboard updates"
+      ],
+      "affectedFiles": [
+        "Analytics controller",
+        "Reporting service",
+        "Dashboard service",
+        "Export service"
+      ],
+      "priority": "Low",
+      "storyPoints": 21
+    }
+  ],
+  "referenceLinks": [
+    "https://taphoammo.net/ - Main marketplace platform",
+    "https://www.similarweb.com/website/taphoammo.net/ - Traffic analytics",
+    "https://www.scamadviser.com/check-website/taphoammo.net - Security assessment"
+  ],
+  "analyze": "Based on research of taphoammo.net, this is a Vietnamese digital marketplace specializing in MMO (Make Money Online) services including social media accounts, proxy services, email accounts, and digital marketing tools. The platform operates with an automated transaction system, 3-day escrow protection, and serves primarily Vietnamese users with global reach. Key features include seller deposit requirements (5M VND minimum), automated product delivery, comprehensive review systems, and integrated wallet management. The database schema supports a full-featured marketplace with role-based access, secure product storage, escrow transactions, and communication systems."
+}
