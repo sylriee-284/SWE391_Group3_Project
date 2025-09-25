@@ -4,8 +4,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import vn.group3.marketplace.domain.BaseEntity;
+import vn.group3.marketplace.domain.constants.StoreStatus;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  * SellerStore entity for marketplace seller stores
@@ -65,6 +67,10 @@ public class SellerStore extends BaseEntity {
     @Builder.Default
     private Boolean isActive = true;
 
+    @Column(name = "status", nullable = false, length = 20)
+    @Builder.Default
+    private String status = StoreStatus.ACTIVE;
+
     // Business methods
     public boolean canListProduct(BigDecimal productPrice) {
         return isActive && !isDeleted() &&
@@ -72,7 +78,7 @@ public class SellerStore extends BaseEntity {
     }
 
     public boolean isOperational() {
-        return isActive && isVerified && !isDeleted();
+        return StoreStatus.isOperational(status, isActive, isVerified) && !isDeleted();
     }
 
     public String getDisplayName() {
@@ -87,5 +93,18 @@ public class SellerStore extends BaseEntity {
     public String getFormattedMaxPrice() {
         if (maxListingPrice == null) return "Không giới hạn";
         return String.format("%,.0f VND", maxListingPrice);
+    }
+
+    // JPA lifecycle methods
+    @PrePersist
+    @PreUpdate
+    public void calculateMaxListingPrice() {
+        if (depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) > 0) {
+            this.maxListingPrice = depositAmount.divide(BigDecimal.TEN, 2, RoundingMode.DOWN);
+        }
+    }
+
+    public String getStatusDisplay() {
+        return StoreStatus.getDisplayName(status);
     }
 }

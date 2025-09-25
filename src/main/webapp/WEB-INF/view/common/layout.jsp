@@ -2,6 +2,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -97,6 +98,18 @@
         .sidebar .nav-link i {
             width: 20px;
             margin-right: 10px;
+        }
+
+        .nav-section-header {
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-section-header:first-child {
+            border-top: none;
+            margin-top: 0 !important;
         }
 
         /* Main Content */
@@ -244,29 +257,89 @@
         </div>
         
         <nav class="nav flex-column">
+            <!-- Common Links -->
             <a class="nav-link" href="/">
                 <i class="fas fa-home"></i>Trang chủ
             </a>
-            <a class="nav-link" href="/users">
-                <i class="fas fa-users"></i>Quản lý người dùng
-            </a>
             <a class="nav-link" href="/stores">
-                <i class="fas fa-store"></i>Quản lý cửa hàng
+                <i class="fas fa-store"></i>Cửa hàng
             </a>
-            <a class="nav-link" href="/products">
-                <i class="fas fa-box"></i>Quản lý sản phẩm
+
+            <!-- Seller Links -->
+            <sec:authorize access="hasRole('SELLER')">
+                <div class="nav-section-header text-white-50 px-3 py-2 mt-3">
+                    <small><i class="fas fa-store-alt me-2"></i>QUẢN LÝ CỬA HÀNG</small>
+                </div>
+                <a class="nav-link" href="/stores/my-store">
+                    <i class="fas fa-tachometer-alt"></i>Dashboard
+                </a>
+                <a class="nav-link" href="/stores/my-store/products">
+                    <i class="fas fa-box"></i>Sản phẩm
+                </a>
+                <a class="nav-link" href="/stores/my-store/orders">
+                    <i class="fas fa-shopping-cart"></i>Đơn hàng
+                </a>
+                <a class="nav-link" href="/stores/my-store/inventory">
+                    <i class="fas fa-boxes"></i>Kho hàng
+                </a>
+                <a class="nav-link" href="/stores/my-store/reviews">
+                    <i class="fas fa-star"></i>Đánh giá
+                </a>
+                <a class="nav-link" href="/stores/my-store/settings">
+                    <i class="fas fa-cog"></i>Cài đặt
+                </a>
+            </sec:authorize>
+
+            <!-- User without store -->
+            <sec:authorize access="hasRole('USER') and !hasRole('SELLER')">
+                <div class="nav-section-header text-white-50 px-3 py-2 mt-3">
+                    <small><i class="fas fa-plus me-2"></i>BÁN HÀNG</small>
+                </div>
+                <a class="nav-link" href="/stores/create">
+                    <i class="fas fa-plus-circle"></i>Tạo cửa hàng
+                </a>
+            </sec:authorize>
+
+            <!-- Admin Links -->
+            <sec:authorize access="hasRole('ADMIN')">
+                <div class="nav-section-header text-white-50 px-3 py-2 mt-3">
+                    <small><i class="fas fa-shield-alt me-2"></i>QUẢN TRỊ</small>
+                </div>
+                <a class="nav-link" href="/admin/users">
+                    <i class="fas fa-users"></i>Người dùng
+                </a>
+                <a class="nav-link" href="/admin/stores">
+                    <i class="fas fa-store-alt"></i>Cửa hàng
+                </a>
+                <a class="nav-link" href="/admin/products">
+                    <i class="fas fa-box"></i>Sản phẩm
+                </a>
+                <a class="nav-link" href="/admin/orders">
+                    <i class="fas fa-shopping-cart"></i>Đơn hàng
+                </a>
+                <a class="nav-link" href="/admin/wallets">
+                    <i class="fas fa-wallet"></i>Ví điện tử
+                </a>
+                <a class="nav-link" href="/admin/reports">
+                    <i class="fas fa-chart-bar"></i>Báo cáo
+                </a>
+                <a class="nav-link" href="/admin/settings">
+                    <i class="fas fa-cog"></i>Cài đặt
+                </a>
+            </sec:authorize>
+
+            <!-- Common User Links -->
+            <div class="nav-section-header text-white-50 px-3 py-2 mt-3">
+                <small><i class="fas fa-user me-2"></i>TÀI KHOẢN</small>
+            </div>
+            <a class="nav-link" href="/users/profile">
+                <i class="fas fa-user-circle"></i>Hồ sơ
             </a>
-            <a class="nav-link" href="/orders">
-                <i class="fas fa-shopping-cart"></i>Quản lý đơn hàng
+            <a class="nav-link" href="/wallets/my-wallet">
+                <i class="fas fa-wallet"></i>Ví của tôi
             </a>
-            <a class="nav-link" href="/wallets">
-                <i class="fas fa-wallet"></i>Quản lý ví
-            </a>
-            <a class="nav-link" href="/reports">
-                <i class="fas fa-chart-bar"></i>Báo cáo
-            </a>
-            <a class="nav-link" href="/settings">
-                <i class="fas fa-cog"></i>Cài đặt
+            <a class="nav-link" href="/orders/my-orders">
+                <i class="fas fa-list"></i>Đơn hàng của tôi
             </a>
         </nav>
     </div>
