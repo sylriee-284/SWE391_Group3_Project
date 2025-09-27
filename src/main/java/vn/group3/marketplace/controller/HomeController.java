@@ -2,13 +2,16 @@ package vn.group3.marketplace.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
-public class TestController {
+public class HomeController {
     @GetMapping("/")
-    public String getMethodName() {
-        return "dashboard";
+    public String root() {
+        return "home";
     }
 
+    @GetMapping("/home")
+    public String home() {
+        return "home";
+    }
 }
