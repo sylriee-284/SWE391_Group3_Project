@@ -10,29 +10,13 @@
         <body>
             <h2>Login</h2>
 
-            <!-- Hiển thị thông báo lỗi khi login fail -->
-            <c:if test="${param.error != null}">
-                <p style="color: red;">Invalid username or password!</p>
-            </c:if>
-
-            <!-- Hiển thị thông báo khi logout -->
-            <c:if test="${param.logout != null}">
-                <p style="color: green;">You have been logged out successfully.</p>
-            </c:if>
-
-            <form action="/login" method="post">
-                <div>
-                    <label>Username:</label>
-                    <input type="text" name="username" required />
-                </div>
-                <div>
-                    <label>Password:</label>
-                    <input type="password" name="password" required />
-                </div>
-                <div>
-                    <button type="submit">Login</button>
-                </div>
+            <form action="<c:url value='/login'/>" method="post">
+                <input type="text" name="username" />
+                <input type="password" name="password" />
+                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+                <button type="submit">Login</button>
             </form>
+
 
         </body>
 
