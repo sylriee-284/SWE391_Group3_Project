@@ -54,10 +54,10 @@
         <body>
 
             <!-- Include Navbar -->
-            <%@ include file="navbar.jsp" %>
+            <%@ include file="common/navbar.jsp" %>
 
                 <!-- Include Sidebar -->
-                <%@ include file="sidebar.jsp" %>
+                <%@ include file="common/sidebar.jsp" %>
 
                     <!-- Nội dung chính -->
                     <div class="content" id="content">
