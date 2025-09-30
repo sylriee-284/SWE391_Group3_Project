@@ -1,5 +1,7 @@
 package vn.group3.marketplace.domain.entity;
 
+import java.util.List;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,4 +24,8 @@ public class Wallet extends BaseEntity {
 
     @Builder.Default
     private Double balance = 0.0;
+
+    @OneToMany(mappedBy = "wallet")
+    private List<WalletTransaction> transactions;
+
 }

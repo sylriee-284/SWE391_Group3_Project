@@ -49,4 +49,8 @@ public class User extends BaseEntity {
     @Column(length = 20)
     @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
+
+    @OneToOne(mappedBy = "user")
+    private Wallet wallet;
+
 }
