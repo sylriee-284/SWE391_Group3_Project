@@ -20,9 +20,4 @@ public class AdminController {
         return "admin/categories";
     }
 
-    @GetMapping("/complaints")
-    public String manageComplaints(Model model) {
-        // load danh sách complaint/dispute
-        return "admin/complaints";
-    }
 }

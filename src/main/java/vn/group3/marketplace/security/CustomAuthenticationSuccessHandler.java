@@ -15,26 +15,15 @@ import java.util.Collection;
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request,
-            HttpServletResponse response,
-            Authentication authentication) throws IOException, ServletException {
-        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+            Authentication authentication) throws IOException {
+        // Lấy role của người dùng
+        String role = authentication.getAuthorities().toString();
 
-        String redirectUrl = "/home"; // default
-        for (GrantedAuthority authority : authorities) {
-            String role = authority.getAuthority();
-            if (role.equals("ROLE_ADMIN")) {
-                redirectUrl = "/admin/dashboard";
-                break;
-            } else if (role.equals("ROLE_SELLER")) {
-                redirectUrl = "/seller/dashboard";
-                break;
-            } else if (role.equals("ROLE_USER")) {
-                redirectUrl = "/user/dashboard";
-                // không break -> nếu có SELLER thì SELLER sẽ ưu tiên
-            }
-        }
+        // Lưu role vào session
+        request.getSession().setAttribute("role", role);
 
-        response.sendRedirect(redirectUrl);
+        // Chuyển hướng về homepage
+        response.sendRedirect("/homepage");
     }
 }

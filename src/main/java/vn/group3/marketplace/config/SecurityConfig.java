@@ -3,75 +3,101 @@
 // import org.springframework.context.annotation.Bean;
 // import org.springframework.context.annotation.Configuration;
 // import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+// import org.springframework.security.core.userdetails.User;
 // import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 // import org.springframework.security.crypto.password.PasswordEncoder;
 // import org.springframework.security.web.SecurityFilterChain;
-// import vn.group3.marketplace.security.CustomAuthenticationSuccessHandler;
 
 // @Configuration
 // public class SecurityConfig {
 
-//     private final CustomAuthenticationSuccessHandler successHandler;
+//         @Bean
+//         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+//                 http
+//                                 .formLogin(form -> form
+//                                                 .loginPage("/login") // Trang đăng nhập tùy chỉnh
+//                                                 .loginProcessingUrl("/login") // URL xử lý login (có thể thay đổi nếu
+//                                                                               // cần)
+//                                                 .defaultSuccessUrl("/homepage", true) // Chuyển hướng sau khi đăng nhập
+//                                                                                       // thành công
+//                                                 .permitAll())
+//                                 .logout(logout -> logout
+//                                                 .permitAll() // Cho phép tất cả người dùng logout
+//                                 )
+//                                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
+//                                                 .requestMatchers("/", "/homepage", "/product/**").permitAll() // Cho
+//                                                                                                               // phép
+//                                                                                                               // truy
+//                                                                                                               // cập vào
+//                                                                                                               // homepage
+//                                                                                                               // và
+//                                                                                                               // product
+//                                                 .requestMatchers("/admin/**").hasRole("ADMIN")
+//                                                 .requestMatchers("/seller/**").hasRole("SELLER")
+//                                                 .requestMatchers("/user/**").hasRole("USER")
+//                                                 .anyRequest().authenticated() // Các yêu cầu còn lại đều cần đăng nhập
+//                                 );
 
-//     public SecurityConfig(CustomAuthenticationSuccessHandler successHandler) {
-//         this.successHandler = successHandler;
-//     }
+//                 return http.build();
+//         }
 
-//     @Bean
-//     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//         http
-//                 .authorizeHttpRequests(auth -> auth
-//                         .requestMatchers("/", "/home", "/login",
-//                                 "/css/**", "/js/**", "/images/**")
-//                         .permitAll()
-//                         .requestMatchers("/admin/**").hasRole("ADMIN")
-//                         .requestMatchers("/seller/**").hasRole("SELLER")
-//                         .requestMatchers("/user/**").hasRole("USER")
-//                         .anyRequest().authenticated())
-//                 .formLogin(login -> login
-//                         .loginPage("/login")
-//                         .successHandler(successHandler) // ✅ dùng custom handler
-//                         .permitAll())
-//                 .logout(logout -> logout
-//                         .logoutUrl("/logout")
-//                         .logoutSuccessUrl("/home")
-//                         .permitAll())
-//                 .csrf(csrf -> csrf.disable());
-
-//         return http.build();
-//     }
-
-//     @Bean
-//     public PasswordEncoder passwordEncoder() {
-//         return new BCryptPasswordEncoder();
-//     }
+//         @Bean
+//         public PasswordEncoder passwordEncoder() {
+//                 return new BCryptPasswordEncoder(); // Mã hóa mật khẩu bằng BCrypt
+//         }
 // }
 
 package vn.group3.marketplace.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+@EnableMethodSecurity
 @Configuration
 public class SecurityConfig {
 
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http
-                                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll()) // cho phép tất cả
-                                .csrf(csrf -> csrf.disable()) // tắt CSRF
-                                .formLogin(form -> form.disable()) // tắt login
-                                .logout(logout -> logout.disable()); // tắt logout
+                                .csrf(csrf -> csrf.disable())
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers("/", "/homepage", "/products/**",
+                                                                "/login", "/logout",
+                                                                "/css/**", "/js/**", "/images/**",
+                                                                "/webjars/**", "/static/**",
+                                                                "/WEB-INF/view/**")
+                                                .permitAll()
+                                                .requestMatchers("/admin/**").hasRole("ADMIN")
+                                                .requestMatchers("/seller/**").hasRole("SELLER")
+                                                .requestMatchers("/orders/**").hasAnyRole("USER", "SELLER")
+                                                .anyRequest().permitAll())
+                                .formLogin(form -> form
+                                                .loginPage("/login")
+                                                .loginProcessingUrl("/login")
+                                                .defaultSuccessUrl("/homepage", false)
+                                                .permitAll())
+                                .logout(logout -> logout
+                                                .logoutUrl("/logout")
+                                                .logoutSuccessUrl("/")
+                                                .permitAll());
 
                 return http.build();
         }
 
         @Bean
+        public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
+                return cfg.getAuthenticationManager();
+        }
+
+        @Bean
         public PasswordEncoder passwordEncoder() {
-                return new BCryptPasswordEncoder();
+                return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
         }
 }

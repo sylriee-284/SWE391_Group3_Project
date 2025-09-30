@@ -1,8 +1,5 @@
 package vn.group3.marketplace.controller;
 
-import vn.group3.marketplace.service.ProductService;
-import vn.group3.marketplace.service.OrderService;
-import vn.group3.marketplace.service.WalletService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,18 +8,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 @RequestMapping("/seller")
 public class SellerController {
-
-    private final ProductService productService;
-    private final OrderService orderService;
-    private final WalletService walletService;
-
-    public SellerController(ProductService productService,
-            OrderService orderService,
-            WalletService walletService) {
-        this.productService = productService;
-        this.orderService = orderService;
-        this.walletService = walletService;
-    }
 
     // // Trang chính của seller
     // @GetMapping("/dashboard")
