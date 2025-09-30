@@ -1,5 +1,6 @@
 package vn.group3.marketplace.domain.entity;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import jakarta.persistence.*;
@@ -43,7 +44,11 @@ public class User extends BaseEntity {
     // Many-to-Many với Role
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<Role> roles;
+    @Builder.Default
+    private Set<Role> roles = new HashSet<>();
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+    private Wallet wallet;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
