@@ -49,15 +49,17 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Role USER không tồn tại"));
         user.getRoles().add(role);
 
-        // Tạo ví liên kết
+        // Lưu user trước
+        User savedUser = userRepository.save(user);
+
+        // Tạo ví liên kết sau khi user đã có ID
         Wallet wallet = Wallet.builder()
-                .user(user) // set quan hệ 2 chiều
+                .user(savedUser)
                 .balance(0.0)
                 .build();
-        user.setWallet(wallet);
 
-        // Lưu user (cascade sẽ lưu luôn cả wallet)
-        userRepository.save(user);
+        // Lưu wallet
+        walletRepository.save(wallet);
     }
 
 }

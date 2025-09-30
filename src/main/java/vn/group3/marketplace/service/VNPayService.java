@@ -40,6 +40,15 @@ public class VNPayService {
     public String generateVNPayURL(double amountDouble, String paymentRef, String ip)
             throws UnsupportedEncodingException {
 
+        System.out.println("=== VNPay Service Debug ===");
+        System.out.println("TMN Code: " + vnp_TmnCode);
+        System.out.println("Secret Key: " + (secretKey != null ? "Set (length: " + secretKey.length() + ")" : "NULL"));
+        System.out.println("Payment URL: " + vnp_PayUrl);
+        System.out.println("Return URL: " + vnp_ReturnUrl);
+        System.out.println("Order ID: " + paymentRef);
+        System.out.println("Amount: " + amountDouble);
+        System.out.println("IP Address: " + ip);
+
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
         String orderType = "other";
@@ -104,6 +113,11 @@ public class VNPayService {
         String vnp_SecureHash = hmacSHA512(secretKey, hashData.toString());
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
         String paymentUrl = vnp_PayUrl + "?" + queryUrl;
+
+        System.out.println("Generated hash data: " + hashData.toString());
+        System.out.println("Generated secure hash: " + vnp_SecureHash);
+        System.out.println("Final payment URL: " + paymentUrl);
+        System.out.println("=== End VNPay Debug ===");
 
         return paymentUrl;
     }

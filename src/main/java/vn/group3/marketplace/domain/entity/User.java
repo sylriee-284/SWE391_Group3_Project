@@ -47,15 +47,12 @@ public class User extends BaseEntity {
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
     private Wallet wallet;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
-
-    @OneToOne(mappedBy = "user")
-    private Wallet wallet;
 
 }

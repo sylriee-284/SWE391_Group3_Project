@@ -67,17 +67,23 @@ public class SecurityConfig {
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http
                                 .csrf(csrf -> csrf.disable())
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(
+                                                                org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
+                                                .maximumSessions(1)
+                                                .maxSessionsPreventsLogin(false))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/", "/homepage", "/products/**",
-                                                                "/login", "/logout",
+                                                                "/login", "/logout", "/register",
                                                                 "/css/**", "/js/**", "/images/**",
                                                                 "/webjars/**", "/static/**",
                                                                 "/WEB-INF/view/**")
                                                 .permitAll()
                                                 .requestMatchers("/admin/**").hasRole("ADMIN")
                                                 .requestMatchers("/seller/**").hasRole("SELLER")
-                                                .requestMatchers("/orders/**").hasAnyRole("USER", "SELLER")
-                                                .anyRequest().permitAll())
+                                                .requestMatchers("/orders/**", "/wallet/**")
+                                                .hasAnyRole("USER", "SELLER", "ADMIN")
+                                                .anyRequest().authenticated())
                                 .formLogin(form -> form
                                                 .loginPage("/login")
                                                 .loginProcessingUrl("/login")
