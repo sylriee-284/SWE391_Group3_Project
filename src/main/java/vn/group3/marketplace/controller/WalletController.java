@@ -69,7 +69,7 @@ public class WalletController {
         }
     }
 
-    @GetMapping("/vnpay-callback") // KHÔNG phải "/wallet/vnpay-callback"
+    @GetMapping("/vnpay-callback")
     public String vnpayCallback(@RequestParam Map<String, String> params) {
         // Khi test: chỉ cần validate chữ ký (nếu bạn đã viết) rồi trả view
         // TODO: boolean ok = vnpayService.verifyCallback(params);
