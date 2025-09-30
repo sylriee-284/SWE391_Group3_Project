@@ -31,6 +31,10 @@ public class WalletTransaction extends BaseEntity {
     @JoinColumn(name = "ref_order_id")
     private Order order;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     private String note;
 
     private String paymentRef;

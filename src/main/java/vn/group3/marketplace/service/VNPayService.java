@@ -60,7 +60,7 @@ public class VNPayService {
         // vnp_Params.put("vnp_BankCode", bankCode);
         // }
         vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
-        vnp_Params.put("vnp_OrderInfo", "Thanh toan don hang:" + vnp_TxnRef);
+        vnp_Params.put("vnp_OrderInfo", "Nạp tiền vào ví user: " + ", ref: " + vnp_TxnRef);
         vnp_Params.put("vnp_OrderType", orderType);
 
         vnp_Params.put("vnp_Locale", "vn");
