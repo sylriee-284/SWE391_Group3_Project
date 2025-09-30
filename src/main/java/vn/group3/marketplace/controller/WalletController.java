@@ -3,6 +3,7 @@ package vn.group3.marketplace.controller;
 import vn.group3.marketplace.domain.entity.Wallet;
 import vn.group3.marketplace.domain.entity.WalletTransaction;
 import vn.group3.marketplace.domain.enums.WalletTransactionType;
+import vn.group3.marketplace.repository.UserRepository;
 import vn.group3.marketplace.repository.WalletRepository;
 import vn.group3.marketplace.repository.WalletTransactionRepository;
 import vn.group3.marketplace.service.VNPayService;
@@ -30,13 +31,16 @@ public class WalletController {
     private final WalletRepository walletRepository;
     private final WalletService walletService;
     private final VNPayService vnpayService;
+    private final UserRepository userRepository;
 
     public WalletController(WalletService walletService, VNPayService vnpayService,
-            WalletTransactionRepository walletTransactionRepository, WalletRepository walletRepository) {
+            WalletTransactionRepository walletTransactionRepository, WalletRepository walletRepository,
+            UserRepository userRepository) {
         this.walletService = walletService;
         this.vnpayService = vnpayService;
         this.walletTransactionRepository = walletTransactionRepository;
         this.walletRepository = walletRepository;
+        this.userRepository = userRepository;
     }
 
     @GetMapping("/deposit")
@@ -51,54 +55,26 @@ public class WalletController {
     }
 
     @PostMapping("/deposit")
-    public String deposit(@RequestParam Double amount, @AuthenticationPrincipal User user, HttpServletRequest request) {
-        String paymentRef = UUID.randomUUID().toString();
+    public String deposit(@RequestParam Double amount, HttpServletRequest request) {
+        String paymentRef = java.util.UUID.randomUUID().toString();
         String ip = vnpayService.getIpAddress(request);
 
-        // Tạo giao dịch tạm thời
-        WalletTransaction tx = new WalletTransaction();
-        tx.setUser(user);
-        tx.setPaymentRef(paymentRef);
-        tx.setAmount(amount);
-        tx.setType(WalletTransactionType.DEPOSIT); // hoặc "DEPOSIT"
-        tx.setPaymentStatus("pending");
-        tx.setPaymentMethod("VNPAY");
-        walletTransactionRepository.save(tx);
-
+        // ĐỪNG tạo/safe WalletTransaction ở đây khi test
         try {
             String paymentUrl = vnpayService.generateVNPayURL(amount, paymentRef, ip);
             return "redirect:" + paymentUrl;
         } catch (UnsupportedEncodingException e) {
-            // Xử lý lỗi encoding
             e.printStackTrace();
-            return "redirect:/wallet/" + user.getId() + "?error=encoding";
+            return "redirect:/wallet?error=encoding";
         }
     }
 
-    @GetMapping("/wallet/vnpay-callback")
+    @GetMapping("/vnpay-callback") // KHÔNG phải "/wallet/vnpay-callback"
     public String vnpayCallback(@RequestParam Map<String, String> params) {
-        String paymentRef = params.get("vnp_TxnRef");
-        WalletTransaction tx = walletTransactionRepository.findByPaymentRef(paymentRef).orElse(null);
-
-        // TODO: Implement verifyCallback method in VNPayService
-        boolean ok = true; // Tạm thời set true, cần implement verification logic
-        // boolean ok = vnpayService.verifyCallback(params);
-
-        if (tx != null && ok && "pending".equals(tx.getPaymentStatus())) {
-            tx.setPaymentStatus("success");
-            walletTransactionRepository.save(tx);
-
-            // Tìm và cập nhật wallet
-            Optional<Wallet> walletOpt = walletRepository.findByUserId(tx.getUser().getId());
-            if (walletOpt.isPresent()) {
-                Wallet wallet = walletOpt.get();
-                wallet.setBalance(wallet.getBalance() + tx.getAmount());
-                walletRepository.save(wallet);
-            }
-
-            return "wallet/success";
-        }
-        return "wallet/failure";
+        // Khi test: chỉ cần validate chữ ký (nếu bạn đã viết) rồi trả view
+        // TODO: boolean ok = vnpayService.verifyCallback(params);
+        boolean ok = true; // tạm thời
+        return ok ? "wallet/success" : "wallet/failure";
     }
 
 }
