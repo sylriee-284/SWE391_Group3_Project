@@ -88,7 +88,7 @@ public interface SellerStoreRepository extends JpaRepository<SellerStore, Long> 
      */
     @Query("SELECT s FROM SellerStore s LEFT JOIN FETCH s.ownerUser WHERE " +
            "s.isActive = true AND s.isDeleted = false AND " +
-           "s.maxListingPrice >= :productPrice")/
+           "s.maxListingPrice >= :productPrice")
     Page<SellerStore> findStoresCanListProduct(@Param("productPrice") BigDecimal productPrice, Pageable pageable);
 
     /**

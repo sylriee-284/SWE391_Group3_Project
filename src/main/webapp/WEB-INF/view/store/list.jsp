@@ -9,36 +9,292 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danh sách Cửa hàng - TaphoaMMO</title>
+
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
     <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #ecf0f1;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            margin: 0;
+            padding-top: 60px;
+        }
+
+        /* Navbar Styles */
+        .navbar-custom {
+            background-color: var(--primary-color);
+            border-bottom: 3px solid var(--accent-color);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: 60px;
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .navbar-nav .nav-link {
+            color: white !important;
+            transition: color 0.3s ease;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: var(--accent-color) !important;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 60px;
+            left: -var(--sidebar-width);
+            width: var(--sidebar-width);
+            height: calc(100vh - 60px);
+            background-color: var(--secondary-color);
+            transition: left 0.3s ease;
+            z-index: 999;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+
+        .sidebar.active {
+            left: 0;
+        }
+
+        .sidebar .logo {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+
+        .sidebar .menu {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar .menu li {
+            margin-bottom: 5px;
+        }
+
+        .sidebar .menu a {
+            display: block;
+            padding: 12px 20px;
+            color: #bdc3c7;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .menu a:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: var(--accent-color);
+            padding-left: 25px;
+        }
+
+        .sidebar .menu a.active {
+            background-color: var(--accent-color);
+            color: white;
+            border-left: 4px solid white;
+        }
+
+        .sidebar .menu a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .menu .menu-section {
+            padding: 15px 20px 5px;
+        }
+
+        .sidebar .menu .menu-title {
+            color: #95a5a6;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 0;
+            padding: 30px;
+            transition: margin-left 0.3s ease;
+            min-height: calc(100vh - 60px);
+        }
+
+        .main-content.shifted {
+            margin-left: var(--sidebar-width);
+        }
+
+        /* Store Card Styles */
         .store-card {
             transition: transform 0.2s, box-shadow 0.2s;
             height: 100%;
+            border: 1px solid #dee2e6;
         }
+
         .store-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
+
         .store-logo {
             width: 80px;
             height: 80px;
             object-fit: cover;
             border-radius: 10px;
         }
+
         .store-stats {
             font-size: 0.9rem;
         }
+
         .search-filters {
-            background: #f8f9fa;
+            background: white;
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Toggle Button */
+        #sidebarToggle {
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
+        #sidebarToggle:focus {
+            box-shadow: none;
+        }
+
+        /* Badge Styles */
+        .badge {
+            padding: 0.35em 0.65em;
+            font-weight: 500;
         }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container-fluid">
+            <button class="btn btn-link text-white me-3" id="sidebarToggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars fa-lg"></i>
+            </button>
+            <a class="navbar-brand" href="/">TaphoaMMO</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/users/profile">
+                            <i class="fas fa-user"></i> Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="logo">
+            MMO Market System
+        </div>
+        <ul class="menu">
+            <!-- Dashboard -->
+            <li><a href="/"><i class="fas fa-tachometer-alt"></i> Trang chủ</a></li>
+
+            <!-- User Management -->
+            <li class="menu-section">
+                <span class="menu-title">Quản lý người dùng</span>
+            </li>
+            <li><a href="/users"><i class="fas fa-users"></i> Danh sách người dùng</a></li>
+            <li><a href="/users/register"><i class="fas fa-user-plus"></i> Thêm người dùng</a></li>
+            <li><a href="/users/profile"><i class="fas fa-user-circle"></i> Hồ sơ của tôi</a></li>
+
+            <!-- Store Management -->
+            <li class="menu-section">
+                <span class="menu-title">Quản lý cửa hàng</span>
+            </li>
+            <li><a href="/stores" class="active"><i class="fas fa-store"></i> Danh sách cửa hàng</a></li>
+            <li><a href="/stores/create"><i class="fas fa-plus-circle"></i> Tạo cửa hàng</a></li>
+
+            <!-- Product Management -->
+            <li class="menu-section">
+                <span class="menu-title">Quản lý sản phẩm</span>
+            </li>
+            <li><a href="/products"><i class="fas fa-box"></i> Danh sách sản phẩm</a></li>
+            <li><a href="/products/create"><i class="fas fa-plus"></i> Thêm sản phẩm</a></li>
+            <li><a href="/categories"><i class="fas fa-tags"></i> Danh mục</a></li>
+
+            <!-- Order Management -->
+            <li class="menu-section">
+                <span class="menu-title">Quản lý đơn hàng</span>
+            </li>
+            <li><a href="/orders"><i class="fas fa-shopping-cart"></i> Danh sách đơn hàng</a></li>
+            <li><a href="/orders/pending"><i class="fas fa-clock"></i> Đơn hàng chờ</a></li>
+            <li><a href="/escrow"><i class="fas fa-handshake"></i> Giao dịch ký quỹ</a></li>
+
+            <!-- Financial Management -->
+            <li class="menu-section">
+                <span class="menu-title">Quản lý tài chính</span>
+            </li>
+            <li><a href="/wallets"><i class="fas fa-wallet"></i> Quản lý ví</a></li>
+            <li><a href="/transactions"><i class="fas fa-exchange-alt"></i> Giao dịch</a></li>
+            <li><a href="/deposits"><i class="fas fa-piggy-bank"></i> Tiền cọc cửa hàng</a></li>
+
+            <!-- Reports & Analytics -->
+            <li class="menu-section">
+                <span class="menu-title">Báo cáo & Thống kê</span>
+            </li>
+            <li><a href="/reports/dashboard"><i class="fas fa-chart-bar"></i> Tổng quan</a></li>
+            <li><a href="/reports/sales"><i class="fas fa-chart-line"></i> Doanh thu</a></li>
+            <li><a href="/reports/users"><i class="fas fa-user-chart"></i> Người dùng</a></li>
+
+            <!-- System Settings -->
+            <li class="menu-section">
+                <span class="menu-title">Cài đặt hệ thống</span>
+            </li>
+            <li><a href="/settings"><i class="fas fa-cog"></i> Cài đặt chung</a></li>
+            <li><a href="/roles"><i class="fas fa-user-tag"></i> Vai trò & Quyền</a></li>
+            <li><a href="/notifications"><i class="fas fa-bell"></i> Thông báo</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content" id="mainContent">
         <!-- Header -->
         <div class="row mb-4">
             <div class="col-12">
@@ -67,7 +323,7 @@
                         <label class="form-label">Tìm kiếm</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text" class="form-control" name="search" 
+                            <input type="text" class="form-control" name="search"
                                    value="${search}" placeholder="Tên cửa hàng, mô tả...">
                         </div>
                     </div>
@@ -236,7 +492,7 @@
                             <div class="mt-3 pt-3 border-top">
                                 <div class="text-muted small">
                                     <i class="fas fa-calendar"></i>
-                                    Tạo ngày: 
+                                    Tạo ngày:
                                     <c:choose>
                                         <c:when test="${not empty store.createdAt}">
                                             ${fn:substring(store.createdAt.toString().replace('T', ' '), 0, 16)}
@@ -248,7 +504,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Card Footer -->
                         <div class="card-footer bg-transparent">
                             <div class="d-grid">
@@ -313,6 +569,40 @@
         </c:if>
     </div>
 
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+
+            sidebar.classList.toggle('active');
+            mainContent.classList.toggle('shifted');
+
+            // Save state to localStorage
+            const isActive = sidebar.classList.contains('active');
+            localStorage.setItem('sidebarActive', isActive);
+        }
+
+        // Restore sidebar state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarActive = localStorage.getItem('sidebarActive') === 'true';
+            if (sidebarActive) {
+                document.getElementById('sidebar').classList.add('active');
+                document.getElementById('mainContent').classList.add('shifted');
+            }
+
+            // Highlight active menu item based on current URL
+            const currentPath = window.location.pathname;
+            const menuLinks = document.querySelectorAll('.sidebar .menu a');
+            menuLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
