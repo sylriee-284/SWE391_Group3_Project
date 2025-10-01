@@ -108,7 +108,7 @@ public class SellerStoreController {
     // @PreAuthorize("hasRole('USER')") // TEMPORARILY DISABLED for testing
     public String showCreateForm(@AuthenticationPrincipal User currentUser, Model model) {
         // TEMPORARILY FAKE USER ID = 2 for testing (no authentication)
-        Long userId = (currentUser != null) ? currentUser.getId() : 2L;
+        Long userId = (currentUser != null && currentUser.getId() != null) ? currentUser.getId() : 2L;
 
         // if (currentUser == null) {
         //     return "redirect:/auth/login?error=authentication_required";
@@ -142,7 +142,7 @@ public class SellerStoreController {
             Model model) {
 
         // TEMPORARILY FAKE USER ID = 2 for testing (no authentication)
-        Long userId = (currentUser != null) ? currentUser.getId() : 2L;
+        Long userId = (currentUser != null && currentUser.getId() != null) ? currentUser.getId() : 2L;
 
         // if (currentUser == null) {
         //     return "redirect:/auth/login?error=authentication_required";
