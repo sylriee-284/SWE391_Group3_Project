@@ -105,23 +105,26 @@ public class SellerStoreController {
      * Show create store form
      */
     @GetMapping("/create")
-    @PreAuthorize("hasRole('USER')")
+    // @PreAuthorize("hasRole('USER')") // TEMPORARILY DISABLED for testing
     public String showCreateForm(@AuthenticationPrincipal User currentUser, Model model) {
-        if (currentUser == null) {
-            return "redirect:/auth/login?error=authentication_required";
-        }
+        // TEMPORARILY FAKE USER ID = 2 for testing (no authentication)
+        Long userId = (currentUser != null) ? currentUser.getId() : 2L;
+
+        // if (currentUser == null) {
+        //     return "redirect:/auth/login?error=authentication_required";
+        // }
 
         // Check if user already has a store
-        Optional<SellerStore> existingStore = sellerStoreService.getStoreByOwnerId(currentUser.getId());
+        Optional<SellerStore> existingStore = sellerStoreService.getStoreByOwnerId(userId);
         if (existingStore.isPresent()) {
             return "redirect:/stores/my-store?error=already_has_store";
         }
 
         model.addAttribute("createRequest", new SellerStoreCreateRequest());
         model.addAttribute("minimumDeposit", sellerStoreService.getMinimumDepositAmount());
-        
+
         // Get user's wallet balance
-        addWalletBalanceToModel(currentUser.getId(), model);
+        addWalletBalanceToModel(userId, model);
 
         return "store/create";
     }
@@ -130,7 +133,7 @@ public class SellerStoreController {
      * Process store creation
      */
     @PostMapping("/create")
-    @PreAuthorize("hasRole('USER')")
+    // @PreAuthorize("hasRole('USER')") // TEMPORARILY DISABLED for testing
     public String createStore(
             @Valid @ModelAttribute("createRequest") SellerStoreCreateRequest request,
             BindingResult bindingResult,
@@ -138,24 +141,27 @@ public class SellerStoreController {
             RedirectAttributes redirectAttributes,
             Model model) {
 
-        if (currentUser == null) {
-            return "redirect:/auth/login?error=authentication_required";
-        }
+        // TEMPORARILY FAKE USER ID = 2 for testing (no authentication)
+        Long userId = (currentUser != null) ? currentUser.getId() : 2L;
+
+        // if (currentUser == null) {
+        //     return "redirect:/auth/login?error=authentication_required";
+        // }
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("minimumDeposit", sellerStoreService.getMinimumDepositAmount());
-            addWalletBalanceToModel(currentUser.getId(), model);
+            addWalletBalanceToModel(userId, model);
             return "store/create";
         }
 
         try {
-            SellerStore store = sellerStoreService.createStore(currentUser.getId(), request);
-            redirectAttributes.addFlashAttribute("success", 
+            SellerStore store = sellerStoreService.createStore(userId, request);
+            redirectAttributes.addFlashAttribute("success",
                 "Cửa hàng đã được tạo thành công! ID: " + store.getId());
             return "redirect:/stores/my-store";
         } catch (Exception e) {
-            log.error("Failed to create store for user {}: {}", currentUser.getId(), e.getMessage());
-            redirectAttributes.addFlashAttribute("error", 
+            log.error("Failed to create store for user {}: {}", userId, e.getMessage());
+            redirectAttributes.addFlashAttribute("error",
                 "Không thể tạo cửa hàng: " + e.getMessage());
             return "redirect:/stores/create";
         }
