@@ -244,10 +244,15 @@ public class ProductController {
     @PreAuthorize("hasRole('SELLER')")
     public String createProduct(
             @Valid @ModelAttribute("createRequest") ProductCreateRequest request,
+            @RequestParam(value = "imageFiles", required = false) List<MultipartFile> imageFiles,
             BindingResult bindingResult,
             @AuthenticationPrincipal User currentUser,
             RedirectAttributes redirectAttributes,
             Model model) {
+
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            log.info("Received {} image files for upload", imageFiles.size());
+        }
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("categories", ProductCategory.values());
@@ -255,9 +260,15 @@ public class ProductController {
         }
 
         try {
-            Product product = productService.createProduct(currentUser.getId(), request);
-            redirectAttributes.addFlashAttribute("success",
-                "Sản phẩm đã được tạo thành công! ID: " + product.getId());
+            Product product = productService.createProduct(currentUser.getId(), request, imageFiles);
+
+            String successMessage = "Sản phẩm đã được tạo thành công! ID: " + product.getId();
+            if (imageFiles != null && !imageFiles.isEmpty()) {
+                long uploadedCount = imageFiles.stream().filter(f -> !f.isEmpty()).count();
+                successMessage += ", Đã upload " + uploadedCount + " ảnh";
+            }
+
+            redirectAttributes.addFlashAttribute("success", successMessage);
             return "redirect:/products/my-products";
         } catch (Exception e) {
             log.error("Failed to create product for user {}: {}", currentUser.getId(), e.getMessage());

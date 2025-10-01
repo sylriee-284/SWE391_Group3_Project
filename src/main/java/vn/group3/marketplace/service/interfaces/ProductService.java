@@ -24,7 +24,7 @@ public interface ProductService {
      * @param request Product creation request
      * @return Created product
      */
-    Product createProduct(Long sellerId, ProductCreateRequest request);
+    Product createProduct(Long sellerId, ProductCreateRequest request, List<org.springframework.web.multipart.MultipartFile> imageFiles);
 
     /**
      * Update an existing product

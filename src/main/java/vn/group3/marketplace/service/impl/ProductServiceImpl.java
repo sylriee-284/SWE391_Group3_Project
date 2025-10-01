@@ -42,7 +42,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public Product createProduct(Long sellerId, ProductCreateRequest request) {
+    public Product createProduct(Long sellerId, ProductCreateRequest request, List<org.springframework.web.multipart.MultipartFile> imageFiles) {
         log.info("Creating product for seller ID: {}", sellerId);
 
         // Verify seller exists
@@ -76,7 +76,7 @@ public class ProductServiceImpl implements ProductService {
             request.setSku(generateUniqueSku());
         }
 
-        // Create product entity
+        // Create product entity WITHOUT images first (need product ID for upload)
         Product product = Product.builder()
                 .productName(request.getProductName())
                 .description(request.getDescription())
@@ -84,14 +84,40 @@ public class ProductServiceImpl implements ProductService {
                 .stockQuantity(request.getStockQuantity())
                 .category(request.getCategory())
                 .sku(request.getSku())
-                .productImages(request.getProductImages())
+                .productImages(null) // Will be set after upload
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
                 .store(store)
                 .seller(seller)
                 .build();
 
+        // Save product to get ID
         Product savedProduct = productRepository.save(product);
         log.info("Product created successfully with ID: {}", savedProduct.getId());
+
+        // Upload images if provided
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            try {
+                List<String> imageUrls = new ArrayList<>();
+                for (org.springframework.web.multipart.MultipartFile imageFile : imageFiles) {
+                    if (!imageFile.isEmpty()) {
+                        String imageUrl = fileUploadService.uploadProductImage(savedProduct.getId(), imageFile);
+                        imageUrls.add(imageUrl);
+                        log.info("Uploaded image for product {}: {}", savedProduct.getId(), imageUrl);
+                    }
+                }
+
+                if (!imageUrls.isEmpty()) {
+                    // Store as JSON array
+                    String imagesJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(imageUrls);
+                    savedProduct.setProductImages(imagesJson);
+                    savedProduct = productRepository.save(savedProduct);
+                    log.info("Updated product {} with {} image URLs", savedProduct.getId(), imageUrls.size());
+                }
+            } catch (Exception e) {
+                log.error("Failed to upload images for product {}: {}", savedProduct.getId(), e.getMessage());
+                // Don't fail the entire creation, just log the error
+            }
+        }
 
         return savedProduct;
     }
