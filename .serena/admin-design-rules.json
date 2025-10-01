@@ -1,0 +1,282 @@
+{
+  "project": "TaphoaMMO Admin Dashboard",
+  "version": "1.0.0",
+  "last_updated": "2025-10-01",
+  "design_system": {
+    "colors": {
+      "primary": "#2c3e50",
+      "secondary": "#34495e",
+      "accent": "#3498db",
+      "success": "#27ae60",
+      "warning": "#f39c12",
+      "danger": "#e74c3c",
+      "light_bg": "#ecf0f1",
+      "sidebar_bg": "#2c3e50",
+      "navbar_bg": "#2c3e50"
+    },
+    "layout": {
+      "description": "Hệ thống layout sử dụng Flexbox với sidebar cố định chiếm không gian và main content co giãn",
+      "structure": {
+        "navbar": {
+          "position": "sticky",
+          "top": 0,
+          "height": "60px",
+          "z_index": 1000,
+          "description": "Navbar luôn sticky ở top khi scroll"
+        },
+        "layout_container": {
+          "display": "flex",
+          "description": "Container chính sử dụng flexbox để chứa sidebar và content"
+        },
+        "sidebar": {
+          "position": "sticky",
+          "top": 0,
+          "width_expanded": "250px",
+          "width_collapsed": "60px",
+          "min_width_expanded": "250px",
+          "min_width_collapsed": "60px",
+          "height": "100vh",
+          "padding_expanded": "20px",
+          "padding_collapsed": "20px 10px",
+          "transition": "width 0.3s ease, min-width 0.3s ease, padding 0.3s ease",
+          "overflow_y": "auto",
+          "overflow_x": "hidden",
+          "description": "Sidebar luôn chiếm không gian trong layout, toggle sẽ thay đổi width từ 250px xuống 60px",
+          "behavior": {
+            "default_state": "expanded (250px)",
+            "collapsed_state": "60px (chỉ hiện icon)",
+            "toggle_method": "toggleSidebar() - toggle class 'collapsed'",
+            "space_behavior": "Luôn chiếm không gian trong layout, đẩy content sang phải"
+          }
+        },
+        "main_content": {
+          "flex": 1,
+          "padding": "20px hoặc 30px",
+          "min_height": "100vh",
+          "overflow_x": "auto",
+          "description": "Main content tự động co giãn theo không gian còn lại, responsive với sidebar"
+        }
+      }
+    },
+    "sidebar_rules": {
+      "logo": {
+        "text_align": "center",
+        "font_size": "20px hoặc 24px",
+        "font_weight": "bold",
+        "margin_bottom": "30px-40px",
+        "hide_on_collapse": true
+      },
+      "menu": {
+        "list_style": "none",
+        "padding": 0,
+        "margin": 0
+      },
+      "menu_items": {
+        "display": "flex",
+        "align_items": "center",
+        "padding": "12px 15px hoặc 12px 20px",
+        "white_space": "nowrap",
+        "transition": "all 0.3s ease",
+        "structure": "<a><i class='icon'></i><span>Text</span></a>",
+        "description": "Menu items phải có cấu trúc icon + span để hỗ trợ collapse"
+      },
+      "menu_icons": {
+        "width": "20px",
+        "min_width": "20px",
+        "margin_right": "10px",
+        "text_align": "center",
+        "margin_right_on_collapse": 0,
+        "description": "Icon có min-width để không bị thu nhỏ khi collapse"
+      },
+      "menu_text": {
+        "wrap_in": "<span>",
+        "hide_on_collapse": true,
+        "overflow": "hidden",
+        "transition": "opacity 0.3s ease"
+      },
+      "menu_sections": {
+        "margin_top": "20px",
+        "margin_bottom": "10px"
+      },
+      "menu_title": {
+        "color": "#95a5a6",
+        "font_size": "12px",
+        "font_weight": 600,
+        "text_transform": "uppercase",
+        "letter_spacing": "1px",
+        "padding": "0 15px hoặc 0 20px",
+        "hide_on_collapse": true
+      },
+      "hover_effect": {
+        "background_color": "#34495e hoặc rgba(52, 152, 219, 0.1)",
+        "color": "white hoặc accent color",
+        "padding_left_increase": "optional (25px-30px)"
+      },
+      "active_state": {
+        "background_color": "#3498db",
+        "color": "white",
+        "border_left": "4px solid white (optional)"
+      },
+      "scrollbar": {
+        "width": "6px-8px",
+        "thumb_color": "#7f8c8d",
+        "track_color": "transparent",
+        "thumb_border_radius": "10px"
+      },
+      "collapsed_state_rules": {
+        "hide_elements": [
+          ".sidebar.collapsed .logo",
+          ".sidebar.collapsed .logo h2",
+          ".sidebar.collapsed .menu-title",
+          ".sidebar.collapsed .menu li a span"
+        ],
+        "center_icon": {
+          "text_align": "center",
+          "padding": "12px 0",
+          "justify_content": "center"
+        }
+      }
+    },
+    "navbar_rules": {
+      "position": "sticky",
+      "top": 0,
+      "background": "primary color",
+      "border_bottom": "3px solid accent color",
+      "height": "60px",
+      "z_index": 1000,
+      "toggle_button": {
+        "position": "left side",
+        "icon": "fas fa-bars",
+        "onclick": "toggleSidebar()",
+        "color": "white"
+      },
+      "brand": {
+        "color": "white",
+        "font_weight": "bold",
+        "font_size": "1.5rem"
+      },
+      "nav_links": {
+        "color": "white",
+        "hover_color": "accent color",
+        "transition": "color 0.3s ease"
+      }
+    },
+    "content_area_rules": {
+      "background": "#f8f9fa hoặc #ecf0f1",
+      "padding": "20px-30px",
+      "min_height": "100vh",
+      "flex": 1
+    },
+    "page_header": {
+      "background": "linear-gradient(135deg, #2c3e50, #3498db) (optional)",
+      "color": "white (if gradient)",
+      "padding": "2rem 0",
+      "margin_bottom": "2rem",
+      "border_radius": "10px-15px"
+    },
+    "cards": {
+      "background": "white",
+      "border_radius": "10px",
+      "box_shadow": "0 2px 10px rgba(0,0,0,0.1) hoặc 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15)",
+      "border": "none hoặc 1px solid #dee2e6",
+      "margin_bottom": "1rem-2rem"
+    },
+    "stats_cards": {
+      "border_left": "4px solid (primary/success/info/warning color)",
+      "padding": "1.5rem"
+    },
+    "tables": {
+      "background": "white",
+      "border_radius": "10px",
+      "overflow": "hidden",
+      "th": {
+        "background": "#f8f9fa",
+        "border": "none",
+        "font_weight": 600,
+        "color": "#2c3e50"
+      },
+      "td": {
+        "border": "none",
+        "vertical_align": "middle"
+      },
+      "tr_hover": {
+        "background": "#f8f9fa"
+      },
+      "tr_border": "1px solid #dee2e6 (bottom)"
+    },
+    "buttons": {
+      "border_radius": "8px-10px",
+      "font_weight": 600,
+      "padding": "0.75rem 1rem"
+    },
+    "badges": {
+      "font_size": "0.75em",
+      "padding": "0.5em 0.75em",
+      "border_radius": "10px"
+    }
+  },
+  "javascript_rules": {
+    "toggle_sidebar_function": {
+      "name": "toggleSidebar()",
+      "implementation": "sidebar.classList.toggle('collapsed')",
+      "description": "Toggle class 'collapsed' trên sidebar element",
+      "no_overlay_needed": true
+    },
+    "active_menu_highlighting": {
+      "method": "Compare current path with menu item href",
+      "implementation": "link.getAttribute('href') === currentPath",
+      "add_class": "active"
+    }
+  },
+  "responsive_rules": {
+    "mobile": {
+      "breakpoint": "max-width: 768px",
+      "sidebar_behavior": "Có thể chuyển sang overlay mode nếu cần",
+      "content_padding": "15px",
+      "notes": "Hiện tại sidebar vẫn chiếm không gian, có thể cần điều chỉnh cho mobile"
+    },
+    "tablet": {
+      "breakpoint": "max-width: 1024px",
+      "behavior": "Giữ nguyên layout flexbox"
+    }
+  },
+  "file_structure": {
+    "common_components": {
+      "sidebar": "WEB-INF/view/sidebar.jsp",
+      "navbar": "WEB-INF/view/navbar.jsp",
+      "description": "Các component dùng chung qua include"
+    },
+    "page_structure": {
+      "navbar": "<%@ include file='navbar.jsp' %>",
+      "layout_container": "<div class='layout-container'>",
+      "sidebar": "<%@ include file='sidebar.jsp' %>",
+      "content": "<div class='content' hoặc 'main-content'>",
+      "close_tags": "</div></div>"
+    }
+  },
+  "css_framework": {
+    "primary": "Bootstrap 5.3.2",
+    "icons": "Font Awesome 6.4.0",
+    "custom_css": "Inline trong mỗi JSP file hoặc separate CSS file"
+  },
+  "important_notes": [
+    "Sidebar PHẢI luôn chiếm không gian trong layout (không dùng position: fixed với left: -250px)",
+    "Sidebar dùng position: sticky để scroll độc lập",
+    "Main content phải có flex: 1 để tự động co giãn",
+    "Layout container phải có display: flex",
+    "Menu items phải có cấu trúc <i> + <span> để hỗ trợ collapse",
+    "Toggle sidebar chỉ thay đổi width, không dùng overlay (trừ mobile)",
+    "Navbar dùng position: sticky thay vì fixed để tránh padding-top trên body",
+    "Tất cả transition phải smooth (0.3s ease)",
+    "Icon phải có min-width để không bị co khi collapse"
+  ],
+  "examples": {
+    "implemented_pages": [
+      "dashboard.jsp",
+      "user/list.jsp",
+      "store/list.jsp"
+    ],
+    "sidebar_component": "sidebar.jsp",
+    "navbar_component": "navbar.jsp"
+  }
+}

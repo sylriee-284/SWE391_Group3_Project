@@ -33,17 +33,15 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--light-bg);
             margin: 0;
-            padding-top: 60px;
+            padding: 0;
         }
 
         /* Navbar Styles */
         .navbar-custom {
             background-color: var(--primary-color);
             border-bottom: 3px solid var(--accent-color);
-            position: fixed;
+            position: sticky;
             top: 0;
-            left: 0;
-            right: 0;
             z-index: 1000;
             height: 60px;
         }
@@ -63,22 +61,53 @@
             color: var(--accent-color) !important;
         }
 
-        /* Sidebar Styles */
-        .sidebar {
-            position: fixed;
-            top: 60px;
-            left: -var(--sidebar-width);
-            width: var(--sidebar-width);
-            height: calc(100vh - 60px);
-            background-color: var(--secondary-color);
-            transition: left 0.3s ease;
-            z-index: 999;
-            overflow-y: auto;
-            padding: 20px 0;
+        /* Layout Container */
+        .layout-container {
+            display: flex;
         }
 
-        .sidebar.active {
-            left: 0;
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            height: 100vh;
+            background-color: var(--secondary-color);
+            transition: width 0.3s ease, min-width 0.3s ease, padding 0.3s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px 0;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+            min-width: 60px;
+            padding: 20px 5px;
+        }
+
+        /* Ẩn text khi sidebar collapse */
+        .sidebar.collapsed .logo,
+        .sidebar.collapsed .menu-title,
+        .sidebar.collapsed .menu li a span {
+            display: none;
+        }
+
+        /* Center icon khi collapse */
+        .sidebar.collapsed .menu li a {
+            text-align: center;
+            padding: 12px 0;
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .menu li a i {
+            margin-right: 0;
+        }
+
+        /* Overlay - không cần nữa */
+        .sidebar-overlay {
+            display: none;
         }
 
         .sidebar .logo {
@@ -101,11 +130,13 @@
         }
 
         .sidebar .menu a {
-            display: block;
+            display: flex;
+            align-items: center;
             padding: 12px 20px;
             color: #bdc3c7;
             text-decoration: none;
             transition: all 0.3s ease;
+            white-space: nowrap;
         }
 
         .sidebar .menu a:hover {
@@ -123,7 +154,13 @@
         .sidebar .menu a i {
             margin-right: 10px;
             width: 20px;
+            min-width: 20px;
             text-align: center;
+        }
+
+        .sidebar .menu a span {
+            overflow: hidden;
+            transition: opacity 0.3s ease;
         }
 
         .sidebar .menu .menu-section {
@@ -140,14 +177,10 @@
 
         /* Main Content */
         .main-content {
-            margin-left: 0;
+            flex: 1;
             padding: 30px;
-            transition: margin-left 0.3s ease;
-            min-height: calc(100vh - 60px);
-        }
-
-        .main-content.shifted {
-            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            overflow-x: auto;
         }
 
         /* Store Card Styles */
@@ -227,74 +260,76 @@
         </div>
     </nav>
 
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
+    <!-- Layout Container -->
+    <div class="layout-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
         <div class="logo">
             MMO Market System
         </div>
         <ul class="menu">
             <!-- Dashboard -->
-            <li><a href="/"><i class="fas fa-tachometer-alt"></i> Trang chủ</a></li>
+            <li><a href="/"><i class="fas fa-tachometer-alt"></i><span>Trang chủ</span></a></li>
 
             <!-- User Management -->
             <li class="menu-section">
                 <span class="menu-title">Quản lý người dùng</span>
             </li>
-            <li><a href="/users"><i class="fas fa-users"></i> Danh sách người dùng</a></li>
-            <li><a href="/users/register"><i class="fas fa-user-plus"></i> Thêm người dùng</a></li>
-            <li><a href="/users/profile"><i class="fas fa-user-circle"></i> Hồ sơ của tôi</a></li>
+            <li><a href="/users"><i class="fas fa-users"></i><span>Danh sách người dùng</span></a></li>
+            <li><a href="/users/register"><i class="fas fa-user-plus"></i><span>Thêm người dùng</span></a></li>
+            <li><a href="/users/profile"><i class="fas fa-user-circle"></i><span>Hồ sơ của tôi</span></a></li>
 
             <!-- Store Management -->
             <li class="menu-section">
                 <span class="menu-title">Quản lý cửa hàng</span>
             </li>
-            <li><a href="/stores" class="active"><i class="fas fa-store"></i> Danh sách cửa hàng</a></li>
-            <li><a href="/stores/create"><i class="fas fa-plus-circle"></i> Tạo cửa hàng</a></li>
+            <li><a href="/stores" class="active"><i class="fas fa-store"></i><span>Danh sách cửa hàng</span></a></li>
+            <li><a href="/stores/create"><i class="fas fa-plus-circle"></i><span>Tạo cửa hàng</span></a></li>
 
             <!-- Product Management -->
             <li class="menu-section">
                 <span class="menu-title">Quản lý sản phẩm</span>
             </li>
-            <li><a href="/products"><i class="fas fa-box"></i> Danh sách sản phẩm</a></li>
-            <li><a href="/products/create"><i class="fas fa-plus"></i> Thêm sản phẩm</a></li>
-            <li><a href="/categories"><i class="fas fa-tags"></i> Danh mục</a></li>
+            <li><a href="/products"><i class="fas fa-box"></i><span>Danh sách sản phẩm</span></a></li>
+            <li><a href="/products/create"><i class="fas fa-plus"></i><span>Thêm sản phẩm</span></a></li>
+            <li><a href="/categories"><i class="fas fa-tags"></i><span>Danh mục</span></a></li>
 
             <!-- Order Management -->
             <li class="menu-section">
                 <span class="menu-title">Quản lý đơn hàng</span>
             </li>
-            <li><a href="/orders"><i class="fas fa-shopping-cart"></i> Danh sách đơn hàng</a></li>
-            <li><a href="/orders/pending"><i class="fas fa-clock"></i> Đơn hàng chờ</a></li>
-            <li><a href="/escrow"><i class="fas fa-handshake"></i> Giao dịch ký quỹ</a></li>
+            <li><a href="/orders"><i class="fas fa-shopping-cart"></i><span>Danh sách đơn hàng</span></a></li>
+            <li><a href="/orders/pending"><i class="fas fa-clock"></i><span>Đơn hàng chờ</span></a></li>
+            <li><a href="/escrow"><i class="fas fa-handshake"></i><span>Giao dịch ký quỹ</span></a></li>
 
             <!-- Financial Management -->
             <li class="menu-section">
                 <span class="menu-title">Quản lý tài chính</span>
             </li>
-            <li><a href="/wallets"><i class="fas fa-wallet"></i> Quản lý ví</a></li>
-            <li><a href="/transactions"><i class="fas fa-exchange-alt"></i> Giao dịch</a></li>
-            <li><a href="/deposits"><i class="fas fa-piggy-bank"></i> Tiền cọc cửa hàng</a></li>
+            <li><a href="/wallets"><i class="fas fa-wallet"></i><span>Quản lý ví</span></a></li>
+            <li><a href="/transactions"><i class="fas fa-exchange-alt"></i><span>Giao dịch</span></a></li>
+            <li><a href="/deposits"><i class="fas fa-piggy-bank"></i><span>Tiền cọc cửa hàng</span></a></li>
 
             <!-- Reports & Analytics -->
             <li class="menu-section">
                 <span class="menu-title">Báo cáo & Thống kê</span>
             </li>
-            <li><a href="/reports/dashboard"><i class="fas fa-chart-bar"></i> Tổng quan</a></li>
-            <li><a href="/reports/sales"><i class="fas fa-chart-line"></i> Doanh thu</a></li>
-            <li><a href="/reports/users"><i class="fas fa-user-chart"></i> Người dùng</a></li>
+            <li><a href="/reports/dashboard"><i class="fas fa-chart-bar"></i><span>Tổng quan</span></a></li>
+            <li><a href="/reports/sales"><i class="fas fa-chart-line"></i><span>Doanh thu</span></a></li>
+            <li><a href="/reports/users"><i class="fas fa-user-chart"></i><span>Người dùng</span></a></li>
 
             <!-- System Settings -->
             <li class="menu-section">
                 <span class="menu-title">Cài đặt hệ thống</span>
             </li>
-            <li><a href="/settings"><i class="fas fa-cog"></i> Cài đặt chung</a></li>
-            <li><a href="/roles"><i class="fas fa-user-tag"></i> Vai trò & Quyền</a></li>
-            <li><a href="/notifications"><i class="fas fa-bell"></i> Thông báo</a></li>
+            <li><a href="/settings"><i class="fas fa-cog"></i><span>Cài đặt chung</span></a></li>
+            <li><a href="/roles"><i class="fas fa-user-tag"></i><span>Vai trò & Quyền</span></a></li>
+            <li><a href="/notifications"><i class="fas fa-bell"></i><span>Thông báo</span></a></li>
         </ul>
     </div>
 
-    <!-- Main Content Area -->
-    <div class="main-content" id="mainContent">
+        <!-- Main Content Area -->
+        <div class="main-content" id="mainContent">
         <!-- Header -->
         <div class="row mb-4">
             <div class="col-12">
@@ -567,6 +602,7 @@
                 </div>
             </div>
         </c:if>
+        </div>
     </div>
 
     <!-- Bootstrap JS -->
@@ -576,24 +612,11 @@
     <script>
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('mainContent');
-
-            sidebar.classList.toggle('active');
-            mainContent.classList.toggle('shifted');
-
-            // Save state to localStorage
-            const isActive = sidebar.classList.contains('active');
-            localStorage.setItem('sidebarActive', isActive);
+            sidebar.classList.toggle('collapsed');
         }
 
         // Restore sidebar state on page load
         document.addEventListener('DOMContentLoaded', function() {
-            const sidebarActive = localStorage.getItem('sidebarActive') === 'true';
-            if (sidebarActive) {
-                document.getElementById('sidebar').classList.add('active');
-                document.getElementById('mainContent').classList.add('shifted');
-            }
-
             // Highlight active menu item based on current URL
             const currentPath = window.location.pathname;
             const menuLinks = document.querySelectorAll('.sidebar .menu a');

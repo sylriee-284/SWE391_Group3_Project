@@ -18,17 +18,11 @@
             <style>
                 /* Nội dung chính */
                 .content {
-                    flex-grow: 1;
+                    flex: 1;
                     padding: 20px;
                     background-color: #f8f9fa;
-                    margin-left: 0;
-                    transition: margin-left 0.3s ease;
                     min-height: 100vh;
-                }
-
-                .content.shifted {
-                    margin-left: 250px;
-                    /* Đẩy nội dung sang phải khi sidebar bật */
+                    overflow-x: auto;
                 }
 
                 .content h1 {
@@ -133,11 +127,13 @@
             <!-- Include Navbar -->
             <%@ include file="navbar.jsp" %>
 
+            <!-- Main Layout Container -->
+            <div style="display: flex;">
                 <!-- Include Sidebar -->
                 <%@ include file="sidebar.jsp" %>
 
-                    <!-- Nội dung chính -->
-                    <div class="content" id="content">
+                <!-- Nội dung chính -->
+                <div class="content" id="content">
                         <div class="container-fluid">
                             <!-- Page Header -->
                             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -308,20 +304,16 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <script>
-                        // Toggle sidebar khi nhấn vào nút
-                        function toggleSidebar() {
-                            var sidebar = document.getElementById('sidebar');
-                            var content = document.getElementById('content');
-
-                            // Toggle class 'active' cho sidebar
-                            sidebar.classList.toggle('active');
-
-                            // Toggle margin-left cho nội dung chính khi sidebar thay đổi trạng thái
-                            content.classList.toggle('shifted');
-                        }
-                    </script>
+            <script>
+                // Toggle sidebar collapse khi nhấn vào nút
+                function toggleSidebar() {
+                    var sidebar = document.getElementById('sidebar');
+                    sidebar.classList.toggle('collapsed');
+                }
+            </script>
 
         </body>
 
