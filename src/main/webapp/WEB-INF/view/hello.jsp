@@ -21,7 +21,7 @@
                 <div class="row">
                     <div class="col-md-12">
                         <h2 class="text-center">Spring MVC Hello World Example</h2>
-                        <h1>Hello, Iam Syl1!</h1>
+                        <h1>Hello, Tôi là Nguyễn Văn Trường </h1>
 
                     </div>
                 </div>
