@@ -12,6 +12,35 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --light-bg: #ecf0f1;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Layout Container */
+        .layout-container {
+            display: flex;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            min-height: 100vh;
+            overflow-x: auto;
+            background-color: #f8f9fa;
+        }
+
         .form-container {
             max-width: 800px;
             margin: 0 auto;
@@ -51,9 +80,18 @@
         }
     </style>
 </head>
-<body class="bg-light">
-    <div class="container py-5">
-        <div class="form-container">
+<body>
+    <!-- Include Navbar -->
+    <%@ include file="../navbar.jsp" %>
+
+    <!-- Layout Container -->
+    <div class="layout-container">
+        <!-- Include Sidebar -->
+        <%@ include file="../sidebar.jsp" %>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <div class="form-container">
             <!-- Header -->
             <div class="text-center mb-5">
                 <h1 class="h2 text-primary">
@@ -259,10 +297,18 @@
                     </a>
                 </div>
             </form:form>
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+    </script>
     <script>
         // Auto-calculate max listing price
         document.getElementById('depositAmount').addEventListener('input', function() {
@@ -309,7 +355,7 @@
             
             if (storeName.length >= 3) {
                 nameCheckTimeout = setTimeout(() => {
-                    fetch(`/stores/check-name?storeName=${encodeURIComponent(storeName)}`)
+                    fetch('/stores/check-name?storeName=' + encodeURIComponent(storeName))
                         .then(response => response.json())
                         .then(available => {
                             const input = document.getElementById('storeName');
