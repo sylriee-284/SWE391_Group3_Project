@@ -91,6 +91,46 @@
         overflow: hidden;
     }
 
+    /* Pagination Styles - Admin Design Rules */
+    .pagination {
+        margin: 0;
+    }
+
+    .pagination .page-link {
+        color: #2c3e50;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin: 0 3px;
+        padding: 0.5rem 0.75rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .pagination .page-link:hover {
+        background-color: #e9ecef;
+        border-color: #3498db;
+        color: #3498db;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #3498db;
+        border-color: #3498db;
+        color: white;
+        font-weight: 600;
+    }
+
+    .pagination .page-item.disabled .page-link {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #6c757d;
+        cursor: not-allowed;
+    }
+
+    .pagination-info {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
     /* Responsive */
     @media (max-width: 1200px) {
         .hide-lg {
@@ -106,6 +146,28 @@
         .table-responsive {
             overflow-x: auto;
         }
+
+        .pagination-info {
+            font-size: 0.8rem;
+        }
+
+        .pagination .page-link {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.875rem;
+            margin: 0 2px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .pagination-container .d-flex {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .pagination {
+            justify-content: center !important;
+        }
     }
 </style>
 
@@ -119,34 +181,151 @@
     </div>
 
     <!-- Search & Filter Section -->
-    <div class="search-filters">
-        <form method="get" action="/products">
-            <div class="row g-3">
-                <div class="col-md-5">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" class="form-control" name="search"
-                               placeholder="Tìm kiếm sản phẩm..." value="${search}">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Bộ lọc tìm kiếm</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" action="/products" id="filterForm">
+                <div class="row g-3">
+                    <!-- Search -->
+                    <div class="col-md-6">
+                        <label class="form-label">Tìm kiếm</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" name="search"
+                                   placeholder="Tìm kiếm sản phẩm..." value="${search}">
+                        </div>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="col-md-6">
+                        <label class="form-label">Danh mục</label>
+                        <select class="form-select" name="category">
+                            <option value="">-- Tất cả danh mục --</option>
+                            <c:forEach items="${categories}" var="cat">
+                                <option value="${cat}" ${category == cat.name() ? 'selected' : ''}>
+                                    ${cat.displayName}
+                                </option>
+                            </c:forEach>
+                        </select>
+                    </div>
+
+                    <!-- Price Range -->
+                    <div class="col-md-3">
+                        <label class="form-label">Giá tối thiểu (VND)</label>
+                        <input type="number" class="form-control" name="minPrice"
+                               placeholder="0" value="${minPrice}" min="0" step="1000">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Giá tối đa (VND)</label>
+                        <input type="number" class="form-control" name="maxPrice"
+                               placeholder="Không giới hạn" value="${maxPrice}" min="0" step="1000">
+                    </div>
+
+                    <!-- Stock Status -->
+                    <div class="col-md-3">
+                        <label class="form-label">Trạng thái kho</label>
+                        <select class="form-select" name="stockStatus">
+                            <option value="">-- Tất cả --</option>
+                            <option value="IN_STOCK" ${stockStatus == 'IN_STOCK' ? 'selected' : ''}>Còn hàng</option>
+                            <option value="LOW_STOCK" ${stockStatus == 'LOW_STOCK' ? 'selected' : ''}>Sắp hết hàng</option>
+                            <option value="OUT_OF_STOCK" ${stockStatus == 'OUT_OF_STOCK' ? 'selected' : ''}>Hết hàng</option>
+                        </select>
+                    </div>
+
+                    <!-- Sort -->
+                    <div class="col-md-3">
+                        <label class="form-label">Sắp xếp</label>
+                        <select class="form-select" name="sortOption" id="sortOption">
+                            <option value="createdAt_desc" ${sort == 'createdAt' && direction == 'desc' ? 'selected' : ''}>Mới nhất</option>
+                            <option value="createdAt_asc" ${sort == 'createdAt' && direction == 'asc' ? 'selected' : ''}>Cũ nhất</option>
+                            <option value="price_asc" ${sort == 'price' && direction == 'asc' ? 'selected' : ''}>Giá: Thấp → Cao</option>
+                            <option value="price_desc" ${sort == 'price' && direction == 'desc' ? 'selected' : ''}>Giá: Cao → Thấp</option>
+                            <option value="productName_asc" ${sort == 'productName' && direction == 'asc' ? 'selected' : ''}>Tên: A → Z</option>
+                            <option value="productName_desc" ${sort == 'productName' && direction == 'desc' ? 'selected' : ''}>Tên: Z → A</option>
+                            <option value="stockQuantity_desc" ${sort == 'stockQuantity' && direction == 'desc' ? 'selected' : ''}>Tồn kho: Cao → Thấp</option>
+                        </select>
+                        <!-- Hidden fields for sort and direction -->
+                        <input type="hidden" name="sort" id="sortField" value="${sort}">
+                        <input type="hidden" name="direction" id="sortDirection" value="${direction}">
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="col-md-6">
+                        <label class="form-label d-block">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Áp dụng bộ lọc
+                        </button>
+                        <a href="/products" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Xóa bộ lọc
+                        </a>
+                    </div>
+
+                    <!-- Page Size -->
+                    <div class="col-md-6">
+                        <label class="form-label">Hiển thị</label>
+                        <select class="form-select" name="size" onchange="this.form.submit()">
+                            <option value="12" ${pageSize == 12 ? 'selected' : ''}>12 sản phẩm/trang</option>
+                            <option value="24" ${pageSize == 24 ? 'selected' : ''}>24 sản phẩm/trang</option>
+                            <option value="48" ${pageSize == 48 ? 'selected' : ''}>48 sản phẩm/trang</option>
+                            <option value="96" ${pageSize == 96 ? 'selected' : ''}>96 sản phẩm/trang</option>
+                        </select>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <select class="form-select" name="category">
-                        <option value="">-- Tất cả danh mục --</option>
-                        <c:forEach items="${categories}" var="cat">
-                            <option value="${cat}" ${category == cat ? 'selected' : ''}>
-                                ${cat.displayName}
-                            </option>
-                        </c:forEach>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-filter"></i> Lọc
-                    </button>
-                </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
+
+    <!-- Active Filters Display -->
+    <c:if test="${not empty search or not empty category or not empty minPrice or not empty maxPrice or not empty stockStatus}">
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <strong><i class="fas fa-filter me-2"></i>Bộ lọc đang áp dụng:</strong>
+            <div class="mt-2">
+                <c:if test="${not empty search}">
+                    <span class="badge bg-primary me-2">
+                        Tìm kiếm: "${search}"
+                        <a href="?category=${category}&minPrice=${minPrice}&maxPrice=${maxPrice}&stockStatus=${stockStatus}&sort=${sort}&direction=${direction}&size=${pageSize}"
+                           class="text-white ms-1 text-decoration-none">✖</a>
+                    </span>
+                </c:if>
+                <c:if test="${not empty category}">
+                    <span class="badge bg-info me-2">
+                        Danh mục: ${category}
+                        <a href="?search=${search}&minPrice=${minPrice}&maxPrice=${maxPrice}&stockStatus=${stockStatus}&sort=${sort}&direction=${direction}&size=${pageSize}"
+                           class="text-white ms-1 text-decoration-none">✖</a>
+                    </span>
+                </c:if>
+                <c:if test="${not empty minPrice or not empty maxPrice}">
+                    <span class="badge bg-success me-2">
+                        Giá: <fmt:formatNumber value="${minPrice != null ? minPrice : 0}" type="number"/> - <fmt:formatNumber value="${maxPrice != null ? maxPrice : 999999999}" type="number"/> VND
+                        <a href="?search=${search}&category=${category}&stockStatus=${stockStatus}&sort=${sort}&direction=${direction}&size=${pageSize}"
+                           class="text-white ms-1 text-decoration-none">✖</a>
+                    </span>
+                </c:if>
+                <c:if test="${not empty stockStatus}">
+                    <span class="badge bg-warning text-dark me-2">
+                        Kho: ${stockStatus == 'IN_STOCK' ? 'Còn hàng' : (stockStatus == 'LOW_STOCK' ? 'Sắp hết' : 'Hết hàng')}
+                        <a href="?search=${search}&category=${category}&minPrice=${minPrice}&maxPrice=${maxPrice}&sort=${sort}&direction=${direction}&size=${pageSize}"
+                           class="text-dark ms-1 text-decoration-none">✖</a>
+                    </span>
+                </c:if>
+                <a href="/products" class="btn btn-sm btn-outline-danger ms-2">
+                    <i class="fas fa-times-circle"></i> Xóa tất cả
+                </a>
+            </div>
+        </div>
+    </c:if>
+
+    <script>
+        // Handle sort option change
+        document.getElementById('sortOption').addEventListener('change', function() {
+            const value = this.value;
+            const parts = value.split('_');
+            document.getElementById('sortField').value = parts[0];
+            document.getElementById('sortDirection').value = parts[1];
+        });
+    </script>
 
     <!-- Products Grid -->
     <c:choose>
@@ -196,7 +375,7 @@
                                     <tr>
                                         <!-- STT -->
                                         <td class="text-center">
-                                            ${currentPage * 12 + status.index + 1}
+                                            ${currentPage * pageSize + status.index + 1}
                                         </td>
 
                                         <!-- Hình ảnh -->
@@ -303,37 +482,104 @@
                 </div>
             </div>
 
-            <!-- Pagination -->
-            <c:if test="${totalPages > 1}">
-                <nav aria-label="Product pagination" class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        <!-- Previous -->
-                        <li class="page-item ${currentPage == 0 ? 'disabled' : ''}">
-                            <a class="page-link" href="?page=${currentPage - 1}&size=12&search=${search}&category=${category}">
-                                Trước
-                            </a>
-                        </li>
+        <!-- Pagination -->
+        <c:if test="${totalPages > 1}">
+            <!-- Build query params string -->
+            <c:set var="queryParams" value="size=${pageSize}&sort=${sort}&direction=${direction}" />
+            <c:if test="${not empty search}">
+                <c:set var="queryParams" value="${queryParams}&search=${search}" />
+            </c:if>
+            <c:if test="${not empty category}">
+                <c:set var="queryParams" value="${queryParams}&category=${category}" />
+            </c:if>
+            <c:if test="${not empty minPrice}">
+                <c:set var="queryParams" value="${queryParams}&minPrice=${minPrice}" />
+            </c:if>
+            <c:if test="${not empty maxPrice}">
+                <c:set var="queryParams" value="${queryParams}&maxPrice=${maxPrice}" />
+            </c:if>
+            <c:if test="${not empty stockStatus}">
+                <c:set var="queryParams" value="${queryParams}&stockStatus=${stockStatus}" />
+            </c:if>
+            <c:if test="${not empty storeId}">
+                <c:set var="queryParams" value="${queryParams}&storeId=${storeId}" />
+            </c:if>
 
-                        <!-- Page Numbers -->
-                        <c:forEach begin="0" end="${totalPages - 1}" var="i">
-                            <c:if test="${i >= currentPage - 2 && i <= currentPage + 2}">
-                                <li class="page-item ${currentPage == i ? 'active' : ''}">
-                                    <a class="page-link" href="?page=${i}&size=12&search=${search}&category=${category}">
-                                        ${i + 1}
+            <div class="card mt-3 pagination-container">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <!-- Left: Display info -->
+                        <div class="pagination-info">
+                            Hiển thị <strong>${currentPage * pageSize + 1}</strong> - <strong>${(currentPage + 1) * pageSize > totalElements ? totalElements : (currentPage + 1) * pageSize}</strong>
+                            trong tổng số <strong>${totalElements}</strong> sản phẩm
+                        </div>
+
+                        <!-- Center: Pagination controls -->
+                        <nav aria-label="Product pagination">
+                            <ul class="pagination mb-0">
+                                <!-- Previous -->
+                                <li class="page-item ${currentPage == 0 ? 'disabled' : ''}">
+                                    <a class="page-link" href="?page=${currentPage - 1}&${queryParams}">
+                                        ‹ Trước
                                     </a>
                                 </li>
-                            </c:if>
-                        </c:forEach>
 
-                        <!-- Next -->
-                        <li class="page-item ${currentPage == totalPages - 1 ? 'disabled' : ''}">
-                            <a class="page-link" href="?page=${currentPage + 1}&size=12&search=${search}&category=${category}">
-                                Sau
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-            </c:if>
+                                <!-- Calculate page range -->
+                                <c:set var="startPage" value="${currentPage - 2 < 0 ? 0 : currentPage - 2}" />
+                                <c:set var="endPage" value="${currentPage + 2 >= totalPages ? totalPages - 1 : currentPage + 2}" />
+
+                                <!-- Show first page if not in range -->
+                                <c:if test="${startPage > 0}">
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=0&${queryParams}">1</a>
+                                    </li>
+                                    <c:if test="${startPage > 1}">
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    </c:if>
+                                </c:if>
+
+                                <!-- Page numbers -->
+                                <c:forEach begin="${startPage}" end="${endPage}" var="pageNum">
+                                    <li class="page-item ${pageNum == currentPage ? 'active' : ''}">
+                                        <a class="page-link" href="?page=${pageNum}&${queryParams}">
+                                            ${pageNum + 1}
+                                        </a>
+                                    </li>
+                                </c:forEach>
+
+                                <!-- Show last page if not in range -->
+                                <c:if test="${endPage < totalPages - 1}">
+                                    <c:if test="${endPage < totalPages - 2}">
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    </c:if>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=${totalPages - 1}&${queryParams}">
+                                            ${totalPages}
+                                        </a>
+                                    </li>
+                                </c:if>
+
+                                <!-- Next -->
+                                <li class="page-item ${currentPage == totalPages - 1 ? 'disabled' : ''}">
+                                    <a class="page-link" href="?page=${currentPage + 1}&${queryParams}">
+                                        Sau ›
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+
+                        <!-- Right: Current page info -->
+                        <div class="pagination-info">
+                            Trang <strong>${currentPage + 1}</strong> / <strong>${totalPages}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </c:if>
         </c:otherwise>
     </c:choose>
 </div>

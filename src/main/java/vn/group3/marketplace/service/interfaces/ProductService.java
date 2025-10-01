@@ -9,6 +9,7 @@ import vn.group3.marketplace.dto.request.ProductCreateRequest;
 import vn.group3.marketplace.dto.request.ProductUpdateRequest;
 import vn.group3.marketplace.dto.response.ProductResponse;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -163,4 +164,26 @@ public interface ProductService {
      * @return Number of active products
      */
     long countActiveProductsBySeller(Long sellerId);
+
+    /**
+     * Get products with advanced filters
+     *
+     * @param search Search keyword (nullable)
+     * @param category Product category (nullable)
+     * @param minPrice Minimum price (nullable)
+     * @param maxPrice Maximum price (nullable)
+     * @param storeId Store ID (nullable)
+     * @param stockStatus Stock status filter (nullable)
+     * @param pageable Pagination and sorting
+     * @return Page of ProductResponse DTOs
+     */
+    Page<ProductResponse> getProductsWithFilters(
+        String search,
+        ProductCategory category,
+        BigDecimal minPrice,
+        BigDecimal maxPrice,
+        Long storeId,
+        String stockStatus,
+        Pageable pageable
+    );
 }

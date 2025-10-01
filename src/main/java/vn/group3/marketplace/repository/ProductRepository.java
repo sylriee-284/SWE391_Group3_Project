@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import vn.group3.marketplace.domain.entity.Product;
 import vn.group3.marketplace.domain.enums.ProductCategory;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -135,6 +136,44 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findByStoreIdAndCategoryAndIsDeletedFalse(
         Long storeId,
         ProductCategory category,
+        Pageable pageable
+    );
+
+    /**
+     * Find products with combined filters
+     * All parameters are optional (nullable)
+     *
+     * @param search Search keyword for name/description (nullable)
+     * @param category Product category filter (nullable)
+     * @param minPrice Minimum price filter (nullable)
+     * @param maxPrice Maximum price filter (nullable)
+     * @param storeId Store ID filter (nullable)
+     * @param stockStatus Stock status filter: ALL, IN_STOCK, LOW_STOCK, OUT_OF_STOCK (nullable)
+     * @param pageable Pagination and sorting parameters
+     * @return Page of products matching all filters
+     */
+    @Query("SELECT p FROM Product p " +
+           "LEFT JOIN FETCH p.store " +
+           "LEFT JOIN FETCH p.seller " +
+           "WHERE p.isActive = true AND p.isDeleted = false " +
+           "AND (:search IS NULL OR :search = '' OR " +
+           "     LOWER(p.productName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "AND (:category IS NULL OR p.category = :category) " +
+           "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
+           "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
+           "AND (:storeId IS NULL OR p.store.id = :storeId) " +
+           "AND (:stockStatus IS NULL OR :stockStatus = 'ALL' OR " +
+           "     (:stockStatus = 'IN_STOCK' AND p.stockQuantity > 0) OR " +
+           "     (:stockStatus = 'LOW_STOCK' AND p.stockQuantity > 0 AND p.stockQuantity <= 10) OR " +
+           "     (:stockStatus = 'OUT_OF_STOCK' AND p.stockQuantity = 0))")
+    Page<Product> findProductsWithFilters(
+        @Param("search") String search,
+        @Param("category") ProductCategory category,
+        @Param("minPrice") BigDecimal minPrice,
+        @Param("maxPrice") BigDecimal maxPrice,
+        @Param("storeId") Long storeId,
+        @Param("stockStatus") String stockStatus,
         Pageable pageable
     );
 }

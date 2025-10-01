@@ -20,6 +20,7 @@ import vn.group3.marketplace.service.interfaces.ProductService;
 import vn.group3.marketplace.service.interfaces.SellerStoreService;
 import vn.group3.marketplace.service.interfaces.UserService;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -357,5 +358,38 @@ public class ProductServiceImpl implements ProductService {
     private String formatPrice(java.math.BigDecimal price) {
         if (price == null) return "0";
         return String.format("%,.0f", price);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductResponse> getProductsWithFilters(
+            String search,
+            ProductCategory category,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            Long storeId,
+            String stockStatus,
+            Pageable pageable) {
+
+        log.debug("Fetching products with filters - search: {}, category: {}, minPrice: {}, " +
+                  "maxPrice: {}, storeId: {}, stockStatus: {}, page: {}, size: {}",
+                  search, category, minPrice, maxPrice, storeId, stockStatus,
+                  pageable.getPageNumber(), pageable.getPageSize());
+
+        // Call repository with all filters
+        Page<Product> products = productRepository.findProductsWithFilters(
+            search,
+            category,
+            minPrice,
+            maxPrice,
+            storeId,
+            stockStatus,
+            pageable
+        );
+
+        log.debug("Found {} products matching filters", products.getTotalElements());
+
+        // Transform to ProductResponse DTOs
+        return products.map(ProductResponse::toListResponse);
     }
 }

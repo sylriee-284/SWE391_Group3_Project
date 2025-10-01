@@ -23,9 +23,11 @@ import vn.group3.marketplace.dto.request.ProductUpdateRequest;
 import vn.group3.marketplace.dto.response.ProductResponse;
 import vn.group3.marketplace.service.interfaces.ProductService;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Controller for product management
@@ -40,7 +42,7 @@ public class ProductController {
     private final ProductService productService;
 
     /**
-     * Show all active products (public view)
+     * Show all active products with advanced filtering (public view)
      */
     @GetMapping
     public String listProducts(
@@ -50,48 +52,112 @@ public class ProductController {
             @RequestParam(defaultValue = "desc") String direction,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) String stockStatus,
+            @RequestParam(required = false) Long storeId,
             Model model) {
 
-        Sort.Direction sortDirection = "desc".equalsIgnoreCase(direction) ?
-                Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
+        // === STEP 1: Validate and sanitize page parameters ===
+        if (page < 0) page = 0;
 
-        Page<ProductResponse> products;
-
-        if (search != null && !search.trim().isEmpty()) {
-            String sanitizedSearch = sanitizeSearchInput(search.trim());
-
-            if (category != null && !category.trim().isEmpty()) {
-                ProductCategory productCategory = parseCategory(category);
-                if (productCategory != null) {
-                    products = productService.searchProducts(sanitizedSearch, productCategory, pageable);
-                    model.addAttribute("category", category);
-                } else {
-                    products = productService.searchProducts(sanitizedSearch, pageable);
-                }
-            } else {
-                products = productService.searchProducts(sanitizedSearch, pageable);
-            }
-            model.addAttribute("search", sanitizedSearch);
-        } else if (category != null && !category.trim().isEmpty()) {
-            ProductCategory productCategory = parseCategory(category);
-            if (productCategory != null) {
-                products = productService.getProductsByCategory(productCategory, pageable);
-                model.addAttribute("category", category);
-            } else {
-                products = productService.getActiveProducts(pageable);
-            }
-        } else {
-            products = productService.getActiveProducts(pageable);
+        // Validate size (min: 6, max: 100, allowed: 12, 24, 48, 96)
+        if (size < 6 || size > 100) {
+            size = 12;
+        }
+        Set<Integer> allowedSizes = Set.of(12, 24, 48, 96);
+        if (!allowedSizes.contains(size)) {
+            size = 12; // Default to 12 if not in allowed list
         }
 
+        // === STEP 2: Validate sort field ===
+        Set<String> allowedSortFields = Set.of("price", "productName", "createdAt", "stockQuantity");
+        if (!allowedSortFields.contains(sort)) {
+            sort = "createdAt";
+        }
+
+        // === STEP 3: Validate sort direction ===
+        Sort.Direction sortDirection = "desc".equalsIgnoreCase(direction) ?
+                Sort.Direction.DESC : Sort.Direction.ASC;
+
+        // === STEP 4: Sanitize search input ===
+        String sanitizedSearch = null;
+        if (search != null && !search.trim().isEmpty()) {
+            sanitizedSearch = sanitizeSearchInput(search.trim());
+            if (sanitizedSearch.length() > 200) {
+                sanitizedSearch = sanitizedSearch.substring(0, 200);
+            }
+        }
+
+        // === STEP 5: Validate category ===
+        ProductCategory productCategory = null;
+        if (category != null && !category.trim().isEmpty()) {
+            productCategory = parseCategory(category);
+        }
+
+        // === STEP 6: Validate price range ===
+        if (minPrice != null && minPrice.compareTo(BigDecimal.ZERO) < 0) {
+            minPrice = null; // Reject negative prices
+        }
+        if (maxPrice != null && maxPrice.compareTo(BigDecimal.ZERO) < 0) {
+            maxPrice = null; // Reject negative prices
+        }
+        // Swap if min > max
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            BigDecimal temp = minPrice;
+            minPrice = maxPrice;
+            maxPrice = temp;
+        }
+
+        // === STEP 7: Validate stock status ===
+        String validatedStockStatus = null;
+        if (stockStatus != null && !stockStatus.trim().isEmpty()) {
+            Set<String> allowedStockStatus = Set.of("ALL", "IN_STOCK", "LOW_STOCK", "OUT_OF_STOCK");
+            String upperStatus = stockStatus.trim().toUpperCase();
+            if (allowedStockStatus.contains(upperStatus)) {
+                validatedStockStatus = upperStatus;
+            }
+        }
+
+        // === STEP 8: Validate store ID ===
+        if (storeId != null && storeId <= 0) {
+            storeId = null;
+        }
+
+        // === STEP 9: Create pageable ===
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
+
+        // === STEP 10: Fetch products with filters ===
+        Page<ProductResponse> products = productService.getProductsWithFilters(
+            sanitizedSearch,
+            productCategory,
+            minPrice,
+            maxPrice,
+            storeId,
+            validatedStockStatus,
+            pageable
+        );
+
+        // === STEP 11: Populate model ===
         model.addAttribute("products", products);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", products.getTotalPages());
         model.addAttribute("totalElements", products.getTotalElements());
+        model.addAttribute("pageSize", size);
         model.addAttribute("sort", sort);
         model.addAttribute("direction", direction);
+
+        // Add filter parameters to model (for form persistence)
+        model.addAttribute("search", sanitizedSearch);
+        model.addAttribute("category", category);
+        model.addAttribute("minPrice", minPrice);
+        model.addAttribute("maxPrice", maxPrice);
+        model.addAttribute("stockStatus", validatedStockStatus);
+        model.addAttribute("storeId", storeId);
+
+        // Add reference data for dropdowns
         model.addAttribute("categories", ProductCategory.values());
+        model.addAttribute("pageSizeOptions", List.of(12, 24, 48, 96));
 
         return "product/list";
     }
