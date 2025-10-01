@@ -7,9 +7,8 @@
         color: white;
         padding: 10px 20px;
         text-align: left;
-        position: fixed;
+        position: sticky;
         top: 0;
-        left: 0;
         z-index: 1000;
     }
 
