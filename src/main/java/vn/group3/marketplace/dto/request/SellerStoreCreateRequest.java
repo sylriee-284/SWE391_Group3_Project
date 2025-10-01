@@ -24,9 +24,10 @@ public class SellerStoreCreateRequest {
     @Size(max = 1000, message = "Store description must not exceed 1000 characters")
     private String storeDescription;
 
-    @NotNull(message = "Deposit amount is required")
-    @DecimalMin(value = "5000000", message = "Minimum deposit is 5,000,000 VND")
-    @DecimalMax(value = "1000000000", message = "Maximum deposit is 1,000,000,000 VND")
+    // TEMPORARILY DISABLED: Deposit requirement
+    // @NotNull(message = "Deposit amount is required")
+    // @DecimalMin(value = "5000000", message = "Minimum deposit is 5,000,000 VND")
+    // @DecimalMax(value = "1000000000", message = "Maximum deposit is 1,000,000,000 VND")
     private BigDecimal depositAmount;
 
     @Email(message = "Invalid email format")

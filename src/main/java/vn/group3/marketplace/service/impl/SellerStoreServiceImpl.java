@@ -45,28 +45,29 @@ public class SellerStoreServiceImpl implements SellerStoreService {
 
     @Override
     public SellerStore createStore(Long userId, SellerStoreCreateRequest request) {
-        log.info("Creating seller store for user {} with deposit {}", userId, request.getDepositAmount());
+        log.info("Creating seller store for user {}", userId);
 
         // Validate user exists and can create store
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
-        if (!canCreateStore(userId, request.getDepositAmount())) {
-            throw new IllegalStateException("User cannot create seller store");
-        }
+        // TEMPORARILY DISABLED: Deposit validation
+        // if (!canCreateStore(userId, request.getDepositAmount())) {
+        //     throw new IllegalStateException("User cannot create seller store");
+        // }
 
         // Validate store name uniqueness
         if (!isStoreNameAvailable(request.getStoreName(), null)) {
             throw new IllegalArgumentException("Store name already exists: " + request.getStoreName());
         }
 
-        // Create seller store first (without processing payment)
+        // Create seller store (deposit temporarily disabled)
         SellerStore store = SellerStore.builder()
                 .ownerUser(user)
                 .storeName(request.getStoreName())
                 .storeDescription(request.getStoreDescription())
-                .depositAmount(request.getDepositAmount())
-                .maxListingPrice(calculateMaxListingPrice(request.getDepositAmount()))
+                .depositAmount(request.getDepositAmount() != null ? request.getDepositAmount() : BigDecimal.ZERO)
+                .maxListingPrice(request.getDepositAmount() != null ? calculateMaxListingPrice(request.getDepositAmount()) : BigDecimal.valueOf(999999999))
                 .contactEmail(request.getContactEmail())
                 .contactPhone(request.getContactPhone())
                 .businessLicense(request.getBusinessLicense())
@@ -78,14 +79,13 @@ public class SellerStoreServiceImpl implements SellerStoreService {
         store.setCreatedBy(userId);
         store = sellerStoreRepository.save(store);
 
-        // Process deposit payment after store creation (within same transaction)
-        try {
-            walletService.processStoreDeposit(userId, request.getDepositAmount(), store.getId());
-        } catch (Exception e) {
-            log.error("Failed to process store deposit for user {}: {}", userId, e.getMessage());
-            // Transaction will rollback automatically due to @Transactional
-            throw new IllegalStateException("Failed to process deposit payment: " + e.getMessage());
-        }
+        // TEMPORARILY DISABLED: Deposit payment processing
+        // try {
+        //     walletService.processStoreDeposit(userId, request.getDepositAmount(), store.getId());
+        // } catch (Exception e) {
+        //     log.error("Failed to process store deposit for user {}: {}", userId, e.getMessage());
+        //     throw new IllegalStateException("Failed to process deposit payment: " + e.getMessage());
+        // }
 
         // Assign SELLER role to user
         try {
@@ -94,7 +94,7 @@ public class SellerStoreServiceImpl implements SellerStoreService {
             log.warn("Failed to assign SELLER role to user {}: {}", userId, e.getMessage());
         }
 
-        log.info("Successfully created seller store {} for user {}", store.getId(), userId);
+        log.info("Successfully created seller store {} for user {} (deposit disabled)", store.getId(), userId);
         return store;
     }
 
