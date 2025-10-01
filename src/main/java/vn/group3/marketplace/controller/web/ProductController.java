@@ -454,11 +454,16 @@ public class ProductController {
     @PostMapping("/create-test")
     public String createTestProduct(
             @Valid @ModelAttribute("createRequest") ProductCreateRequest request,
+            @RequestParam(value = "imageFiles", required = false) List<MultipartFile> imageFiles,
             BindingResult bindingResult,
             RedirectAttributes redirectAttributes,
             Model model) {
 
         log.warn("TEST MODE: Creating product with hard-coded store_id = 2");
+
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            log.info("Received {} image files for upload", imageFiles.size());
+        }
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("categories", ProductCategory.values());
@@ -467,11 +472,18 @@ public class ProductController {
         }
 
         try {
-            Product product = productService.createProductForTesting(request);
-            redirectAttributes.addFlashAttribute("success",
-                "✅ Test product created successfully! ID: " + product.getId() +
+            Product product = productService.createProductForTesting(request, imageFiles);
+
+            String successMessage = "✅ Test product created successfully! ID: " + product.getId() +
                 ", SKU: " + product.getSku() +
-                ", Store ID: " + product.getStore().getId());
+                ", Store ID: " + product.getStore().getId();
+
+            if (imageFiles != null && !imageFiles.isEmpty()) {
+                long uploadedCount = imageFiles.stream().filter(f -> !f.isEmpty()).count();
+                successMessage += ", Images uploaded: " + uploadedCount;
+            }
+
+            redirectAttributes.addFlashAttribute("success", successMessage);
             return "redirect:/products";
         } catch (Exception e) {
             log.error("Failed to create test product: {}", e.getMessage());

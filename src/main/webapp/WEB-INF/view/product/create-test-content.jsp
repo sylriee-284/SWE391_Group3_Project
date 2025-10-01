@@ -29,7 +29,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <form:form method="post" action="/products/create-test" modelAttribute="createRequest">
+                <form:form method="post" action="/products/create-test" modelAttribute="createRequest" enctype="multipart/form-data">
                     <!-- Product Name -->
                     <div class="mb-3">
                         <label class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
@@ -78,6 +78,21 @@
                         </div>
                     </div>
 
+                    <!-- Product Images Upload -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Hình ảnh sản phẩm
+                            <span class="text-muted small">(Tối đa 10MB/file, định dạng: JPG, PNG, GIF)</span>
+                        </label>
+                        <input type="file" name="imageFiles" class="form-control" id="imageFiles"
+                               accept="image/jpeg,image/jpg,image/png,image/gif"
+                               multiple />
+                        <small class="text-muted">Có thể chọn nhiều ảnh cùng lúc</small>
+
+                        <!-- Image Preview Container -->
+                        <div id="imagePreviewContainer" class="mt-3 row g-2"></div>
+                    </div>
+
                     <!-- Active Status -->
                     <div class="mb-3">
                         <div class="form-check">
@@ -112,3 +127,62 @@
         </div>
     </div>
 </div>
+
+<!-- JavaScript for Image Preview -->
+<script>
+document.getElementById('imageFiles').addEventListener('change', function(e) {
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    previewContainer.innerHTML = ''; // Clear previous previews
+
+    const files = e.target.files;
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        // Validate file size
+        if (file.size > maxSize) {
+            alert('File "' + file.name + '" vượt quá 10MB!');
+            continue;
+        }
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            alert('File "' + file.name + '" không phải là ảnh hợp lệ!');
+            continue;
+        }
+
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const col = document.createElement('div');
+            col.className = 'col-md-3 col-sm-4 col-6';
+
+            const imgContainer = document.createElement('div');
+            imgContainer.className = 'border rounded p-2 text-center';
+            imgContainer.style.height = '150px';
+            imgContainer.style.display = 'flex';
+            imgContainer.style.flexDirection = 'column';
+            imgContainer.style.justifyContent = 'center';
+
+            const img = document.createElement('img');
+            img.src = event.target.result;
+            img.className = 'img-fluid';
+            img.style.maxHeight = '100px';
+            img.style.objectFit = 'contain';
+
+            const fileName = document.createElement('small');
+            fileName.className = 'text-muted mt-2';
+            fileName.textContent = file.name;
+            fileName.style.fontSize = '0.75rem';
+            fileName.style.wordBreak = 'break-all';
+
+            imgContainer.appendChild(img);
+            imgContainer.appendChild(fileName);
+            col.appendChild(imgContainer);
+            previewContainer.appendChild(col);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>

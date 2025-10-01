@@ -191,7 +191,8 @@ public interface ProductService {
      * Create a new product for testing (hard-coded store_id = 2)
      * WARNING: This method is for testing purposes only!
      * @param request Product creation request
+     * @param imageFiles Optional list of image files to upload
      * @return Created product
      */
-    Product createProductForTesting(ProductCreateRequest request);
+    Product createProductForTesting(ProductCreateRequest request, List<org.springframework.web.multipart.MultipartFile> imageFiles);
 }
