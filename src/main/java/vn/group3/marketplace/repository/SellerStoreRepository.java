@@ -209,4 +209,12 @@ public interface SellerStoreRepository extends JpaRepository<SellerStore, Long> 
      */
     @Query("SELECT COUNT(s) FROM SellerStore s WHERE s.isVerified = :isVerified AND s.isDeleted = false")
     Long countByVerificationStatus(@Param("isVerified") boolean isVerified);
+
+    /**
+     * Find seller store by ID with owner details loaded
+     * @param storeId Store ID
+     * @return Optional SellerStore with owner loaded
+     */
+    @Query("SELECT s FROM SellerStore s LEFT JOIN FETCH s.ownerUser WHERE s.id = :storeId AND s.isDeleted = false")
+    Optional<SellerStore> findByIdWithOwner(@Param("storeId") Long storeId);
 }

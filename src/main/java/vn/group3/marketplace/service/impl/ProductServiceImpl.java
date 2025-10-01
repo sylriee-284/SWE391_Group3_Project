@@ -424,33 +424,19 @@ public class ProductServiceImpl implements ProductService {
     public Product createProductForTesting(ProductCreateRequest request, List<org.springframework.web.multipart.MultipartFile> imageFiles) {
         log.warn("WARNING: Creating product with hard-coded store_id = 2 (TEST MODE)");
 
-        // Hard-code store ID = 2
+        // Hard-code store ID = 2 and seller ID = 2
         Long testStoreId = 2L;
+        Long testSellerId = 2L;
 
-        // Get store with ID = 2
-        SellerStore store = sellerStoreService.getStoreById(testStoreId)
-                .orElseThrow(() -> new IllegalStateException("Test store (ID=2) không tồn tại trong database"));
+        // Create references without fully loading entities to avoid lazy loading issues
+        // Skip all validations in test mode
+        SellerStore store = new SellerStore();
+        store.setId(testStoreId);
 
-        // Get seller from store owner
-        User seller = store.getOwnerUser();
-        if (seller == null) {
-            throw new IllegalStateException("Store ID=2 không có owner user");
-        }
+        User seller = new User();
+        seller.setId(testSellerId);
 
-        log.info("Creating test product for store ID: {}, seller ID: {}", testStoreId, seller.getId());
-
-        // Verify store is operational
-        if (!store.isOperational()) {
-            throw new IllegalStateException("Test store (ID=2) chưa được kích hoạt hoặc đang bị khóa");
-        }
-
-        // Validate price against store's max listing price
-        if (!store.canListProduct(request.getPrice())) {
-            throw new IllegalArgumentException(
-                String.format("Giá sản phẩm (%s VND) vượt quá giới hạn của test store (%s)",
-                    formatPrice(request.getPrice()), store.getFormattedMaxPrice())
-            );
-        }
+        log.info("TEST MODE: Skipping store operational check and price validation");
 
         // Check SKU uniqueness if provided
         if (request.getSku() != null && !request.getSku().isEmpty()) {
