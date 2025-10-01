@@ -85,9 +85,10 @@ public class SellerStoreController {
      * Show store details (public view)
      */
     @GetMapping("/{storeId}")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public String viewStore(@PathVariable Long storeId, Model model) {
         Optional<SellerStore> storeOpt = sellerStoreService.getStoreById(storeId);
-        
+
         if (storeOpt.isEmpty()) {
             return "redirect:/stores?error=store_not_found";
         }
@@ -117,7 +118,7 @@ public class SellerStoreController {
         // Check if user already has a store
         Optional<SellerStore> existingStore = sellerStoreService.getStoreByOwnerId(userId);
         if (existingStore.isPresent()) {
-            return "redirect:/stores/my-store?error=already_has_store";
+            return "redirect:/?error=already_has_store";
         }
 
         model.addAttribute("createRequest", new SellerStoreCreateRequest());
