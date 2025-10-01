@@ -23,154 +23,167 @@
 
     <!-- Menu -->
     <ul class="menu">
-        <!-- Common Links -->
+        <!-- Dashboard -->
         <li>
             <a href="/">
-                <i class="fas fa-home"></i>
+                <i class="fas fa-tachometer-alt"></i>
                 <span>Trang chủ</span>
             </a>
         </li>
+
+        <!-- User Management -->
+        <li class="menu-section">
+            <div class="menu-title">Quản lý người dùng</div>
+        </li>
         <li>
-            <a href="/products">
-                <i class="fas fa-boxes"></i>
-                <span>Sản phẩm</span>
+            <a href="/users">
+                <i class="fas fa-users"></i>
+                <span>Danh sách người dùng</span>
             </a>
+        </li>
+        <li>
+            <a href="/users/register">
+                <i class="fas fa-user-plus"></i>
+                <span>Thêm người dùng</span>
+            </a>
+        </li>
+        <li>
+            <a href="/users/profile">
+                <i class="fas fa-user-circle"></i>
+                <span>Hồ sơ của tôi</span>
+            </a>
+        </li>
+
+        <!-- Store Management -->
+        <li class="menu-section">
+            <div class="menu-title">Quản lý cửa hàng</div>
         </li>
         <li>
             <a href="/stores">
                 <i class="fas fa-store"></i>
-                <span>Cửa hàng</span>
+                <span>Danh sách cửa hàng</span>
+            </a>
+        </li>
+        <li>
+            <a href="/stores/create">
+                <i class="fas fa-plus-circle"></i>
+                <span>Tạo cửa hàng</span>
             </a>
         </li>
 
-        <!-- Seller Section -->
-        <c:if test="${not empty sessionScope.currentUser and (sessionScope.currentUser.role == 'SELLER' or sessionScope.currentUser.role == 'ADMIN')}">
-            <li class="menu-section">
-                <div class="menu-title">Quản lý cửa hàng</div>
-            </li>
-            <li>
-                <a href="/stores/my-store">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
-                </a>
-            </li>
-            <li>
-                <a href="/products/my-products">
-                    <i class="fas fa-box"></i>
-                    <span>Sản phẩm của tôi</span>
-                </a>
-            </li>
-            <li>
-                <a href="/products/create">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>Thêm sản phẩm</span>
-                </a>
-            </li>
-            <li>
-                <a href="/stores/my-store/orders">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span>Đơn hàng</span>
-                </a>
-            </li>
-            <li>
-                <a href="/stores/my-store/inventory">
-                    <i class="fas fa-boxes"></i>
-                    <span>Kho hàng</span>
-                </a>
-            </li>
-            <li>
-                <a href="/stores/my-store/settings">
-                    <i class="fas fa-cog"></i>
-                    <span>Cài đặt cửa hàng</span>
-                </a>
-            </li>
-        </c:if>
+        <!-- Product Management -->
+        <li class="menu-section">
+            <div class="menu-title">Quản lý sản phẩm</div>
+        </li>
+        <li>
+            <a href="/products">
+                <i class="fas fa-box"></i>
+                <span>Danh sách sản phẩm</span>
+            </a>
+        </li>
+        <li>
+            <a href="/products/create">
+                <i class="fas fa-plus"></i>
+                <span>Thêm sản phẩm</span>
+            </a>
+        </li>
+        <li>
+            <a href="/categories">
+                <i class="fas fa-tags"></i>
+                <span>Danh mục</span>
+            </a>
+        </li>
 
-        <!-- User without store -->
-        <c:if test="${not empty sessionScope.currentUser and sessionScope.currentUser.role == 'USER'}">
-            <li class="menu-section">
-                <div class="menu-title">Bán hàng</div>
-            </li>
-            <li>
-                <a href="/stores/create">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>Tạo cửa hàng</span>
-                </a>
-            </li>
-        </c:if>
+        <!-- Order Management -->
+        <li class="menu-section">
+            <div class="menu-title">Quản lý đơn hàng</div>
+        </li>
+        <li>
+            <a href="/orders">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Danh sách đơn hàng</span>
+            </a>
+        </li>
+        <li>
+            <a href="/orders/pending">
+                <i class="fas fa-clock"></i>
+                <span>Đơn hàng chờ</span>
+            </a>
+        </li>
+        <li>
+            <a href="/escrow">
+                <i class="fas fa-handshake"></i>
+                <span>Giao dịch ký quỹ</span>
+            </a>
+        </li>
 
-        <!-- Admin Section -->
-        <c:if test="${not empty sessionScope.currentUser and sessionScope.currentUser.role == 'ADMIN'}">
-            <li class="menu-section">
-                <div class="menu-title">Quản trị</div>
-            </li>
-            <li>
-                <a href="/admin/users">
-                    <i class="fas fa-users"></i>
-                    <span>Người dùng</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/stores">
-                    <i class="fas fa-store-alt"></i>
-                    <span>Cửa hàng</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/products">
-                    <i class="fas fa-box"></i>
-                    <span>Sản phẩm</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/orders">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span>Đơn hàng</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/wallets">
-                    <i class="fas fa-wallet"></i>
-                    <span>Ví điện tử</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/reports">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Báo cáo</span>
-                </a>
-            </li>
-        </c:if>
+        <!-- Financial Management -->
+        <li class="menu-section">
+            <div class="menu-title">Quản lý tài chính</div>
+        </li>
+        <li>
+            <a href="/wallets">
+                <i class="fas fa-wallet"></i>
+                <span>Quản lý ví</span>
+            </a>
+        </li>
+        <li>
+            <a href="/transactions">
+                <i class="fas fa-exchange-alt"></i>
+                <span>Giao dịch</span>
+            </a>
+        </li>
+        <li>
+            <a href="/deposits">
+                <i class="fas fa-piggy-bank"></i>
+                <span>Tiền cọc cửa hàng</span>
+            </a>
+        </li>
 
-        <!-- User Account Section -->
-        <c:if test="${not empty sessionScope.currentUser}">
-            <li class="menu-section">
-                <div class="menu-title">Tài khoản</div>
-            </li>
-            <li>
-                <a href="/users/profile">
-                    <i class="fas fa-user-circle"></i>
-                    <span>Hồ sơ</span>
-                </a>
-            </li>
-            <li>
-                <a href="/wallets/my-wallet">
-                    <i class="fas fa-wallet"></i>
-                    <span>Ví của tôi</span>
-                </a>
-            </li>
-            <li>
-                <a href="/orders/my-orders">
-                    <i class="fas fa-list"></i>
-                    <span>Đơn hàng của tôi</span>
-                </a>
-            </li>
-            <li>
-                <a href="/users/change-password">
-                    <i class="fas fa-key"></i>
-                    <span>Đổi mật khẩu</span>
-                </a>
-            </li>
-        </c:if>
+        <!-- Reports & Analytics -->
+        <li class="menu-section">
+            <div class="menu-title">Báo cáo & Thống kê</div>
+        </li>
+        <li>
+            <a href="/reports/dashboard">
+                <i class="fas fa-chart-bar"></i>
+                <span>Tổng quan</span>
+            </a>
+        </li>
+        <li>
+            <a href="/reports/sales">
+                <i class="fas fa-chart-line"></i>
+                <span>Doanh thu</span>
+            </a>
+        </li>
+        <li>
+            <a href="/reports/users">
+                <i class="fas fa-user-chart"></i>
+                <span>Người dùng</span>
+            </a>
+        </li>
+
+        <!-- System Settings -->
+        <li class="menu-section">
+            <div class="menu-title">Cài đặt hệ thống</div>
+        </li>
+        <li>
+            <a href="/settings">
+                <i class="fas fa-cog"></i>
+                <span>Cài đặt chung</span>
+            </a>
+        </li>
+        <li>
+            <a href="/roles">
+                <i class="fas fa-user-tag"></i>
+                <span>Vai trò & Quyền</span>
+            </a>
+        </li>
+        <li>
+            <a href="/notifications">
+                <i class="fas fa-bell"></i>
+                <span>Thông báo</span>
+            </a>
+        </li>
     </ul>
 </div>
