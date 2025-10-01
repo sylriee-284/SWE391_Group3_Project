@@ -186,4 +186,12 @@ public interface ProductService {
         String stockStatus,
         Pageable pageable
     );
+
+    /**
+     * Create a new product for testing (hard-coded store_id = 2)
+     * WARNING: This method is for testing purposes only!
+     * @param request Product creation request
+     * @return Created product
+     */
+    Product createProductForTesting(ProductCreateRequest request);
 }

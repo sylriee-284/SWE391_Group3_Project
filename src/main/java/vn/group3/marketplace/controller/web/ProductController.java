@@ -434,6 +434,53 @@ public class ProductController {
         return productService.isSkuAvailable(sku, excludeProductId);
     }
 
+    /**
+     * Show test create product form (hard-coded store_id = 2)
+     * WARNING: For testing purposes only!
+     */
+    @GetMapping("/create-test")
+    public String showTestCreateForm(Model model) {
+        log.warn("TEST MODE: Showing create product form with hard-coded store_id = 2");
+        model.addAttribute("createRequest", new ProductCreateRequest());
+        model.addAttribute("categories", ProductCategory.values());
+        model.addAttribute("testMode", true);
+        return "product/create-test";
+    }
+
+    /**
+     * Process test product creation (hard-coded store_id = 2)
+     * WARNING: For testing purposes only!
+     */
+    @PostMapping("/create-test")
+    public String createTestProduct(
+            @Valid @ModelAttribute("createRequest") ProductCreateRequest request,
+            BindingResult bindingResult,
+            RedirectAttributes redirectAttributes,
+            Model model) {
+
+        log.warn("TEST MODE: Creating product with hard-coded store_id = 2");
+
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("categories", ProductCategory.values());
+            model.addAttribute("testMode", true);
+            return "product/create-test";
+        }
+
+        try {
+            Product product = productService.createProductForTesting(request);
+            redirectAttributes.addFlashAttribute("success",
+                "✅ Test product created successfully! ID: " + product.getId() +
+                ", SKU: " + product.getSku() +
+                ", Store ID: " + product.getStore().getId());
+            return "redirect:/products";
+        } catch (Exception e) {
+            log.error("Failed to create test product: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("error",
+                "❌ Failed to create test product: " + e.getMessage());
+            return "redirect:/products/create-test";
+        }
+    }
+
     // Helper methods
 
     /**

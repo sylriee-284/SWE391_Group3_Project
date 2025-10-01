@@ -43,7 +43,7 @@ public class Product extends BaseEntity {
     @DecimalMin(value = "0.0", inclusive = false, message = "Giá sản phẩm phải lớn hơn 0")
     private BigDecimal price;
 
-    @Column(name = "stock_quantity", nullable = false)
+    @Column(name = "stock", nullable = false)
     @Min(value = 0, message = "Số lượng tồn kho không được âm")
     @Builder.Default
     private Integer stockQuantity = 0;
@@ -64,7 +64,7 @@ public class Product extends BaseEntity {
     private Boolean isActive = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "store_id", nullable = false)
+    @JoinColumn(name = "seller_store_id", nullable = false)
     private SellerStore store;
 
     @ManyToOne(fetch = FetchType.LAZY)

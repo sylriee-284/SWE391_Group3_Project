@@ -392,4 +392,68 @@ public class ProductServiceImpl implements ProductService {
         // Transform to ProductResponse DTOs
         return products.map(ProductResponse::toListResponse);
     }
+
+    @Override
+    @Transactional
+    public Product createProductForTesting(ProductCreateRequest request) {
+        log.warn("WARNING: Creating product with hard-coded store_id = 2 (TEST MODE)");
+
+        // Hard-code store ID = 2
+        Long testStoreId = 2L;
+
+        // Get store with ID = 2
+        SellerStore store = sellerStoreService.getStoreById(testStoreId)
+                .orElseThrow(() -> new IllegalStateException("Test store (ID=2) không tồn tại trong database"));
+
+        // Get seller from store owner
+        User seller = store.getOwnerUser();
+        if (seller == null) {
+            throw new IllegalStateException("Store ID=2 không có owner user");
+        }
+
+        log.info("Creating test product for store ID: {}, seller ID: {}", testStoreId, seller.getId());
+
+        // Verify store is operational
+        if (!store.isOperational()) {
+            throw new IllegalStateException("Test store (ID=2) chưa được kích hoạt hoặc đang bị khóa");
+        }
+
+        // Validate price against store's max listing price
+        if (!store.canListProduct(request.getPrice())) {
+            throw new IllegalArgumentException(
+                String.format("Giá sản phẩm (%s VND) vượt quá giới hạn của test store (%s)",
+                    formatPrice(request.getPrice()), store.getFormattedMaxPrice())
+            );
+        }
+
+        // Check SKU uniqueness if provided
+        if (request.getSku() != null && !request.getSku().isEmpty()) {
+            if (productRepository.existsBySku(request.getSku())) {
+                throw new IllegalArgumentException("SKU đã tồn tại: " + request.getSku());
+            }
+        } else {
+            // Generate unique SKU if not provided
+            request.setSku(generateUniqueSku());
+        }
+
+        // Create product entity
+        Product product = Product.builder()
+                .productName(request.getProductName())
+                .description(request.getDescription())
+                .price(request.getPrice())
+                .stockQuantity(request.getStockQuantity())
+                .category(request.getCategory())
+                .sku(request.getSku())
+                .productImages(request.getProductImages())
+                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
+                .store(store)
+                .seller(seller)
+                .build();
+
+        Product savedProduct = productRepository.save(product);
+        log.info("Test product created successfully with ID: {}, SKU: {}",
+                savedProduct.getId(), savedProduct.getSku());
+
+        return savedProduct;
+    }
 }
