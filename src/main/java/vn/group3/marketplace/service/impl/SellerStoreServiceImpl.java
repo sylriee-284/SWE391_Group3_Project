@@ -87,14 +87,14 @@ public class SellerStoreServiceImpl implements SellerStoreService {
         //     throw new IllegalStateException("Failed to process deposit payment: " + e.getMessage());
         // }
 
-        // Assign SELLER role to user
-        try {
-            userService.assignRole(userId, "SELLER");
-        } catch (Exception e) {
-            log.warn("Failed to assign SELLER role to user {}: {}", userId, e.getMessage());
-        }
+        // TEMPORARILY DISABLED: Assign SELLER role (role doesn't exist yet)
+        // try {
+        //     userService.assignRole(userId, "SELLER");
+        // } catch (Exception e) {
+        //     log.warn("Failed to assign SELLER role to user {}: {}", userId, e.getMessage());
+        // }
 
-        log.info("Successfully created seller store {} for user {} (deposit disabled)", store.getId(), userId);
+        log.info("Successfully created seller store {} for user {} (deposit and role assignment disabled)", store.getId(), userId);
         return store;
     }
 
