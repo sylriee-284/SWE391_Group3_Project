@@ -7,7 +7,7 @@
 ### Version
 - **Project Version:** 1.0.0 (v0.0.1-SNAPSHOT)
 - **Database:** mmo_market_system (MySQL)
-- **Status:** Active Development (~40% complete)
+- **Status:** Active Development (~55-60% complete)
 
 ---
 
@@ -20,14 +20,15 @@
 - **Role-Based Access Control (RBAC):** 5 roles with 27 granular permissions
 - **Dashboard:** System overview with user and financial statistics
 - **Responsive UI:** Bootstrap 5.3.2 based JSP templates
+- **Product Management:** Complete CRUD operations with advanced filtering, image upload, inventory management, and seller dashboard
+- **File Upload Service:** Fully implemented image upload with validation (2MB max, jpg/jpeg/png/gif)
 
 ### In Development ⚙️
 - **Spring Security Configuration:** Basic HTTP auth currently active
 - **Store Deposit Processing:** Temporarily disabled for testing
-- **File Upload Service:** Interface defined, implementation pending
+- **Product Test Mode:** Test endpoints with hardcoded store_id for development (remove before production)
 
 ### Planned Features 📋
-- **Product Management:** Create, list, and manage digital product inventory
 - **Order Processing:** Complete purchase workflow with escrow protection
 - **Review & Rating System:** Product and seller reviews
 - **Messaging System:** Buyer-seller communication
@@ -47,6 +48,7 @@
 - **Security:** Spring Security
 - **Build Tool:** Maven
 - **Server:** Embedded Tomcat
+- **File Upload:** MultipartFile with validation
 
 ### Frontend
 - **Template Engine:** JSP (Jakarta Server Pages)
@@ -84,6 +86,8 @@
    USE mmo_market_system;
    SOURCE marketplace.sql;
    SOURCE marketplace-sample-data.sql;
+   # Optional: Load sample products
+   SOURCE insert-products-simple.sql;
    ```
 
 3. **Configure database connection**
@@ -169,12 +173,21 @@ SWE391_Group3_Project/
 - Transaction history tracking
 - Deposit and withdrawal operations
 
-### 4. Role-Based Access Control
+### 4. Product Management
+- Complete CRUD operations (create, read, update, delete)
+- Advanced filtering (category, price range, stock status, search)
+- Multi-image upload with validation
+- SKU generation and uniqueness validation
+- Inventory management with low stock alerts
+- Seller product dashboard with statistics
+- Product price validation against store max listing price
+
+### 5. Role-Based Access Control
 - **Roles:** ADMIN, MODERATOR, SELLER, BUYER, USER
 - **Permissions:** 27 granular permissions across 9 categories
 - Spring Security integration
 
-### 5. Dashboard & Analytics
+### 6. Dashboard & Analytics
 - User statistics
 - Financial overview
 - Store metrics (planned)
@@ -230,6 +243,8 @@ SWE391_Group3_Project/
 - `GET /` - Main dashboard
 - `GET /users` - List users
 - `GET /stores` - List active stores
+- `GET /products` - List products with advanced filtering
+- `GET /products/{id}` - View product details
 - `GET /users/register` - Registration form
 - `POST /users/register` - Submit registration
 
@@ -242,10 +257,23 @@ SWE391_Group3_Project/
 - `GET /stores/my-store` - Store dashboard
 - `POST /stores/my-store/settings` - Update store
 - `POST /stores/my-store/upload-logo` - Upload logo
+- `GET /products/my-products` - Seller's product dashboard
+- `GET /products/create` - Product creation form
+- `POST /products/create` - Create product with images
+- `POST /products/{id}/edit` - Update product
+- `POST /products/{id}/delete` - Soft delete product
+- `POST /products/{id}/toggle-status` - Activate/deactivate
+- `POST /products/{id}/upload-images` - Upload product images
 
 ### Admin Endpoints (ROLE_ADMIN)
 - `POST /admin/stores/{id}/verify` - Verify store
 - `POST /admin/stores/{id}/suspend` - Suspend store
+
+### AJAX Endpoints
+- `GET /users/check-username` - Check username availability
+- `GET /users/check-email` - Check email availability
+- `GET /stores/check-name` - Check store name availability
+- `GET /products/check-sku` - Check SKU availability
 
 For complete API documentation, see [API.md](./API.md).
 
@@ -257,16 +285,21 @@ For complete API documentation, see [API.md](./API.md).
 - **Server Port:** 8081
 - **Context Path:** /
 - **Max File Upload:** 10MB
+- **File Upload Directory:** uploads/ (configurable)
 
 ### Database Settings
 - **JDBC URL:** jdbc:mysql://localhost:3306/mmo_market_system
 - **Hibernate DDL:** update (auto-update schema)
 - **Show SQL:** false (enable for debugging)
+- **Total Tables:** 18 (users, roles, permissions, wallets, stores, **products**, etc.)
 
 ### Business Configuration
 - **Minimum Store Deposit:** 5,000,000 VND
 - **Escrow Hold Period:** 3 days
 - **Wallet Currency:** VND
+- **Max File Size:** 2MB (per image)
+- **Allowed Image Types:** jpg, jpeg, png, gif
+- **Product Categories:** 7 (Game Account, Game Currency, Social Account, etc.)
 
 ### Security Settings
 - **Password Encoding:** BCrypt
@@ -278,21 +311,25 @@ For complete API documentation, see [API.md](./API.md).
 ## Development Status
 
 ### Completed (✓)
-- [x] Database schema design (17 tables)
+- [x] Database schema design (18 tables)
 - [x] User CRUD operations
 - [x] Seller store management
 - [x] Wallet basic operations
 - [x] RBAC infrastructure
 - [x] JSP view templates
 - [x] Sample data seeding
+- [x] **Product management module (CRUD, filtering, images)**
+- [x] **File upload service (fully implemented)**
+- [x] **Advanced product filtering (6 parameters)**
+- [x] **Product image upload with validation**
+- [x] **Seller product dashboard**
 
 ### In Progress (⚙️)
 - [ ] Spring Security full configuration
-- [ ] File upload implementation
-- [ ] Transaction integrity fixes
+- [ ] Transaction integrity fixes (wallet ↔ store deposit)
+- [ ] Removing test mode endpoints (requires proper auth)
 
 ### Not Started (📋)
-- [ ] Product management
 - [ ] Order processing
 - [ ] Review system
 - [ ] Messaging system
@@ -408,25 +445,33 @@ For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
    - Fallback to user ID = 2 when auth not configured
    - TODO: Complete Spring Security setup
 
-4. **File upload throws exception**
-   - Implementation pending
-   - TODO: Implement storage service
+4. **Test mode product endpoints** ⚠️ NEW
+   - `/products/create-test` with hardcoded `store_id=2`
+   - Bypasses seller verification for testing
+   - Location: ProductController lines 453-506
+   - TODO: Remove before production deployment
+
+5. **Lazy loading fixed** ✅
+   - Fixed in commit `cf04cc1` and `dbd237c`
+   - Solution: Using `@Transactional(readOnly = true)` and `LEFT JOIN FETCH`
 
 ---
 
 ## Roadmap
 
-### Phase 1: Foundation (Current)
+### Phase 1: Foundation (85% Complete)
 - ✓ Database design
 - ✓ User management
 - ✓ Store management
+- ✓ **Product management**
+- ✓ **File upload service**
 - ⚙️ Security implementation
 
 ### Phase 2: Core Commerce (Next 2 months)
-- Product CRUD
 - Order processing
 - Payment integration
 - Escrow automation
+- Shopping cart functionality
 
 ### Phase 3: Engagement (Months 3-4)
 - Review system

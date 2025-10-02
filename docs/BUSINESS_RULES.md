@@ -6,11 +6,12 @@
 3. [Seller Store Rules](#seller-store-rules)
 4. [Wallet & Financial Rules](#wallet--financial-rules)
 5. [Product Listing Rules](#product-listing-rules)
-6. [Order & Purchase Rules](#order--purchase-rules)
-7. [Escrow System Rules](#escrow-system-rules)
-8. [Review System Rules](#review-system-rules)
-9. [Dispute Resolution Rules](#dispute-resolution-rules)
-10. [Role & Permission Rules](#role--permission-rules)
+6. [File Upload Rules](#file-upload-rules)
+7. [Order & Purchase Rules](#order--purchase-rules)
+8. [Escrow System Rules](#escrow-system-rules)
+9. [Review System Rules](#review-system-rules)
+10. [Dispute Resolution Rules](#dispute-resolution-rules)
+11. [Role & Permission Rules](#role--permission-rules)
 
 ---
 
@@ -382,88 +383,471 @@ max_listing_price = ROUND(deposit_amount / 10, 2)
 
 ## Product Listing Rules
 
-### PL-001: Price Limit Enforcement
+### PL-001: Price Limit Enforcement ✅
 
 **Rule:** Product price cannot exceed store's max_listing_price.
 
 **Validation:** Service layer check before creating/updating product
 
-**Implementation:** `SellerStoreService.canListProduct(storeId, productPrice)`
+**Implementation:** `ProductService.createProduct()` validates `price <= store.maxListingPrice`
 
-**Error:** Return validation error if price exceeds limit
+**Error:** Returns validation error with message: "Product price exceeds your store's maximum listing price"
 
-**Formula:** `product.price <= store.max_listing_price`
+**Formula:** `product.price <= store.max_listing_price` (deposit_amount / 10)
 
----
-
-### PL-002: Product Slug Uniqueness
-
-**Rule:** Product slug must be unique within the same store.
-
-**Constraint:** Unique constraint on `products(seller_store_id, slug)`
-
-**Auto-generation:** Generate slug from product name (recommended)
-
-**Example:**
-- Name: "Level 80 WoW Account"
-- Slug: "level-80-wow-account"
+**Location:** `ProductServiceImpl.java` in create/update methods
 
 ---
 
-### PL-003: Stock Management
+### PL-002: SKU Uniqueness and Auto-Generation ✅
 
-**Rule:** Product stock must match available ProductStorage entries.
+**Rule:** Product SKU must be unique across the entire platform.
 
-**Calculation:**
-```sql
-stock = COUNT(*) FROM product_storage
-WHERE product_id = ? AND status = 'AVAILABLE'
+**Auto-generation Format:** PRD-XXXXXXXX (PRD prefix + 8 random uppercase letters)
+
+**Constraint:** Unique constraint on `products.sku`
+
+**AJAX Check:** `GET /products/check-sku?sku={sku}`
+
+**Implementation:**
+- Service: `ProductService.generateSKU()`
+- Repository: `ProductRepository.existsBySku(sku)`
+- Controller: `ProductController.checkSkuAvailability()`
+
+**Location:** `ProductServiceImpl.java:generateSKU()`, `ProductController.java:checkSkuAvailability()`
+
+---
+
+### PL-003: Stock Quantity Validation ✅
+
+**Rule:** Product stock quantity must be between 0 and 999,999.
+
+**Constraints:**
+- Minimum: 0 (out of stock)
+- Maximum: 999,999
+- Type: Integer
+- Required: Yes
+
+**Low Stock Alert:** Products with stock ≤ 10 flagged in seller dashboard
+
+**Validation:**
+```java
+@Min(value = 0, message = "Stock quantity cannot be negative")
+@Max(value = 999999, message = "Stock quantity cannot exceed 999,999")
 ```
 
-**Auto-update:** Stock decremented when ProductStorage reserved for order
-
-**Out of Stock:** Product status set to OUT_OF_STOCK when stock = 0
+**Location:** `ProductCreateRequest.java`
 
 ---
 
-### PL-004: Product Status
+### PL-004: Product Price Range ✅
 
-**Rule:** Only ACTIVE products are visible to buyers.
+**Rule:** Product price must be within valid range: 1,000 - 999,999,999 VND.
+
+**Constraints:**
+- Minimum: 1,000 VND (prevent free items)
+- Maximum: 999,999,999 VND (DECIMAL(15,2) limit)
+- Required: Yes
+- Must also satisfy PL-001 (≤ max_listing_price)
+
+**Validation:**
+```java
+@NotNull
+@DecimalMin(value = "1000", message = "Price must be at least 1,000 VND")
+@DecimalMax(value = "999999999", message = "Price cannot exceed 999,999,999 VND")
+```
+
+**Location:** `ProductCreateRequest.java`
+
+---
+
+### PL-005: Product Name Validation ✅
+
+**Rule:** Product name must be between 1 and 200 characters.
+
+**Constraints:**
+- Minimum: 1 character
+- Maximum: 200 characters
+- Required: Yes
+- Special characters allowed (for game names with symbols)
+
+**Validation:**
+```java
+@NotBlank(message = "Product name is required")
+@Size(min = 1, max = 200, message = "Product name must be between 1 and 200 characters")
+```
+
+**Location:** `ProductCreateRequest.java`, `Product.java`
+
+---
+
+### PL-006: Product Category Validation ✅
+
+**Rule:** Product must belong to one of the 7 predefined categories.
+
+**Valid Categories (ProductCategory enum):**
+1. GAME_ACCOUNT - "Tài khoản Game"
+2. GAME_CURRENCY - "Vàng/Tiền Game"
+3. SOCIAL_ACCOUNT - "Tài khoản MXH"
+4. SOFTWARE_LICENSE - "License Phần mềm"
+5. GIFT_CARD - "Thẻ quà tặng"
+6. VPN_PROXY - "VPN/Proxy"
+7. OTHER - "Khác"
+
+**Validation:**
+```java
+@NotNull(message = "Category is required")
+private ProductCategory category;
+```
+
+**Location:** `ProductCategory.java`, `ProductCreateRequest.java`
+
+---
+
+### PL-007: Product Description (Optional) ✅
+
+**Rule:** Product description is optional but recommended for better sales.
+
+**Constraints:**
+- Type: TEXT (unlimited length)
+- Required: No
+- HTML/Markdown: Plain text only (XSS prevention)
+
+**Best Practice:** Include detailed information about product features, delivery method, and usage instructions
+
+**Location:** `Product.java`, `ProductCreateRequest.java`
+
+---
+
+### PL-008: Seller Ownership Verification ✅
+
+**Rule:** Products can only be created by users who own an active seller store.
+
+**Validation Checks:**
+1. User is authenticated
+2. User has ROLE_SELLER
+3. User owns exactly one seller store
+4. Store is ACTIVE (not suspended/closed)
+
+**Error:** "You must have an active seller store to create products"
+
+**Implementation:** `ProductService.createProduct()` validates store ownership
+
+**Current Workaround:** Test mode endpoints bypass this check (remove before production)
+
+---
+
+### PL-009: Product Active Status ✅
+
+**Rule:** Only active products are visible to buyers in product listings.
 
 **Status Values:**
-- DRAFT: Not published, visible to seller only
-- ACTIVE: Published and available for purchase
-- INACTIVE: Temporarily hidden
-- OUT_OF_STOCK: No inventory available
+- `is_active = true`: Product visible in public listings
+- `is_active = false`: Product hidden from buyers (seller can still see/edit)
 
-**Transition Rules:**
-- DRAFT → ACTIVE: Manual publish by seller
-- ACTIVE → OUT_OF_STOCK: Automatic when stock = 0
-- OUT_OF_STOCK → ACTIVE: Automatic when stock > 0
-- Any → INACTIVE: Manual by seller or admin
+**Default:** true (active) upon creation
+
+**Toggle:** Sellers can activate/deactivate products via dashboard
+
+**Implementation:**
+- `ProductService.toggleProductStatus(productId)`
+- `POST /products/{id}/toggle-status`
+
+**Location:** `ProductServiceImpl.java:toggleProductStatus()`, `ProductController.java:toggleProductStatus()`
 
 ---
 
-### PL-005: Digital Product Storage
+### PL-010: Product Image Storage ✅
 
-**Rule:** Each digital product must have ProductStorage entries with credentials/keys.
+**Rule:** Product images stored as JSON array in TEXT column.
 
-**Structure:**
+**Format:**
 ```json
-{
-  "username": "account_username",
-  "password": "account_password",
-  "email": "linked_email@example.com",
-  "additionalData": "any relevant info"
-}
+["url1", "url2", "url3"]
 ```
 
-**Security:**
-- `payload_json`: Full credentials (encrypted recommended)
-- `payload_mask`: Masked preview for buyers (e.g., "user***@gm***.com")
+**Storage Path:** `/uploads/products/images/{productId}/{filename}`
 
-**Status Flow:**
-- AVAILABLE → RESERVED (during purchase) → DELIVERED (after order completion)
+**Maximum Images:** No hard limit (recommended: 5-10 images)
+
+**Null Handling:** Empty array `[]` if no images uploaded
+
+**Location:** `Product.java` (productImages field), `FileUploadServiceImpl.java`
+
+---
+
+### PL-011: Soft Delete for Products ✅
+
+**Rule:** Products are never hard-deleted; they are soft-deleted.
+
+**Implementation:**
+- Set `is_deleted = 1`
+- Set `deleted_by` to user ID
+- Update `updated_at` timestamp
+
+**Query Filter:** All product queries filter `is_deleted = 0` by default
+
+**Restoration:** Admins can restore soft-deleted products
+
+**Location:** `ProductServiceImpl.java:deleteProduct()`, `ProductRepository.java`
+
+---
+
+### PL-012: Product Filtering and Search ✅
+
+**Rule:** Products support advanced filtering with 6 parameters.
+
+**Filter Parameters:**
+1. **search**: Search in product_name and description (case-insensitive)
+2. **category**: Filter by ProductCategory enum
+3. **minPrice**: Minimum price filter (inclusive)
+4. **maxPrice**: Maximum price filter (inclusive)
+5. **storeId**: Filter products by specific store
+6. **stockStatus**: Filter by stock availability (ALL, IN_STOCK, LOW_STOCK, OUT_OF_STOCK)
+
+**Stock Status Rules:**
+- IN_STOCK: stock_quantity > 10
+- LOW_STOCK: 1 ≤ stock_quantity ≤ 10
+- OUT_OF_STOCK: stock_quantity = 0
+
+**Implementation:** `ProductRepository.findAllWithFilters()` with dynamic WHERE clauses
+
+**Location:** `ProductRepositoryCustom.java`, `ProductController.java:listProducts()`
+
+---
+
+### PL-013: Product Pagination ✅
+
+**Rule:** Product listings are paginated with configurable page size.
+
+**Defaults:**
+- Page: 0 (first page, 0-indexed)
+- Size: 12 products per page
+
+**Allowed Sizes:** 12, 24, 48, 96
+
+**Sorting Options:**
+- price (ascending/descending)
+- productName (alphabetical)
+- createdAt (newest/oldest)
+- stockQuantity (high to low)
+
+**Implementation:** Spring Data Pageable with `PageRequest.of(page, size, sort)`
+
+**Location:** `ProductController.java:listProducts()`
+
+---
+
+### PL-014: Test Mode Product Creation ⚠️
+
+**Rule:** Test mode endpoints exist for development with hardcoded store_id.
+
+**Endpoints:**
+- `GET /products/create-test`
+- `POST /products/create-test`
+
+**Behavior:**
+- Bypasses seller authentication
+- Uses hardcoded `store_id = 2`
+- No store ownership validation
+
+**⚠️ WARNING:** Must be removed before production deployment
+
+**Location:** `ProductController.java:453-506`
+
+---
+
+### PL-015: Product Store Relationship ✅
+
+**Rule:** Each product must be associated with exactly one seller store.
+
+**Foreign Keys:**
+- `seller_store_id`: References seller_stores(id)
+- `seller_id`: References users(id) (denormalized for performance)
+
+**Cascade:** Products soft-deleted when store is deleted
+
+**Validation:** Store must exist and be owned by the authenticated user
+
+**Location:** `Product.java` @ManyToOne relationships
+
+---
+
+## File Upload Rules
+
+### FU-001: Maximum File Size ✅
+
+**Rule:** Uploaded files cannot exceed 2MB per file.
+
+**Configuration:**
+```properties
+spring.servlet.multipart.max-file-size=10MB  # Global limit
+```
+
+**Service-Level Validation:** 2MB enforced in FileUploadService
+
+**Error Message:** "File size exceeds the maximum allowed size of 2MB"
+
+**Implementation:** `FileUploadServiceImpl.uploadProductImage()` validates file size before processing
+
+**Location:** `FileUploadServiceImpl.java:uploadProductImage()`
+
+---
+
+### FU-002: Allowed File Types ✅
+
+**Rule:** Only specific image file types are allowed for product images.
+
+**Allowed Extensions:**
+- jpg
+- jpeg
+- png
+- gif
+
+**Content-Type Validation:** Validates both file extension AND MIME type
+
+**Allowed MIME Types:**
+- image/jpeg
+- image/png
+- image/gif
+
+**Error Message:** "Invalid file type. Only JPG, JPEG, PNG, and GIF files are allowed"
+
+**Implementation:** `FileUploadServiceImpl.isValidImageFile(file)`
+
+**Location:** `FileUploadServiceImpl.java:isValidImageFile()`
+
+---
+
+### FU-003: File Naming Convention ✅
+
+**Rule:** Uploaded files are renamed using timestamp and UUID to prevent conflicts.
+
+**Format:** `{timestamp}_{uuid}.{original_extension}`
+
+**Example:** `1704067200000_a3f2c8d1-4e5f-6a7b-8c9d-0e1f2a3b4c5d.jpg`
+
+**Benefits:**
+- Prevents filename conflicts
+- Prevents path traversal attacks
+- Maintains original file extension
+- Sortable by upload time
+
+**Implementation:** `FileUploadServiceImpl.generateUniqueFileName(originalFilename)`
+
+**Location:** `FileUploadServiceImpl.java:generateUniqueFileName()`
+
+---
+
+### FU-004: File Storage Path Structure ✅
+
+**Rule:** Uploaded files are organized in a structured directory hierarchy.
+
+**Path Structure:**
+```
+uploads/{type}/{entity_id}/{filename}
+```
+
+**Examples:**
+- Product images: `uploads/products/images/123/1704067200000_uuid.jpg`
+- Store logos: `uploads/stores/logos/5/1704067200000_uuid.png`
+
+**Directory Creation:** Automatically created if not exists
+
+**Permissions:** Upload directory must be writable by application
+
+**Implementation:**
+- `FileUploadServiceImpl.uploadProductImage(productId, file)`
+- Path: `uploadDir + "/products/images/" + productId + "/"`
+
+**Location:** `FileUploadServiceImpl.java`
+
+---
+
+### FU-005: File Upload Base Directory ✅
+
+**Rule:** All uploads stored in configurable base directory.
+
+**Configuration:**
+```properties
+file.upload-dir=uploads  # Relative to project root
+```
+
+**Default Value:** `uploads/` if not configured
+
+**Absolute Path:** Resolved relative to application working directory
+
+**Access:** Files served via static resource mapping or controller endpoint
+
+**Implementation:**
+```java
+@Value("${file.upload-dir:uploads}")
+private String uploadDir;
+```
+
+**Location:** `FileUploadServiceImpl.java:uploadDir` field
+
+---
+
+### FU-006: Image Upload for Products ✅
+
+**Rule:** Product images uploaded after product creation, not during.
+
+**Process:**
+1. Create product (without images)
+2. Product saved with `productImages = null` or empty array
+3. Upload images via separate endpoint
+4. Images appended to product's `productImages` JSON array
+5. Product updated with new image URLs
+
+**Endpoint:** `POST /products/{id}/upload-images`
+
+**Multiple Uploads:** Supports uploading multiple images sequentially
+
+**Implementation:** `ProductController.uploadProductImages(productId, file)`
+
+**Location:** `ProductController.java:uploadProductImages()`, `ProductServiceImpl.java:addProductImage()`
+
+---
+
+### FU-007: File Upload Error Handling ✅
+
+**Rule:** All file upload errors are handled gracefully with user-friendly messages.
+
+**Error Scenarios:**
+1. **File too large:** "File size exceeds the maximum allowed size of 2MB"
+2. **Invalid file type:** "Invalid file type. Only JPG, JPEG, PNG, and GIF files are allowed"
+3. **Empty file:** "Uploaded file is empty"
+4. **IO error:** "Failed to upload file. Please try again"
+5. **Storage error:** "Failed to create upload directory"
+
+**HTTP Status Codes:**
+- 400 Bad Request: Validation errors (size, type)
+- 500 Internal Server Error: IO/storage errors
+
+**Implementation:** Try-catch blocks in `FileUploadServiceImpl` with specific exception handling
+
+**Location:** `FileUploadServiceImpl.java` upload methods
+
+---
+
+### FU-008: File Security Validation ✅
+
+**Rule:** Uploaded files are validated for security threats.
+
+**Validations:**
+1. **File size limit:** Prevents DoS attacks
+2. **Extension whitelist:** Prevents executable uploads
+3. **Content-type verification:** Prevents MIME type spoofing
+4. **Filename sanitization:** Prevents path traversal (../, ..\)
+5. **UUID naming:** Prevents predictable filenames
+
+**Not Implemented (Recommended):**
+- Virus scanning
+- Image content validation (check if actually an image)
+- File hash verification
+
+**Location:** `FileUploadServiceImpl.java:isValidImageFile()`, `generateUniqueFileName()`
 
 ---
 
@@ -859,20 +1243,29 @@ user.getAuthorities() =
 
 ---
 
-### CR-002: File Upload Limits
+### CR-002: File Upload Limits ✅
 
 **Rule:** File uploads are limited by size and type.
 
-**Constraints:**
-- Max file size: 10MB
+**Global Constraints (Spring Boot):**
+- Max file size: 10MB (multipart limit)
 - Max request size: 10MB
-- Allowed types: Images (JPG, PNG, GIF) for logos
+
+**Service-Level Constraints (Business Logic):**
+- Product images: 2MB per file
+- Allowed types: JPG, JPEG, PNG, GIF
+- Content-type validation: Required
 
 **Configuration:**
 ```properties
 spring.servlet.multipart.max-file-size=10MB
 spring.servlet.multipart.max-request-size=10MB
+file.upload-dir=uploads
 ```
+
+**Implementation:** `FileUploadServiceImpl` enforces 2MB limit and file type validation
+
+**Location:** `application.properties`, `FileUploadServiceImpl.java`
 
 ---
 

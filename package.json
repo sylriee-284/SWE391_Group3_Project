@@ -1,0 +1,26 @@
+{
+  "name": "swe391_group3_project",
+  "version": "1.0.0",
+  "main": "test-product-creation.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sylriee-284/SWE391_Group3_Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sylriee-284/SWE391_Group3_Project/issues"
+  },
+  "homepage": "https://github.com/sylriee-284/SWE391_Group3_Project#readme",
+  "description": "",
+  "dependencies": {
+    "playwright": "^1.55.1"
+  }
+}

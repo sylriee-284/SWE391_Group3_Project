@@ -87,6 +87,14 @@ TaphoaMMO Marketplace follows a **Layered Architecture** pattern based on Spring
 │  - Jakarta Bean Validation (JSR-380)                │
 │  - Custom Business Validation                       │
 └─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│  File Upload (FileUploadService) ✨ NEW             │
+│  - MultipartFile handling                           │
+│  - Image validation (type, size)                    │
+│  - UUID-based filename generation                   │
+│  - Organized storage: uploads/{type}/{id}/          │
+└─────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -102,12 +110,14 @@ TaphoaMMO Marketplace follows a **Layered Architecture** pattern based on Spring
   - `DashboardController` - Main dashboard
   - `UserController` - User management
   - `SellerStoreController` - Store operations
+  - `ProductController` - **Product CRUD with advanced filtering** ✨
   - `AdminStoreController` - Admin store management
 
 - **Views** (`webapp/WEB-INF/view/`)
   - JSP templates with JSTL
   - Bootstrap 5.3.2 for responsive design
   - jQuery for AJAX interactions
+  - **Product views:** list, detail, create, edit, my-products ✨
 
 **Technologies:**
 - Spring MVC
@@ -129,16 +139,21 @@ TaphoaMMO Marketplace follows a **Layered Architecture** pattern based on Spring
   - `UserService` - User business logic
   - `SellerStoreService` - Store operations
   - `WalletService` - Financial transactions
-  - `FileUploadService` - File management
+  - `ProductService` - **Product management with 20+ methods** ✨
+  - `FileUploadService` - **File management (fully implemented)** ✨
 
 - **Service Implementations** (`service/impl/`)
   - Transaction boundaries defined here
   - Business validation
   - Complex business workflows
+  - **ProductServiceImpl** - Product CRUD, filtering, image upload ✨
+  - **FileUploadServiceImpl** - Image validation, storage, URL generation ✨
 
 - **DTOs** (`dto/`)
   - **Request DTOs:** Validate and bind user input
+    - ProductCreateRequest, ProductUpdateRequest ✨
   - **Response DTOs:** Control API responses
+    - ProductResponse with store/seller details ✨
   - Separation from domain entities
 
 **Technologies:**
@@ -160,14 +175,17 @@ TaphoaMMO Marketplace follows a **Layered Architecture** pattern based on Spring
   - Extend `JpaRepository<T, ID>`
   - Custom query methods via method naming
   - Example: `UserRepository`, `SellerStoreRepository`, `WalletRepository`
+  - **ProductRepository** - 20+ query methods including advanced filtering ✨
 
 - **Entities** (`domain/entity/`)
   - JPA entities with Hibernate annotations
   - Relationships: `@OneToOne`, `@OneToMany`, `@ManyToMany`
   - Auditing fields via `BaseEntity`
+  - **Product** - Core product entity with validation ✨
 
 - **Enums & Constants** (`domain/enums/`, `domain/constants/`)
   - `UserStatus`, `Gender`, `TransactionType`
+  - **ProductCategory** - 7 product categories ✨
   - `StoreStatus` constants
 
 **Technologies:**
@@ -185,14 +203,16 @@ TaphoaMMO Marketplace follows a **Layered Architecture** pattern based on Spring
 **Responsibility:** Data storage, integrity constraints, indexing
 
 **Schema:**
-- 17 tables with foreign key constraints
+- **18 tables** with foreign key constraints ✨
 - Audit fields on all tables
 - Soft delete support (is_deleted flag)
 - Generated columns for calculated values
+- **products table** with 4 indexes (category, active, store, seller) ✨
 
 **Technologies:**
 - MySQL 8.0
 - InnoDB storage engine
+- **JSON column** for product images (TEXT storing JSON array) ✨
 
 ---
 
@@ -410,17 +430,23 @@ public class SellerStoreServiceImpl implements SellerStoreService {
        │
        ▼
 ┌──────────────┐         ┌──────────────┐
-│ SellerStore  │────────>│   Product    │
+│ SellerStore  │────────>│   Product    │✨ NEW - Fully Implemented
 │              │  1:M    │              │
 │ - id         │         │ - id         │
 │ - owner_id   │         │ - store_id   │
-│ - storeName  │         │ - category   │
-│ - deposit    │         │ - price      │
-└──────────────┘         └──────┬───────┘
-                                │ 1:M
+│ - storeName  │         │ - seller_id  │ M:1 → User
+│ - deposit    │         │ - productName│
+│ max_listing  │(calc)   │ - price      │ (validated ≤ max_listing_price)
+└──────────────┘         │ - stockQty   │
+                         │ - category   │ (ProductCategory enum)
+                         │ - sku        │ (unique, auto-generated)
+                         │ - images     │ (JSON array of URLs)
+                         │ - isActive   │
+                         └──────┬───────┘
+                                │ 1:M (planned)
                                 ▼
                          ┌──────────────┐
-                         │ProductStorage│
+                         │ProductStorage│ (Planned - not yet implemented)
                          │              │
                          │ - id         │
                          │ - product_id │
@@ -455,6 +481,31 @@ public class SellerStoreServiceImpl implements SellerStoreService {
    │ - walletRepo       │          │ - userRepo         │
    │                    │          │ - roleRepo         │
    └────────────────────┘          └────────────────────┘
+
+
+┌────────────────────────────────────────────┐  ✨ NEW
+│         ProductController                  │
+└──────────────┬─────────────────────────────┘
+               │ depends on
+               ▼
+┌────────────────────────────────────────────┐
+│       ProductServiceImpl                   │
+│  ┌──────────────────────────────────────┐  │
+│  │ - productRepository                  │  │
+│  │ - sellerStoreRepository              │  │
+│  │ - fileUploadService ────────┐        │  │
+│  └──────────────────────────────┼───────┘  │
+└───────────────────────────────────┼────────┘
+                                    │
+                                    ▼
+                       ┌────────────────────────┐
+                       │ FileUploadServiceImpl  │
+                       │                        │
+                       │ - Validate file        │
+                       │ - Generate UUID        │
+                       │ - Save to disk         │
+                       │ - Return URL           │
+                       └────────────────────────┘
 ```
 
 ---
@@ -561,7 +612,85 @@ public class SellerStoreServiceImpl implements SellerStoreService {
 [Store Dashboard]
 ```
 
-### 3. Product Purchase Flow (Planned)
+### 3. Product Creation Flow with Image Upload ✨ NEW
+
+```
+[Seller's Browser]
+    │
+    │ 1. GET /products/create
+    ▼
+[ProductController.showCreateForm()]
+    │
+    │ 2. Validate seller has a store
+    │ 3. Check store is operational
+    ▼
+[create.jsp]
+    │
+    │ 4. Seller fills form (name, price, category, stock)
+    │ 5. Uploads product images (multi-file)
+    │ 6. POST /products/create + MultipartFile[]
+    ▼
+[ProductController.createProduct()]
+    │
+    │ 7. Validate input (@Valid ProductCreateRequest)
+    │ 8. Validate images (size, type, count)
+    ▼
+[ProductService.createProduct(sellerId, request, imageFiles)]
+    │
+    ├─> 9. Get seller's store
+    │   [SellerStoreRepository.findByOwnerId(sellerId)]
+    │
+    ├─> 10. Validate store is operational
+    │   - isActive = true
+    │   - isVerified (optional)
+    │
+    ├─> 11. Validate price ≤ store.maxListingPrice
+    │   - Enforce deposit-based price limit
+    │
+    ├─> 12. Generate SKU if not provided
+    │   - Format: PRD-XXXXXXXX (8 random uppercase chars)
+    │   - Check uniqueness
+    │
+    ├─> 13. Build Product entity
+    │   - Set seller, store, category, price, stock
+    │   - Mark as active by default
+    │
+    ├─> 14. Upload images
+    │   [FileUploadService.uploadProductImage(productId, file)]
+    │   │
+    │   ├─> Validate file type (jpg, jpeg, png, gif)
+    │   ├─> Validate file size (≤ 2MB)
+    │   ├─> Generate unique filename (timestamp_uuid.ext)
+    │   ├─> Save to uploads/products/images/{productId}/
+    │   └─> Return URL: /uploads/products/images/{productId}/{filename}
+    │
+    ├─> 15. Store image URLs as JSON array
+    │   - product.productImages = ["url1", "url2", "url3"]
+    │
+    ├─> 16. Save product
+    │   [ProductRepository.save()]
+    │
+    │ 17. Return created product
+    ▼
+[ProductController]
+    │
+    │ 18. Redirect to /products/my-products with success
+    ▼
+[Seller Product Dashboard]
+```
+
+**Key Validation Points:**
+- Price validation against store max listing price
+- SKU uniqueness enforcement
+- Image validation (type, size)
+- Store operational status check
+- Ownership verification (product belongs to seller's store)
+
+**Transaction Boundary:** Entire flow in single `@Transactional` method
+
+---
+
+### 4. Product Purchase Flow (Planned)
 
 ```
 [Buyer Browser]

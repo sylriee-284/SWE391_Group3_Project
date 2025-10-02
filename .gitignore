@@ -34,3 +34,4 @@ build/
 .claude/
 nul
 .playwright-mcp/
+node_modules/

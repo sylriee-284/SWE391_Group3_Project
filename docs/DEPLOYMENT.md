@@ -217,10 +217,16 @@ sudo passwd marketplace  # Set password
 sudo mkdir -p /opt/marketplace
 sudo mkdir -p /opt/marketplace/logs
 sudo mkdir -p /opt/marketplace/config
+sudo mkdir -p /opt/marketplace/uploads
+sudo mkdir -p /opt/marketplace/uploads/products/images
+sudo mkdir -p /opt/marketplace/uploads/stores/logos
 sudo mkdir -p /var/log/marketplace
 sudo chown -R marketplace:marketplace /opt/marketplace
 sudo chown -R marketplace:marketplace /var/log/marketplace
+sudo chmod -R 755 /opt/marketplace/uploads
 ```
+
+**Important:** Ensure uploads directory is writable by the application
 
 ---
 
@@ -264,6 +270,7 @@ spring.mvc.view.suffix=.jsp
 spring.servlet.multipart.max-file-size=10MB
 spring.servlet.multipart.max-request-size=10MB
 spring.servlet.multipart.location=/opt/marketplace/uploads
+file.upload-dir=/opt/marketplace/uploads
 
 # Business Configuration
 marketplace.seller.minimum-deposit=5000000
@@ -468,6 +475,22 @@ server {
         proxy_buffering on;
         proxy_buffer_size 4k;
         proxy_buffers 8 4k;
+    }
+
+    # Uploaded Files (Serve directly from filesystem)
+    location /uploads/ {
+        alias /opt/marketplace/uploads/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+
+        # Security: Prevent directory listing
+        autoindex off;
+
+        # Only allow image files
+        location ~* \.(jpg|jpeg|png|gif)$ {
+            alias /opt/marketplace/uploads/;
+        }
     }
 
     # Static Resources Cache
@@ -811,15 +834,103 @@ tar -czf /opt/marketplace/backups/app_$(date +%Y%m%d).tar.gz \
 
 ---
 
+### File Upload Backup ✨ NEW
+
+**Backup Uploaded Files:**
+
+Create backup script `/opt/marketplace/scripts/backup_uploads.sh`:
+
+```bash
+#!/bin/bash
+# Uploaded files backup script
+
+BACKUP_DIR="/opt/marketplace/backups/uploads"
+UPLOAD_DIR="/opt/marketplace/uploads"
+DATE=$(date +%Y%m%d_%H%M%S)
+BACKUP_FILE="${BACKUP_DIR}/uploads_${DATE}.tar.gz"
+
+# Create backup directory
+mkdir -p $BACKUP_DIR
+
+# Backup uploads directory
+tar -czf $BACKUP_FILE -C /opt/marketplace uploads/
+
+# Delete backups older than 7 days (uploads can be large)
+find $BACKUP_DIR -name "uploads_*.tar.gz" -mtime +7 -delete
+
+# Log
+echo "Upload backup completed: $BACKUP_FILE ($(du -h $BACKUP_FILE | cut -f1))" >> /var/log/marketplace/backup.log
+```
+
+**Make Executable:**
+```bash
+chmod +x /opt/marketplace/scripts/backup_uploads.sh
+```
+
+**Schedule with Cron (Weekly):**
+```bash
+sudo crontab -e
+```
+
+Add:
+```cron
+# Weekly upload backup (Sunday at 3 AM)
+0 3 * * 0 /opt/marketplace/scripts/backup_uploads.sh
+```
+
+**Cloud Storage Sync (Recommended for Production):**
+
+```bash
+# Install AWS CLI or rclone for cloud backup
+sudo apt install awscli -y
+
+# Sync to S3
+aws s3 sync /opt/marketplace/uploads/ s3://taphoammo-uploads/ --delete
+
+# Or use rclone for other providers
+rclone sync /opt/marketplace/uploads/ remote:taphoammo-uploads/
+```
+
+**Restore Uploaded Files:**
+```bash
+# Extract backup
+tar -xzf uploads_backup.tar.gz -C /opt/marketplace/
+
+# Set correct permissions
+sudo chown -R marketplace:marketplace /opt/marketplace/uploads
+sudo chmod -R 755 /opt/marketplace/uploads
+```
+
+---
+
 ### Disaster Recovery Plan
 
 1. **Database:** Restore from latest backup
 2. **Application:** Redeploy JAR from Git tag/release
 3. **Configuration:** Restore from backup or recreate
-4. **Uploads:** Restore from cloud storage (S3, etc.)
+4. **Uploaded Files:** Restore from cloud storage (S3) or local backup
+
+**Recovery Steps:**
+```bash
+# 1. Restore database
+zcat /opt/marketplace/backups/mmo_market_system_prod_*.sql.gz | mysql -u root -p mmo_market_system_prod
+
+# 2. Restore uploaded files
+tar -xzf /opt/marketplace/backups/uploads/uploads_*.tar.gz -C /opt/marketplace/
+# OR sync from cloud
+aws s3 sync s3://taphoammo-uploads/ /opt/marketplace/uploads/
+
+# 3. Redeploy application
+sudo systemctl restart marketplace
+
+# 4. Verify
+curl http://localhost:8080/actuator/health
+```
 
 **Recovery Time Objective (RTO):** 4 hours
-**Recovery Point Objective (RPO):** 24 hours (daily backups)
+**Recovery Point Objective (RPO):**
+- Database: 24 hours (daily backups)
+- Uploaded Files: 7 days (weekly backups) or real-time (if using cloud sync)
 
 ---
 
@@ -837,9 +948,12 @@ tar -czf /opt/marketplace/backups/app_$(date +%Y%m%d).tar.gz \
 - [ ] Database user has minimal permissions
 - [ ] Passwords encrypted (BCrypt)
 - [ ] Session cookies set to `HttpOnly` and `Secure`
-- [ ] File upload validation
+- [ ] File upload validation (size: 2MB, types: jpg/jpeg/png/gif)
+- [ ] Upload directory permissions set correctly (755)
+- [ ] Uploaded files served through Nginx (not Spring Boot)
 - [ ] Rate limiting implemented
 - [ ] Regular security updates applied
+- [ ] Test mode endpoints removed (ProductController:453-506)
 
 ---
 
@@ -961,23 +1075,32 @@ spring.datasource.hikari.maximum-pool-size=30
 - [ ] Security audit completed
 - [ ] Performance testing done (load testing)
 - [ ] Monitoring configured
-- [ ] Backup system tested
+- [ ] Backup system tested (database + uploads)
 - [ ] SSL certificate installed
 - [ ] Domain configured correctly
 - [ ] Error pages customized
 - [ ] Documentation updated
 - [ ] Team trained on deployment
+- [ ] Upload directory created and permissions set
+- [ ] Nginx configured to serve uploaded files
+- [ ] Test mode endpoints removed from ProductController
+- [ ] Cloud storage configured for uploads (recommended)
 
 ### Post-Deployment
 
 - [ ] Health check passing
 - [ ] All endpoints accessible
 - [ ] User registration working
+- [ ] Store creation working
+- [ ] Product creation working
+- [ ] Product image upload working
+- [ ] Uploaded images displaying correctly
 - [ ] Payment processing working (when implemented)
 - [ ] Email notifications working (when implemented)
 - [ ] Logs being captured
 - [ ] Monitoring alerts configured
 - [ ] Performance baseline established
+- [ ] Upload backup job running successfully
 
 ---
 

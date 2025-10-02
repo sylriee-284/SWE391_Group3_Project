@@ -18,7 +18,7 @@
 - **Storage Engine:** InnoDB
 - **Character Set:** utf8mb4
 - **Collation:** utf8mb4_unicode_ci
-- **Total Tables:** 17
+- **Total Tables:** 18 ✨ (added `products` table)
 
 ### Design Principles
 - **Referential Integrity:** All foreign keys enforced
@@ -80,28 +80,37 @@
     └──────┬───────┘
            │ 1:1 (owner)
            │
-    ┌──────▼───────────┐              ┌──────────────┐
-    │ seller_stores    │──────────────│ categories   │
-    │ PK: id           │              │ PK: id       │
-    │ UK: owner_id     │              │ UK: slug     │
-    │ UK: store_name   │              └──────┬───────┘
-    │    deposit       │                     │
-    │  max_list_price  │ (GENERATED)         │
-    └──────┬───────────┘                     │
-           │ 1:M                             │
-           │                                 │
-    ┌──────▼───────┐                        │
-    │   products   │◄───────────────────────┘
-    │ PK: id       │ M:1
-    │ FK: store_id │
-    │ FK: category │
-    │ UK: store+slug│
-    │    price     │
-    └──────┬───────┘
+    ┌──────▼───────────┐
+    │ seller_stores    │
+    │ PK: id           │
+    │ UK: owner_id     │
+    │ UK: store_name   │
+    │    deposit       │
+    │  max_list_price  │ (GENERATED)
+    └──────┬───────────┘
            │ 1:M
            │
+    ┌──────▼───────────┐              ✨ IMPLEMENTED
+    │   products       │
+    │ PK: id           │
+    │ FK: store_id     │ M:1 → seller_stores
+    │ FK: seller_id    │ M:1 → users
+    │ UK: sku          │ (unique, auto-generated: PRD-XXXXXXXX)
+    │ - productName    │ VARCHAR(200)
+    │ - description    │ TEXT
+    │ - price          │ DECIMAL(15,2) - validated ≤ max_listing_price
+    │ - stockQuantity  │ INT
+    │ - category       │ ENUM (ProductCategory)
+    │ - productImages  │ TEXT (JSON array of URLs)
+    │ - isActive       │ BOOLEAN
+    │ - createdAt      │
+    │ - updatedAt      │
+    │ - isDeleted      │ (soft delete)
+    └──────┬───────────┘
+           │ 1:M (planned)
+           │
     ┌──────▼───────────┐
-    │ product_storage  │
+    │ product_storage  │ (Planned - not yet implemented)
     │ PK: id           │
     │ FK: product_id   │
     │    payload_json  │
@@ -511,43 +520,65 @@ CREATE TABLE categories (
 
 ---
 
-### 10. products
+### 10. products ✨ IMPLEMENTED
 
-**Purpose:** Product listings
+**Purpose:** Product listings with image support and inventory management
 
 ```sql
 CREATE TABLE products (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    seller_store_id BIGINT NOT NULL,
-    category_id BIGINT NOT NULL,
-    name VARCHAR(200) NOT NULL,
-    slug VARCHAR(200) NOT NULL,
+    product_name VARCHAR(200) NOT NULL,
     description TEXT,
-    price DECIMAL(18, 2) NOT NULL,
-    stock INT DEFAULT 0,
-    status VARCHAR(20) DEFAULT 'DRAFT',
+    price DECIMAL(15, 2) NOT NULL,
+    stock_quantity INT NOT NULL DEFAULT 0,
+    category VARCHAR(50),  -- ProductCategory enum
+    product_images TEXT,   -- JSON array of image URLs
+    sku VARCHAR(50) UNIQUE,  -- Auto-generated: PRD-XXXXXXXX
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+
+    seller_store_id BIGINT NOT NULL,
+    seller_id BIGINT NOT NULL,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_by BIGINT,
-    is_deleted TINYINT(1) DEFAULT 0,
+    is_deleted BOOLEAN DEFAULT FALSE,
 
-    FOREIGN KEY (seller_store_id) REFERENCES seller_stores(id) ON DELETE CASCADE,
-    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
+    FOREIGN KEY (seller_store_id) REFERENCES seller_stores(id),
+    FOREIGN KEY (seller_id) REFERENCES users(id),
 
-    UNIQUE KEY uk_store_slug (seller_store_id, slug),
-    INDEX idx_category_id (category_id),
-    INDEX idx_status (status),
-    INDEX idx_price (price)
+    INDEX idx_category (category),
+    INDEX idx_active (is_active),
+    INDEX idx_store (seller_store_id),
+    INDEX idx_seller (seller_id),
+    INDEX idx_product_name (product_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-**Status Values:**
-- DRAFT - Not published
-- ACTIVE - Available for purchase
-- INACTIVE - Temporarily hidden
-- OUT_OF_STOCK - No inventory
+**Key Features:**
+- **SKU:** Unique identifier, auto-generated as `PRD-XXXXXXXX` if not provided
+- **productImages:** TEXT column storing JSON array of image URLs
+- **category:** ProductCategory enum (7 categories)
+- **price:** Validated against `seller_stores.max_listing_price`
+- **stock_quantity:** Inventory tracking with low stock alerts (threshold: 10)
+- **is_active:** Product visibility toggle
+- **4 Indexes:** category, active status, store, seller for query optimization
+
+**ProductCategory Enum Values:**
+1. GAME_ACCOUNT - "Tài khoản Game"
+2. GAME_CURRENCY - "Vàng/Tiền Game"
+3. SOCIAL_ACCOUNT - "Tài khoản MXH"
+4. SOFTWARE_LICENSE - "License Phần mềm"
+5. GIFT_CARD - "Thẻ quà tặng"
+6. VPN_PROXY - "VPN/Proxy"
+7. OTHER - "Khác"
+
+**Business Rules:**
+- Price must be ≤ store's max_listing_price
+- SKU must be unique across all products
+- Stock quantity range: 0 - 999,999
+- Price range: 1,000 - 999,999,999 VND
+- Product must belong to seller's store
+- Store must be operational to list products
 
 ---
 
@@ -960,6 +991,11 @@ See full list in marketplace-sample-data.sql
 ### Wallet Balances
 - Total system balance: 261,700,000 VND
 - Average balance: ~17.4M VND per user
+
+### Product Sample Data ✨ NEW
+- **File:** `insert-products-simple.sql`
+- **File:** `insert-sample-products.sql` (comprehensive, 242 lines)
+- Sample products for testing with various categories, prices, and stock levels
 
 ---
 

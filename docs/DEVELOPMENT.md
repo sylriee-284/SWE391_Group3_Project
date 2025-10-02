@@ -7,8 +7,9 @@
 4. [Coding Standards](#coding-standards)
 5. [Testing Guidelines](#testing-guidelines)
 6. [Debugging](#debugging)
-7. [Common Tasks](#common-tasks)
-8. [Troubleshooting](#troubleshooting)
+7. [Product Module Development Guide](#product-module-development-guide)
+8. [Common Tasks](#common-tasks)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -64,8 +65,14 @@ mysql -u root -p mmo_market_system < marketplace-sample-data.sql
 **Verify Setup:**
 ```sql
 USE mmo_market_system;
-SHOW TABLES;  -- Should show 17 tables
+SHOW TABLES;  -- Should show 18 tables
 SELECT COUNT(*) FROM users;  -- Should return 15
+SELECT COUNT(*) FROM products;  -- Should return 0 (or load sample products)
+```
+
+**Optional - Load Sample Products:**
+```bash
+mysql -u root -p mmo_market_system < insert-products-simple.sql
 ```
 
 #### 3. Configure Application
@@ -86,6 +93,11 @@ spring.jpa.hibernate.ddl-auto=update
 
 # Show SQL (enable for debugging)
 spring.jpa.show-sql=true
+
+# File Upload Configuration
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=10MB
+file.upload-dir=uploads
 ```
 
 #### 4. Build Project
@@ -659,6 +671,413 @@ SELECT * FROM seller_stores WHERE owner_user_id = 2;
 
 ---
 
+## Product Module Development Guide
+
+### Product Entity and DTOs ✅
+
+The Product module follows the standard layered architecture pattern.
+
+**Product Entity Structure:**
+```java
+@Entity
+@Table(name = "products")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Product extends BaseEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "product_name", nullable = false, length = 200)
+    private String productName;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(nullable = false, precision = 15, scale = 2)
+    private BigDecimal price;
+
+    @Column(name = "stock_quantity", nullable = false)
+    private Integer stockQuantity = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
+    private ProductCategory category;
+
+    @Column(name = "product_images", columnDefinition = "TEXT")
+    private String productImages;  // JSON array of image URLs
+
+    @Column(length = 50, unique = true)
+    private String sku;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seller_store_id", nullable = false)
+    private SellerStore sellerStore;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seller_id", nullable = false)
+    private User seller;
+}
+```
+
+**ProductCategory Enum:**
+```java
+public enum ProductCategory {
+    GAME_ACCOUNT("Tài khoản Game"),
+    GAME_CURRENCY("Vàng/Tiền Game"),
+    SOCIAL_ACCOUNT("Tài khoản MXH"),
+    SOFTWARE_LICENSE("License Phần mềm"),
+    GIFT_CARD("Thẻ quà tặng"),
+    VPN_PROXY("VPN/Proxy"),
+    OTHER("Khác");
+
+    private final String displayName;
+
+    ProductCategory(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+}
+```
+
+---
+
+### Product Service Implementation ✅
+
+**Key Service Methods:**
+
+```java
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class ProductServiceImpl implements ProductService {
+
+    private final ProductRepository productRepository;
+    private final SellerStoreService sellerStoreService;
+
+    // Create product with validation
+    @Override
+    public Product createProduct(ProductCreateRequest request, Long userId) {
+        // 1. Validate user has active store
+        SellerStore store = sellerStoreService.getStoreByUserId(userId)
+            .orElseThrow(() -> new IllegalStateException("You must have an active seller store"));
+
+        // 2. Validate price <= max_listing_price
+        if (request.getPrice().compareTo(store.getMaxListingPrice()) > 0) {
+            throw new IllegalArgumentException("Product price exceeds max listing price");
+        }
+
+        // 3. Generate SKU if not provided
+        String sku = (request.getSku() != null) ? request.getSku() : generateSKU();
+
+        // 4. Build and save product
+        Product product = Product.builder()
+            .productName(request.getProductName())
+            .description(request.getDescription())
+            .price(request.getPrice())
+            .stockQuantity(request.getStockQuantity())
+            .category(request.getCategory())
+            .sku(sku)
+            .sellerStore(store)
+            .seller(store.getOwner())
+            .build();
+
+        return productRepository.save(product);
+    }
+
+    // Auto-generate SKU: PRD-XXXXXXXX
+    private String generateSKU() {
+        String sku;
+        do {
+            sku = "PRD-" + RandomStringUtils.randomAlphabetic(8).toUpperCase();
+        } while (productRepository.existsBySku(sku));
+        return sku;
+    }
+
+    // Advanced filtering with 6 parameters
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Product> findAllWithFilters(
+        String search,
+        ProductCategory category,
+        BigDecimal minPrice,
+        BigDecimal maxPrice,
+        Long storeId,
+        String stockStatus,
+        Pageable pageable
+    ) {
+        return productRepository.findAllWithFilters(
+            search, category, minPrice, maxPrice, storeId, stockStatus, pageable
+        );
+    }
+}
+```
+
+---
+
+### Product Repository with Custom Queries ✅
+
+**Custom Query Methods:**
+
+```java
+public interface ProductRepository extends JpaRepository<Product, Long> {
+
+    // Check SKU availability
+    boolean existsBySku(String sku);
+
+    // Find by seller store
+    List<Product> findBySellerStoreIdAndIsDeletedFalse(Long storeId);
+
+    // Custom filtering implementation
+    @Query("""
+        SELECT p FROM Product p
+        WHERE p.isDeleted = false
+        AND (:search IS NULL OR LOWER(p.productName) LIKE LOWER(CONCAT('%', :search, '%'))
+            OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')))
+        AND (:category IS NULL OR p.category = :category)
+        AND (:minPrice IS NULL OR p.price >= :minPrice)
+        AND (:maxPrice IS NULL OR p.price <= :maxPrice)
+        AND (:storeId IS NULL OR p.sellerStore.id = :storeId)
+        AND (
+            :stockStatus = 'ALL'
+            OR (:stockStatus = 'IN_STOCK' AND p.stockQuantity > 10)
+            OR (:stockStatus = 'LOW_STOCK' AND p.stockQuantity BETWEEN 1 AND 10)
+            OR (:stockStatus = 'OUT_OF_STOCK' AND p.stockQuantity = 0)
+        )
+        """)
+    Page<Product> findAllWithFilters(
+        @Param("search") String search,
+        @Param("category") ProductCategory category,
+        @Param("minPrice") BigDecimal minPrice,
+        @Param("maxPrice") BigDecimal maxPrice,
+        @Param("storeId") Long storeId,
+        @Param("stockStatus") String stockStatus,
+        Pageable pageable
+    );
+}
+```
+
+---
+
+### File Upload Service ✅
+
+**FileUploadService Interface:**
+
+```java
+public interface FileUploadService {
+    String uploadProductImage(Long productId, MultipartFile file) throws IOException;
+}
+```
+
+**FileUploadServiceImpl:**
+
+```java
+@Service
+@Slf4j
+public class FileUploadServiceImpl implements FileUploadService {
+
+    @Value("${file.upload-dir:uploads}")
+    private String uploadDir;
+
+    private static final long MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "gif");
+    private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
+        "image/jpeg", "image/png", "image/gif"
+    );
+
+    @Override
+    public String uploadProductImage(Long productId, MultipartFile file) throws IOException {
+        // 1. Validation
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("Uploaded file is empty");
+        }
+
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("File size exceeds 2MB limit");
+        }
+
+        if (!isValidImageFile(file)) {
+            throw new IllegalArgumentException("Invalid file type. Only JPG, JPEG, PNG, GIF allowed");
+        }
+
+        // 2. Create directory structure
+        String productDir = uploadDir + "/products/images/" + productId + "/";
+        Files.createDirectories(Paths.get(productDir));
+
+        // 3. Generate unique filename
+        String uniqueFilename = generateUniqueFileName(file.getOriginalFilename());
+        String filePath = productDir + uniqueFilename;
+
+        // 4. Save file
+        file.transferTo(new File(filePath));
+
+        // 5. Return URL
+        return "/uploads/products/images/" + productId + "/" + uniqueFilename;
+    }
+
+    private boolean isValidImageFile(MultipartFile file) {
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null) return false;
+
+        String extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
+        String contentType = file.getContentType();
+
+        return ALLOWED_EXTENSIONS.contains(extension) && ALLOWED_CONTENT_TYPES.contains(contentType);
+    }
+
+    private String generateUniqueFileName(String originalFilename) {
+        String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        return System.currentTimeMillis() + "_" + UUID.randomUUID().toString() + extension;
+    }
+}
+```
+
+---
+
+### Product Controller Examples ✅
+
+**List Products with Filtering:**
+
+```java
+@GetMapping("/products")
+public String listProducts(
+    @RequestParam(required = false) String search,
+    @RequestParam(required = false) ProductCategory category,
+    @RequestParam(required = false) BigDecimal minPrice,
+    @RequestParam(required = false) BigDecimal maxPrice,
+    @RequestParam(required = false) Long storeId,
+    @RequestParam(defaultValue = "ALL") String stockStatus,
+    @RequestParam(defaultValue = "0") int page,
+    @RequestParam(defaultValue = "12") int size,
+    @RequestParam(defaultValue = "createdAt") String sort,
+    Model model
+) {
+    Pageable pageable = PageRequest.of(page, size, Sort.by(sort).descending());
+
+    Page<Product> products = productService.findAllWithFilters(
+        search, category, minPrice, maxPrice, storeId, stockStatus, pageable
+    );
+
+    model.addAttribute("products", products);
+    model.addAttribute("categories", ProductCategory.values());
+    return "product/list";
+}
+```
+
+**Upload Product Images:**
+
+```java
+@PostMapping("/products/{id}/upload-images")
+public String uploadProductImages(
+    @PathVariable Long id,
+    @RequestParam("file") MultipartFile file,
+    RedirectAttributes redirectAttributes
+) {
+    try {
+        String imageUrl = fileUploadService.uploadProductImage(id, file);
+        productService.addProductImage(id, imageUrl);
+        redirectAttributes.addFlashAttribute("successMessage", "Image uploaded successfully");
+    } catch (IOException | IllegalArgumentException e) {
+        redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+    }
+    return "redirect:/products/" + id;
+}
+```
+
+---
+
+### Test Mode Development ⚠️
+
+**Purpose:** Test mode endpoints allow product creation without authentication during development.
+
+**Test Mode Endpoints:**
+
+```java
+// Test mode product creation form (bypasses auth)
+@GetMapping("/products/create-test")
+public String showCreateTestForm(Model model) {
+    model.addAttribute("product", new ProductCreateRequest());
+    model.addAttribute("categories", ProductCategory.values());
+    model.addAttribute("testMode", true);
+    return "product/create";
+}
+
+// Test mode product creation (hardcoded store_id=2)
+@PostMapping("/products/create-test")
+public String createTestProduct(
+    @Valid @ModelAttribute ProductCreateRequest request,
+    BindingResult result,
+    RedirectAttributes redirectAttributes
+) {
+    if (result.hasErrors()) {
+        return "product/create";
+    }
+
+    // Hardcoded store_id for testing
+    Long testStoreId = 2L;
+    SellerStore store = sellerStoreService.getStoreById(testStoreId)
+        .orElseThrow(() -> new RuntimeException("Test store not found"));
+
+    Product product = productService.createProductForStore(request, store);
+    redirectAttributes.addFlashAttribute("successMessage", "Product created successfully (TEST MODE)");
+    return "redirect:/products/" + product.getId();
+}
+```
+
+**⚠️ Important Notes:**
+- Test mode endpoints are located at `ProductController.java:453-506`
+- They bypass all authentication and authorization checks
+- Use hardcoded `store_id = 2` (seller01's store)
+- **MUST be removed before production deployment**
+
+**Remove Before Production:**
+```java
+// Delete these endpoints:
+// - GET /products/create-test
+// - POST /products/create-test
+```
+
+---
+
+### Lazy Loading Best Practices ✅
+
+**Problem:** `LazyInitializationException` when accessing collections outside transaction
+
+**Solution 1: Use @Transactional(readOnly = true)**
+
+```java
+@Override
+@Transactional(readOnly = true)
+public Product getProductById(Long id) {
+    return productRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+}
+```
+
+**Solution 2: Use JOIN FETCH in queries**
+
+```java
+@Query("SELECT p FROM Product p LEFT JOIN FETCH p.sellerStore LEFT JOIN FETCH p.seller WHERE p.id = :id")
+Optional<Product> findByIdWithDetails(@Param("id") Long id);
+```
+
+**Solution 3: Use @EntityGraph (recommended for complex graphs)**
+
+```java
+@EntityGraph(attributePaths = {"sellerStore", "seller"})
+Optional<Product> findById(Long id);
+```
+
+---
+
 ## Common Tasks
 
 ### Add New Entity
@@ -864,6 +1283,91 @@ mvn test -Dtest=UserServiceTest
 - Check unique constraints
 - Verify data before insert
 - Handle exception in service layer
+
+---
+
+### Product Module Issues
+
+**Problem:** Product price exceeds max listing price
+
+**Solution:**
+```java
+// Check store's max listing price before creating product
+if (product.getPrice().compareTo(store.getMaxListingPrice()) > 0) {
+    throw new IllegalArgumentException("Product price exceeds max listing price");
+}
+```
+
+---
+
+**Problem:** SKU already exists
+
+**Solution:**
+- Use AJAX check before submission: `GET /products/check-sku?sku={sku}`
+- Auto-generate SKU if not provided (recommended)
+- Handle `DataIntegrityViolationException` for unique constraint
+
+---
+
+**Problem:** File upload fails (size/type validation)
+
+**Solution:**
+```java
+// Check file size (max 2MB)
+if (file.getSize() > 2 * 1024 * 1024) {
+    throw new IllegalArgumentException("File exceeds 2MB limit");
+}
+
+// Check file type
+String extension = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".") + 1);
+if (!Arrays.asList("jpg", "jpeg", "png", "gif").contains(extension.toLowerCase())) {
+    throw new IllegalArgumentException("Invalid file type");
+}
+```
+
+---
+
+**Problem:** Uploaded images not displaying
+
+**Solution:**
+1. Check upload directory exists and is writable
+2. Verify static resource mapping in WebMvcConfig:
+   ```java
+   registry.addResourceHandler("/uploads/**")
+       .addResourceLocations("file:uploads/");
+   ```
+3. Check image URL format in database: `/uploads/products/images/{productId}/{filename}`
+4. Verify file physically exists in `uploads/products/images/{productId}/` directory
+
+---
+
+**Problem:** LazyInitializationException when displaying product with store details
+
+**Solution:**
+```java
+// Option 1: Add @Transactional(readOnly = true) to controller method
+@GetMapping("/products/{id}")
+@Transactional(readOnly = true)
+public String viewProduct(@PathVariable Long id, Model model) {
+    // Can access lazy collections
+}
+
+// Option 2: Use JOIN FETCH in repository
+@Query("SELECT p FROM Product p LEFT JOIN FETCH p.sellerStore WHERE p.id = :id")
+Optional<Product> findByIdWithStore(@Param("id") Long id);
+```
+
+---
+
+**Problem:** Test mode endpoints not working
+
+**Solution:**
+1. Verify `store_id = 2` exists in database:
+   ```sql
+   SELECT * FROM seller_stores WHERE id = 2;
+   ```
+2. Check if seller01 user (id=2) has a store
+3. Remember: Test endpoints will be removed in production
 
 ---
 

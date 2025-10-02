@@ -6,9 +6,10 @@
 3. [Dashboard Endpoints](#dashboard-endpoints)
 4. [User Management Endpoints](#user-management-endpoints)
 5. [Seller Store Endpoints](#seller-store-endpoints)
-6. [Admin Store Endpoints](#admin-store-endpoints)
-7. [Response Formats](#response-formats)
-8. [Error Handling](#error-handling)
+6. [Product Management Endpoints](#product-management-endpoints) ✨ NEW
+7. [Admin Store Endpoints](#admin-store-endpoints)
+8. [Response Formats](#response-formats)
+9. [Error Handling](#error-handling)
 
 ---
 
@@ -787,6 +788,495 @@ Calculate maximum listing price based on deposit amount.
 **Controller:** `SellerStoreController.calculateMaxListingPrice()`
 
 **Location:** `src/main/java/vn/group3/marketplace/controller/web/SellerStoreController.java:334`
+
+---
+
+## Product Management Endpoints
+
+### 1. List Products (Public)
+
+**GET /products**
+
+List all active products with advanced filtering and pagination.
+
+**Authentication:** No (Public)
+
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| page | Integer | 0 | Page number (0-indexed) |
+| size | Integer | 12 | Items per page (12, 24, 48, 96) |
+| sort | String | "createdAt" | Sort field (price, productName, createdAt, stockQuantity) |
+| direction | String | "desc" | Sort direction (asc/desc) |
+| search | String | null | Search in product name and description |
+| category | String | null | Filter by ProductCategory enum |
+| minPrice | BigDecimal | null | Minimum price filter |
+| maxPrice | BigDecimal | null | Maximum price filter |
+| storeId | Long | null | Filter by specific store |
+| stockStatus | String | "ALL" | Stock filter (ALL, IN_STOCK, LOW_STOCK, OUT_OF_STOCK) |
+
+**Response:** JSP view (`product/list.jsp`)
+
+**Model Attributes:**
+```java
+{
+  "products": Page<ProductResponse>,
+  "currentPage": Integer,
+  "totalPages": Integer,
+  "totalItems": Long,
+  "categories": ProductCategory[],
+  "filters": {
+    "search": String,
+    "category": String,
+    "minPrice": BigDecimal,
+    "maxPrice": BigDecimal,
+    "stockStatus": String
+  }
+}
+```
+
+**Example:**
+```
+GET /products?page=0&size=24&category=GAME_ACCOUNT&minPrice=100000&maxPrice=1000000&search=level
+```
+
+**Controller:** `ProductController.listProducts()`
+
+**Location:** `src/main/java/vn/group3/marketplace/controller/web/ProductController.java:82`
+
+---
+
+### 2. View Product Details
+
+**GET /products/{productId}**
+
+View public product details.
+
+**Authentication:** No (Public)
+
+**Path Parameters:**
+- `productId` (Long) - Product ID
+
+**Response:** JSP view (`product/detail.jsp`)
+
+**Model Attributes:**
+```java
+{
+  "product": ProductResponse,
+  "store": SellerStore,
+  "seller": User,
+  "relatedProducts": List<ProductResponse>  // (planned)
+}
+```
+
+**Error:** Redirects to `/products` with error if product not found or inactive
+
+**Controller:** `ProductController.viewProduct()`
+
+**Location:** `ProductController.java:136`
+
+---
+
+### 3. Seller Product Dashboard
+
+**GET /products/my-products**
+
+View seller's product management dashboard with statistics.
+
+**Authentication:** ROLE_SELLER
+
+**Response:** JSP view (`product/my-products.jsp`)
+
+**Model Attributes:**
+```java
+{
+  "products": Page<Product>,
+  "totalProducts": Long,
+  "activeProducts": Long,
+  "lowStockProducts": List<Product>,
+  "outOfStockProducts": List<Product>,
+  "totalValue": BigDecimal
+}
+```
+
+**Controller:** `ProductController.myProducts()`
+
+**Location:** `ProductController.java:182`
+
+---
+
+### 4. Create Product Form
+
+**GET /products/create**
+
+Show product creation form.
+
+**Authentication:** User (temporarily public for testing)
+
+**Response:** JSP view (`product/create.jsp`)
+
+**Model Attributes:**
+```java
+{
+  "categories": ProductCategory[],
+  "store": SellerStore,
+  "maxListingPrice": BigDecimal,
+  "productRequest": new ProductCreateRequest()
+}
+```
+
+**Error:** Redirects if seller doesn't have a store
+
+**Controller:** `ProductController.showCreateForm()`
+
+**Location:** `ProductController.java:222`
+
+---
+
+### 5. Create Product
+
+**POST /products/create**
+
+Create new product with multi-image upload.
+
+**Authentication:** User (temporarily public)
+
+**Request Body (Multipart Form Data):**
+```java
+{
+  "productName": String,           // Required, max 200 chars
+  "description": String,           // Optional
+  "price": BigDecimal,             // Required, min 1000, validated ≤ max_listing_price
+  "stockQuantity": Integer,        // Required, 0-999999
+  "category": String,              // Required, ProductCategory enum
+  "sku": String,                   // Optional, auto-generated if not provided
+  "imageFiles": MultipartFile[]    // Optional, max 2MB per file, jpg/jpeg/png/gif
+}
+```
+
+**Validation:**
+- Product name: 1-200 characters
+- Price: 1,000 - 999,999,999 VND
+- Price must be ≤ store's max_listing_price
+- Stock: 0 - 999,999 units
+- SKU uniqueness (if provided)
+- Image validation: type, size, count
+
+**Success Response:** Redirect to `/products/my-products` with success message
+
+**Error Response:** Return to form with validation errors
+
+**Business Logic:**
+1. Validate seller has a store
+2. Validate store is operational
+3. Validate price ≤ store.maxListingPrice
+4. Generate SKU if not provided (PRD-XXXXXXXX)
+5. Upload images via FileUploadService
+6. Store image URLs as JSON array
+7. Save product with is_active = true
+
+**Controller:** `ProductController.createProduct()`
+
+**Location:** `ProductController.java:257`
+
+---
+
+### 6. Edit Product Form
+
+**GET /products/{productId}/edit**
+
+Show edit product form.
+
+**Authentication:** ROLE_SELLER
+
+**Path Parameters:**
+- `productId` (Long) - Product ID
+
+**Response:** JSP view (`product/edit.jsp`)
+
+**Model Attributes:**
+```java
+{
+  "product": Product,
+  "categories": ProductCategory[],
+  "maxListingPrice": BigDecimal
+}
+```
+
+**Error:** Access denied if product doesn't belong to seller
+
+**Controller:** `ProductController.showEditForm()`
+
+**Location:** `ProductController.java:311`
+
+---
+
+### 7. Update Product
+
+**POST /products/{productId}/edit**
+
+Update existing product.
+
+**Authentication:** ROLE_SELLER
+
+**Path Parameters:**
+- `productId` (Long) - Product ID
+
+**Request Body (Form Data):**
+```java
+{
+  "productName": String,
+  "description": String,
+  "price": BigDecimal,
+  "stockQuantity": Integer,
+  "category": String,
+  "sku": String
+}
+```
+
+**Validation:** Same as create product
+
+**Success Response:** Redirect to `/products/my-products` with success message
+
+**Error Response:** Return to form with validation errors
+
+**Business Logic:**
+- Verify ownership (product belongs to seller's store)
+- Validate price ≤ max_listing_price
+- Validate SKU uniqueness (excluding current product)
+
+**Controller:** `ProductController.updateProduct()`
+
+**Location:** `ProductController.java:345`
+
+---
+
+### 8. Delete Product
+
+**POST /products/{productId}/delete**
+
+Soft delete product.
+
+**Authentication:** ROLE_SELLER
+
+**Path Parameters:**
+- `productId` (Long) - Product ID
+
+**Response:** Redirect to `/products/my-products` with success message
+
+**Business Logic:**
+- Verify ownership
+- Set is_deleted = true
+- Preserve product data for audit trail
+
+**Controller:** `ProductController.deleteProduct()`
+
+**Location:** `ProductController.java:385`
+
+---
+
+### 9. Toggle Product Status
+
+**POST /products/{productId}/toggle-status**
+
+Activate or deactivate product (toggle is_active).
+
+**Authentication:** ROLE_SELLER
+
+**Path Parameters:**
+- `productId` (Long) - Product ID
+
+**Response:** Redirect to `/products/my-products` with success message
+
+**Business Logic:**
+- Verify ownership
+- Toggle is_active boolean
+- Active products visible in public listings
+
+**Controller:** `ProductController.toggleProductStatus()`
+
+**Location:** `ProductController.java:409`
+
+---
+
+### 10. Upload Product Images
+
+**POST /products/{productId}/upload-images**
+
+Upload additional images for existing product.
+
+**Authentication:** ROLE_SELLER
+
+**Path Parameters:**
+- `productId` (Long) - Product ID
+
+**Request Body (Multipart Form Data):**
+```java
+{
+  "imageFiles": MultipartFile[]  // Max 2MB per file
+}
+```
+
+**Validation:**
+- File type: jpg, jpeg, png, gif
+- File size: ≤ 2MB per file
+- Content-type validation
+
+**Response:** Redirect with success/error message
+
+**Business Logic:**
+- Upload via FileUploadService
+- Append URLs to existing productImages JSON array
+
+**Controller:** `ProductController.uploadProductImages()`
+
+**Location:** `ProductController.java:433`
+
+---
+
+### 11. Check SKU Availability (AJAX)
+
+**GET /products/check-sku**
+
+Check if SKU is available.
+
+**Authentication:** No
+
+**Query Parameters:**
+- `sku` (String) - SKU to check
+- `productId` (Long, optional) - Exclude from check (for edit)
+
+**Response:** JSON
+```json
+{
+  "available": true
+}
+```
+
+**Controller:** `ProductController.checkSkuAvailability()`
+
+**Location:** `ProductController.java:368`
+
+---
+
+### 12. Test Mode: Create Product Form ⚠️
+
+**GET /products/create-test**
+
+**⚠️ TEST MODE ONLY** - Product creation form with hardcoded store_id=2.
+
+**Authentication:** No (bypasses authentication)
+
+**Purpose:** Testing product creation without proper authentication
+
+**Response:** JSP view (`product/create-test.jsp`)
+
+**⚠️ WARNING:** Remove before production deployment
+
+**Controller:** `ProductController.showCreateTestForm()`
+
+**Location:** `ProductController.java:453`
+
+---
+
+### 13. Test Mode: Create Product ⚠️
+
+**POST /products/create-test**
+
+**⚠️ TEST MODE ONLY** - Process product creation with hardcoded store_id=2.
+
+**Authentication:** No (bypasses seller verification)
+
+**Request Body:** Same as regular create product
+
+**Response:** Redirect to `/products` with success message
+
+**⚠️ WARNING:** Remove before production deployment
+
+**Business Logic:**
+- Uses hardcoded store_id = 2
+- Bypasses seller ownership verification
+- For testing purposes only
+
+**Controller:** `ProductController.createProductTest()`
+
+**Location:** `ProductController.java:470`
+
+---
+
+### ProductCreateRequest DTO Schema
+
+```java
+{
+  "productName": {
+    "type": "String",
+    "validation": "@NotBlank, @Size(min=1, max=200)",
+    "required": true
+  },
+  "description": {
+    "type": "String",
+    "validation": "Optional",
+    "required": false
+  },
+  "price": {
+    "type": "BigDecimal",
+    "validation": "@DecimalMin('1000'), @DecimalMax('999999999')",
+    "required": true,
+    "note": "Must be ≤ store.maxListingPrice (business rule)"
+  },
+  "stockQuantity": {
+    "type": "Integer",
+    "validation": "@Min(0), @Max(999999)",
+    "required": true
+  },
+  "category": {
+    "type": "ProductCategory",
+    "validation": "@NotNull",
+    "required": true,
+    "enum": ["GAME_ACCOUNT", "GAME_CURRENCY", "SOCIAL_ACCOUNT", "SOFTWARE_LICENSE", "GIFT_CARD", "VPN_PROXY", "OTHER"]
+  },
+  "sku": {
+    "type": "String",
+    "validation": "@Size(max=50)",
+    "required": false,
+    "note": "Auto-generated as PRD-XXXXXXXX if not provided"
+  }
+}
+```
+
+---
+
+### ProductResponse DTO Schema
+
+```java
+{
+  "id": Long,
+  "productName": String,
+  "description": String,
+  "price": BigDecimal,
+  "formattedPrice": String,  // "1,000,000 VND"
+  "stockQuantity": Integer,
+  "category": ProductCategory,
+  "categoryDisplay": String,  // Localized display name
+  "sku": String,
+  "productImages": String[],  // Array of image URLs
+  "isActive": Boolean,
+  "isAvailable": Boolean,     // Calculated: isActive && stockQuantity > 0
+  "store": {
+    "id": Long,
+    "storeName": String,
+    "storeLogoUrl": String,
+    "isVerified": Boolean
+  },
+  "seller": {
+    "id": Long,
+    "username": String,
+    "fullName": String
+  },
+  "createdAt": Timestamp,
+  "updatedAt": Timestamp
+}
+```
 
 ---
 
