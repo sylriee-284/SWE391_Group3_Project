@@ -1,17 +1,12 @@
 package vn.group3.marketplace.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.*;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import vn.group3.marketplace.security.CustomAuthenticationSuccessHandler;
-import vn.group3.marketplace.security.CustomUserDetailsService;
 
 @EnableMethodSecurity
 @Configuration
@@ -24,6 +19,8 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/", "/homepage", "/products/**",
                                                                 "/login", "/logout", "/register",
+                                                                "/login/captcha", "/forgot-password", "/reset-password",
+                                                                "/debug/**",
                                                                 "/css/**", "/js/**", "/images/**",
                                                                 "/webjars/**", "/static/**",
                                                                 "/WEB-INF/view/**")
@@ -34,13 +31,18 @@ public class SecurityConfig {
                                                 .anyRequest().permitAll())
                                 .formLogin(form -> form
                                                 .loginPage("/login")
-                                                .loginProcessingUrl("/login")
+                                                .loginProcessingUrl("/spring-login") // Đổi URL để tránh conflict
                                                 .defaultSuccessUrl("/homepage", false)
                                                 .permitAll())
                                 .logout(logout -> logout
                                                 .logoutUrl("/logout")
                                                 .logoutSuccessUrl("/")
-                                                .permitAll());
+                                                .permitAll())
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(
+                                                                org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
+                                                .maximumSessions(1)
+                                                .maxSessionsPreventsLogin(false));
 
                 return http.build();
         }

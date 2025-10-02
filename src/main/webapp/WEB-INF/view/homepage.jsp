@@ -79,6 +79,18 @@
                     <!-- Nội dung chính -->
                     <div class="content" id="content">
                         <br />
+                        <!-- Thông báo -->
+                        <c:if test="${not empty successMessage}">
+                            <div class="alert alert-success" role="alert">
+                                ${successMessage}
+                            </div>
+                        </c:if>
+
+                        <c:if test="${not empty errorMessage}">
+                            <div class="alert alert-danger" role="alert">
+                                ${errorMessage}
+                            </div>
+                        </c:if>
                         <div class="container my-4">
                             <div class="row justify-content-center">
                                 <div class="col-md-8">

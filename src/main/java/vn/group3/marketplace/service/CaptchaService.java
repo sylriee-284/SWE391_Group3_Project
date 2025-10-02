@@ -5,12 +5,11 @@ import org.springframework.stereotype.Component;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Random;
 
 @Component
-public class CaptchaGenerator {
+public class CaptchaService {
     private static final int CAPTCHA_LENGTH = 4;
     private static final int IMAGE_WIDTH = 120;
     private static final int IMAGE_HEIGHT = 40;

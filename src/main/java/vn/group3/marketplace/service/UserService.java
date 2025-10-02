@@ -8,11 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import vn.group3.marketplace.domain.entity.Role;
-import vn.group3.marketplace.domain.entity.User;
+import vn.group3.marketplace.domain.entity.*;
 import vn.group3.marketplace.domain.enums.UserStatus;
-import vn.group3.marketplace.repository.RoleRepository;
-import vn.group3.marketplace.repository.UserRepository;
+import vn.group3.marketplace.repository.*;
 
 @Service
 @RequiredArgsConstructor
@@ -54,5 +52,19 @@ public class UserService {
 
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    public void resetPassword(String newPassword, String email) {
+        String encodedPassword = passwordEncoder.encode(newPassword);
+        userRepository.updatePassword(encodedPassword, email);
+    }
+
+    public void updatePassword(String newPassword, String email) {
+        String encodedPassword = passwordEncoder.encode(newPassword);
+        userRepository.updatePassword(encodedPassword, email);
     }
 }
