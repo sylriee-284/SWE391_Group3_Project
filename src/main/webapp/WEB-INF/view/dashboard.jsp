@@ -313,6 +313,18 @@
                     var sidebar = document.getElementById('sidebar');
                     sidebar.classList.toggle('collapsed');
                 }
+
+                // Check for error parameter and show alert
+                document.addEventListener('DOMContentLoaded', function() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const error = urlParams.get('error');
+
+                    if (error === 'already_has_store') {
+                        alert('Bạn đã có cửa hàng rồi! Mỗi người dùng chỉ được tạo một cửa hàng duy nhất.');
+                        // Remove error parameter from URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                });
             </script>
 
         </body>
