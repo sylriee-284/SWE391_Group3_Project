@@ -1,5 +1,7 @@
 package vn.group3.marketplace.domain.entity;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import lombok.*;
 import vn.group3.marketplace.domain.enums.EscrowStatus;
@@ -23,13 +25,17 @@ public class EscrowTransaction extends BaseEntity {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    private Double amount;
+    @Column(nullable = false, precision = 18, scale = 2)
+    private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
+    @Column(length = 20, nullable = false)
     @Builder.Default
     private EscrowStatus status = EscrowStatus.HELD;
 
-    private java.time.LocalDateTime holdUntil;
-    private java.time.LocalDateTime releasedAt;
+    @Column(name = "hold_until", insertable = false, updatable = false)
+    private LocalDateTime holdUntil;
+
+    @Column(name = "released_at")
+    private LocalDateTime releasedAt;
 }

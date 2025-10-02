@@ -1,10 +1,10 @@
 package vn.group3.marketplace.security;
 
+import java.math.BigDecimal;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import vn.group3.marketplace.domain.entity.Role;
 import vn.group3.marketplace.domain.entity.User;
-import vn.group3.marketplace.domain.entity.Wallet;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -60,9 +60,8 @@ public class CustomUserDetails implements UserDetails {
     }
 
     // ✅ Getter bổ sung cho JSP
-    public Double getBalance() {
-        Wallet wallet = user.getWallet();
-        return wallet != null ? wallet.getBalance() : 0.0;
+    public BigDecimal getBalance() {
+        return user.getBalance() != null ? user.getBalance() : BigDecimal.ZERO;
     }
 
     public Long getId() {

@@ -88,6 +88,29 @@
                                     <label class="form-label" for="form3Example4">Password</label>
                                 </div>
 
+                                <!-- Captcha input -->
+                                <div class="form-outline mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <img id="captchaImage" src="/login/captcha" alt="CAPTCHA"
+                                            style="height:40px; border:1px solid #ccc; cursor:pointer;"
+                                            onclick="refreshCaptcha()" />
+                                        <button type="button" class="btn btn-outline-secondary btn-sm ms-2"
+                                            onclick="refreshCaptcha()">Làm mới</button>
+                                    </div>
+                                    <input type="text" id="captchaInput" name="captcha"
+                                        class="form-control form-control-lg" placeholder="Nhập 4 số trong hình"
+                                        maxlength="4" required />
+                                    <label class="form-label" for="captchaInput">Mã xác thực (4 số)</label>
+                                </div>
+
+                                <script>
+                                    function refreshCaptcha() {
+                                        var img = document.getElementById('captchaImage');
+                                        img.src = '/login/captcha?' + new Date().getTime();
+                                        document.getElementById('captchaInput').value = '';
+                                    }
+                                </script>
+
                                 <div class="d-flex justify-content-between align-items-center">
                                     <!-- Checkbox -->
                                     <div class="form-check mb-0">
