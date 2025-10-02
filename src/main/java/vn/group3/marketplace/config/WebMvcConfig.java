@@ -30,7 +30,28 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/css/**").addResourceLocations("/resources/css/");
+        // Static resources from webapp/resources/
+        registry.addResourceHandler("/resources/**")
+                .addResourceLocations("/resources/")
+                .setCachePeriod(31556926); // 1 year cache
+
+        // Additional resource handlers
+        registry.addResourceHandler("/css/**")
+                .addResourceLocations("/resources/css/");
+
+        registry.addResourceHandler("/js/**")
+                .addResourceLocations("/resources/js/");
+
+        registry.addResourceHandler("/images/**")
+                .addResourceLocations("/resources/images/");
+
+        registry.addResourceHandler("/fonts/**")
+                .addResourceLocations("/resources/fonts/");
+
+        // Webjars support (if using webjars dependencies)
+        registry.addResourceHandler("/webjars/**")
+                .addResourceLocations("/webjars/")
+                .resourceChain(false);
     }
 
 }

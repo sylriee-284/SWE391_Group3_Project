@@ -142,8 +142,7 @@ public class SellerStoreServiceImpl implements SellerStoreService {
     @Override
     @Transactional(readOnly = true)
     public Optional<SellerStore> getStoreById(Long storeId) {
-        return sellerStoreRepository.findById(storeId)
-                .filter(store -> !store.isDeleted());
+        return sellerStoreRepository.findByIdWithOwner(storeId);
     }
 
     @Override
