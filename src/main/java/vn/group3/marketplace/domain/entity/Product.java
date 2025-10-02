@@ -16,8 +16,8 @@ import java.math.BigDecimal;
 @Table(name = "products", indexes = {
     @Index(name = "idx_category", columnList = "category"),
     @Index(name = "idx_active", columnList = "is_active"),
-    @Index(name = "idx_store", columnList = "store_id"),
-    @Index(name = "idx_seller", columnList = "seller_id")
+    @Index(name = "idx_products_store", columnList = "seller_store_id"),
+    @Index(name = "idx_products_seller", columnList = "seller_id")
 })
 @Getter
 @Setter

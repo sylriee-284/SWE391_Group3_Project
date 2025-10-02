@@ -6,6 +6,7 @@ import vn.group3.marketplace.domain.enums.ProductCategory;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * DTO for product response with full details
@@ -42,6 +43,10 @@ public class ProductResponse {
     // Timestamps
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String formattedCreatedAt;
+    private String formattedUpdatedAt;
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     /**
      * Convert Product entity to ProductResponse DTO
@@ -65,7 +70,9 @@ public class ProductResponse {
                 .isActive(product.getIsActive())
                 .isAvailable(product.isAvailable())
                 .createdAt(product.getCreatedAt())
-                .updatedAt(product.getUpdatedAt());
+                .updatedAt(product.getUpdatedAt())
+                .formattedCreatedAt(product.getCreatedAt() != null ? product.getCreatedAt().format(DATE_TIME_FORMATTER) : "")
+                .formattedUpdatedAt(product.getUpdatedAt() != null ? product.getUpdatedAt().format(DATE_TIME_FORMATTER) : "");
 
         // Add store information if available
         if (product.getStore() != null) {
@@ -105,6 +112,10 @@ public class ProductResponse {
                 .isAvailable(product.isAvailable())
                 .storeId(product.getStore() != null ? product.getStore().getId() : null)
                 .storeName(product.getStore() != null ? product.getStore().getStoreName() : null)
+                .createdAt(product.getCreatedAt())
+                .updatedAt(product.getUpdatedAt())
+                .formattedCreatedAt(product.getCreatedAt() != null ? product.getCreatedAt().format(DATE_TIME_FORMATTER) : "")
+                .formattedUpdatedAt(product.getUpdatedAt() != null ? product.getUpdatedAt().format(DATE_TIME_FORMATTER) : "")
                 .build();
     }
 }

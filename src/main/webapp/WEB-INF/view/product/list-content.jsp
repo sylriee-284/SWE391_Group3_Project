@@ -453,8 +453,8 @@
 
                                         <!-- Ngày tạo -->
                                         <td class="hide-lg">
-                                            <c:if test="${not empty product.createdAt}">
-                                                <fmt:formatDate value="${product.createdAt}" pattern="dd/MM/yyyy HH:mm" />
+                                            <c:if test="${not empty product.formattedCreatedAt}">
+                                                ${product.formattedCreatedAt}
                                             </c:if>
                                         </td>
 

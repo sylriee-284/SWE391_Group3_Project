@@ -29,9 +29,6 @@ public class FileUploadServiceImpl implements FileUploadService {
     @Value("${app.upload.allowed-extensions:jpg,jpeg,png,gif}")
     private String allowedExtensions;
 
-    @Value("${app.base-url:http://localhost:8080}")
-    private String baseUrl;
-
     private static final String STORE_LOGO_DIR = "stores/logos";
     private static final String PRODUCT_IMAGE_DIR = "products/images";
     private static final String USER_AVATAR_DIR = "users/avatars";
@@ -49,8 +46,8 @@ public class FileUploadServiceImpl implements FileUploadService {
         
         try {
             String fullPath = saveFile(logoFile, relativePath);
-            String fileUrl = baseUrl + "/uploads/" + relativePath;
-            
+            String fileUrl = "/uploads/" + relativePath;
+
             log.info("Successfully uploaded store logo: {}", fileUrl);
             return fileUrl;
             
@@ -73,8 +70,8 @@ public class FileUploadServiceImpl implements FileUploadService {
         
         try {
             String fullPath = saveFile(imageFile, relativePath);
-            String fileUrl = baseUrl + "/uploads/" + relativePath;
-            
+            String fileUrl = "/uploads/" + relativePath;
+
             log.info("Successfully uploaded product image: {}", fileUrl);
             return fileUrl;
             
@@ -97,8 +94,8 @@ public class FileUploadServiceImpl implements FileUploadService {
         
         try {
             String fullPath = saveFile(avatarFile, relativePath);
-            String fileUrl = baseUrl + "/uploads/" + relativePath;
-            
+            String fileUrl = "/uploads/" + relativePath;
+
             log.info("Successfully uploaded user avatar: {}", fileUrl);
             return fileUrl;
             
@@ -110,24 +107,36 @@ public class FileUploadServiceImpl implements FileUploadService {
 
     @Override
     public boolean deleteFile(String fileUrl) {
-        if (fileUrl == null || !fileUrl.startsWith(baseUrl)) {
+        if (fileUrl == null || fileUrl.isEmpty()) {
             return false;
         }
 
         try {
-            String relativePath = fileUrl.replace(baseUrl + "/uploads/", "");
+            // Handle both absolute URLs and relative paths
+            String relativePath;
+            if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
+                // Legacy absolute URL format: http://localhost:8080/uploads/...
+                relativePath = fileUrl.replaceFirst("^https?://[^/]+/uploads/", "");
+            } else if (fileUrl.startsWith("/uploads/")) {
+                // New relative path format: /uploads/...
+                relativePath = fileUrl.replace("/uploads/", "");
+            } else {
+                // Direct path: products/images/...
+                relativePath = fileUrl;
+            }
+
             Path filePath = Paths.get(uploadDir, relativePath);
-            
+
             if (Files.exists(filePath)) {
                 Files.delete(filePath);
                 log.info("Successfully deleted file: {}", fileUrl);
                 return true;
             }
-            
+
         } catch (IOException e) {
             log.error("Failed to delete file {}: {}", fileUrl, e.getMessage());
         }
-        
+
         return false;
     }
 
