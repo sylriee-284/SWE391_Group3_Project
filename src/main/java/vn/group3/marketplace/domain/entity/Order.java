@@ -1,5 +1,6 @@
 package vn.group3.marketplace.domain.entity;
 
+import java.math.BigDecimal;
 import jakarta.persistence.*;
 import lombok.*;
 import vn.group3.marketplace.domain.enums.OrderStatus;
@@ -35,12 +36,17 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "product_storage_id")
     private ProductStorage productStorage;
 
+    @Column(name = "product_name", nullable = false)
     private String productName;
-    private Double productPrice;
+
+    @Column(name = "product_price", nullable = false, precision = 15, scale = 2)
+    private BigDecimal productPrice;
+
+    @Column(nullable = false)
     @Builder.Default
     private Integer quantity = 1;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "product_data", columnDefinition = "JSON")
     private String productData;
 
     @Enumerated(EnumType.STRING)
@@ -48,5 +54,6 @@ public class Order extends BaseEntity {
     @Builder.Default
     private OrderStatus status = OrderStatus.PENDING;
 
-    private Double totalAmount;
+    @Column(name = "total_amount", nullable = false, precision = 18, scale = 2)
+    private BigDecimal totalAmount;
 }

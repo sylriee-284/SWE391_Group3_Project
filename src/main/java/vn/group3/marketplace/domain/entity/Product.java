@@ -1,5 +1,6 @@
 package vn.group3.marketplace.domain.entity;
 
+import java.math.BigDecimal;
 import jakarta.persistence.*;
 import lombok.*;
 import vn.group3.marketplace.domain.enums.ProductStatus;
@@ -31,8 +32,14 @@ public class Product extends BaseEntity {
     private String name;
 
     private String slug;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
-    private Double price;
+
+    @Column(nullable = false, precision = 15, scale = 2)
+    private BigDecimal price;
+
+    @Column(nullable = false)
     @Builder.Default
     private Integer stock = 0;
 

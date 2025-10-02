@@ -1,5 +1,6 @@
 package vn.group3.marketplace.domain.entity;
 
+import java.math.BigDecimal;
 import jakarta.persistence.*;
 import lombok.*;
 import vn.group3.marketplace.domain.enums.WalletTransactionType;
@@ -18,18 +19,20 @@ public class WalletTransaction extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wallet_id", nullable = false)
-    private Wallet wallet;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
     private WalletTransactionType type;
 
-    private Double amount;
+    @Column(nullable = false, precision = 18, scale = 2)
+    private BigDecimal amount;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ref_order_id")
-    private Order order;
+    private Order refOrder;
 
+    @Column(length = 500)
     private String note;
 }
