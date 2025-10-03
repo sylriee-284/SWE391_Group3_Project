@@ -1,8 +1,10 @@
 package vn.group3.marketplace.controller;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.group3.marketplace.domain.Product;
 import vn.group3.marketplace.service.ProductService;
 
@@ -39,8 +41,21 @@ public class ProductController {
 
     // Submit tạo
     @PostMapping("/seller/products")
-    public String create(@ModelAttribute("product") Product product) {
-        service.create(product);
-        return "redirect:/seller/products";
+    public String create(@ModelAttribute("product") Product product,
+            Model model,
+            RedirectAttributes ra) {
+        try {
+            if (product.getSellerId() != null && product.getSellerId() <= 0) {
+                product.setSellerId(null);
+            }
+            service.create(product);
+            ra.addFlashAttribute("successMessage", "Đã thêm sản phẩm: " + product.getName());
+            return "redirect:/seller/products";
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            model.addAttribute("errorMessage",
+                    "Không lưu được vì Seller ID không tồn tại trong bảng users. Hãy để trống hoặc nhập ID hợp lệ.");
+            return "product_add";
+        }
     }
+
 }

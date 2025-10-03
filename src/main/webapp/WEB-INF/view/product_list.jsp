@@ -1,52 +1,61 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
     <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-        <%@ include file="layout/header.jspf" %>
+        <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+            <%@ include file="layout/header.jspf" %>
 
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4>Danh sách sản phẩm</h4>
-                <a class="btn btn-primary" href="/seller/products/new">+ Thêm sản phẩm</a>
-            </div>
+                <c:if test="${not empty successMessage}">
+                    <div class="alert alert-success">${successMessage}</div>
+                </c:if>
 
-            <c:choose>
-                <c:when test="${empty products}">
-                    <div class="alert alert-info">Chưa có sản phẩm nào. Nhấn “Thêm sản phẩm”.</div>
-                </c:when>
-                <c:otherwise>
-                    <div class="table-responsive">
-                        <table class="table table-striped align-middle">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Tên</th>
-                                    <th>Loại</th>
-                                    <th>Giá</th>
-                                    <th>Số lượng</th>
-                                    <th>Trạng thái</th>
-                                    <th>Seller</th>
-                                    <th>Tạo lúc</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <c:forEach var="p" items="${products}">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4>Danh sách sản phẩm</h4>
+                    <a class="btn btn-primary" href="/seller/products/new">+ Thêm sản phẩm</a>
+                </div>
+
+                <c:choose>
+                    <c:when test="${empty products}">
+                        <div class="alert alert-info">Chưa có sản phẩm nào. Nhấn “Thêm sản phẩm”.</div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle">
+                                <thead>
                                     <tr>
-                                        <td>${p.id}</td>
-                                        <td>${p.name}</td>
-                                        <td>${p.type}</td>
-                                        <td>${p.price}</td>
-                                        <td>${p.quantity}</td>
-                                        <td>${p.status}</td>
-                                        <td>
-                                            <c:out value="${p.sellerId}" />
-                                        </td>
-                                        <td>
-                                            <c:out value="${p.createdAt}" />
-                                        </td>
+                                        <th>ID</th>
+                                        <th>Tên</th>
+                                        <th>Loại</th>
+                                        <th>Giá</th>
+                                        <th>Số lượng</th>
+                                        <th>Trạng thái</th>
+                                        <th>Seller</th>
+                                        <th>Tạo lúc</th>
                                     </tr>
-                                </c:forEach>
-                            </tbody>
-                        </table>
-                    </div>
-                </c:otherwise>
-            </c:choose>
+                                </thead>
+                                <tbody>
+                                    <c:forEach var="p" items="${products}">
+                                        <tr>
+                                            <td>${p.id}</td>
+                                            <td>${p.name}</td>
+                                            <td>${p.type}</td>
+                                            <td>
+                                                <fmt:formatNumber value="${p.price}" type="number" />
+                                            </td>
+                                            <td>${p.quantity}</td>
+                                            <td>${p.status}</td>
+                                            <td>
+                                                <c:out value="${p.sellerId != null ? p.sellerId : '-'}" />
+                                            </td>
+                                            <td>
+                                                <c:if test="${p.createdAt != null}">
+                                                    <fmt:formatDate value="${p.createdAt}" pattern="yyyy-MM-dd HH:mm" />
+                                                </c:if>
+                                            </td>
+                                        </tr>
+                                    </c:forEach>
+                                </tbody>
+                            </table>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
 
-            <%@ include file="layout/footer.jspf" %>
+                <%@ include file="layout/footer.jspf" %>
