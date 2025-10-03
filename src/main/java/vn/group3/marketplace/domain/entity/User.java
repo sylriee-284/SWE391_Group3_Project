@@ -36,7 +36,6 @@ public class User extends BaseEntity {
 
     private String phone;
     private String fullName;
-    private String avatarUrl;
     private LocalDate dateOfBirth;
 
     @Enumerated(EnumType.STRING)

@@ -25,6 +25,7 @@ public class SecurityConfig {
                                                                 "/webjars/**", "/static/**",
                                                                 "/WEB-INF/view/**")
                                                 .permitAll()
+                                                .requestMatchers("/chat/**").authenticated()
                                                 .requestMatchers("/admin/**").hasRole("ADMIN")
                                                 .requestMatchers("/seller/**").hasRole("SELLER")
                                                 .requestMatchers("/orders/**").hasAnyRole("USER", "SELLER")

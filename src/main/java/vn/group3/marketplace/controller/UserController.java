@@ -15,21 +15,4 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping
-    public String listUsers(Model model) {
-        // model.addAttribute("users", userService.findAll());
-        return "user/list";
-    }
-
-    @GetMapping("/{id}")
-    public String getUser(@PathVariable Long id, Model model) {
-        // model.addAttribute("user", userService.findById(id).orElseThrow());
-        return "user/detail";
-    }
-
-    @PostMapping
-    public String saveUser(@ModelAttribute User user) {
-        // userService.save(user);
-        return "redirect:/users";
-    }
 }
