@@ -1,5 +1,6 @@
 package vn.group3.marketplace.domain.entity;
 
+import java.math.BigDecimal;
 import jakarta.persistence.*;
 import lombok.*;
 import vn.group3.marketplace.domain.enums.StoreStatus;
@@ -32,8 +33,14 @@ public class SellerStore extends BaseEntity {
     @Builder.Default
     private StoreStatus status = StoreStatus.ACTIVE;
 
-    private Double depositAmount;
-    private Double maxListingPrice;
+    @Column(name = "deposit_amount", nullable = false, precision = 18, scale = 2)
+    @Builder.Default
+    private BigDecimal depositAmount = BigDecimal.ZERO;
+
+    @Column(name = "max_listing_price", precision = 18, scale = 2, insertable = false, updatable = false)
+    private BigDecimal maxListingPrice;
+
+    @Column(name = "deposit_currency", length = 3, nullable = false)
     @Builder.Default
     private String depositCurrency = "VND";
 }

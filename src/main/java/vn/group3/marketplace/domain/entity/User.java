@@ -1,5 +1,6 @@
 package vn.group3.marketplace.domain.entity;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,24 +36,21 @@ public class User extends BaseEntity {
 
     private String phone;
     private String fullName;
-    private String avatarUrl;
     private LocalDate dateOfBirth;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private Gender gender;
-    // Many-to-Many với Role
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
-    @Builder.Default
-    private Set<Role> roles = new HashSet<>();
-
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
-    private Wallet wallet;
-
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    @Builder.Default
+    private Gender gender;      
+      
+      
+     
+     
     private UserStatus status = UserStatus.ACTIVE;
 
-}
+    @Column(nullable = false, precision = 18, scale = 2)
+    @Builder.Default
+    private BigDecimal bal    
+
+    
+
+    

@@ -1,7 +1,9 @@
 package vn.group3.marketplace.domain.entity;
 
+import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import lombok.*;
+import vn.group3.marketplace.domain.enums.ProductStorageStatus;
 
 @Getter
 @Setter
@@ -20,12 +22,23 @@ public class ProductStorage extends BaseEntity {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
     @Builder.Default
-    private String status = "available";
-    @Column(columnDefinition = "TEXT")
-    private String payloadJson; // JSON
+    private ProductStorageStatus status = ProductStorageStatus.AVAILABLE;
+
+    @Column(name = "payload_json", columnDefinition = "JSON", nullable = false)
+    private String payloadJson;
+
+    @Column(name = "payload_mask")
     private String payloadMask;
-    private java.time.LocalDateTime reservedUntil;
-    private java.time.LocalDateTime deliveredAt;
+
+    @Column(name = "reserved_until")
+    private LocalDateTime reservedUntil;
+
+    @Column(name = "delivered_at")
+    private LocalDateTime deliveredAt;
+
+    @Column(length = 255)
     private String note;
 }
