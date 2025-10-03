@@ -2,7 +2,6 @@ package vn.group3.marketplace.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import vn.group3.marketplace.domain.enums.MessageType;
 
 @Getter
 @Setter
@@ -17,21 +16,25 @@ public class Message extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Cặp hội thoại (đều FK tới users.id)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "conversation_id", nullable = false)
-    private Conversation conversation;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seller_user_id", nullable = false)
+    private User sellerUser;
+
+    // Người gửi (phải là 1 trong 2 bên ở trên; validate ở backend)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_user_id", nullable = false)
-    private User sender;
+    private User senderUser;
 
+    // Nội dung & idempotency
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    @Builder.Default
-    private MessageType messageType = MessageType.TEXT;
+    @Column(name = "client_msg_id", length = 100)
+    private String clientMsgId;
 
-    private java.time.LocalDateTime readAt;
 }
