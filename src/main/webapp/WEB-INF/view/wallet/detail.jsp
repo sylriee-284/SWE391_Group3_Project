@@ -89,11 +89,10 @@
                                                     </button>
                                                 </div>
                                                 <div class="col-md-4 mb-3">
-                                                    <button class="btn btn-info w-100" disabled>
+                                                    <a href="/wallet/transactions" class="btn btn-info w-100">
                                                         <i class="fas fa-history"></i><br>
-                                                        Lịch sử<br>
-                                                        <small>(Sắp có)</small>
-                                                    </button>
+                                                        Lịch sử giao dịch
+                                                    </a>
                                                 </div>
                                             </div>
                                         </div>

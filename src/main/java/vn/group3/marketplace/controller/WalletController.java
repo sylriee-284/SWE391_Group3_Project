@@ -6,7 +6,6 @@ import vn.group3.marketplace.repository.WalletRepository;
 import vn.group3.marketplace.repository.WalletTransactionRepository;
 import vn.group3.marketplace.service.VNPayService;
 import vn.group3.marketplace.service.WalletService;
-import vn.group3.marketplace.security.CustomUserDetailsService;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
@@ -49,7 +48,7 @@ public class WalletController {
         if (currentUser == null) {
             return "redirect:/login?error=not_authenticated";
         }
-        return "wallet/deposit"; // hoặc "deposit" nếu đặt ở gốc view
+        return "wallet/deposit";
     }
 
     @GetMapping
@@ -153,10 +152,10 @@ public class WalletController {
             try {
                 walletService.processSuccessfulDeposit(paymentRef);
                 System.out.println("Deposit processed successfully");
-                
-                // Refresh authentication để cập nhật số dư trong session
+
+                // REFRESH AUTHENTICATION để cập nhật số dư trong session
                 refreshAuthenticationContext();
-                
+
                 return "wallet/success";
             } catch (Exception e) {
                 System.err.println("Error processing deposit: " + e.getMessage());
@@ -171,6 +170,11 @@ public class WalletController {
 
     /**
      * Refresh authentication context để cập nhật thông tin user trong session
+     * 
+     * VẤN ĐỀ: Sau khi nạp tiền thành công, database đã cập nhật số dư mới,
+     * nhưng CustomUserDetails trong session vẫn chứa số dư cũ.
+     * 
+     * GIẢI PHÁP: Fetch lại user từ database và cập nhật SecurityContext
      */
     private void refreshAuthenticationContext() {
         try {
@@ -178,28 +182,31 @@ public class WalletController {
             if (currentAuth != null && currentAuth.getPrincipal() instanceof CustomUserDetails) {
                 CustomUserDetails currentUserDetails = (CustomUserDetails) currentAuth.getPrincipal();
                 String username = currentUserDetails.getUsername();
-                
-                // Fetch lại user mới từ database
+
+                System.out.println("Refreshing authentication for user: " + username);
+
+                // Fetch lại user mới từ database (với số dư đã cập nhật)
                 User refreshedUser = userRepository.findByUsername(username).orElse(null);
                 if (refreshedUser != null) {
                     // Tạo CustomUserDetails mới với thông tin đã cập nhật
                     CustomUserDetails newUserDetails = new CustomUserDetails(refreshedUser);
-                    
+
+                    System.out.println(" Old balance in session: " + currentUserDetails.getBalance());
+                    System.out.println(" New balance from DB: " + newUserDetails.getBalance());
+
                     // Tạo authentication object mới
-                    UsernamePasswordAuthenticationToken newAuth = 
-                        new UsernamePasswordAuthenticationToken(
-                            newUserDetails, 
-                            currentAuth.getCredentials(), 
-                            newUserDetails.getAuthorities()
-                        );
-                    
+                    UsernamePasswordAuthenticationToken newAuth = new UsernamePasswordAuthenticationToken(
+                            newUserDetails,
+                            currentAuth.getCredentials(),
+                            newUserDetails.getAuthorities());
+
                     // Cập nhật SecurityContext
                     SecurityContextHolder.getContext().setAuthentication(newAuth);
-                    System.out.println("Authentication context refreshed for user: " + username);
+                    System.out.println(" Authentication context refreshed successfully!");
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error refreshing authentication context: " + e.getMessage());
+            System.err.println(" Error refreshing authentication context: " + e.getMessage());
             e.printStackTrace();
         }
     }
