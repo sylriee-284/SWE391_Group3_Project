@@ -122,4 +122,28 @@ public class ProductService {
     public Long countProductsByParentCategory(Category parentCategory) {
         return productRepository.countByParentCategoryId(parentCategory.getId(), ProductStatus.ACTIVE);
     }
+
+    /**
+     * Get product by ID
+     * 
+     * @param productId Product ID
+     * @return Product or null if not found
+     */
+    public Product getProductById(Long productId) {
+        return productRepository.findByIdWithDetails(productId).orElse(null);
+    }
+
+    /**
+     * Get active product by ID
+     * 
+     * @param productId Product ID
+     * @return Active product or null if not found or inactive
+     */
+    public Product getActiveProductById(Long productId) {
+        Product product = getProductById(productId);
+        if (product != null && product.getStatus() == ProductStatus.ACTIVE && !product.getIsDeleted()) {
+            return product;
+        }
+        return null;
+    }
 }
