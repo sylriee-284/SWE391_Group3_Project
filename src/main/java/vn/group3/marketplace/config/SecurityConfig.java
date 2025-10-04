@@ -1,10 +1,13 @@
+
 package vn.group3.marketplace.config;
 
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -23,14 +26,11 @@ public class SecurityConfig {
                                                 .maxSessionsPreventsLogin(false))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/", "/homepage", "/products/**",
-                                                                "/login", "/logout", "/register",
-                                                                "/login/captcha", "/forgot-password", "/reset-password",
-                                                                "/debug/**",
+                                                                "/login", "/login/captcha", "/logout", "/register",
                                                                 "/css/**", "/js/**", "/images/**",
                                                                 "/webjars/**", "/static/**",
                                                                 "/WEB-INF/view/**")
                                                 .permitAll()
-                                                .requestMatchers("/chat/**").authenticated()
                                                 .requestMatchers("/admin/**").hasRole("ADMIN")
                                                 .requestMatchers("/seller/**").hasRole("SELLER")
                                                 .requestMatchers("/orders/**", "/wallet/**")
@@ -38,18 +38,13 @@ public class SecurityConfig {
                                                 .anyRequest().authenticated())
                                 .formLogin(form -> form
                                                 .loginPage("/login")
-                                                .loginProcessingUrl("/spring-login") // Đổi URL để tránh conflict
+                                                .loginProcessingUrl("/login")
                                                 .defaultSuccessUrl("/homepage", false)
                                                 .permitAll())
                                 .logout(logout -> logout
                                                 .logoutUrl("/logout")
                                                 .logoutSuccessUrl("/")
-                                                .permitAll())
-                                .sessionManagement(session -> session
-                                                .sessionCreationPolicy(
-                                                                org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
-                                                .maximumSessions(1)
-                                                .maxSessionsPreventsLogin(false));
+                                                .permitAll());
 
                 return http.build();
         }

@@ -40,17 +40,20 @@ public class User extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private Gender gender;      
-      
-      
-     
-     
+    private Gender gender;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
 
     @Column(nullable = false, precision = 18, scale = 2)
     @Builder.Default
-    private BigDecimal bal    
+    private BigDecimal balance = BigDecimal.ZERO;
 
-    
-
-    
+    // Many-to-Many với Role
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+    @Builder.Default
+    private Set<Role> roles = new HashSet<>();
+}

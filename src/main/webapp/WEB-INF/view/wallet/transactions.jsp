@@ -3,12 +3,12 @@
         <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
             <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
                 <!DOCTYPE html>
-                <html lang="vi">
+                <html lang="en">
 
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Lịch sử giao dịch - Marketplace</title>
+                    <title>Transaction History - Marketplace</title>
                     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
                         rel="stylesheet">
                     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -77,12 +77,12 @@
                             <div class="col-12">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
                                     <div>
-                                        <h2><i class="fas fa-history"></i> Lịch sử giao dịch</h2>
-                                        <p class="text-muted">Quản lý và theo dõi các giao dịch ví của bạn</p>
+                                        <h2><i class="fas fa-history"></i> Transaction History</h2>
+                                        <p class="text-muted">Manage and track your wallet transactions</p>
                                     </div>
                                     <div class="text-end">
                                         <a href="/wallet" class="btn btn-outline-primary">
-                                            <i class="fas fa-wallet"></i> Quay lại ví
+                                            <i class="fas fa-wallet"></i> Back to Wallet
                                         </a>
                                     </div>
                                 </div>
@@ -94,19 +94,19 @@
                             <form method="get" action="/wallet/transactions">
                                 <div class="row g-3">
                                     <div class="col-md-4">
-                                        <label for="type" class="form-label">Loại giao dịch</label>
+                                        <label for="type" class="form-label">Transaction Type</label>
                                         <select class="form-select" id="type" name="type">
-                                            <option value="">Tất cả</option>
+                                            <option value="">All</option>
                                             <c:forEach var="transactionType" items="${transactionTypes}">
                                                 <option value="${transactionType}" ${selectedType==transactionType
                                                     ? 'selected' : '' }>
                                                     <c:choose>
-                                                        <c:when test="${transactionType == 'DEPOSIT'}">Nạp tiền</c:when>
-                                                        <c:when test="${transactionType == 'WITHDRAWAL'}">Rút tiền
+                                                        <c:when test="${transactionType == 'DEPOSIT'}">Deposit</c:when>
+                                                        <c:when test="${transactionType == 'WITHDRAWAL'}">Withdrawal
                                                         </c:when>
-                                                        <c:when test="${transactionType == 'PAYMENT'}">Thanh toán
+                                                        <c:when test="${transactionType == 'PAYMENT'}">Payment
                                                         </c:when>
-                                                        <c:when test="${transactionType == 'REFUND'}">Hoàn tiền</c:when>
+                                                        <c:when test="${transactionType == 'REFUND'}">Refund</c:when>
                                                         <c:otherwise>${transactionType}</c:otherwise>
                                                     </c:choose>
                                                 </option>
@@ -114,17 +114,18 @@
                                         </select>
                                     </div>
                                     <div class="col-md-4">
-                                        <label for="status" class="form-label">Trạng thái</label>
+                                        <label for="status" class="form-label">Status</label>
                                         <select class="form-select" id="status" name="status">
-                                            <option value="">Tất cả</option>
+                                            <option value="">All</option>
                                             <c:forEach var="paymentStatus" items="${paymentStatuses}">
                                                 <option value="${paymentStatus}" ${selectedStatus==paymentStatus
                                                     ? 'selected' : '' }>
                                                     <c:choose>
-                                                        <c:when test="${paymentStatus == 'SUCCESS'}">Thành công</c:when>
-                                                        <c:when test="${paymentStatus == 'PENDING'}">Đang xử lý</c:when>
-                                                        <c:when test="${paymentStatus == 'FAILED'}">Thất bại</c:when>
-                                                        <c:when test="${paymentStatus == 'CANCELLED'}">Đã hủy</c:when>
+                                                        <c:when test="${paymentStatus == 'SUCCESS'}">Success</c:when>
+                                                        <c:when test="${paymentStatus == 'PENDING'}">Pending</c:when>
+                                                        <c:when test="${paymentStatus == 'FAILED'}">Failed</c:when>
+                                                        <c:when test="${paymentStatus == 'CANCELLED'}">Cancelled
+                                                        </c:when>
                                                         <c:otherwise>${paymentStatus}</c:otherwise>
                                                     </c:choose>
                                                 </option>
@@ -148,8 +149,8 @@
                             <div class="col-md-12">
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle"></i>
-                                    <strong>Tổng cộng:</strong> ${totalTransactions} giao dịch
-                                    | <strong>Trang:</strong> ${currentPage + 1} / ${totalPages}
+                                    <strong>Total:</strong> ${totalTransactions} transactions
+                                    | <strong>Page:</strong> ${currentPage + 1} / ${totalPages}
                                 </div>
                             </div>
                         </div>
@@ -162,7 +163,8 @@
                                         <div class="col-12 mb-3">
                                             <div class="card transaction-card 
                                 <c:choose>
-                                    <c:when test=" ${transaction.type.name() eq 'DEPOSIT' }">transaction-deposit
+                                            <c:when test=" ${transaction.type.name() eq 'DEPOSIT' }">
+                                                transaction-deposit
                             </c:when>
                             <c:when test="${transaction.type.name() eq 'WITHDRAWAL'}">transaction-withdraw</c:when>
                             <c:otherwise>transaction-payment</c:otherwise>
@@ -195,11 +197,12 @@
                                 <div class="col-md-6">
                                     <h6 class="mb-1">
                                         <c:choose>
-                                            <c:when test='${transaction.type.name() eq "DEPOSIT"}'>Nạp tiền</c:when>
-                                            <c:when test='${transaction.type.name() eq "WITHDRAWAL"}'>Rút tiền</c:when>
-                                            <c:when test='${transaction.type.name() eq "PAYMENT"}'>Thanh toán</c:when>
-                                            <c:when test='${transaction.type.name() eq "REFUND"}'>Hoàn tiền</c:when>
-                                            <c:otherwise>Chuyển khoản</c:otherwise>
+                                            <c:when test='${transaction.type.name() eq "DEPOSIT"}'>Deposit</c:when>
+                                            <c:when test='${transaction.type.name() eq "WITHDRAWAL"}'>Withdrawal
+                                            </c:when>
+                                            <c:when test='${transaction.type.name() eq "PAYMENT"}'>Payment</c:when>
+                                            <c:when test='${transaction.type.name() eq "REFUND"}'>Refund</c:when>
+                                            <c:otherwise>Transfer</c:otherwise>
                                         </c:choose>
 
                                         <!-- Payment Method -->
@@ -221,7 +224,7 @@
 
                                     <c:if test="${transaction.paymentRef != null}">
                                         <small class="text-muted">
-                                            Mã giao dịch: ${transaction.paymentRef}
+                                            Payment Ref: ${transaction.paymentRef}
                                         </small>
                                     </c:if>
                                 </div>
@@ -258,17 +261,18 @@
                                         </c:choose> mb-2">
 
                                         <c:choose>
-                                            <c:when test='${transaction.paymentStatus == "SUCCESS"}'>Thành công</c:when>
-                                            <c:when test='${transaction.paymentStatus == "PENDING"}'>Đang xử lý</c:when>
-                                            <c:when test='${transaction.paymentStatus == "FAILED"}'>Thất bại</c:when>
-                                            <c:when test='${transaction.paymentStatus == "CANCELLED"}'>Đã hủy</c:when>
+                                            <c:when test='${transaction.paymentStatus == "SUCCESS"}'>Success</c:when>
+                                            <c:when test='${transaction.paymentStatus == "PENDING"}'>Pending</c:when>
+                                            <c:when test='${transaction.paymentStatus == "FAILED"}'>Failed</c:when>
+                                            <c:when test='${transaction.paymentStatus == "CANCELLED"}'>Cancelled
+                                            </c:when>
                                             <c:otherwise>${transaction.paymentStatus}</c:otherwise>
                                         </c:choose>
                                     </span>
                                     <br>
                                     <a href="/wallet/transactions/${transaction.id}"
                                         class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-eye"></i> Chi tiết
+                                        <i class="fas fa-eye"></i> Details
                                     </a>
                                 </div>
                             </div>
@@ -286,7 +290,7 @@
                                 <li class="page-item ${currentPage == 0 ? 'disabled' : ''}">
                                     <a class="page-link"
                                         href="?page=${currentPage - 1}&type=${selectedType}&status=${selectedStatus}">
-                                        <i class="fas fa-chevron-left"></i> Trước
+                                        <i class="fas fa-chevron-left"></i> Previous
                                     </a>
                                 </li>
 
@@ -306,7 +310,7 @@
                                 <li class="page-item ${currentPage == totalPages - 1 ? 'disabled' : ''}">
                                     <a class="page-link"
                                         href="?page=${currentPage + 1}&type=${selectedType}&status=${selectedStatus}">
-                                        Sau <i class="fas fa-chevron-right"></i>
+                                        Next <i class="fas fa-chevron-right"></i>
                                     </a>
                                 </li>
                             </ul>
@@ -317,11 +321,11 @@
                         <!-- 📭 Empty state -->
                         <div class="text-center py-5">
                             <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-                            <h4 class="text-muted">Chưa có giao dịch nào</h4>
-                            <p class="text-muted">Bạn chưa thực hiện giao dịch nào hoặc không tìm thấy giao dịch phù hợp
-                                với bộ lọc.</p>
+                            <h4 class="text-muted">No transactions yet</h4>
+                            <p class="text-muted">You haven't made any transactions or no matching transactions were
+                                found for the current filters.</p>
                             <a href="/wallet/deposit" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Nạp tiền ngay
+                                <i class="fas fa-plus"></i> Deposit now
                             </a>
                         </div>
                     </c:otherwise>

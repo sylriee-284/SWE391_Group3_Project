@@ -2,13 +2,14 @@ package vn.group3.marketplace.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import vn.group3.marketplace.domain.entity.User;
-import vn.group3.marketplace.domain.entity.Wallet;
+// Wallet entity removed - balance stored on User directly
 import vn.group3.marketplace.domain.entity.WalletTransaction;
 import vn.group3.marketplace.domain.enums.WalletTransactionType;
 import vn.group3.marketplace.repository.UserRepository;
-import vn.group3.marketplace.repository.WalletRepository;
 import vn.group3.marketplace.repository.WalletTransactionRepository;
 
 import java.util.Optional;
@@ -17,14 +18,15 @@ import java.util.Optional;
 @Transactional
 public class WalletService {
 
-    private final WalletRepository walletRepository;
+    private static final Logger logger = LoggerFactory.getLogger(WalletService.class);
+
+    // walletRepository removed
     private final WalletTransactionRepository walletTransactionRepository;
     private final UserRepository userRepository;
 
-    public WalletService(WalletRepository walletRepository,
+    public WalletService(
             WalletTransactionRepository walletTransactionRepository,
             UserRepository userRepository) {
-        this.walletRepository = walletRepository;
         this.walletTransactionRepository = walletTransactionRepository;
         this.userRepository = userRepository;
     }
@@ -32,13 +34,13 @@ public class WalletService {
     /**
      * Tạo pending deposit transaction cho user (chờ thanh toán VNPay)
      */
-    public WalletTransaction createPendingDeposit(User user, Double amount, String paymentRef) {
-        // Lấy managed User từ DB và tạo/lấy wallet
-        Wallet wallet = getOrCreateWallet(user.getId());
+    public WalletTransaction createPendingDeposit(User user, java.math.BigDecimal amount, String paymentRef) {
+        // Lấy managed User từ DB và dùng balance trên user
+        User managed = userRepository.findById(user.getId())
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + user.getId()));
 
         WalletTransaction transaction = WalletTransaction.builder()
-                .wallet(wallet)
-                .user(wallet.getUser()) // Dùng managed user từ wallet
+                .user(managed)
                 .type(WalletTransactionType.DEPOSIT)
                 .amount(amount)
                 .paymentRef(paymentRef)
@@ -55,71 +57,45 @@ public class WalletService {
      */
     @Transactional
     public void processSuccessfulDeposit(String paymentRef) {
-        System.out.println("=== Processing Successful Deposit ===");
-        System.out.println("Payment Ref: " + paymentRef);
+        logger.info("=== Processing Successful Deposit ===");
+        logger.info("Payment Ref: {}", paymentRef);
 
         Optional<WalletTransaction> transactionOpt = walletTransactionRepository.findByPaymentRef(paymentRef);
         if (transactionOpt.isPresent()) {
             WalletTransaction transaction = transactionOpt.get();
 
-            System.out.println("Found transaction: " + transaction.getId());
-            System.out.println("Transaction amount: " + transaction.getAmount());
-            System.out.println("Current status: " + transaction.getPaymentStatus());
+            logger.debug("Found transaction: {}", transaction.getId());
+            logger.debug("Transaction amount: {}", transaction.getAmount());
+            logger.debug("Current status: {}", transaction.getPaymentStatus());
 
             // Kiểm tra transaction chưa được xử lý
             if (!"PENDING".equals(transaction.getPaymentStatus())) {
-                System.out.println("Transaction already processed, status: " + transaction.getPaymentStatus());
+                logger.warn("Transaction already processed, status: {}", transaction.getPaymentStatus());
                 return;
             }
 
-            // Cập nhật số dư ví
-            Wallet wallet = transaction.getWallet();
-            Double oldBalance = wallet.getBalance();
-            Double newBalance = oldBalance + transaction.getAmount();
-            wallet.setBalance(newBalance);
-            walletRepository.save(wallet);
-            System.out.println("Updated wallet balance from " + oldBalance + " to " + newBalance);
+            // Cập nhật số dư trực tiếp trên user (BigDecimal safe arithmetic)
+            User txnUser = transaction.getUser();
+            java.math.BigDecimal oldBalance = txnUser.getBalance();
+            java.math.BigDecimal newBalance = oldBalance.add(transaction.getAmount());
+            txnUser.setBalance(newBalance);
+            userRepository.save(txnUser);
+            logger.info("Updated user balance from {} to {}", oldBalance, newBalance);
 
             // Cập nhật trạng thái transaction
             transaction.setPaymentStatus("SUCCESS");
             walletTransactionRepository.save(transaction);
-            System.out.println("Updated transaction status to SUCCESS");
+            logger.info("Updated transaction status to SUCCESS");
         } else {
-            System.err.println("Transaction not found with payment ref: " + paymentRef);
+            logger.error("Transaction not found with payment ref: {}", paymentRef);
         }
-        System.out.println("=== Deposit Processing Complete ===");
-    }
-
-    /**
-     * Lấy hoặc tạo mới ví cho user (bằng userId)
-     */
-    @Transactional
-    public Wallet getOrCreateWallet(Long userId) {
-        System.out.println("=== WalletService Debug ===");
-        System.out.println("Getting wallet for userId: " + userId);
-
-        // Lấy managed User từ DB với eager loading
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-
-        System.out.println("Retrieved managed user: " + user.getUsername());
-
-        return walletRepository.findByUser(user)
-                .orElseGet(() -> {
-                    System.out.println("Creating new wallet for user: " + user.getUsername());
-                    Wallet newWallet = Wallet.builder()
-                            .user(user) // Quan trọng: set managed user
-                            .balance(0.0)
-                            .build();
-                    System.out.println("New wallet created successfully");
-                    return walletRepository.save(newWallet);
-                });
+        logger.info("=== Deposit Processing Complete ===");
     }
 
     /**
      * Tìm ví theo user ID
      */
-    public Optional<Wallet> findByUserId(Long userId) {
-        return Optional.of(getOrCreateWallet(userId));
+    public java.util.Optional<java.math.BigDecimal> findBalanceByUserId(Long userId) {
+        return userRepository.findById(userId).map(User::getBalance);
     }
 }

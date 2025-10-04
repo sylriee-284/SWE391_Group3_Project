@@ -2,12 +2,12 @@
     <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
         <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
             <!DOCTYPE html>
-            <html lang="vi">
+            <html lang="en">
 
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Ví của tôi</title>
+                <title>My Wallet</title>
                 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
                 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
             </head>
@@ -21,9 +21,9 @@
                         <div class="col-md-8 mx-auto">
                             <!-- Header -->
                             <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h2><i class="fas fa-wallet text-primary"></i> Ví của tôi</h2>
+                                <h2><i class="fas fa-wallet text-primary"></i> My Wallet</h2>
                                 <a href="/" class="btn btn-outline-secondary">
-                                    <i class="fas fa-home"></i> Về trang chủ
+                                    <i class="fas fa-home"></i> Back to Home
                                 </a>
                             </div>
 
@@ -33,7 +33,7 @@
                                     <div class="card bg-primary text-white">
                                         <div class="card-body text-center">
                                             <h5 class="card-title">
-                                                <i class="fas fa-coins"></i> Số dư hiện tại
+                                                <i class="fas fa-coins"></i> Current Balance
                                             </h5>
                                             <h2 class="card-text">
                                                 <c:choose>
@@ -54,7 +54,7 @@
                                     <div class="card">
                                         <div class="card-body text-center">
                                             <h5 class="card-title">
-                                                <i class="fas fa-user"></i> Chủ tài khoản
+                                                <i class="fas fa-user"></i> Account Owner
                                             </h5>
                                             <p class="card-text">
                                                 <strong>${user.fullName != null ? user.fullName :
@@ -71,27 +71,27 @@
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-header">
-                                            <h5><i class="fas fa-cog"></i> Thao tác</h5>
+                                            <h5><i class="fas fa-cog"></i> Actions</h5>
                                         </div>
                                         <div class="card-body">
                                             <div class="row">
                                                 <div class="col-md-4 mb-3">
                                                     <a href="/wallet/deposit" class="btn btn-success w-100">
                                                         <i class="fas fa-plus-circle"></i><br>
-                                                        Nạp tiền
+                                                        Deposit
                                                     </a>
                                                 </div>
                                                 <div class="col-md-4 mb-3">
                                                     <button class="btn btn-warning w-100" disabled>
                                                         <i class="fas fa-minus-circle"></i><br>
-                                                        Rút tiền<br>
-                                                        <small>(Sắp có)</small>
+                                                        Withdraw<br>
+                                                        <small>(Coming Soon)</small>
                                                     </button>
                                                 </div>
                                                 <div class="col-md-4 mb-3">
                                                     <a href="/wallet/transactions" class="btn btn-info w-100">
                                                         <i class="fas fa-history"></i><br>
-                                                        Lịch sử giao dịch
+                                                        Transaction History
                                                     </a>
                                                 </div>
                                             </div>
@@ -102,11 +102,11 @@
 
                             <!-- Thông tin bổ sung -->
                             <div class="alert alert-info">
-                                <h6><i class="fas fa-info-circle"></i> Thông tin quan trọng:</h6>
+                                <h6><i class="fas fa-info-circle"></i> Important Information:</h6>
                                 <ul class="mb-0">
-                                    <li>Số dư ví được cập nhật ngay sau khi thanh toán thành công</li>
-                                    <li>Bạn có thể sử dụng số dư để mua hàng trên hệ thống</li>
-                                    <li>Mọi giao dịch đều được bảo mật và lưu trữ an toàn</li>
+                                    <li>Wallet balance is updated immediately after successful payment</li>
+                                    <li>You can use your balance to make purchases on the system</li>
+                                    <li>All transactions are secure and safely stored</li>
                                 </ul>
                             </div>
                         </div>

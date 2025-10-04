@@ -1,9 +1,6 @@
 package vn.group3.marketplace.controller;
 
-import vn.group3.marketplace.domain.entity.Wallet;
 import vn.group3.marketplace.repository.UserRepository;
-import vn.group3.marketplace.repository.WalletRepository;
-import vn.group3.marketplace.repository.WalletTransactionRepository;
 import vn.group3.marketplace.service.VNPayService;
 import vn.group3.marketplace.service.WalletService;
 
@@ -20,6 +17,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -27,26 +26,24 @@ import jakarta.servlet.http.HttpServletRequest;
 @RequestMapping("/wallet")
 public class WalletController {
 
-    private final WalletTransactionRepository walletTransactionRepository;
-    private final WalletRepository walletRepository;
+    private static final Logger logger = LoggerFactory.getLogger(WalletController.class);
+    private static final String REDIRECT_NOT_AUTHENTICATED = "redirect:/login?error=not_authenticated";
+
     private final WalletService walletService;
     private final VNPayService vnpayService;
     private final UserRepository userRepository;
 
     public WalletController(WalletService walletService, VNPayService vnpayService,
-            WalletTransactionRepository walletTransactionRepository, WalletRepository walletRepository,
             UserRepository userRepository) {
         this.walletService = walletService;
         this.vnpayService = vnpayService;
-        this.walletTransactionRepository = walletTransactionRepository;
-        this.walletRepository = walletRepository;
         this.userRepository = userRepository;
     }
 
     @GetMapping("/deposit")
     public String showDepositForm(@AuthenticationPrincipal CustomUserDetails currentUser) {
         if (currentUser == null) {
-            return "redirect:/login?error=not_authenticated";
+            return REDIRECT_NOT_AUTHENTICATED;
         }
         return "wallet/deposit";
     }
@@ -54,86 +51,88 @@ public class WalletController {
     @GetMapping
     public String getWallet(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
         if (currentUser == null) {
-            return "redirect:/login?error=not_authenticated";
+            return REDIRECT_NOT_AUTHENTICATED;
         }
         User user = currentUser.getUser();
-        Wallet wallet = walletService.findByUserId(user.getId()).orElse(null);
-        model.addAttribute("wallet", wallet);
+        java.math.BigDecimal balance = walletService.findBalanceByUserId(user.getId())
+                .orElse(java.math.BigDecimal.ZERO);
+        model.addAttribute("wallet", java.util.Map.of("balance", balance));
         model.addAttribute("user", user);
         return "wallet/detail";
     }
 
     @GetMapping("/{userId}")
     public String getWalletById(@PathVariable Long userId, Model model) {
-        Wallet wallet = walletService.findByUserId(userId).orElse(null);
-        model.addAttribute("wallet", wallet);
+        java.math.BigDecimal balance = walletService.findBalanceByUserId(userId).orElse(java.math.BigDecimal.ZERO);
+        model.addAttribute("wallet", java.util.Map.of("balance", balance));
         return "wallet/detail";
     }
 
     // User tự nạp tiền cho chính mình
     @PostMapping("/deposit")
-    public String deposit(@RequestParam Double amount,
+    public String deposit(@RequestParam java.math.BigDecimal amount,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             HttpServletRequest request) {
-        System.out.println("=== Wallet Controller Debug ===");
-        System.out.println("User: " + (currentUser != null ? currentUser.getUsername() : "NULL"));
-        System.out.println("User ID: " + (currentUser != null ? currentUser.getId() : "NULL"));
-        System.out.println("User Email: " + (currentUser != null ? currentUser.getEmail() : "NULL"));
-        System.out.println("Amount: " + amount);
+        logger.debug("=== Wallet Controller Debug ===");
+        logger.debug("User: {}", (currentUser != null ? currentUser.getUsername() : "NULL"));
+        logger.debug("User ID: {}", (currentUser != null ? currentUser.getId() : "NULL"));
+        logger.debug("User Email: {}", (currentUser != null ? currentUser.getEmail() : "NULL"));
+        logger.debug("Amount: {}", amount);
 
         // Kiểm tra user có null không
         if (currentUser == null) {
-            System.out.println("Current user is null, redirecting to login");
-            return "redirect:/login?error=not_authenticated";
+            logger.warn("Current user is null, redirecting to login");
+            return REDIRECT_NOT_AUTHENTICATED;
         }
 
         // Lấy User entity từ CustomUserDetails
         User user = currentUser.getUser();
-        System.out.println("User from CustomUserDetails: " + (user != null ? user.getUsername() : "NULL"));
+        logger.debug("User from CustomUserDetails: {}", (user != null ? user.getUsername() : "NULL"));
 
         // Validation số tiền
-        if (amount == null || amount < 10000) {
-            System.out.println("Invalid amount, redirecting with error");
+        if (amount == null || amount.compareTo(new java.math.BigDecimal(10000)) < 0) {
+            logger.warn("Invalid amount: {}", amount);
             return "redirect:/wallet/deposit?error=invalid_amount";
         }
 
         String paymentRef = java.util.UUID.randomUUID().toString();
         String ip = vnpayService.getIpAddress(request);
 
-        System.out.println("Payment Ref: " + paymentRef);
-        System.out.println("IP Address: " + ip);
+        logger.debug("Payment Ref: {}", paymentRef);
+        logger.debug("IP Address: {}", ip);
 
         // Tạo pending transaction cho user hiện tại
         try {
             walletService.createPendingDeposit(user, amount, paymentRef);
-            System.out.println("Created pending deposit successfully");
+            if (user != null) {
+                logger.info("Created pending deposit for userId={} amount={} ref={}", user.getId(), amount, paymentRef);
+            } else {
+                logger.info("Created pending deposit for unknown user amount={} ref={}", amount, paymentRef);
+            }
         } catch (Exception e) {
-            System.err.println("Error creating pending deposit: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error creating pending deposit: {}", e.getMessage(), e);
             return "redirect:/wallet/deposit?error=database";
         }
 
         try {
-            String paymentUrl = vnpayService.generateVNPayURL(amount, paymentRef, ip);
-            System.out.println("Generated VNPay URL: " + paymentUrl);
-            System.out.println("Redirecting to VNPay...");
-            System.out.println("=== End Wallet Controller Debug ===");
+            String paymentUrl = vnpayService.generateVNPayURL(amount.doubleValue(), paymentRef, ip);
+            logger.debug("Generated VNPay URL: {}", paymentUrl);
+            logger.debug("Redirecting to VNPay...");
+            logger.debug("=== End Wallet Controller Debug ===");
             return "redirect:" + paymentUrl;
         } catch (UnsupportedEncodingException e) {
-            System.err.println("Encoding error: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Encoding error: {}", e.getMessage(), e);
             return "redirect:/wallet/deposit?error=encoding";
         } catch (Exception e) {
-            System.err.println("Unexpected error: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Unexpected error while generating VNPay URL: {}", e.getMessage(), e);
             return "redirect:/wallet/deposit?error=vnpay";
         }
     }
 
     @GetMapping("/vnpay-callback")
     public String vnpayCallback(@RequestParam Map<String, String> params) {
-        System.out.println("=== VNPay Callback Received ===");
-        System.out.println("All params: " + params);
+        logger.debug("=== VNPay Callback Received ===");
+        logger.debug("All params: {}", params);
 
         // Lấy payment reference từ params
         String paymentRef = params.get("vnp_TxnRef");
@@ -141,29 +140,28 @@ public class WalletController {
         String amount = params.get("vnp_Amount");
         String bankCode = params.get("vnp_BankCode");
 
-        System.out.println("Payment Ref: " + paymentRef);
-        System.out.println("Response Code: " + responseCode);
-        System.out.println("Amount: " + amount);
-        System.out.println("Bank Code: " + bankCode);
+        logger.debug("Payment Ref: {}", paymentRef);
+        logger.debug("Response Code: {}", responseCode);
+        logger.debug("Amount: {}", amount);
+        logger.debug("Bank Code: {}", bankCode);
 
         // Kiểm tra thanh toán thành công (response code = 00)
         if ("00".equals(responseCode)) {
-            System.out.println("Payment successful, processing deposit...");
+            logger.info("Payment successful (ref={}), processing deposit...", paymentRef);
             try {
                 walletService.processSuccessfulDeposit(paymentRef);
-                System.out.println("Deposit processed successfully");
+                logger.info("Deposit processed successfully for ref={}", paymentRef);
 
                 // REFRESH AUTHENTICATION để cập nhật số dư trong session
                 refreshAuthenticationContext();
 
                 return "wallet/success";
             } catch (Exception e) {
-                System.err.println("Error processing deposit: " + e.getMessage());
-                e.printStackTrace();
+                logger.error("Error processing deposit: {}", e.getMessage(), e);
                 return "wallet/failure";
             }
         } else {
-            System.out.println("Payment failed with response code: " + responseCode);
+            logger.warn("Payment failed with response code: {}", responseCode);
             return "wallet/failure";
         }
     }
@@ -183,7 +181,7 @@ public class WalletController {
                 CustomUserDetails currentUserDetails = (CustomUserDetails) currentAuth.getPrincipal();
                 String username = currentUserDetails.getUsername();
 
-                System.out.println("Refreshing authentication for user: " + username);
+                logger.debug("Refreshing authentication for user: {}", username);
 
                 // Fetch lại user mới từ database (với số dư đã cập nhật)
                 User refreshedUser = userRepository.findByUsername(username).orElse(null);
@@ -191,8 +189,8 @@ public class WalletController {
                     // Tạo CustomUserDetails mới với thông tin đã cập nhật
                     CustomUserDetails newUserDetails = new CustomUserDetails(refreshedUser);
 
-                    System.out.println(" Old balance in session: " + currentUserDetails.getBalance());
-                    System.out.println(" New balance from DB: " + newUserDetails.getBalance());
+                    logger.debug(" Old balance in session: {}", currentUserDetails.getBalance());
+                    logger.debug(" New balance from DB: {}", newUserDetails.getBalance());
 
                     // Tạo authentication object mới
                     UsernamePasswordAuthenticationToken newAuth = new UsernamePasswordAuthenticationToken(
@@ -202,12 +200,11 @@ public class WalletController {
 
                     // Cập nhật SecurityContext
                     SecurityContextHolder.getContext().setAuthentication(newAuth);
-                    System.out.println(" Authentication context refreshed successfully!");
+                    logger.info("Authentication context refreshed successfully for user={}", username);
                 }
             }
         } catch (Exception e) {
-            System.err.println(" Error refreshing authentication context: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error refreshing authentication context: {}", e.getMessage(), e);
         }
     }
 
