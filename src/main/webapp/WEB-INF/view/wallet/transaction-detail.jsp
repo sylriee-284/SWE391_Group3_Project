@@ -92,21 +92,21 @@
                             </div>
                         </div>
 
-                        <!-- 🎯 Transaction Header -->
+                        <!--  Transaction Header -->
                         <div class="transaction-header text-center">
                             <div class="row align-items-center">
                                 <div class="col-md-2">
                                     <c:choose>
-                                        <c:when test='${transaction.type == "DEPOSIT"}'>
+                                        <c:when test='${transaction.type eq "DEPOSIT"}'>
                                             <i class="fas fa-plus-circle fa-4x"></i>
                                         </c:when>
-                                        <c:when test='${transaction.type == "WITHDRAWAL"}'>
+                                        <c:when test='${transaction.type eq "WITHDRAWAL"}'>
                                             <i class="fas fa-minus-circle fa-4x"></i>
                                         </c:when>
-                                        <c:when test='${transaction.type == "PAYMENT"}'>
+                                        <c:when test='${transaction.type eq "PAYMENT"}'>
                                             <i class="fas fa-shopping-cart fa-4x"></i>
                                         </c:when>
-                                        <c:when test='${transaction.type == "REFUND"}'>
+                                        <c:when test='${transaction.type eq "REFUND"}'>
                                             <i class="fas fa-undo fa-4x"></i>
                                         </c:when>
                                         <c:otherwise>
@@ -117,11 +117,11 @@
                                 <div class="col-md-8">
                                     <h2 class="mb-2">
                                         <c:choose>
-                                            <c:when test='${transaction.type == "DEPOSIT"}'>Deposit Transaction</c:when>
-                                            <c:when test='${transaction.type == "WITHDRAWAL"}'>Withdrawal Transaction
+                                            <c:when test='${transaction.type eq "DEPOSIT"}'>Deposit Transaction</c:when>
+                                            <c:when test='${transaction.type eq "WITHDRAWAL"}'>Withdrawal Transaction
                                             </c:when>
-                                            <c:when test='${transaction.type == "PAYMENT"}'>Payment Transaction</c:when>
-                                            <c:when test='${transaction.type == "REFUND"}'>Refund Transaction</c:when>
+                                            <c:when test='${transaction.type eq "PAYMENT"}'>Payment Transaction</c:when>
+                                            <c:when test='${transaction.type eq "REFUND"}'>Refund Transaction</c:when>
                                             <c:otherwise>Transfer Transaction</c:otherwise>
                                         </c:choose>
                                     </h2>
@@ -131,24 +131,22 @@
                                     </p>
                                 </div>
                                 <div class="col-md-2">
-                                    <span class="
-                        <c:choose>
-                            <c:when test='${transaction.paymentStatus == " SUCCESS"}'>status-success</c:when>
-                                        <c:when test='${transaction.paymentStatus == "PENDING"}'>status-pending</c:when>
-                                        <c:otherwise>status-failed</c:otherwise>
-                                        </c:choose>">
+                                    <span class="${
+                                        (transaction.paymentStatus eq 'SUCCESS') ? 'status-success' : 
+                                        (transaction.paymentStatus eq 'PENDING') ? 'status-pending' : 'status-failed'
+                                    }">
 
                                         <c:choose>
-                                            <c:when test='${transaction.paymentStatus == "SUCCESS"}'>
+                                            <c:when test='${transaction.paymentStatus eq "SUCCESS"}'>
                                                 <i class="fas fa-check-circle"></i> Success
                                             </c:when>
-                                            <c:when test='${transaction.paymentStatus == "PENDING"}'>
+                                            <c:when test='${transaction.paymentStatus eq "PENDING"}'>
                                                 <i class="fas fa-clock"></i> Pending
                                             </c:when>
-                                            <c:when test='${transaction.paymentStatus == "FAILED"}'>
+                                            <c:when test='${transaction.paymentStatus eq "FAILED"}'>
                                                 <i class="fas fa-times-circle"></i> Failed
                                             </c:when>
-                                            <c:when test='${transaction.paymentStatus == "CANCELLED"}'>
+                                            <c:when test='${transaction.paymentStatus eq "CANCELLED"}'>
                                                 <i class="fas fa-ban"></i> Cancelled
                                             </c:when>
                                             <c:otherwise>${transaction.paymentStatus}</c:otherwise>
@@ -159,36 +157,30 @@
                         </div>
 
                         <div class="row">
-                            <!-- 💰 Amount Card -->
+                            <!--  Amount Card -->
                             <div class="col-md-6 mb-4">
                                 <div class="card detail-card">
                                     <div class="card-body text-center">
                                         <h5 class="card-title text-muted mb-3">
-                                            <i class="fas fa-money-bill-wave"></i> Số tiền
+                                            <i class="fas fa-money-bill-wave"></i> Amount
                                         </h5>
-                                        <div class="amount-display 
-                            <c:choose>
-                                <c:when test='${transaction.type == " DEPOSIT" || transaction.type=="REFUND" }'>
-                                            amount-positive</c:when>
-                                            <c:otherwise>amount-negative</c:otherwise>
-                                            </c:choose>">
+                                        <c:set var="isPositive"
+                                            value="${transaction.type.name() eq 'DEPOSIT' or transaction.type.name() eq 'REFUND'}" />
 
-                                            <c:choose>
-                                                <c:when
-                                                    test='${transaction.type == "DEPOSIT" || transaction.type == "REFUND"}'>
-                                                    +</c:when>
-                                                <c:otherwise>-</c:otherwise>
-                                            </c:choose>
+                                        <div
+                                            class="amount-display ${isPositive ? 'amount-positive' : 'amount-negative'}">
+                                            ${isPositive ? '+' : '-'}
 
                                             <fmt:formatNumber value="${transaction.amount}" type="number"
                                                 pattern="#,###" />
                                             <small class="fs-4">VNĐ</small>
                                         </div>
+
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- 📋 Transaction Info -->
+                            <!--  Transaction Info -->
                             <div class="col-md-6 mb-4">
                                 <div class="card detail-card">
                                     <div class="card-body">
@@ -276,7 +268,7 @@
                             </div>
                         </div>
 
-                        <!-- 📝 Note Section -->
+                        <!-- Note Section -->
                         <c:if test="${transaction.note != null && !transaction.note.trim().isEmpty()}">
                             <div class="row">
                                 <div class="col-12">
@@ -320,7 +312,7 @@
                             </div>
                         </c:if>
 
-                        <!-- 🎯 Action Buttons -->
+                        <!-- Action Buttons -->
                         <div class="row mt-4">
                             <div class="col-12 text-center">
                                 <a href="/wallet/transactions" class="btn btn-secondary me-2">

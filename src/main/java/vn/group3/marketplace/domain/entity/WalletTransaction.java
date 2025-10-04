@@ -68,4 +68,8 @@ public class WalletTransaction extends BaseEntity {
     public void setPaymentMethod(String paymentMethod) {
         this.paymentMethod = paymentMethod;
     }
+
+    public Order getOrder() {
+        return this.refOrder;
+    }
 }
