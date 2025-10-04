@@ -18,6 +18,11 @@
                 <!-- Font Awesome for icons -->
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+                <!-- iziToast CSS -->
+                <link rel="stylesheet"
+                    href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css" />
+
+
                 <title>Dashboard</title>
                 <style>
                     /* Nội dung chính */
@@ -83,18 +88,7 @@
                         <!-- Nội dung chính -->
                         <div class="content" id="content">
                             <br />
-                            <!-- Thông báo -->
-                            <c:if test="${not empty successMessage}">
-                                <div class="alert alert-success" role="alert">
-                                    ${successMessage}
-                                </div>
-                            </c:if>
-
-                            <c:if test="${not empty errorMessage}">
-                                <div class="alert alert-danger" role="alert">
-                                    ${errorMessage}
-                                </div>
-                            </c:if>
+                            <!-- Notifications will be displayed using iziToast -->
                             <div class="container my-4">
                                 <div class="row justify-content-center">
                                     <div class="col-md-8">
@@ -110,24 +104,25 @@
                             <div class="container my-5">
                                 <h3 class="text-center mb-4" style="color: green;">-- DANH SÁCH SẢN PHẨM --</h3>
                                 <div class="row text-center">
-                                    <c:forEach var="cat" items="${categories}">
+                                    <c:forEach var="parentCategory" items="${parentCategories}">
                                         <div class="col-md-3 mb-4">
                                             <div class="card h-100 border-success">
                                                 <div class="card-body text-center">
                                                     <div class="mb-3">
-                                                        <a href="<c:url value='/category/${cat.name.toLowerCase()}'/>">
-                                                            <img src="<c:url value='/images/${cat.name}.png'/>"
+                                                        <a
+                                                            href="<c:url value='/category/${parentCategory.name.toLowerCase()}'/>">
+                                                            <img src="<c:url value='/images/${parentCategory.name}.png'/>"
                                                                 alt="${cat.name}" class="img-fluid"
                                                                 style="width:70px;height:70px;">
                                                         </a>
                                                     </div>
                                                     <h5 class="card-title text-success">
-                                                        <a href="<c:url value='/category/${cat.name.toLowerCase()}'/>"
+                                                        <a href="<c:url value='/category/${parentCategory.name.toLowerCase()}'/>"
                                                             class="text-success text-decoration-none">
-                                                            ${cat.name}
+                                                            ${parentCategory.name}
                                                         </a>
                                                     </h5>
-                                                    <p class="card-text">${cat.description}</p>
+                                                    <p class="card-text">${parentCategory.description}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -325,9 +320,35 @@
 
                         </script>
 
+                        <!-- iziToast JS -->
+                        <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+
+                        <!-- Script to display notifications using iziToast -->
+                        <c:if test="${not empty successMessage}">
+                            <script>
+                                iziToast.success({
+                                    title: 'Success!',
+                                    message: '${successMessage}',
+                                    position: 'topRight',
+                                    timeout: 5000
+                                });
+                            </script>
+                        </c:if>
+
+                        <c:if test="${not empty errorMessage}">
+                            <script>
+                                iziToast.error({
+                                    title: 'Error!',
+                                    message: '${errorMessage}',
+                                    position: 'topRight',
+                                    timeout: 5000
+                                });
+                            </script>
+                        </c:if>
 
                         <!-- Include Footer -->
                         <%@ include file="common/footer.jsp" %>
+
 
 
             </body>

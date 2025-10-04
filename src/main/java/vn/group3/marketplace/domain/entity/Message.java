@@ -9,7 +9,11 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "messages")
+@Table(name = "messages", indexes = {
+        @Index(name = "idx_messages_pair_time", columnList = "user_id, seller_user_id, created_at DESC"),
+        @Index(name = "idx_messages_pair_time_rev", columnList = "seller_user_id, user_id, created_at DESC"),
+        @Index(name = "uq_sender_client_msg", columnList = "sender_user_id, client_msg_id", unique = true)
+})
 @Access(AccessType.FIELD)
 public class Message extends BaseEntity {
     @Id

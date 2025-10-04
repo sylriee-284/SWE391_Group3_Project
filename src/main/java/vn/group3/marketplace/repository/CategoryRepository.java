@@ -12,4 +12,13 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     List<Category> findByIsDeletedFalse();
 
+    // Find parent categories (categories with parent_id = null)
+    List<Category> findByParentIsNullAndIsDeletedFalse();
+
+    // Find child categories by parent id
+    List<Category> findByParentIdAndIsDeletedFalse(Long parentId);
+
+    // Find categories by parent
+    List<Category> findByParentAndIsDeletedFalse(Category parent);
+
 }
