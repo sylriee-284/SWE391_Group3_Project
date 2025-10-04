@@ -104,7 +104,7 @@
             <ul class="menu">
                 <li><a href="/homepage">Trang chủ</a></li>
                 <c:if test="${pageContext.request.userPrincipal == null}">
-                    <li><a href="/register">Đăng ký ngay nhận voucher 50k</a></li>
+                    <li><a href="/register">Đăng ký ngay</a></li>
                 </c:if>
                 <ul class="list-unstyled">
 

@@ -15,6 +15,7 @@ import jakarta.servlet.http.*;
 import vn.group3.marketplace.config.GlobalConfig;
 import vn.group3.marketplace.security.CustomUserDetailsService;
 import vn.group3.marketplace.service.*;
+import vn.group3.marketplace.util.ValidationUtils;
 
 import java.io.IOException;
 
@@ -80,15 +81,35 @@ public class AuthController {
             RedirectAttributes redirectAttributes,
             Model model) {
 
+        // Validate username
+        if (!ValidationUtils.isValidUsername(username)) {
+            model.addAttribute("errorMessage", ValidationUtils.getUsernameErrorMessage());
+            model.addAttribute("username", username);
+            model.addAttribute("email", email);
+            return "register";
+        }
+
+        // Validate email
+        if (!ValidationUtils.isValidEmail(email)) {
+            model.addAttribute("errorMessage", ValidationUtils.getEmailErrorMessage());
+            model.addAttribute("username", username);
+            model.addAttribute("email", email);
+            return "register";
+        }
+
         // Validate password
-        if (password == null || password.trim().isEmpty()) {
-            model.addAttribute("errorMessage", "Mật khẩu không được để trống hoặc chỉ chứa khoảng trắng!");
+        if (!ValidationUtils.isValidPassword(password)) {
+            model.addAttribute("errorMessage", ValidationUtils.getPasswordErrorMessage());
+            model.addAttribute("username", username);
+            model.addAttribute("email", email);
             return "register";
         }
 
         // Check password match
         if (!password.equals(repeatPassword)) {
-            model.addAttribute("errorMessage", "Mật khẩu không khớp!");
+            model.addAttribute("errorMessage", "Passwords do not match!");
+            model.addAttribute("username", username);
+            model.addAttribute("email", email);
             return "register";
         }
 
@@ -98,14 +119,14 @@ public class AuthController {
 
             // Success message
             redirectAttributes.addFlashAttribute("successMessage",
-                    "Đăng ký thành công! Vui lòng đăng nhập.");
+                    "Registration successful! Please log in.");
             return "redirect:/login";
 
         } catch (IllegalArgumentException ex) {
             model.addAttribute("errorMessage", ex.getMessage());
             return "register";
         } catch (Exception ex) {
-            model.addAttribute("errorMessage", "Có lỗi xảy ra. Vui lòng thử lại.");
+            model.addAttribute("errorMessage", "An error occurred. Please try again.");
             return "register";
         }
     }
@@ -117,10 +138,22 @@ public class AuthController {
             HttpSession session,
             Model model) {
 
+        // Validate username
+        if (!ValidationUtils.isValidUsername(username)) {
+            model.addAttribute("errorMessage", ValidationUtils.getUsernameErrorMessage());
+            return "login";
+        }
+
+        // Validate password
+        if (!ValidationUtils.isValidPassword(password)) {
+            model.addAttribute("errorMessage", ValidationUtils.getPasswordErrorMessage());
+            return "login";
+        }
+
         // Validate captcha first
         String sessionCaptcha = (String) session.getAttribute(CAPTCHA_SESSION_KEY);
         if (sessionCaptcha == null || !sessionCaptcha.equals(captcha)) {
-            model.addAttribute("errorMessage", "Mã xác thực không đúng!");
+            model.addAttribute("errorMessage", "Invalid captcha code!");
             return "login";
         }
 
@@ -129,7 +162,7 @@ public class AuthController {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
             if (!passwordEncoder.matches(password, userDetails.getPassword())) {
-                model.addAttribute("errorMessage", "Tên đăng nhập hoặc mật khẩu không đúng!");
+                model.addAttribute("errorMessage", "Invalid username or password!");
                 return "login";
             }
 
@@ -141,7 +174,7 @@ public class AuthController {
             return "redirect:/homepage";
 
         } catch (Exception e) {
-            model.addAttribute("errorMessage", "Tên đăng nhập hoặc mật khẩu không đúng!");
+            model.addAttribute("errorMessage", "Invalid username or password!");
             return "login";
         }
     }
@@ -153,7 +186,14 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public String handleForgotPassword(@RequestParam String email, HttpSession session,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, Model model) {
+
+        // Validate email
+        if (!ValidationUtils.isValidEmail(email)) {
+            model.addAttribute("errorMessage", ValidationUtils.getEmailErrorMessage());
+            return "forgot-password";
+        }
+
         try {
             String otp = captchaService.generateCaptchaText();
             session.setAttribute("otp", otp);
@@ -206,31 +246,29 @@ public class AuthController {
     public String handleResetPassword(@RequestParam String otp, @RequestParam String newPassword,
             @RequestParam String email, HttpSession session, Model model, RedirectAttributes redirectAttributes) {
 
-        // Kiểm tra mật khẩu mới không được để trống hoặc chỉ chứa khoảng trắng
-        if (newPassword == null || newPassword.trim().isEmpty()) {
-            model.addAttribute("errorMessage", "Mật khẩu không được để trống hoặc chỉ chứa khoảng trắng!");
+        // Validate password
+        if (!ValidationUtils.isValidPassword(newPassword)) {
+            model.addAttribute("errorMessage", ValidationUtils.getPasswordErrorMessage());
             return "reset-password";
         }
 
-        // Lấy OTP và thời gian từ session
+        // Get OTP and time from session
         String sessionOtp = (String) session.getAttribute("otp");
         Long otpTime = (Long) session.getAttribute("otp_time");
 
-        // Kiểm tra OTP hợp lệ và chưa hết hạn
-        if (sessionOtp != null && sessionOtp.equals(otp) && (System.currentTimeMillis() - otpTime < 600000)) { // 10
-                                                                                                               // phút
-            // Nếu OTP hợp lệ, cập nhật mật khẩu mới cho người dùng
+        // Check if OTP is valid and not expired (10 minutes)
+        if (sessionOtp != null && sessionOtp.equals(otp) && (System.currentTimeMillis() - otpTime < 600000)) {
+            // If OTP is valid, update user's password
             userService.resetPassword(newPassword, email);
-            session.removeAttribute("otp"); // Xóa OTP sau khi sử dụng
+            session.removeAttribute("otp"); // Remove OTP after use
 
-            // Thiết lập thông báo thành công và chuyển hướng tới trang login
+            // Set success message and redirect to login page
             redirectAttributes.addFlashAttribute("successMessage", "Password reset successful. You can now log in.");
-            return "redirect:/login"; // Điều hướng tới trang login
+            return "redirect:/login";
         } else {
-            // Nếu OTP không hợp lệ hoặc hết hạn, thiết lập thông báo lỗi và chuyển lại
-            // trang quên mật khẩu
+            // If OTP is invalid or expired
             redirectAttributes.addFlashAttribute("errorMessage", "Invalid or expired OTP. Please try again.");
-            return "redirect:/forgot-password"; // Điều hướng lại trang quên mật khẩu
+            return "redirect:/forgot-password";
         }
     }
 }

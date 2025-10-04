@@ -17,8 +17,8 @@ public class SystemSetting extends BaseEntity {
     private Long id;
 
     @Column(name = "setting_key", nullable = false, unique = true, length = 200)
-    private String key;
+    private String settingKey;
 
     @Column(name = "setting_value", columnDefinition = "TEXT")
-    private String value;
+    private String settingValue;
 }

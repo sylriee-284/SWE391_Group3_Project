@@ -10,13 +10,13 @@ public class AdminController {
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-        // load các số liệu báo cáo: orders, users, revenue, disputes...
+        // Load report data: orders, users, revenue, disputes...
         return "admin/dashboard";
     }
 
     @GetMapping("/categories")
-    public String manageCategories(Model model) {
-        // load danh mục
+    public String manageCategories() {
+        // Parent categories are automatically loaded by GlobalControllerAdvice
         return "admin/categories";
     }
 

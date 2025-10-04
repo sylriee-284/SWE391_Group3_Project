@@ -7,6 +7,10 @@
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
                 rel="stylesheet">
 
+            <!-- iziToast CSS -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css" />
+
+
             <style>
                 .divider:after,
                 .divider:before {
@@ -61,31 +65,33 @@
                                     <p class="text-center fw-bold mx-3 mb-0">Or</p>
                                 </div>
 
-                                <!-- Thông báo -->
-                                <c:if test="${not empty successMessage}">
-                                    <div class="alert alert-success" role="alert">
-                                        ${successMessage}
-                                    </div>
-                                </c:if>
-
-                                <c:if test="${not empty errorMessage}">
-                                    <div class="alert alert-danger" role="alert">
-                                        ${errorMessage}
-                                    </div>
-                                </c:if>
+                                <!-- Notifications will be displayed using iziToast -->
 
                                 <!-- Username input -->
                                 <div data-mdb-input-init class="form-outline mb-4">
-                                    <input type="text" id="form3Example3" name="username"
-                                        class="form-control form-control-lg" placeholder="Enter a valid username" />
-                                    <label class="form-label" for="form3Example3">Username</label>
+                                    <label class="form-label" for="username">Username</label>
+                                    <input type="text" id="username" name="username"
+                                        class="form-control form-control-lg" placeholder="Enter a valid username"
+                                        pattern="^[A-Za-z0-9_]{4,20}$"
+                                        title="Username: 4-20 ký tự, chỉ chữ cái, số và _, không bắt đầu/kết thúc bằng _"
+                                        required />
+                                    <div class="invalid-feedback" id="usernameError">
+                                        Username: 4-20 ký tự, chỉ chữ cái, số và _, không bắt đầu/kết thúc bằng _
+                                    </div>
                                 </div>
 
                                 <!-- Password input -->
                                 <div data-mdb-input-init class="form-outline mb-3">
-                                    <input type="password" id="form3Example4" name="password"
-                                        class="form-control form-control-lg" placeholder="Enter password" />
-                                    <label class="form-label" for="form3Example4">Password</label>
+                                    <label class="form-label" for="password">Password</label>
+                                    <input type="password" id="password" name="password"
+                                        class="form-control form-control-lg" placeholder="Enter password"
+                                        pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Z][a-zA-Z\d]{7,}$"
+                                        title="Password: ít nhất 8 ký tự, bắt đầu bằng chữ hoa, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số"
+                                        required />
+                                    <div class="invalid-feedback" id="passwordError">
+                                        Password: ít nhất 8 ký tự, bắt đầu bằng chữ hoa, có ít nhất 1 chữ hoa, 1 chữ
+                                        thường, 1 số
+                                    </div>
                                 </div>
 
                                 <!-- Captcha input -->
@@ -97,10 +103,10 @@
                                         <button type="button" class="btn btn-outline-secondary btn-sm ms-2"
                                             onclick="refreshCaptcha()">Làm mới</button>
                                     </div>
+                                    <label class="form-label" for="captchaInput">Mã xác thực (4 số)</label>
                                     <input type="text" id="captchaInput" name="captcha"
                                         class="form-control form-control-lg" placeholder="Nhập 4 số trong hình"
                                         maxlength="4" required />
-                                    <label class="form-label" for="captchaInput">Mã xác thực (4 số)</label>
                                 </div>
 
                                 <script>
@@ -109,17 +115,113 @@
                                         img.src = '/login/captcha?' + new Date().getTime();
                                         document.getElementById('captchaInput').value = '';
                                     }
+
+                                    // Validation functions
+                                    function validateUsername(username) {
+                                        // Kiểm tra độ dài 4-20 ký tự
+                                        if (username.length < 4 || username.length > 20) {
+                                            return false;
+                                        }
+
+                                        // Kiểm tra chỉ chứa chữ cái, số và _
+                                        if (!/^[A-Za-z0-9_]+$/.test(username)) {
+                                            return false;
+                                        }
+
+                                        // Kiểm tra không bắt đầu hoặc kết thúc bằng _
+                                        if (username.startsWith('_') || username.endsWith('_')) {
+                                            return false;
+                                        }
+
+                                        return true;
+                                    }
+
+                                    function validatePassword(password) {
+                                        // Kiểm tra độ dài ít nhất 8 ký tự
+                                        if (password.length < 8) {
+                                            return false;
+                                        }
+
+                                        // Kiểm tra bắt đầu bằng chữ hoa
+                                        if (!/^[A-Z]/.test(password)) {
+                                            return false;
+                                        }
+
+                                        // Kiểm tra có ít nhất 1 chữ hoa
+                                        if (!/[A-Z]/.test(password)) {
+                                            return false;
+                                        }
+
+                                        // Kiểm tra có ít nhất 1 chữ thường
+                                        if (!/[a-z]/.test(password)) {
+                                            return false;
+                                        }
+
+                                        // Kiểm tra có ít nhất 1 số
+                                        if (!/\d/.test(password)) {
+                                            return false;
+                                        }
+
+                                        return true;
+                                    }
+
+                                    // Real-time validation
+                                    document.getElementById('username').addEventListener('input', function () {
+                                        var username = this.value;
+                                        var isValid = validateUsername(username);
+
+                                        if (username.length > 0 && !isValid) {
+                                            this.setCustomValidity('Username không hợp lệ');
+                                            this.classList.add('is-invalid');
+                                        } else {
+                                            this.setCustomValidity('');
+                                            this.classList.remove('is-invalid');
+                                        }
+                                    });
+
+                                    document.getElementById('password').addEventListener('input', function () {
+                                        var password = this.value;
+                                        var isValid = validatePassword(password);
+
+                                        if (password.length > 0 && !isValid) {
+                                            this.setCustomValidity('Password không hợp lệ');
+                                            this.classList.add('is-invalid');
+                                        } else {
+                                            this.setCustomValidity('');
+                                            this.classList.remove('is-invalid');
+                                        }
+                                    });
+
+                                    // Form submission validation
+                                    document.querySelector('form').addEventListener('submit', function (e) {
+                                        var username = document.getElementById('username').value;
+                                        var password = document.getElementById('password').value;
+
+                                        if (!validateUsername(username)) {
+                                            e.preventDefault();
+                                            iziToast.error({
+                                                title: 'Lỗi!',
+                                                message: 'Username: 4-20 ký tự, chỉ chữ cái, số và _, không bắt đầu/kết thúc bằng _',
+                                                position: 'topRight',
+                                                timeout: 5000
+                                            });
+                                            return false;
+                                        }
+
+                                        if (!validatePassword(password)) {
+                                            e.preventDefault();
+                                            iziToast.error({
+                                                title: 'Lỗi!',
+                                                message: 'Password: ít nhất 8 ký tự, bắt đầu bằng chữ hoa, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số',
+                                                position: 'topRight',
+                                                timeout: 5000
+                                            });
+                                            return false;
+                                        }
+                                    });
                                 </script>
 
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <!-- Checkbox -->
-                                    <div class="form-check mb-0">
-                                        <input class="form-check-input me-2" type="checkbox" value=""
-                                            id="form2Example3" />
-                                        <label class="form-check-label" for="form2Example3">
-                                            Remember me
-                                        </label>
-                                    </div>
                                     <a href="/forgot-password" class="text-body">Forgot password?</a>
                                 </div>
 
@@ -161,6 +263,32 @@
                     <!-- Right -->
                 </div>
             </section>
+
+            <!-- iziToast JS -->
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+
+            <!-- Script to display notifications using iziToast -->
+            <c:if test="${not empty successMessage}">
+                <script>
+                    iziToast.success({
+                        title: 'Success!',
+                        message: '${successMessage}',
+                        position: 'topRight',
+                        timeout: 5000
+                    });
+                </script>
+            </c:if>
+
+            <c:if test="${not empty errorMessage}">
+                <script>
+                    iziToast.error({
+                        title: 'Error!',
+                        message: '${errorMessage}',
+                        position: 'topRight',
+                        timeout: 5000
+                    });
+                </script>
+            </c:if>
 
         </body>
 

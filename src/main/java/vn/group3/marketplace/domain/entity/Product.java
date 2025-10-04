@@ -25,13 +25,16 @@ public class Product extends BaseEntity {
     private SellerStore sellerStore;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
     @Column(nullable = false)
     private String name;
 
     private String slug;
+
+    @Column(name = "product_url", length = 500)
+    private String productUrl;
 
     @Column(columnDefinition = "TEXT")
     private String description;

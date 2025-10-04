@@ -26,6 +26,10 @@ public class Notification extends BaseEntity {
     private NotificationType type;
 
     private String title;
+
+    @Column(columnDefinition = "TEXT")
     private String content;
+
+    @Column(name = "read_at")
     private java.time.LocalDateTime readAt;
 }

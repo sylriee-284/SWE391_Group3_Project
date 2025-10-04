@@ -13,6 +13,9 @@
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
                 rel="stylesheet">
 
+            <!-- iziToast CSS -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css" />
+
             <!-- Thêm font và style tùy chỉnh -->
             <style>
                 body {
@@ -42,18 +45,7 @@
                     </p>
                     <!-- Input email với validation -->
                     <form action="/forgot-password" method="POST" class="needs-validation" novalidate>
-                        <!-- Thông báo -->
-                        <c:if test="${not empty successMessage}">
-                            <div class="alert alert-success" role="alert">
-                                ${successMessage}
-                            </div>
-                        </c:if>
-
-                        <c:if test="${not empty errorMessage}">
-                            <div class="alert alert-danger" role="alert">
-                                ${errorMessage}
-                            </div>
-                        </c:if>
+                        <!-- Notifications will be displayed using iziToast -->
 
                         <div class="form-outline">
                             <input type="email" id="typeEmail" name="email" class="form-control my-3"
@@ -94,6 +86,32 @@
 
             <!-- Thêm link tới Bootstrap JS (cần thiết cho tính năng validation) -->
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+            <!-- iziToast JS -->
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+
+            <!-- Script to display notifications using iziToast -->
+            <c:if test="${not empty successMessage}">
+                <script>
+                    iziToast.success({
+                        title: 'Success!',
+                        message: '${successMessage}',
+                        position: 'topRight',
+                        timeout: 5000
+                    });
+                </script>
+            </c:if>
+
+            <c:if test="${not empty errorMessage}">
+                <script>
+                    iziToast.error({
+                        title: 'Error!',
+                        message: '${errorMessage}',
+                        position: 'topRight',
+                        timeout: 5000
+                    });
+                </script>
+            </c:if>
 
         </body>
 
