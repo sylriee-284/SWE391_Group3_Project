@@ -55,4 +55,34 @@ public class CategoryService {
     public Category getCategoryById(Long id) {
         return categoryRepository.findById(id).orElse(null);
     }
+
+    /**
+     * Get category by name
+     *
+     * @param name Category name
+     * @return Category or null if not found
+     */
+    public Category getCategoryByName(String name) {
+        return categoryRepository.findByNameAndIsDeletedFalse(name).orElse(null);
+    }
+
+    /**
+     * Get parent category by name (case insensitive)
+     * 
+     * @param name Category name
+     * @return Parent category or null if not found
+     */
+    public Category getParentCategoryByName(String name) {
+        // First try exact match
+        Category category = getCategoryByName(name);
+        if (category != null && category.getParent() == null) {
+            return category;
+        }
+
+        // If not found, try case insensitive search among parent categories
+        return getParentCategories().stream()
+                .filter(cat -> cat.getName().equalsIgnoreCase(name))
+                .findFirst()
+                .orElse(null);
+    }
 }
