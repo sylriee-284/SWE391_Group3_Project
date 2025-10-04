@@ -25,6 +25,7 @@ public class CategoryController {
     /**
      * Display category products with filtering and pagination
      */
+    // test
     @GetMapping("/category/{categoryName}")
     public String getCategoryByName(
             @PathVariable String categoryName,
