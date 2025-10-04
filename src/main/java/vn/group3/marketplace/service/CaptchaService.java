@@ -30,7 +30,7 @@ public class CaptchaService {
         g2d.setColor(Color.WHITE);
         g2d.fillRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
         g2d.setFont(new Font("Arial", Font.BOLD, 28));
-        // Vẽ các đường kẻ nhiễu
+        // Draw noise lines
         g2d.setColor(new Color(180, 180, 180));
         for (int i = 0; i < 3; i++) {
             int x1 = random.nextInt(IMAGE_WIDTH);
@@ -39,7 +39,7 @@ public class CaptchaService {
             int y2 = random.nextInt(IMAGE_HEIGHT);
             g2d.drawLine(x1, y1, x2, y2);
         }
-        // Vẽ chuỗi số
+        // Draw number string
         g2d.setColor(Color.BLACK);
         int x = 15;
         for (int i = 0; i < captchaText.length(); i++) {

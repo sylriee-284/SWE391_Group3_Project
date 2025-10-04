@@ -28,6 +28,9 @@ public class ProductReview extends BaseEntity {
     @JoinColumn(name = "reviewer_user_id", nullable = false)
     private User reviewer;
 
+    @Column(name = "rating", nullable = false)
     private Byte rating;
+
+    @Column(columnDefinition = "TEXT")
     private String content;
 }

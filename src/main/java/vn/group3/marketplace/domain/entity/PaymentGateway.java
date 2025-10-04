@@ -22,9 +22,10 @@ public class PaymentGateway extends BaseEntity {
     @Column(nullable = false, length = 255)
     private String name;
 
+    @Column(nullable = false)
     @Builder.Default
     private Boolean enabled = true;
 
-    @Column(columnDefinition = "TEXT")
-    private String config; // JSON
+    @Column(columnDefinition = "JSON")
+    private String config;
 }

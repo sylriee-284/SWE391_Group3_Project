@@ -22,31 +22,31 @@ public class UserService {
 
     @Transactional
     public void registerUser(String username, String email, String rawPassword) {
-        // Kiểm tra username trùng
+        // Check username duplicate
         if (userRepository.findByUsername(username).isPresent()) {
-            throw new IllegalArgumentException("Username đã tồn tại!");
+            throw new IllegalArgumentException("Username already exists!");
         }
 
-        // Kiểm tra email trùng
+        // Check email duplicate
         if (userRepository.findByEmail(email).isPresent()) {
-            throw new IllegalArgumentException("Email đã tồn tại!");
+            throw new IllegalArgumentException("Email already exists!");
         }
 
-        // Tạo user mới với balance mặc định
+        // Create new user with default balance
         User user = User.builder()
                 .username(username)
                 .email(email)
                 .passwordHash(passwordEncoder.encode(rawPassword))
                 .status(UserStatus.ACTIVE)
-                .balance(BigDecimal.ZERO) // Balance được lưu trực tiếp trong User
+                .balance(BigDecimal.ZERO) // Balance is stored directly in User
                 .build();
 
-        // Gán role mặc định
+        // Assign default role
         Role role = roleRepository.findByCode("USER")
-                .orElseThrow(() -> new RuntimeException("Role USER không tồn tại"));
+                .orElseThrow(() -> new RuntimeException("Role USER does not exist"));
         user.getRoles().add(role);
 
-        // Lưu user
+        // Save user
         userRepository.save(user);
     }
 

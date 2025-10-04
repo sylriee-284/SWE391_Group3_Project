@@ -21,14 +21,14 @@ public class ChatController {
             @RequestParam(value = "image", required = false) MultipartFile image,
             RedirectAttributes redirectAttributes) {
 
-        // Xử lý tin nhắn và ảnh ở đây
+        // Process message and image here
         System.out.println("Message: " + message);
         if (image != null && !image.isEmpty()) {
             System.out.println("Image: " + image.getOriginalFilename());
         }
 
-        // Redirect về trang chat
-        redirectAttributes.addFlashAttribute("successMessage", "Tin nhắn đã được gửi!");
+        // Redirect to chat page
+        redirectAttributes.addFlashAttribute("successMessage", "Message sent successfully!");
         return "redirect:/chat";
     }
 }
