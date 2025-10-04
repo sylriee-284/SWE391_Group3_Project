@@ -336,19 +336,6 @@
                                                         </p>
                                                     </c:otherwise>
                                                 </c:choose>
-
-                                                <c:if test="${not empty product.productUrl}">
-                                                    <div class="mt-4">
-                                                        <h5><i class="fas fa-link text-success"></i> Link sản phẩm:</h5>
-                                                        <div class="alert alert-info">
-                                                            <a href="${product.productUrl}" target="_blank"
-                                                                class="text-decoration-none">
-                                                                <i class="fas fa-external-link-alt"></i>
-                                                                ${product.productUrl}
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                </c:if>
                                             </div>
                                         </div>
                                     </div>
