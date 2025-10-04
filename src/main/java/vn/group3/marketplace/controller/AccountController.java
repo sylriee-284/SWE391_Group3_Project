@@ -1,5 +1,5 @@
 package vn.group3.marketplace.controller;
 
-public class CategoryController {
+public class AccountController {
 
 }

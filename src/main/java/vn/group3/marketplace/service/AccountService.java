@@ -1,5 +1,5 @@
 package vn.group3.marketplace.service;
 
-public class CategoryService {
+public class AccountService {
 
 }

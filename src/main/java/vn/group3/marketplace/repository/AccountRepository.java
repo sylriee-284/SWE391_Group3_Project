@@ -1,5 +1,5 @@
 package vn.group3.marketplace.repository;
 
-public interface CategoryRepository {
+public class AccountRepository {
 
 }
