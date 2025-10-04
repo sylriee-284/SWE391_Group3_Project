@@ -327,7 +327,7 @@
                                                 <c:choose>
                                                     <c:when test="${not empty product.description}">
                                                         <div class="product-description">
-                                                            <p style="white-space: pre-wrap; line-height: 1.6;">
+                                                            <p>
                                                                 ${product.description}</p>
                                                         </div>
                                                     </c:when>
