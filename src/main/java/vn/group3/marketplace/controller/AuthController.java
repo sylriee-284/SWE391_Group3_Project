@@ -79,7 +79,8 @@ public class AuthController {
             @RequestParam("password") String password,
             @RequestParam("repeatPassword") String repeatPassword,
             RedirectAttributes redirectAttributes,
-            Model model) {
+            Model model,
+            HttpSession session) {
 
         // Validate username
         if (!ValidationUtils.isValidUsername(username)) {
@@ -113,14 +114,36 @@ public class AuthController {
             return "register";
         }
 
+        // Check if username or email already exists
         try {
-            // Register user
-            userService.registerUser(username, email, password);
+            if (userService.findByUsername(username).isPresent()) {
+                model.addAttribute("errorMessage", "Username already exists!");
+                model.addAttribute("username", username);
+                model.addAttribute("email", email);
+                return "register";
+            }
 
-            // Success message
+            if (userService.findByEmail(email).isPresent()) {
+                model.addAttribute("errorMessage", "Email already exists!");
+                model.addAttribute("username", username);
+                model.addAttribute("email", email);
+                return "register";
+            }
+
+            // Generate OTP and store registration data in session
+            String otp = captchaService.generateCaptchaText();
+            session.setAttribute("registration_otp", otp);
+            session.setAttribute("registration_otp_time", System.currentTimeMillis());
+            session.setAttribute("registration_username", username);
+            session.setAttribute("registration_email", email);
+            session.setAttribute("registration_password", password);
+
+            // Send OTP email
+            emailService.sendEmailWithRegistrationOTP(email, otp);
+
             redirectAttributes.addFlashAttribute("successMessage",
-                    "Registration successful! Please log in.");
-            return "redirect:/login";
+                    "An OTP has been sent to your email. Please check your inbox and verify your email to complete registration.");
+            return "redirect:/verify-otp";
 
         } catch (IllegalArgumentException ex) {
             model.addAttribute("errorMessage", ex.getMessage());
@@ -199,29 +222,9 @@ public class AuthController {
             session.setAttribute("otp", otp);
             session.setAttribute("otp_time", System.currentTimeMillis());
             session.setAttribute("reset_email", email);
-            String resetLink = GlobalConfig.BASE_URL + "/reset-password";
 
-            // Email content
-            String subject = "Reset Your Password - MMO Market System";
-            String body = "<html><body>" +
-                    "<h2>Password Reset Request</h2>" +
-                    "<p>Hello,</p>" +
-                    "<p>You have requested to reset your password. Please use the following information:</p>" +
-                    "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0;'>" +
-                    "<p><strong>Your OTP:</strong> <span style='font-size: 18px; color: #007bff; font-weight: bold;'>"
-                    + otp + "</span></p>" +
-                    "</div>" +
-                    "<p>Click the link below to reset your password:</p>" +
-                    "<p><a href='" + resetLink
-                    + "' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Reset Password</a></p>"
-                    +
-                    "<p><strong>Note:</strong> This OTP will expire in 10 minutes for security reasons.</p>" +
-                    "<p>If you did not request this password reset, please ignore this email.</p>" +
-                    "<br>" +
-                    "<p>Best regards,<br>MMO Market System Team</p>" +
-                    "</body></html>";
-
-            emailService.sendEmail(email, subject, body);
+            // Send reset password OTP email
+            emailService.sendEmailWithResetPasswordOTP(email, otp);
             redirectAttributes.addFlashAttribute("successMessage",
                     "An email with the OTP has been sent. Please check your inbox.");
             session.removeAttribute("successMessage");
@@ -269,6 +272,89 @@ public class AuthController {
             // If OTP is invalid or expired
             redirectAttributes.addFlashAttribute("errorMessage", "Invalid or expired OTP. Please try again.");
             return "redirect:/forgot-password";
+        }
+    }
+
+    @GetMapping("/verify-otp")
+    public String verifyOtpPage(Model model) {
+        return "verify-otp";
+    }
+
+    @PostMapping("/verify-otp")
+    public String handleVerifyOtp(@RequestParam String otp, HttpSession session,
+            RedirectAttributes redirectAttributes, Model model) {
+
+        // Get OTP and time from session
+        String sessionOtp = (String) session.getAttribute("registration_otp");
+        Long otpTime = (Long) session.getAttribute("registration_otp_time");
+
+        // Check if OTP is valid and not expired (10 minutes)
+        if (sessionOtp != null && sessionOtp.equals(otp) && (System.currentTimeMillis() - otpTime < 600000)) {
+            try {
+                // Get registration data from session
+                String username = (String) session.getAttribute("registration_username");
+                String email = (String) session.getAttribute("registration_email");
+                String password = (String) session.getAttribute("registration_password");
+
+                // Register user
+                userService.registerUser(username, email, password);
+
+                // Clear session data
+                session.removeAttribute("registration_otp");
+                session.removeAttribute("registration_otp_time");
+                session.removeAttribute("registration_username");
+                session.removeAttribute("registration_email");
+                session.removeAttribute("registration_password");
+
+                // Success message
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "Registration successful! Please log in.");
+                return "redirect:/login";
+
+            } catch (Exception ex) {
+                model.addAttribute("errorMessage", "Registration failed. Please try again.");
+                return "verify-otp";
+            }
+        } else {
+            // If OTP is invalid or expired, stay on the same page and show error
+            if (sessionOtp == null || otpTime == null) {
+                model.addAttribute("errorMessage", "No OTP found. Please register again.");
+                return "verify-otp";
+            } else if (System.currentTimeMillis() - otpTime >= 600000) {
+                model.addAttribute("errorMessage", "OTP has expired. Please register again.");
+                return "verify-otp";
+            } else {
+                model.addAttribute("errorMessage", "Invalid OTP. Please try again.");
+                return "verify-otp";
+            }
+        }
+    }
+
+    @PostMapping("/resend-otp")
+    public String resendOtp(HttpSession session, RedirectAttributes redirectAttributes, Model model) {
+        try {
+            // Get registration data from session
+            String email = (String) session.getAttribute("registration_email");
+
+            if (email == null) {
+                model.addAttribute("errorMessage", "No registration session found. Please register again.");
+                return "verify-otp";
+            }
+
+            // Generate new OTP
+            String otp = captchaService.generateCaptchaText();
+            session.setAttribute("registration_otp", otp);
+            session.setAttribute("registration_otp_time", System.currentTimeMillis());
+
+            // Send new OTP email
+            emailService.sendEmailWithRegistrationOTP(email, otp);
+
+            model.addAttribute("successMessage", "A new OTP has been sent to your email.");
+            return "verify-otp";
+
+        } catch (Exception ex) {
+            model.addAttribute("errorMessage", "Failed to resend OTP. Please try again.");
+            return "verify-otp";
         }
     }
 }
