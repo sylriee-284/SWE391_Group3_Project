@@ -9,7 +9,6 @@ import vn.group3.marketplace.service.CategoryService;
 import java.util.List;
 
 @Controller
-@RequestMapping("/categories")
 public class CategoryController {
 
     private final CategoryService categoryService;
@@ -19,42 +18,11 @@ public class CategoryController {
     }
 
     /**
-     * Display all parent categories
-     * Note: parentCategories are automatically loaded by GlobalControllerAdvice
+     * Display category by name
      */
-    @GetMapping("/parents")
-    public String getParentCategories() {
-        return "category/parent-categories";
-    }
-
-    /**
-     * Display child categories of a specific parent
-     */
-    @GetMapping("/{parentId}/children")
-    public String getChildCategories(@PathVariable Long parentId, Model model) {
-        List<Category> childCategories = categoryService.getChildCategories(parentId);
-        Category parentCategory = categoryService.getCategoryById(parentId);
-
-        model.addAttribute("childCategories", childCategories);
-        model.addAttribute("parentCategory", parentCategory);
-        return "category/child-categories";
-    }
-
-    /**
-     * API endpoint to get parent categories as JSON
-     */
-    @GetMapping("/api/parents")
-    @ResponseBody
-    public List<Category> getParentCategoriesApi() {
-        return categoryService.getParentCategories();
-    }
-
-    /**
-     * API endpoint to get child categories as JSON
-     */
-    @GetMapping("/api/{parentId}/children")
-    @ResponseBody
-    public List<Category> getChildCategoriesApi(@PathVariable Long parentId) {
-        return categoryService.getChildCategories(parentId);
+    @GetMapping("/category/{categoryName}")
+    public String getCategoryByName(@PathVariable String categoryName) {
+        // Simple redirect to homepage for now
+        return "redirect:/homepage";
     }
 }
