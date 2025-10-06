@@ -148,6 +148,24 @@
 
 
 
+                        /* Shop info styling */
+                        .shop-info {
+                            background: #f8f9fa;
+                            border: 1px solid #e9ecef;
+                            border-radius: 10px;
+                            padding: 20px;
+                        }
+
+                        .shop-avatar {
+                            width: 50px;
+                            height: 50px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            background: rgba(13, 110, 253, 0.1);
+                            border-radius: 10px;
+                        }
+
                         /* Responsive Design */
                         @media (max-width: 768px) {
                             .content {
@@ -252,6 +270,29 @@
                                                             currencySymbol="" maxFractionDigits="0" />đ
                                                     </div>
                                                 </div>
+
+                                                <!-- Shop Information -->
+                                                <div class="mb-4 shop-info">
+
+                                                    <div class="d-flex align-items-center">
+
+                                                        <div class="flex-grow-1">
+
+                                                            <h6 class="mb-1 text-dark">Người bán: ${shop.storeName}</h6>
+
+
+                                                            <div>
+                                                                <span
+                                                                    class="badge ${shop.status == 'ACTIVE' ? 'bg-success' : 'bg-warning'}">
+                                                                    <i class="fas fa-circle me-1"></i>${shop.status ==
+                                                                    'ACTIVE' ? 'Đang hoạt động' : 'Tạm ngưng'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+
 
                                                 <!-- Stock Status -->
                                                 <div class="mb-4">

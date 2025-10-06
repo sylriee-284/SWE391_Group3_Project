@@ -21,6 +21,7 @@ public class ProductController {
      * @param model     Model to pass data to view
      * @return Product detail view
      */
+
     @GetMapping("/{productId}")
     public String getProductDetail(@PathVariable Long productId, Model model) {
         Product product = productService.getProductById(productId);
@@ -36,43 +37,12 @@ public class ProductController {
             return "redirect:/";
         }
 
+        // Add product and shop information to model
         model.addAttribute("product", product);
+        model.addAttribute("shop", product.getSellerStore());
+        model.addAttribute("shopOwner", product.getSellerStore().getOwner());
+
         return "product/detail";
     }
 
-    /**
-     * Handle buy now action
-     * 
-     * @param productId Product ID
-     * @param quantity  Quantity to buy
-     * @param model     Model for response
-     * @return Response view or redirect
-     */
-    @PostMapping("/{productId}/buy-now")
-    public String buyNow(@PathVariable Long productId,
-            @RequestParam(defaultValue = "1") Integer quantity,
-            Model model) {
-        try {
-            Product product = productService.getProductById(productId);
-
-            if (product == null) {
-                model.addAttribute("errorMessage", "Không tìm thấy sản phẩm");
-                return "redirect:/product/" + productId;
-            }
-
-            if (quantity > product.getStock()) {
-                model.addAttribute("errorMessage", "Số lượng yêu cầu vượt quá tồn kho");
-                return "redirect:/product/" + productId;
-            }
-
-            // TODO: Implement buy now logic - redirect to checkout
-            // For now, redirect to product page with message
-            model.addAttribute("successMessage", "Chuyển đến trang thanh toán");
-            return "redirect:/checkout?productId=" + productId + "&quantity=" + quantity;
-
-        } catch (Exception e) {
-            model.addAttribute("errorMessage", "Có lỗi xảy ra khi mua sản phẩm");
-            return "redirect:/product/" + productId;
-        }
-    }
 }
