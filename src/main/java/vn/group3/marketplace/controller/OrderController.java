@@ -102,7 +102,7 @@ public class OrderController {
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @PathVariable Long id,
             Model model) {
-        Order order = orderService.findById(id)
+        Order order = orderService.findByIdWithProductStorages(id)
                 .orElse(null);
 
         if (order == null) {
@@ -121,6 +121,8 @@ public class OrderController {
             return "redirect:/error";
         }
 
+        // Lấy trực tiếp các ProductStorage đã gán cho order này qua quan hệ @OneToMany
+        model.addAttribute("deliveredStorages", order.getProductStorages());
         model.addAttribute("order", order);
         model.addAttribute("isSeller", hasAuthority(currentUser, "ROLE_SELLER"));
         return "order/detail";

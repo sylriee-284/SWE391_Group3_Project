@@ -1,8 +1,12 @@
+// ...existing code...
+// Lấy order kèm productStorages (fetch join)
 package vn.group3.marketplace.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import vn.group3.marketplace.domain.entity.Order;
@@ -44,4 +48,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     // Đếm số đơn hàng theo người mua
     Long countByBuyer(User buyer);
+
+    // Lấy order kèm productStorages (fetch join)
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.productStorages WHERE o.id = :id")
+    java.util.Optional<Order> findByIdWithProductStorages(@Param("id") Long id);
 }

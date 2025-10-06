@@ -17,6 +17,12 @@ import java.util.Optional;
 
 @Service
 public class OrderService {
+    /**
+     * Lấy đơn hàng kèm productStorages (fetch join)
+     */
+    public Optional<Order> findByIdWithProductStorages(Long id) {
+        return orderRepository.findByIdWithProductStorages(id);
+    }
 
     private final OrderRepository orderRepository;
 

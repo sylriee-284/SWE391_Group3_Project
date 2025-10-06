@@ -50,4 +50,5 @@ public class Product extends BaseEntity {
     @Column(length = 20)
     @Builder.Default
     private ProductStatus status = ProductStatus.ACTIVE;
+
 }

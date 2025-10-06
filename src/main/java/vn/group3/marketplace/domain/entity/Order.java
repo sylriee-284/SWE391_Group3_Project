@@ -1,6 +1,9 @@
 package vn.group3.marketplace.domain.entity;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.*;
 import lombok.*;
 import vn.group3.marketplace.domain.enums.OrderStatus;
@@ -32,9 +35,9 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "product_storage_id")
-    private ProductStorage productStorage;
+    // @ManyToOne(fetch = FetchType.EAGER)
+    // @JoinColumn(name = "product_storage_id")
+    // private ProductStorage productStorage;
 
     @Column(name = "product_name", nullable = false)
     private String productName;
@@ -56,4 +59,8 @@ public class Order extends BaseEntity {
 
     @Column(name = "total_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal totalAmount;
+
+    @OneToMany(mappedBy = "order")
+    private List<ProductStorage> productStorages = new ArrayList<>();
+
 }
