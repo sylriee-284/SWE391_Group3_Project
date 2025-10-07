@@ -61,6 +61,6 @@ public class Order extends BaseEntity {
     private BigDecimal totalAmount;
 
     @OneToMany(mappedBy = "order")
-    private List<ProductStorage> productStorages = new ArrayList<>();
-
+    @Builder.Default
+    private java.util.List<ProductStorage> productStorages = new java.util.ArrayList<>();
 }

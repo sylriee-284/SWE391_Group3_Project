@@ -44,5 +44,4 @@ public class WalletTransaction extends BaseEntity {
 
     @Column(name = "payment_method", length = 50)
     private String paymentMethod;
-
 }

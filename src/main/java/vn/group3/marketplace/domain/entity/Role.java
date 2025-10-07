@@ -1,7 +1,5 @@
 package vn.group3.marketplace.domain.entity;
 
-import java.util.Set;
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -33,7 +31,8 @@ public class Role extends BaseEntity {
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "role_permissions", joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
     private Set<Permission> permissions;
-    // Many-to-Many với User
-    @ManyToMany(mappedBy = "roles")
-    private Set<User> users;
+
+    // One-to-Many với UserRole
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<UserRole> userRoles;
 }

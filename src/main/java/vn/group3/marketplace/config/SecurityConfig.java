@@ -26,8 +26,10 @@ public class SecurityConfig {
                                                 .maxSessionsPreventsLogin(false))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/", "/homepage", "/products/**",
-                                                                "/login", "/login/captcha", "/logout", "/register",
-                                                                "/css/**", "/js/**", "/images/**",
+                                                                "/login", "/logout", "/register",
+                                                                "/login/captcha", "/forgot-password", "/reset-password",
+                                                                "/debug/**",
+                                                                "/css/**", "/js/**", "/images/**", "/resources/**",
                                                                 "/webjars/**", "/static/**",
                                                                 "/WEB-INF/view/**")
                                                 .permitAll()

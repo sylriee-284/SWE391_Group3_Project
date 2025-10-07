@@ -43,4 +43,8 @@ public class SellerStore extends BaseEntity {
     @Column(name = "deposit_currency", length = 3, nullable = false)
     @Builder.Default
     private String depositCurrency = "VND";
+
+    @Column(nullable = false, precision = 3, scale = 2)
+    @Builder.Default
+    private BigDecimal rating = BigDecimal.ZERO;
 }
