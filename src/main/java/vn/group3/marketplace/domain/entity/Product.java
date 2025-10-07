@@ -50,4 +50,12 @@ public class Product extends BaseEntity {
     @Column(length = 20)
     @Builder.Default
     private ProductStatus status = ProductStatus.ACTIVE;
+
+    @Column(nullable = false, precision = 3, scale = 2)
+    @Builder.Default
+    private BigDecimal rating = BigDecimal.ZERO;
+
+    @Column(name = "rating_count", nullable = false)
+    @Builder.Default
+    private Integer ratingCount = 0;
 }

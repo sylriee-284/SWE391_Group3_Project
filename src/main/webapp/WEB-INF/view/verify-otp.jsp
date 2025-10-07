@@ -32,17 +32,59 @@
                 .otp-container {
                     max-width: 400px;
                     margin: 0 auto;
+                    border: 2px solid #e9ecef;
+                    border-radius: 15px;
+                    padding: 2rem;
+                    background-color: #ffffff;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
                 }
 
                 .otp-input {
                     font-size: 1.5rem;
                     text-align: center;
                     letter-spacing: 0.5rem;
+                    border: 2px solid #dee2e6;
+                    border-radius: 8px;
+                    transition: border-color 0.3s ease;
+                }
+
+                .otp-input:focus {
+                    border-color: #007bff;
+                    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
                 }
 
                 .resend-timer {
                     font-size: 0.9rem;
                     color: #6c757d;
+                }
+
+                .btn-verify {
+                    border: 2px solid #007bff;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    transition: all 0.3s ease;
+                }
+
+                .btn-verify:hover {
+                    border-color: #0056b3;
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+                }
+
+                .back-link {
+                    display: inline-block;
+                    padding: 0.5rem 1rem;
+                    border: 1px solid #6c757d;
+                    border-radius: 6px;
+                    color: #6c757d;
+                    text-decoration: none;
+                    transition: all 0.3s ease;
+                }
+
+                .back-link:hover {
+                    border-color: #495057;
+                    color: #495057;
+                    background-color: #f8f9fa;
                 }
             </style>
         </head>
@@ -72,7 +114,7 @@
                                     </div>
 
                                     <div class="text-center mb-3">
-                                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                                        <button type="submit" class="btn btn-primary btn-lg w-100 btn-verify">
                                             Verify Email
                                         </button>
                                     </div>
@@ -96,7 +138,7 @@
                                 </form>
 
                                 <div class="text-center mt-3">
-                                    <a href="/register" class="text-decoration-none">
+                                    <a href="/register" class="back-link">
                                         <i class="fas fa-arrow-left me-1"></i>
                                         Back to Registration
                                     </a>

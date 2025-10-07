@@ -41,4 +41,8 @@ public class ProductStorage extends BaseEntity {
 
     @Column(length = 255)
     private String note;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id")
+    private Order order;
 }
