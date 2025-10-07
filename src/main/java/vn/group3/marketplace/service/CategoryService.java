@@ -1,6 +1,9 @@
 package vn.group3.marketplace.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -55,4 +58,42 @@ public class CategoryService {
     public Category getCategoryById(Long id) {
         return categoryRepository.findById(id).orElse(null);
     }
+
+    // --- CRUD: Start of Admin Category Management ---
+    public List<Category> getAll() {
+        return categoryRepository.findAll()
+                .stream()
+                .filter(c -> !Boolean.TRUE.equals(c.getIsDeleted()))
+                .collect(Collectors.toList());
+    }
+
+    public Optional<Category> getById(Long id) {
+        return categoryRepository.findById(id)
+                .filter(c -> !Boolean.TRUE.equals(c.getIsDeleted()));
+    }
+
+    public Category create(Category category) {
+        category.setId(null);
+        category.setIsDeleted(false);
+        // category.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
+        return categoryRepository.save(category);
+    }
+
+    public Category update(Long id, Category updated) {
+        return categoryRepository.findById(id).map(existing -> {
+            existing.setName(updated.getName());
+            existing.setDescription(updated.getDescription());
+            // existing.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
+            return categoryRepository.save(existing);
+        }).orElseThrow(() -> new RuntimeException("Category not found"));
+    }
+
+    public void softDelete(Long id, Long adminId) {
+        categoryRepository.findById(id).ifPresent(c -> {
+            c.setIsDeleted(true);
+            c.setDeletedBy(adminId);
+            categoryRepository.save(c);
+        });
+    }
+    // --- CRUD: End of Admin Category Management ---
 }

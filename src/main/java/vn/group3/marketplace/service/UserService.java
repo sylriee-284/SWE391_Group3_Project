@@ -1,7 +1,12 @@
 package vn.group3.marketplace.service;
 
+import java.sql.Timestamp;
+import java.util.List;
+
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -67,4 +72,52 @@ public class UserService {
         String encodedPassword = passwordEncoder.encode(newPassword);
         userRepository.updatePassword(encodedPassword, email);
     }
+
+    // --- CRUD: Start of Admin Account Management ---
+    public List<User> getAllActiveUsers() {
+        // Lấy toàn bộ user chưa bị xóa (isDeleted = false)
+        return userRepository.findAll()
+                .stream()
+                .filter(u -> !Boolean.TRUE.equals(u.getIsDeleted()))
+                .collect(Collectors.toList());
+    }
+
+    public Optional<User> getUserById(Long id) {
+        // Tìm user theo ID, chỉ trả nếu chưa bị xóa
+        return userRepository.findById(id)
+                .filter(u -> !Boolean.TRUE.equals(u.getIsDeleted()));
+    }
+
+    public User createUser(User user) {
+        // Tạo mới user (admin thêm user)
+        user.setId(null); // đảm bảo là insert mới
+        // user.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
+        user.setIsDeleted(false);
+        user.setStatus(UserStatus.ACTIVE);
+        return userRepository.save(user);
+    }
+
+    public User updateUser(Long id, User updatedUser) {
+        // Cập nhật thông tin user
+        return userRepository.findById(id).map(existing -> {
+            existing.setFullName(updatedUser.getFullName());
+            existing.setEmail(updatedUser.getEmail());
+            existing.setPhone(updatedUser.getPhone());
+            existing.setGender(updatedUser.getGender());
+            existing.setStatus(updatedUser.getStatus());
+            // existing.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
+            return userRepository.save(existing);
+        }).orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    public void softDeleteUser(Long id, Long adminId) {
+        // Xóa mềm user
+        userRepository.findById(id).ifPresent(user -> {
+            user.setIsDeleted(true);
+            user.setDeletedBy(adminId);
+            user.setStatus(UserStatus.INACTIVE);
+            userRepository.save(user);
+        });
+    }
+    // --- CRUD: End of Admin Account Management ---
 }
