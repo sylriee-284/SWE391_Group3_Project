@@ -35,4 +35,13 @@ public class WalletTransaction extends BaseEntity {
 
     @Column(length = 500)
     private String note;
+
+    @Column(name = "payment_ref", length = 100)
+    private String paymentRef;
+
+    @Column(name = "payment_status", length = 50)
+    private String paymentStatus;
+
+    @Column(name = "payment_method", length = 50)
+    private String paymentMethod;
 }

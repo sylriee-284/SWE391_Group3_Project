@@ -56,4 +56,8 @@ public class Order extends BaseEntity {
 
     @Column(name = "total_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal totalAmount;
+
+    @OneToMany(mappedBy = "order")
+    @Builder.Default
+    private java.util.List<ProductStorage> productStorages = new java.util.ArrayList<>();
 }
