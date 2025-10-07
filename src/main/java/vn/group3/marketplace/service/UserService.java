@@ -38,15 +38,20 @@ public class UserService {
                 .email(email)
                 .passwordHash(passwordEncoder.encode(rawPassword))
                 .status(UserStatus.ACTIVE)
-                .balance(BigDecimal.ZERO) // Balance is stored directly in User
+                .balance(BigDecimal.ZERO)
                 .build();
 
         // Assign default role
         Role role = roleRepository.findByCode("USER")
                 .orElseThrow(() -> new RuntimeException("Role USER does not exist"));
-        user.getRoles().add(role);
+        UserRole userRole = UserRole.builder()
+                .user(user)
+                .role(role)
+                .id(new UserRole.UserRoleId(null, null)) // id sẽ được tự động set khi persist
+                .build();
+        user.getUserRoles().add(userRole);
 
-        // Save user
+        // Save user (cascade sẽ tự động lưu userRole)
         userRepository.save(user);
     }
 

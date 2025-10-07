@@ -110,20 +110,13 @@
                                         <h5 class="mb-0"><i class="bi bi-info-circle"></i> Order #${order.id}</h5>
                                         <span class="badge
                             ${order.status=='PENDING' ? 'bg-warning' :
-                            order.status=='PAID' ? 'bg-info' :
-                            order.status=='PROCESSING' ? 'bg-primary' :
-                            order.status=='SHIPPED' ? 'bg-secondary' :
                             order.status=='COMPLETED' ? 'bg-success' :
                             order.status=='CANCELLED' ? 'bg-danger' :
-                            order.status=='REFUNDED' ? 'bg-dark' : 'bg-light'} fs-6">
+                            'bg-light'} fs-6">
                                             <c:choose>
                                                 <c:when test="${order.status == 'PENDING'}">Pending</c:when>
-                                                <c:when test="${order.status == 'PAID'}">Paid</c:when>
-                                                <c:when test="${order.status == 'PROCESSING'}">Processing</c:when>
-                                                <c:when test="${order.status == 'SHIPPED'}">Shipped</c:when>
                                                 <c:when test="${order.status == 'COMPLETED'}">Completed</c:when>
                                                 <c:when test="${order.status == 'CANCELLED'}">Cancelled</c:when>
-                                                <c:when test="${order.status == 'REFUNDED'}">Refunded</c:when>
                                                 <c:otherwise>${order.status}</c:otherwise>
                                             </c:choose>
                                         </span>
@@ -148,30 +141,16 @@
                                                         <td>
                                                             <span class="badge
                                             ${order.status=='PENDING' ? 'bg-warning' :
-                                            order.status=='PAID' ? 'bg-info' :
-                                            order.status=='PROCESSING' ? 'bg-primary' :
-                                            order.status=='SHIPPED' ? 'bg-secondary' :
                                             order.status=='COMPLETED' ? 'bg-success' :
                                             order.status=='CANCELLED' ? 'bg-danger' :
-                                            order.status=='REFUNDED' ? 'bg-dark' : 'bg-light'}">
+                                            'bg-light'}">
                                                                 <c:choose>
                                                                     <c:when test="${order.status == 'PENDING'}">Pending
                                                                     </c:when>
-                                                                    <c:when test="${order.status == 'PAID'}">Paid
-                                                                    </c:when>
-                                                                    <c:when test="${order.status == 'PROCESSING'}">
-                                                                        Processing</c:when>
-                                                                    <c:when test="${order.status == 'SHIPPED'}">Shipped
-                                                                    </c:when>
                                                                     <c:when test="${order.status == 'COMPLETED'}">
-                                                                        Completed
-                                                                    </c:when>
+                                                                        Completed</c:when>
                                                                     <c:when test="${order.status == 'CANCELLED'}">
-                                                                        Cancelled
-                                                                    </c:when>
-                                                                    <c:when test="${order.status == 'REFUNDED'}">
-                                                                        Refunded
-                                                                    </c:when>
+                                                                        Cancelled</c:when>
                                                                     <c:otherwise>${order.status}</c:otherwise>
                                                                 </c:choose>
                                                             </span>
@@ -190,7 +169,8 @@
                                             <div class="col-md-6">
                                                 <h6 class="border-bottom pb-2">Buyer/Seller Information</h6>
                                                 <table class="table table-borderless">
-                                                    <c:if test="${order.buyer != null}">
+                                                    <c:if
+                                                        test="${order.buyer != null && (order.buyer.id == currentUser.id || !isSeller)}">
                                                         <tr>
                                                             <td class="text-muted">Buyer:</td>
                                                             <td>${order.buyer.fullName} (${order.buyer.username})</td>

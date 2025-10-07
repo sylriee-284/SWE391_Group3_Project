@@ -123,22 +123,20 @@
                                                     style="width: auto;" onchange="this.form.submit()">
                                                     <option value="">All Status</option>
                                                     <c:forEach items="${orderStatuses}" var="status">
-                                                        <option value="${status}" ${status==selectedStatus ? 'selected'
-                                                            : '' }>
-                                                            <c:choose>
-                                                                <c:when test="${status == 'PENDING'}">Pending</c:when>
-                                                                <c:when test="${status == 'PAID'}">Paid</c:when>
-                                                                <c:when test="${status == 'SHIPPED'}">Shipped</c:when>
-                                                                <c:when test="${status == 'PROCESSING'}">Processing
-                                                                </c:when>
-                                                                <c:when test="${status == 'COMPLETED'}">Completed
-                                                                </c:when>
-                                                                <c:when test="${status == 'CANCELLED'}">Cancelled
-                                                                </c:when>
-                                                                <c:when test="${status == 'REFUNDED'}">Refunded</c:when>
-                                                                <c:otherwise>${status}</c:otherwise>
-                                                            </c:choose>
-                                                        </option>
+                                                        <c:if
+                                                            test="${status == 'PENDING' || status == 'COMPLETED' || status == 'CANCELLED'}">
+                                                            <option value="${status}" ${status==selectedStatus
+                                                                ? 'selected' : '' }>
+                                                                <c:choose>
+                                                                    <c:when test="${status == 'PENDING'}">Pending
+                                                                    </c:when>
+                                                                    <c:when test="${status == 'COMPLETED'}">Completed
+                                                                    </c:when>
+                                                                    <c:when test="${status == 'CANCELLED'}">Cancelled
+                                                                    </c:when>
+                                                                </c:choose>
+                                                            </option>
+                                                        </c:if>
                                                     </c:forEach>
                                                 </select>
                                             </form>
@@ -174,12 +172,9 @@
                                                         </c:if>
                                                         <c:forEach items="${orders}" var="order">
                                                             <c:set var="badgeClass" value="${
-                                                            order.status == 'PENDING' ? 'bg-warning' : 
-                                                            order.status == 'PAID' ? 'bg-info' :
-                                                            order.status == 'PROCESSING' ? 'bg-primary' :
+                                                            order.status == 'PENDING' ? 'bg-warning' :
                                                             order.status == 'COMPLETED' ? 'bg-success' :
                                                             order.status == 'CANCELLED' ? 'bg-danger' :
-                                                            order.status == 'REFUNDED' ? 'bg-secondary' :
                                                             'bg-light'
                                                         }" />
                                                             <tr>
@@ -220,22 +215,12 @@
                                                                         <c:choose>
                                                                             <c:when test="${order.status == 'PENDING'}">
                                                                                 Pending</c:when>
-                                                                            <c:when test="${order.status == 'PAID'}">
-                                                                                Paid
-                                                                            </c:when>
-                                                                            <c:when
-                                                                                test="${order.status == 'PROCESSING'}">
-                                                                                Processing</c:when>
                                                                             <c:when
                                                                                 test="${order.status == 'COMPLETED'}">
                                                                                 Completed</c:when>
                                                                             <c:when
                                                                                 test="${order.status == 'CANCELLED'}">
                                                                                 Cancelled</c:when>
-                                                                            <c:when
-                                                                                test="${order.status == 'REFUNDED'}">
-                                                                                Refunded</c:when>
-                                                                            <c:otherwise>${order.status}</c:otherwise>
                                                                         </c:choose>
                                                                     </span>
                                                                 </td>

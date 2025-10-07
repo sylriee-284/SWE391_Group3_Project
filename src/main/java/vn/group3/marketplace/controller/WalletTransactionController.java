@@ -123,18 +123,4 @@ public class WalletTransactionController {
         return "wallet/transaction-detail";
     }
 
-    /**
-     * API lấy transactions gần đây (cho AJAX)
-     */
-    @GetMapping("/recent")
-    @ResponseBody
-    public List<WalletTransaction> getRecentTransactions(@AuthenticationPrincipal CustomUserDetails currentUser) {
-
-        if (currentUser == null) {
-            return List.of(); // Return empty list
-        }
-
-        User user = currentUser.getUser();
-        return walletTransactionService.getRecentTransactions(user);
-    }
 }

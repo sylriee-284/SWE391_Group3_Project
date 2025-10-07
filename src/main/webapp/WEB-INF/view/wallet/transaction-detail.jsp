@@ -218,7 +218,8 @@
                                                             </c:when>
                                                             <c:when test='${transaction.type == "REFUND"}'>Refund
                                                             </c:when>
-                                                            <c:otherwise>Transfer</c:otherwise>
+                                                            <c:otherwise><span class="text-muted">Unknown</span>
+                                                            </c:otherwise>
                                                         </c:choose>
                                                     </span>
                                                 </div>
@@ -284,8 +285,8 @@
                             </div>
                         </c:if>
 
-                        <!-- 🔗 Related Order (if exists) -->
-                        <c:if test="${transaction.order != null}">
+                        <!-- 🔗 Đơn hàng liên quan (nếu có) -->
+                        <c:if test="${transaction.refOrder != null}">
                             <div class="row mt-4">
                                 <div class="col-12">
                                     <div class="card detail-card">
@@ -295,13 +296,14 @@
                                             </h5>
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div>
-                                                    <p class="mb-1"><strong>Order ID:</strong> #${transaction.order.id}
+                                                    <p class="mb-1"><strong>Mã đơn hàng:</strong>
+                                                        #${transaction.refOrder.id}
                                                     </p>
                                                     <p class="mb-0 text-muted">
-                                                        Created at: ${fn:substring(transaction.order.createdAt, 0, 10)}
+                                                        Ngày tạo: ${fn:substring(transaction.refOrder.createdAt, 0, 10)}
                                                     </p>
                                                 </div>
-                                                <a href="/orders/${transaction.order.id}"
+                                                <a href="/orders/${transaction.refOrder.id}"
                                                     class="btn btn-outline-primary">
                                                     <i class="fas fa-eye"></i> Xem đơn hàng
                                                 </a>
