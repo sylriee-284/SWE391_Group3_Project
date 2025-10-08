@@ -21,7 +21,7 @@ public class SecurityConfig {
                                                                 "/login", "/logout", "/register",
                                                                 "/login/captcha", "/forgot-password", "/reset-password",
                                                                 "/debug/**",
-                                                                "/css/**", "/js/**", "/images/**",
+                                                                "/css/**", "/js/**", "/images/**", "/resources/**",
                                                                 "/webjars/**", "/static/**",
                                                                 "/WEB-INF/view/**")
                                                 .permitAll()

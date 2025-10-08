@@ -2,7 +2,6 @@ package vn.group3.marketplace.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import vn.group3.marketplace.domain.enums.NotificationType;
 
 @Getter
 @Setter
@@ -21,9 +20,8 @@ public class Notification extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 100)
-    private NotificationType type;
+    @Column(length = 100, nullable = false)
+    private String type;
 
     private String title;
 

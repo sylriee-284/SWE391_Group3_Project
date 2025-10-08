@@ -51,9 +51,19 @@ public class User extends BaseEntity {
     @Builder.Default
     private BigDecimal balance = BigDecimal.ZERO;
 
-    // Many-to-Many với Role
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+    // One-to-Many với UserRole
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
-    private Set<Role> roles = new HashSet<>();
+    private Set<UserRole> userRoles = new HashSet<>();
+
+    // One-to-One với SellerStore
+    @OneToOne(mappedBy = "owner", cascade = CascadeType.ALL)
+    private SellerStore sellerStore;
+
+    // Convenience method to get roles
+    public Set<Role> getRoles() {
+        return userRoles.stream()
+                .map(UserRole::getRole)
+                .collect(java.util.stream.Collectors.toSet());
+    }
 }
