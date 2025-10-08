@@ -1,0 +1,82 @@
+{
+    "serverId": "marketplace-sonar",
+    "projectKey": "marketplace",
+    "rules": {
+        // Spring Boot specific rules
+        "java:S1118": {
+            "level": "off"
+        },
+        "java:S1192": {
+            "level": "info",
+            "parameters": {
+                "threshold": "5"
+            }
+        },
+        "java:S1135": {
+            "level": "info"
+        },
+        "java:S1144": {
+            "level": "warn"
+        },
+        "java:S1172": {
+            "level": "warn"
+        },
+        "java:S1481": {
+            "level": "warn"
+        },
+        "java:S1854": {
+            "level": "warn"
+        },
+        "java:S2094": {
+            "level": "warn"
+        },
+        "java:S2142": {
+            "level": "error"
+        },
+        "java:S2259": {
+            "level": "error"
+        },
+        "java:S2293": {
+            "level": "info"
+        },
+        "java:S3776": {
+            "level": "warn",
+            "parameters": {
+                "threshold": "15"
+            }
+        },
+        "java:S4144": {
+            "level": "warn"
+        },
+        "java:S6204": {
+            "level": "info"
+        },
+        // Security rules
+        "java:S2076": {
+            "level": "error"
+        },
+        "java:S2077": {
+            "level": "error"
+        },
+        "java:S2078": {
+            "level": "error"
+        },
+        // Performance rules
+        "java:S1149": {
+            "level": "warn"
+        },
+        "java:S1155": {
+            "level": "warn"
+        },
+        "java:S1168": {
+            "level": "warn"
+        }
+    },
+    "excludes": [
+        "**/target/**",
+        "**/node_modules/**",
+        "**/*.min.js",
+        "**/*.min.css",
+        "**/generated/**"
+    ]
+}
