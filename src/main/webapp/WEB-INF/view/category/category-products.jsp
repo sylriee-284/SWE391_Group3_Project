@@ -2,126 +2,33 @@
     <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
         <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
             <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+
+                <!DOCTYPE html>
                 <html lang="en">
 
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>${parentCategory.name} - Danh sách sản phẩm</title>
-                    <!-- Latest compiled and minified CSS -->
-                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-                        rel="stylesheet">
+                    <title>
+                        <c:if test="${not empty pageTitle}">${pageTitle} - </c:if>MMO Market System
+                    </title>
 
-                    <!-- Latest compiled JavaScript -->
-                    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-                    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-
-                    <!-- Font Awesome for icons -->
-                    <link rel="stylesheet"
-                        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-                    <!-- iziToast CSS -->
-                    <link rel="stylesheet"
-                        href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css" />
-
-                    <style>
-                        /* Content styling */
-                        .content {
-                            flex-grow: 1;
-                            padding: 20px;
-                            background-color: #ecf0f1;
-                            margin-left: 0;
-                            transition: margin-left 0.3s ease;
-                        }
-
-                        .content.shifted {
-                            margin-left: 250px;
-                        }
-
-                        .content h1 {
-                            font-size: 28px;
-                            color: #2c3e50;
-                        }
-
-                        /* Product card styling */
-                        .product-card {
-                            transition: transform 0.2s ease-in-out;
-                            height: 100%;
-                        }
-
-                        .product-card:hover {
-                            transform: translateY(-5px);
-                            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-                        }
-
-                        .product-image {
-                            width: 100%;
-                            height: 200px;
-                            object-fit: cover;
-                        }
-
-                        .price {
-                            color: #e74c3c;
-                            font-weight: bold;
-                            font-size: 1.2em;
-                        }
-
-                        /* Filter section */
-                        .filter-section {
-                            background: white;
-                            border-radius: 8px;
-                            padding: 20px;
-                            margin-bottom: 20px;
-                            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-                        }
-
-                        /* Pagination */
-                        .pagination .page-link {
-                            color: #28a745;
-                        }
-
-                        .pagination .page-item.active .page-link {
-                            background-color: #28a745;
-                            border-color: #28a745;
-                        }
-
-                        /* Responsive Design */
-                        @media (max-width: 768px) {
-                            .content {
-                                margin-left: 200px;
-                            }
-                        }
-
-                        @media (max-width: 480px) {
-                            .content {
-                                margin-left: 150px;
-                            }
-                        }
-
-                        html,
-                        body {
-                            height: 100%;
-                        }
-
-                        .wrapper {
-                            min-height: 100%;
-                            display: flex;
-                            flex-direction: column;
-                        }
-
-                        .content {
-                            flex: 1;
-                        }
-                    </style>
+                    <!-- Include common head with all CSS and JS -->
+                    <jsp:include page="../common/head.jsp" />
                 </head>
 
                 <body>
                     <!-- Include Navbar -->
-                    <%@ include file="../common/navbar.jsp" %>
+                    <jsp:include page="../common/navbar.jsp" />
 
-                        <!-- Include Sidebar -->
-                        <%@ include file="../common/sidebar.jsp" %>
+                    <!-- Include Sidebar -->
+                    <jsp:include page="../common/sidebar.jsp" />
+
+                    <!-- Main Content Area -->
+                    <div class="content" id="content">
+                        <!-- Page Content will be inserted here -->
+
+                        <body>
 
                             <!-- Main Content -->
                             <div class="content" id="content">
@@ -395,61 +302,138 @@
                                 </div>
                             </div>
                             </c:if>
-                            </div>
-                            </div>
+                    </div>
+                    </div>
 
-                            <script>
-                                // Toggle sidebar function
-                                function toggleSidebar() {
-                                    var sidebar = document.getElementById('sidebar');
-                                    var content = document.getElementById('content');
-                                    sidebar.classList.toggle('active');
-                                    content.classList.toggle('shifted');
-                                }
+                    <script>
+                        // Toggle sidebar function
+                        function toggleSidebar() {
+                            var sidebar = document.getElementById('sidebar');
+                            var content = document.getElementById('content');
+                            sidebar.classList.toggle('active');
+                            content.classList.toggle('shifted');
+                        }
 
-                                // Auto submit form when filter options change
-                                document.getElementById('childCategory').addEventListener('change', function () {
-                                    document.getElementById('filterForm').submit();
-                                });
+                        // Auto submit form when filter options change
+                        document.getElementById('childCategory').addEventListener('change', function () {
+                            document.getElementById('filterForm').submit();
+                        });
 
-                                document.getElementById('sort').addEventListener('change', function () {
-                                    document.getElementById('filterForm').submit();
-                                });
+                        document.getElementById('sort').addEventListener('change', function () {
+                            document.getElementById('filterForm').submit();
+                        });
 
-                                document.getElementById('direction').addEventListener('change', function () {
-                                    document.getElementById('filterForm').submit();
-                                });
-                            </script>
+                        document.getElementById('direction').addEventListener('change', function () {
+                            document.getElementById('filterForm').submit();
+                        });
+                    </script>
 
-                            <!-- iziToast JS -->
-                            <script
-                                src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+                    <!-- iziToast JS -->
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
 
-                            <!-- Script to display notifications using iziToast -->
-                            <c:if test="${not empty successMessage}">
-                                <script>
-                                    iziToast.success({
-                                        title: 'Success!',
-                                        message: '${successMessage}',
-                                        position: 'topRight',
-                                        timeout: 5000
-                                    });
-                                </script>
-                            </c:if>
+                    <!-- Script to display notifications using iziToast -->
+                    <c:if test="${not empty successMessage}">
+                        <script>
+                            iziToast.success({
+                                title: 'Success!',
+                                message: '${successMessage}',
+                                position: 'topRight',
+                                timeout: 5000
+                            });
+                        </script>
+                    </c:if>
 
-                            <c:if test="${not empty errorMessage}">
-                                <script>
-                                    iziToast.error({
-                                        title: 'Error!',
-                                        message: '${errorMessage}',
-                                        position: 'topRight',
-                                        timeout: 5000
-                                    });
-                                </script>
-                            </c:if>
+                    <c:if test="${not empty errorMessage}">
+                        <script>
+                            iziToast.error({
+                                title: 'Error!',
+                                message: '${errorMessage}',
+                                position: 'topRight',
+                                timeout: 5000
+                            });
+                        </script>
+                    </c:if>
+                    <!-- Include Footer -->
+                    <jsp:include page="../common/footer.jsp" />
 
-                            <!-- Include Footer -->
-                            <%@ include file="../common/footer.jsp" %>
+                </body>
+
+
+                <!-- Script to display notifications using iziToast -->
+                <c:if test="${not empty successMessage}">
+                    <script>
+                        iziToast.success({
+                            title: 'Success!',
+                            message: '${successMessage}',
+                            position: 'topRight',
+                            timeout: 5000
+                        });
+                    </script>
+                </c:if>
+
+                <c:if test="${not empty errorMessage}">
+                    <script>
+                        iziToast.error({
+                            title: 'Error!',
+                            message: '${errorMessage}',
+                            position: 'topRight',
+                            timeout: 5000
+                        });
+                    </script>
+                </c:if>
+
+                <!-- Page-specific JavaScript -->
+                <c:if test="${not empty pageJS}">
+                    <c:forEach var="js" items="${pageJS}">
+                        <script src="${pageContext.request.contextPath}${js}"></script>
+                    </c:forEach>
+                </c:if>
+
+                <!-- Common JavaScript -->
+                <script>
+                    // Toggle sidebar function
+                    function toggleSidebar() {
+                        var sidebar = document.getElementById('sidebar');
+                        var content = document.getElementById('content');
+                        var overlay = document.getElementById('sidebarOverlay');
+
+                        if (sidebar && content) {
+                            sidebar.classList.toggle('active');
+                            content.classList.toggle('shifted');
+
+                            // Toggle overlay for mobile
+                            if (overlay) {
+                                overlay.classList.toggle('active');
+                            }
+                        }
+                    }
+
+                    // Close sidebar when clicking outside on mobile
+                    document.addEventListener('click', function (event) {
+                        var sidebar = document.getElementById('sidebar');
+                        var overlay = document.getElementById('sidebarOverlay');
+                        var menuToggle = document.querySelector('.menu-toggle');
+
+                        if (sidebar && sidebar.classList.contains('active') &&
+                            !sidebar.contains(event.target) &&
+                            !menuToggle.contains(event.target)) {
+                            toggleSidebar();
+                        }
+                    });
+
+                    // Auto-hide alerts after 5 seconds
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var alerts = document.querySelectorAll('.alert');
+                        alerts.forEach(function (alert) {
+                            setTimeout(function () {
+                                alert.style.opacity = '0';
+                                setTimeout(function () {
+                                    alert.remove();
+                                }, 300);
+                            }, 5000);
+                        });
+                    });
+                </script>
                 </body>
 
                 </html>
