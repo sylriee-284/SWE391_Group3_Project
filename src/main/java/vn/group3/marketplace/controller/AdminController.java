@@ -6,6 +6,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import vn.group3.marketplace.domain.entity.User;
 import vn.group3.marketplace.security.CustomUserDetails;
@@ -21,10 +22,16 @@ public class AdminController {
         this.userService = userService;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    public String adminRoot() {
+        return "redirect:/admin/users";
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/dashboard")
-    public String dashboard(Model model) {
-        // Load report data: orders, users, revenue, disputes...
-        return "admin/dashboard";
+    public String dashboard() {
+        return "redirect:/admin/users";
     }
 
     @GetMapping("/categories")
@@ -34,38 +41,55 @@ public class AdminController {
     }
 
     // --- CRUD: Start of Admin Account Management ---
+    // Danh sách tài khoản
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/api/admin/users")
-    public ResponseEntity<?> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllActiveUsers());
+    @GetMapping("/users")
+    public String getAllUsers(Model model) {
+        model.addAttribute("users", userService.getAllActiveUsers());
+        return "admin/users"; // JSP: hiển thị danh sách users
     }
 
+    // Form thêm mới tài khoản
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/api/admin/users/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable Long id) {
-        return userService.getUserById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping("/users/create")
+    public String showCreateUserForm(Model model) {
+        model.addAttribute("user", new User());
+        model.addAttribute("formTitle", "Tạo tài khoản mới");
+        return "admin/user_form"; // JSP form thêm user
     }
 
+    // Form chỉnh sửa tài khoản
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/api/admin/users")
-    public ResponseEntity<?> createUser(@RequestBody User user) {
-        return ResponseEntity.ok(userService.createUser(user));
+    @GetMapping("/users/edit/{id}")
+    public String showEditUserForm(@PathVariable Long id, Model model) {
+        User existing = userService.getUserById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user ID: " + id));
+        model.addAttribute("user", existing);
+        model.addAttribute("formTitle", "Chỉnh sửa tài khoản");
+        return "admin/user_form";
     }
 
+    // Xử lý cập nhật
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/api/admin/users/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
-        return ResponseEntity.ok(userService.updateUser(id, updatedUser));
+    @PostMapping("/users/update/{id}")
+    public String updateUser(@PathVariable Long id,
+            @ModelAttribute("user") User updatedUser,
+            RedirectAttributes redirectAttributes) {
+        userService.updateUser(id, updatedUser);
+        redirectAttributes.addFlashAttribute("success", "Cập nhật tài khoản thành công!");
+        return "redirect:/admin/users";
     }
 
+    // Xóa mềm tài khoản
     @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/api/admin/users/{id}")
-    public ResponseEntity<?> softDeleteUser(@PathVariable Long id, Authentication auth) {
+    @PostMapping("/users/delete/{id}")
+    public String softDeleteUser(@PathVariable Long id,
+            Authentication auth,
+            RedirectAttributes redirectAttributes) {
         CustomUserDetails admin = (CustomUserDetails) auth.getPrincipal();
         userService.softDeleteUser(id, admin.getId());
-        return ResponseEntity.ok("User deleted successfully (soft delete)");
+        redirectAttributes.addFlashAttribute("success", "Đã xóa tài khoản thành công (soft delete)");
+        return "redirect:/admin/users";
     }
     // --- CRUD: End of Admin Account Management ---
 
