@@ -29,10 +29,14 @@ public class Message extends BaseEntity {
     @JoinColumn(name = "seller_user_id", nullable = false)
     private User sellerUser;
 
-    // Người gửi (phải là 1 trong 2 bên ở trên; validate ở backend)
+    // Người gửi và người nhận
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_user_id", nullable = false)
     private User senderUser;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "receiver_user_id", nullable = false)
+    private User receiverUser;
 
     // Nội dung & idempotency
     @Column(nullable = false, columnDefinition = "TEXT")
@@ -40,5 +44,4 @@ public class Message extends BaseEntity {
 
     @Column(name = "client_msg_id", length = 100)
     private String clientMsgId;
-
 }

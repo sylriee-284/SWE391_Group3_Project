@@ -15,4 +15,9 @@ public class HomeController {
         return "homepage";
     }
 
+    @GetMapping("/layout")
+    public String layout() {
+        return "layout";
+    }
+
 }
