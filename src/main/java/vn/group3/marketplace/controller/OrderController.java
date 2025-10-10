@@ -1,6 +1,5 @@
 package vn.group3.marketplace.controller;
 
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +41,7 @@ public class OrderController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) String key,
             Model model) {
         if (page < 0)
             page = 0;
@@ -53,7 +53,19 @@ public class OrderController {
         boolean isSeller = hasAuthority(currentUser, "ROLE_SELLER");
         boolean isAdmin = hasAuthority(currentUser, "ROLE_ADMIN");
 
-        Page<Order> ordersPage = getOrdersPage(isAdmin, isSeller, status, pageable);
+        Page<Order> ordersPage;
+        if (isAdmin) {
+            ordersPage = (key != null && !key.isEmpty()) ? orderService.searchByProductName(status, key, pageable)
+                    : getOrdersPage(isAdmin, isSeller, status, pageable);
+        } else if (isSeller) {
+            ordersPage = (key != null && !key.isEmpty())
+                    ? orderService.searchByCurrentSellerAndProductName(status, key, pageable)
+                    : getOrdersPage(isAdmin, isSeller, status, pageable);
+        } else {
+            ordersPage = (key != null && !key.isEmpty())
+                    ? orderService.searchByCurrentBuyerAndProductName(status, key, pageable)
+                    : getOrdersPage(isAdmin, isSeller, status, pageable);
+        }
 
         // Paging helpers
         int totalPages = ordersPage.getTotalPages();
@@ -78,6 +90,7 @@ public class OrderController {
         model.addAttribute("orderStatuses", OrderStatus.values());
         model.addAttribute("selectedStatus", status != null ? status.name() : null);
         model.addAttribute("isSeller", isSeller);
+        model.addAttribute("key", key);
 
         return "order/list";
     }

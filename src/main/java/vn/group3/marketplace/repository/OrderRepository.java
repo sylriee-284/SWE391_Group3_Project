@@ -18,6 +18,20 @@ import java.util.List;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
+    // Tìm đơn hàng theo người mua và tên sản phẩm (phân trang)
+    @Query("SELECT o FROM Order o WHERE o.buyer = :buyer AND (:status IS NULL OR o.status = :status) AND (:key IS NULL OR LOWER(o.productName) LIKE LOWER(CONCAT('%', :key, '%')))")
+    Page<Order> searchByBuyerAndProductName(@Param("buyer") User buyer, @Param("status") OrderStatus status,
+            @Param("key") String key, Pageable pageable);
+
+    // Tìm đơn hàng theo người bán và tên sản phẩm (phân trang)
+    @Query("SELECT o FROM Order o WHERE o.sellerStore = :sellerStore AND (:status IS NULL OR o.status = :status) AND (:key IS NULL OR LOWER(o.productName) LIKE LOWER(CONCAT('%', :key, '%')))")
+    Page<Order> searchBySellerAndProductName(@Param("sellerStore") SellerStore sellerStore,
+            @Param("status") OrderStatus status, @Param("key") String key, Pageable pageable);
+
+    // Tìm đơn hàng cho admin theo tên sản phẩm (phân trang)
+    @Query("SELECT o FROM Order o WHERE (:status IS NULL OR o.status = :status) AND (:key IS NULL OR LOWER(o.productName) LIKE LOWER(CONCAT('%', :key, '%')))")
+    Page<Order> searchByProductName(@Param("status") OrderStatus status, @Param("key") String key, Pageable pageable);
+
     // Tìm đơn hàng theo người mua
     Page<Order> findByBuyer(User buyer, Pageable pageable);
 

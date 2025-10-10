@@ -17,6 +17,22 @@ import java.util.Optional;
 
 @Service
 public class OrderService {
+    public Page<Order> searchByCurrentBuyerAndProductName(OrderStatus status, String key, Pageable pageable) {
+        return orderRepository.searchByBuyerAndProductName(getCurrentUser(), status, key, pageable);
+    }
+
+    public Page<Order> searchByCurrentSellerAndProductName(OrderStatus status, String key, Pageable pageable) {
+        SellerStore store = getCurrentUser().getSellerStore();
+        if (store == null) {
+            throw new IllegalStateException("Current user is not a seller");
+        }
+        return orderRepository.searchBySellerAndProductName(store, status, key, pageable);
+    }
+
+    public Page<Order> searchByProductName(OrderStatus status, String key, Pageable pageable) {
+        return orderRepository.searchByProductName(status, key, pageable);
+    }
+
     /**
      * Lấy đơn hàng kèm productStorages (fetch join)
      */
