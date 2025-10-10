@@ -18,7 +18,7 @@
                                 Category
                             </button>
                             <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
-                                <c:forEach var="cat" items="${categories}">
+                                <c:forEach var="cat" items="${parentCategories}">
                                     <li>
                                         <a class="dropdown-item" href="/category/${cat.name.toLowerCase()}">
                                             ${cat.name}
