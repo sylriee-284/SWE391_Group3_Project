@@ -71,12 +71,16 @@
                                                     </select>
 
                                                     <!-- Search by product name -->
-                                                    <input type="text" name="q" value="${q}"
-                                                        placeholder="Search product name..."
-                                                        class="form-control form-control-sm" style="width: 240px;">
-                                                    <button type="submit" class="btn btn-sm btn-light">
-                                                        <i class="bi bi-search"></i>
-                                                    </button>
+                                                    <div class="input-group input-group-sm" style="width: 240px;">
+                                                        <input type="text" name="key" value="${key}"
+                                                            placeholder="Search product name..."
+                                                            class="form-control border-primary"
+                                                            aria-label="Search product name">
+                                                        <button type="submit" class="btn btn-primary"
+                                                            style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+                                                            <i class="bi bi-search"></i> Search
+                                                        </button>
+                                                    </div>
                                                 </form>
                                             </div>
 
