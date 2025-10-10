@@ -26,3 +26,12 @@
 
     <!-- iziToast JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+
+    <!-- Custom Product Detail CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/productdetail.css">
+
+    <!-- Custom Category Products CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/categoryproducts.css">
+
+    <!-- Custom Profile CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/profile.css">
