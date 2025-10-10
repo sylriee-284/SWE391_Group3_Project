@@ -72,4 +72,63 @@ public class UserService {
         String encodedPassword = passwordEncoder.encode(newPassword);
         userRepository.updatePassword(encodedPassword, email);
     }
+
+    /**
+     * Get user by username
+     * 
+     * @param username Username
+     * @return User or null if not found
+     */
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username).orElse(null);
+    }
+
+    /**
+     * Get user by ID
+     * 
+     * @param id User ID
+     * @return User or null if not found
+     */
+    public User getUserById(Long id) {
+        return userRepository.findById(id).orElse(null);
+    }
+
+    /**
+     * Update user information
+     * 
+     * @param user User to update
+     * @return Updated user
+     */
+    @Transactional
+    public User updateUser(User user) {
+        System.out.println("💾 UserService.updateUser() called for user ID: " + user.getId());
+        System.out.println("💾 Saving: " + user.getFullName() + " | " + user.getEmail());
+        User savedUser = userRepository.saveAndFlush(user);
+        System.out.println("💾 User saved successfully!");
+        return savedUser;
+    }
+
+    /**
+     * Get fresh user data from database (bypass cache)
+     * 
+     * @param username Username
+     * @return Fresh user data
+     */
+    @Transactional(readOnly = true)
+    public User getFreshUserByUsername(String username) {
+        System.out.println("🔍 UserService.getFreshUserByUsername() called for: " + username);
+        // Force a fresh query from database
+        User user = userRepository.findByUsername(username).orElse(null);
+        System.out.println("🔍 Fresh user retrieved: " + (user != null ? user.getFullName() : "NULL"));
+        return user;
+    }
+
+    /**
+     * Force flush and clear entity manager to ensure immediate persistence
+     */
+    @Transactional
+    public void flushAndClear() {
+        userRepository.flush();
+    }
+
 }
