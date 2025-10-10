@@ -19,4 +19,8 @@ public class GlobalControllerAdvice {
         return categoryService.getParentCategories();
     }
 
+    @ModelAttribute("categories")
+    public List<Category> addCategoriesToModel() {
+        return categoryService.getAllCategories();
+    }
 }
