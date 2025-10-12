@@ -45,10 +45,15 @@ public class AuthController {
     @GetMapping("/login")
     public String loginPage(
             @RequestParam(value = "error", required = false) String error,
+            @RequestParam(value = "errorMessage", required = false) String errorMessage,
             Model model) {
 
         if (error != null) {
             model.addAttribute("errorMessage", error);
+        }
+
+        if (errorMessage != null) {
+            model.addAttribute("errorMessage", errorMessage);
         }
 
         return "login";
