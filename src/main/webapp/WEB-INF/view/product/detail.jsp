@@ -78,13 +78,16 @@
                                             <h1 class="mb-3">${product.name}</h1>
 
                                             <!-- Rating Stars -->
-                                            <div class="mb-3">
+                                            <div class="mt-2">
                                                 <div class="rating">
                                                     <c:forEach begin="1" end="5" var="star">
-                                                        <i
-                                                            class="fas fa-star ${star <= product.rating ? 'text-warning' : 'text-muted'}"></i>
+                                                        <i class="fas fa-star ${star <= product.rating ? 'text-warning' : 'text-muted'}"
+                                                            style="font-size: 0.8em;"></i>
                                                     </c:forEach>
-                                                    <span class="ms-2">${product.rating}/5</span>
+
+                                                    <span class="text-muted">${product.ratingCount}
+                                                        Review</span>
+                                                    </small>
                                                 </div>
                                             </div>
 
@@ -113,13 +116,6 @@
                                                         <h6 class="mb-1 text-dark">Người bán: ${shop.storeName}</h6>
 
 
-                                                        <div>
-                                                            <span
-                                                                class="badge ${shop.status == 'ACTIVE' ? 'bg-success' : 'bg-warning'}">
-                                                                <i class="fas fa-circle me-1"></i>${shop.status ==
-                                                                'ACTIVE' ? 'Đang hoạt động' : 'Tạm ngưng'}
-                                                            </span>
-                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -145,14 +141,7 @@
                                                 </span>
                                             </div>
 
-                                            <!-- Product Status -->
-                                            <div class="mb-4">
-                                                <span
-                                                    class="badge ${product.status == 'ACTIVE' ? 'bg-success' : 'bg-warning'} fs-6">
-                                                    <i class="fas fa-circle"></i>
-                                                    ${product.status == 'ACTIVE' ? 'Đang bán' : 'Tạm ngưng'}
-                                                </span>
-                                            </div>
+
 
                                             <!-- Quantity and Action Buttons -->
                                             <c:if test="${product.status == 'ACTIVE' && product.stock > 0}">
@@ -228,12 +217,70 @@
                                 content.classList.toggle('shifted');
                             }
 
+                            // Store original values for cancel
+                            let originalValues = {
+                                name: '${product.name}',
+                                price: ${product.price},
+                                description: `${product.description}`
+                            };
+
+                            // Toggle edit mode
+                            function toggleEditMode() {
+                                document.querySelectorAll('.view-mode').forEach(el => el.style.display = 'none');
+                                document.querySelectorAll('.edit-mode').forEach(el => el.style.display = 'block');
+                            }
+
+                            // Cancel edit
+                            function cancelEdit() {
+                                document.getElementById('productName').value = originalValues.name;
+                                document.getElementById('productPrice').value = originalValues.price;
+                                document.getElementById('productDescription').value = originalValues.description;
+                                document.querySelectorAll('.view-mode').forEach(el => el.style.display = 'block');
+                                document.querySelectorAll('.edit-mode').forEach(el => el.style.display = 'none');
+                            }
+
+                            // Save changes
+                            function saveChanges() {
+                                const data = {
+                                    name: document.getElementById('productName').value,
+                                    price: document.getElementById('productPrice').value,
+                                    description: document.getElementById('productDescription').value,
+                                };
+
+                                fetch('/api/products/${product.id}', {
+                                    method: 'PUT',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify(data)
+                                })
+                                .then(response => {
+                                    if (response.ok) {
+                                        iziToast.success({
+                                            title: 'Thành công!',
+                                            message: 'Đã cập nhật sản phẩm',
+                                            position: 'topRight'
+                                        });
+                                        location.reload();
+                                    } else {
+                                        throw new Error('Lỗi khi cập nhật sản phẩm');
+                                    }
+                                })
+                                .catch(error => {
+                                    iziToast.error({
+                                        title: 'Lỗi!',
+                                        message: error.message,
+                                        position: 'topRight'
+                                    });
+                                });
+                            }
+
 
 
                             // Buy now function
                             function buyNow() {
                                 var form = document.getElementById('productForm');
-                                form.action = '<c:url value="/product/${product.id}/buy-now"/>';
+                                form.action = '<c:url value="/product/${product.slug}/buy-now"/>';
                                 form.submit();
                             }
 
