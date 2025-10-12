@@ -32,20 +32,15 @@ public class WalletController {
     private final WalletService walletService;
     private final VNPayService vnpayService;
     private final UserRepository userRepository;
+    private final vn.group3.marketplace.service.UserSerialTaskService depositQueueService;
 
     public WalletController(WalletService walletService, VNPayService vnpayService,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            vn.group3.marketplace.service.UserSerialTaskService depositQueueService) {
         this.walletService = walletService;
         this.vnpayService = vnpayService;
         this.userRepository = userRepository;
-    }
-
-    @GetMapping("/deposit")
-    public String showDepositForm(@AuthenticationPrincipal CustomUserDetails currentUser) {
-        if (currentUser == null) {
-            return REDIRECT_NOT_AUTHENTICATED;
-        }
-        return "wallet/deposit";
+        this.depositQueueService = depositQueueService;
     }
 
     @GetMapping
@@ -61,11 +56,12 @@ public class WalletController {
         return "wallet/detail";
     }
 
-    @GetMapping("/{userId}")
-    public String getWalletById(@PathVariable Long userId, Model model) {
-        java.math.BigDecimal balance = walletService.findBalanceByUserId(userId).orElse(java.math.BigDecimal.ZERO);
-        model.addAttribute("wallet", java.util.Map.of("balance", balance));
-        return "wallet/detail";
+    @GetMapping("/deposit")
+    public String showDepositForm(@AuthenticationPrincipal CustomUserDetails currentUser) {
+        if (currentUser == null) {
+            return REDIRECT_NOT_AUTHENTICATED;
+        }
+        return "wallet/deposit";
     }
 
     // User tự nạp tiền cho chính mình
@@ -147,17 +143,30 @@ public class WalletController {
 
         // Kiểm tra thanh toán thành công (response code = 00)
         if ("00".equals(responseCode)) {
-            logger.info("Payment successful (ref={}), processing deposit...", paymentRef);
+            logger.info("Payment successful (ref={}), enqueueing deposit processing...", paymentRef);
+
             try {
-                walletService.processSuccessfulDeposit(paymentRef);
-                logger.info("Deposit processed successfully for ref={}", paymentRef);
+                // Tìm userId từ paymentRef bằng API rõ ràng trên WalletService
+                Long partitionUserId = walletService.findUserIdByPaymentRef(paymentRef).orElse(0L);
+
+                var future = depositQueueService.enqueueDeposit(partitionUserId, paymentRef);
+
+                // Chờ tối đa 10 giây để hoàn tất xử lý (để có thể refresh session ngay lập tức)
+                try {
+                    future.get(10, java.util.concurrent.TimeUnit.SECONDS);
+                    logger.info("Deposit processed (via queue) for ref={}", paymentRef);
+                } catch (java.util.concurrent.TimeoutException te) {
+                    logger.warn(
+                            "Deposit processing not finished within timeout for ref={}; returning success page and letting background worker finish",
+                            paymentRef);
+                }
 
                 // REFRESH AUTHENTICATION để cập nhật số dư trong session
                 refreshAuthenticationContext();
 
                 return "wallet/success";
             } catch (Exception e) {
-                logger.error("Error processing deposit: {}", e.getMessage(), e);
+                logger.error("Error queueing/processing deposit: {}", e.getMessage(), e);
                 return "wallet/failure";
             }
         } else {

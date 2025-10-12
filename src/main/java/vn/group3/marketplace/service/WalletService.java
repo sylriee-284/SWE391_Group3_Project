@@ -74,13 +74,14 @@ public class WalletService {
                 return;
             }
 
-            // Cập nhật số dư trực tiếp trên user (BigDecimal safe arithmetic)
-            User txnUser = transaction.getUser();
-            java.math.BigDecimal oldBalance = txnUser.getBalance();
-            java.math.BigDecimal newBalance = oldBalance.add(transaction.getAmount());
-            txnUser.setBalance(newBalance);
-            userRepository.save(txnUser);
-            logger.info("Updated user balance from {} to {}", oldBalance, newBalance);
+            // Cập nhật số dư bằng UPDATE nguyên tử ở DB để an toàn multi-instance
+            Long userId = transaction.getUser().getId();
+            int rows = userRepository.incrementBalance(userId, transaction.getAmount());
+            if (rows != 1) {
+                logger.warn("incrementBalance affected {} rows for userId={}", rows, userId);
+            } else {
+                logger.info("Incremented balance for userId={} by {}", userId, transaction.getAmount());
+            }
 
             // Cập nhật trạng thái transaction
             transaction.setPaymentStatus("SUCCESS");
@@ -97,5 +98,24 @@ public class WalletService {
      */
     public java.util.Optional<java.math.BigDecimal> findBalanceByUserId(Long userId) {
         return userRepository.findById(userId).map(User::getBalance);
+    }
+
+    /**
+     * Trả về userId liên kết với paymentRef nếu có.
+     */
+    public java.util.Optional<Long> findUserIdByPaymentRef(String paymentRef) {
+        try {
+            java.util.Optional<WalletTransaction> txOpt = walletTransactionRepository.findByPaymentRef(paymentRef);
+            if (txOpt.isPresent()) {
+                WalletTransaction tx = txOpt.get();
+                if (tx.getUser() != null) {
+                    return java.util.Optional.ofNullable(tx.getUser().getId());
+                }
+            }
+            return java.util.Optional.empty();
+        } catch (Exception ex) {
+            logger.error("Error finding userId by paymentRef {}: {}", paymentRef, ex.getMessage());
+            return java.util.Optional.empty();
+        }
     }
 }
