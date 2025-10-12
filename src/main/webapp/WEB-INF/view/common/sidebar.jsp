@@ -30,6 +30,54 @@
                         </sec:authorize>
                         </li>
 
+                        <!-- Dành cho người bán hàng (SELLER) -->
+                        <sec:authorize access="isAuthenticated() and hasRole('SELLER') and !hasRole('ADMIN')">
+
+                            <!-- Chuẩn bị URL có storeId (nếu có) -->
+                            <c:url var="sellerProductsUrl" value="/seller/products">
+                                <c:if test="${not empty storeId}">
+                                    <c:param name="storeId" value="${storeId}" />
+                                </c:if>
+                            </c:url>
+                            <c:url var="sellerProductNewUrl" value="/seller/products/new">
+                                <c:if test="${not empty storeId}">
+                                    <c:param name="storeId" value="${storeId}" />
+                                </c:if>
+                            </c:url>
+
+                            <!-- Menu Quản lý bán hàng -->
+                            <li class="mt-2">
+                                <a class="d-flex justify-content-between align-items-center text-decoration-none text-white"
+                                    data-bs-toggle="collapse" href="#sellerMenu" role="button" aria-expanded="false"
+                                    aria-controls="sellerMenu">
+                                    🧰 Quản lý bán hàng
+                                    <i class="fas fa-chevron-down"></i>
+                                </a>
+
+                                <ul class="collapse list-unstyled ms-3 mt-2" id="sellerMenu">
+                                    <li>
+                                        <a href="${sellerProductsUrl}" class="text-white text-decoration-none">
+                                            📦 Danh sách sản phẩm
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="${sellerProductNewUrl}" class="text-white text-decoration-none">
+                                            ➕ Thêm sản phẩm
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <!-- Giữ nguyên các mục cũ của bạn -->
+                            <li class="mt-2">
+                                <a href="<c:url value='/seller/dashboard'/>">Bảng điều khiển người bán</a>
+                            </li>
+                            <li>
+                                <a href="<c:url value='/seller/dashboard'/>">Báo cáo</a>
+                            </li>
+                        </sec:authorize>
+
+
                         <!-- Mua hàng -->
                         <li class="mt-2">
                             <a class="d-flex justify-content-between align-items-center text-decoration-none text-white"

@@ -1,11 +1,19 @@
 package vn.group3.marketplace.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import vn.group3.marketplace.domain.entity.ProductStorage;
+import vn.group3.marketplace.domain.enums.ProductStorageStatus;
 
-@Repository
 public interface ProductStorageRepository extends JpaRepository<ProductStorage, Long> {
 
+    @Query("""
+                SELECT COUNT(ps) FROM ProductStorage ps
+                WHERE ps.product.id = :productId
+                  AND ps.status = :status
+                  AND ps.isDeleted = false
+            """)
+    long countAvailable(@Param("productId") Long productId,
+            @Param("status") ProductStorageStatus status);
 }
