@@ -39,3 +39,5 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/transaction.css">
     <!-- Custom Profile CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/profile.css">
+    <!-- transaction-detail CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/transaction-detail.css">
