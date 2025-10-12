@@ -31,13 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-### Database Configuration ###
-# Ignore database configuration files
-src/main/resources/application-db.properties
-src/main/resources/application-local.properties
-src/main/resources/application-dev.properties
-
-# Ignore environment-specific configuration
-src/main/resources/application-*.properties
-!src/main/resources/application.properties

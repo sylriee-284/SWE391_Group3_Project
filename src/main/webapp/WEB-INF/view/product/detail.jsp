@@ -26,218 +26,260 @@
 
                     <!-- Main Content Area -->
                     <div class="content" id="content">
-                        <br />
+                        <!-- Page Content will be inserted here -->
 
-                        <div class="container-fluid">
-                            <!-- Breadcrumb -->
-                            <nav aria-label="breadcrumb">
-                                <ol class="breadcrumb">
-                                    <li class="breadcrumb-item"><a href="<c:url value='/'/>"
-                                            class="text-decoration-none">Trang chủ</a></li>
-                                    <li class="breadcrumb-item">
-                                        <a href="<c:url value='/category/${product.category.parent.name.toLowerCase()}'/>"
-                                            class="text-decoration-none">${product.category.parent.name}</a>
-                                    </li>
-                                    <li class="breadcrumb-item">
-                                        <a href="<c:url value='/category/${product.category.parent.name.toLowerCase()}?childCategory=${product.category.id}'/>"
-                                            class="text-decoration-none">${product.category.name}</a>
-                                    </li>
-                                    <li class="breadcrumb-item active" aria-current="page">${product.name}</li>
-                                </ol>
-                            </nav>
+                        <!-- Main Content -->
+                        <div class="content" id="content">
+                            <br />
 
-                            <div class="row">
-                                <!-- Product Image -->
-                                <div class="col-lg-6 mb-4">
-                                    <div class="text-center">
-                                        <c:choose>
-                                            <c:when test="${not empty product.productUrl}">
-                                                <img src="${product.productUrl}" alt="${product.name}"
-                                                    class="product-image">
-                                            </c:when>
-                                            <c:otherwise>
-                                                <div class="product-placeholder">
-                                                    <div class="text-center">
-                                                        <i class="fas fa-image fa-4x text-muted mb-3"></i>
-                                                        <p class="text-muted">Chưa có hình ảnh</p>
+                            <div class="container-fluid">
+                                <!-- Breadcrumb -->
+                                <nav aria-label="breadcrumb">
+                                    <ol class="breadcrumb">
+                                        <li class="breadcrumb-item"><a href="<c:url value='/'/>"
+                                                class="text-decoration-none">Trang chủ</a></li>
+                                        <li class="breadcrumb-item">
+                                            <a href="<c:url value='/category/${product.category.parent.name.toLowerCase()}'/>"
+                                                class="text-decoration-none">${product.category.parent.name}</a>
+                                        </li>
+                                        <li class="breadcrumb-item">
+                                            <a href="<c:url value='/category/${product.category.parent.name.toLowerCase()}?childCategory=${product.category.id}'/>"
+                                                class="text-decoration-none">${product.category.name}</a>
+                                        </li>
+                                        <li class="breadcrumb-item active" aria-current="page">${product.name}</li>
+                                    </ol>
+                                </nav>
+
+                                <div class="row">
+                                    <!-- Product Image -->
+                                    <div class="col-lg-6 mb-4">
+                                        <div class="text-center">
+                                            <c:choose>
+                                                <c:when test="${not empty product.productUrl}">
+                                                    <img src="${product.productUrl}" alt="${product.name}"
+                                                        class="product-image">
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <div class="product-placeholder">
+                                                        <div class="text-center">
+                                                            <i class="fas fa-image fa-4x text-muted mb-3"></i>
+                                                            <p class="text-muted">Chưa có hình ảnh</p>
+                                                        </div>
+                                                    </div>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </div>
+                                    </div>
+
+                                    <!-- Product Info -->
+                                    <div class="col-lg-6">
+                                        <div class="info-card">
+                                            <!-- Product Name -->
+                                            <h1 class="mb-3">${product.name}</h1>
+
+                                            <!-- Rating Stars -->
+                                            <div class="mt-2">
+                                                <div class="rating">
+                                                    <c:forEach begin="1" end="5" var="star">
+                                                        <i class="fas fa-star ${star <= product.rating ? 'text-warning' : 'text-muted'}"
+                                                            style="font-size: 0.8em;"></i>
+                                                    </c:forEach>
+
+                                                    <span class="text-muted">${product.ratingCount}
+                                                        Review</span>
+                                                    </small>
+                                                </div>
+                                            </div>
+
+                                            <!-- Category Badge -->
+                                            <div class="mb-3">
+                                                <span class="badge bg-success fs-6">
+                                                    <i class="fas fa-tag"></i> ${product.category.name}
+                                                </span>
+                                            </div>
+
+                                            <!-- Price -->
+                                            <div class="mb-4">
+                                                <div class="price">
+                                                    <fmt:formatNumber value="${product.price}" type="currency"
+                                                        currencySymbol="" maxFractionDigits="0" />đ
+                                                </div>
+                                            </div>
+
+                                            <!-- Shop Information -->
+                                            <div class="mb-4 shop-info">
+
+                                                <div class="d-flex align-items-center">
+
+                                                    <div class="flex-grow-1">
+
+                                                        <h6 class="mb-1 text-dark">Người bán: ${shop.storeName}</h6>
+
+
                                                     </div>
                                                 </div>
-                                            </c:otherwise>
-                                        </c:choose>
+                                            </div>
+
+
+
+                                            <!-- Stock Status -->
+                                            <div class="mb-4">
+                                                <span
+                                                    class="stock-indicator ${product.stock > 10 ? 'stock-available' : (product.stock > 0 ? 'stock-low' : 'stock-out')}">
+                                                    <i class="fas fa-boxes"></i>
+                                                    <c:choose>
+                                                        <c:when test="${product.stock > 10}">
+                                                            Còn hàng (${product.stock} sản phẩm)
+                                                        </c:when>
+                                                        <c:when test="${product.stock > 0}">
+                                                            Sắp hết hàng (${product.stock} sản phẩm)
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            Hết hàng
+                                                        </c:otherwise>
+                                                    </c:choose>
+                                                </span>
+                                            </div>
+
+
+
+                                            <!-- Quantity and Action Buttons -->
+                                            <c:if test="${product.status == 'ACTIVE' && product.stock > 0}">
+                                                <div class="action-buttons">
+                                                    <form id="productForm" method="post">
+                                                        <!-- Quantity Selection -->
+                                                        <div class="row mb-4">
+                                                            <div class="col-md-6">
+                                                                <label class="form-label fw-bold">Số lượng:</label>
+                                                                <input type="number" id="quantity" name="quantity"
+                                                                    class="form-control quantity-input" value="1"
+                                                                    min="1" max="${product.stock}"
+                                                                    style="width: 100px;">
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Action Button -->
+                                                        <div class="d-grid">
+                                                            <button type="button" class="btn btn-buy-now btn-lg"
+                                                                onclick="buyNow()">
+                                                                <i class="fas fa-bolt"></i> Mua ngay
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </c:if>
+
+                                            <c:if test="${product.status != 'ACTIVE' || product.stock <= 0}">
+                                                <div class="alert alert-warning text-center">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                    Sản phẩm hiện tại không thể mua
+                                                </div>
+                                            </c:if>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- Product Info -->
-                                <div class="col-lg-6">
-                                    <div class="info-card">
-                                        <!-- Product Name -->
-                                        <h1 class="mb-3">${product.name}</h1>
-
-                                        <!-- Rating Stars -->
-                                        <div class="mt-2">
-                                            <div class="rating">
-                                                <c:forEach begin="1" end="5" var="star">
-                                                    <i class="fas fa-star ${star <= product.rating ? 'text-warning' : 'text-muted'}"
-                                                        style="font-size: 0.8em;"></i>
-                                                </c:forEach>
-
-                                                <span class="text-muted">${product.ratingCount}
-                                                    Review</span>
-                                                </small>
-                                            </div>
-                                        </div>
-
-                                        <!-- Category Badge -->
-                                        <div class="mb-3">
-                                            <span class="badge bg-success fs-6">
-                                                <i class="fas fa-tag"></i> ${product.category.name}
-                                            </span>
-                                        </div>
-
-                                        <!-- Price -->
-                                        <div class="mb-4">
-                                            <div class="price">
-                                                <fmt:formatNumber value="${product.price}" type="currency"
-                                                    currencySymbol="" maxFractionDigits="0" />đ
-                                            </div>
-                                        </div>
-
-                                        <!-- Shop Information -->
-                                        <div class="mb-4 shop-info">
-
-                                            <div class="d-flex align-items-center">
-
-                                                <div class="flex-grow-1">
-
-                                                    <h6 class="mb-1 text-dark">Người bán: ${shop.storeName}</h6>
-
-
-                                                </div>
-                                            </div>
-                                        </div>
-
-
-
-                                        <!-- Stock Status -->
-                                        <div class="mb-4">
-                                            <span
-                                                class="stock-indicator ${product.stock > 10 ? 'stock-available' : (product.stock > 0 ? 'stock-low' : 'stock-out')}">
-                                                <i class="fas fa-boxes"></i>
-                                                <c:choose>
-                                                    <c:when test="${product.stock > 10}">
-                                                        Còn hàng (${product.stock} sản phẩm)
-                                                    </c:when>
-                                                    <c:when test="${product.stock > 0}">
-                                                        Sắp hết hàng (${product.stock} sản phẩm)
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        Hết hàng
-                                                    </c:otherwise>
-                                                </c:choose>
-                                            </span>
-                                        </div>
-
-
-
-                                        <!-- Quantity and Action Buttons -->
-                                        <c:if test="${product.status == 'ACTIVE' && product.stock > 0}">
-                                            <div class="action-buttons">
-                                                <!-- Quantity Selection -->
-                                                <div class="row mb-4">
-                                                    <div class="col-md-6">
-                                                        <label class="form-label fw-bold">Số lượng:</label>
-                                                        <input type="number" id="quantity" name="quantity"
-                                                            class="form-control quantity-input" value="1" min="1"
-                                                            max="${product.stock}" style="width: 100px;">
+                                <!-- Product Description -->
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <div class="info-card">
+                                            <h3 class="mb-3">
+                                                <i class="fas fa-info-circle text-success"></i> Mô tả sản phẩm
+                                            </h3>
+                                            <c:choose>
+                                                <c:when test="${not empty product.description}">
+                                                    <div class="product-description">
+                                                        <p>
+                                                            ${product.description}</p>
                                                     </div>
-                                                </div>
-
-                                                <!-- Action Button -->
-                                                <div class="d-grid">
-                                                    <button type="button" class="btn btn-buy-now btn-lg"
-                                                        onclick="buyNow()">
-                                                        <i class="fas fa-bolt"></i> Mua ngay
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </c:if>
-
-                                        <c:if test="${product.status != 'ACTIVE' || product.stock <= 0}">
-                                            <div class="alert alert-warning text-center">
-                                                <i class="fas fa-exclamation-triangle"></i>
-                                                Sản phẩm hiện tại không thể mua
-                                            </div>
-                                        </c:if>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <p class="text-muted fst-italic">Chưa có mô tả cho sản phẩm này.
+                                                    </p>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </div>
                                     </div>
                                 </div>
+
+
+
+
                             </div>
-
-                            <!-- Product Description -->
-                            <div class="row mt-4">
-                                <div class="col-12">
-                                    <div class="info-card">
-                                        <h3 class="mb-3">
-                                            <i class="fas fa-info-circle text-success"></i> Mô tả sản phẩm
-                                        </h3>
-                                        <c:choose>
-                                            <c:when test="${not empty product.description}">
-                                                <div class="product-description">
-                                                    <p>
-                                                        ${product.description}</p>
-                                                </div>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <p class="text-muted fst-italic">Chưa có mô tả cho sản phẩm này.
-                                                </p>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </div>
-                                </div>
-                            </div>
-
-
-
-
                         </div>
+
+                        <script>
+                            // Toggle sidebar function
+                            function toggleSidebar() {
+                                var sidebar = document.getElementById('sidebar');
+                                var content = document.getElementById('content');
+                                sidebar.classList.toggle('active');
+                                content.classList.toggle('shifted');
+                            }
+
+
+
+                            // Buy now function
+                            function buyNow() {
+                                var form = document.getElementById('productForm');
+                                form.action = '<c:url value="/product/${product.slug}/buy-now"/>';
+                                form.submit();
+                            }
+
+                            // Validate quantity input
+                            document.getElementById('quantity').addEventListener('input', function () {
+                                var value = parseInt(this.value);
+                                var min = parseInt(this.min);
+                                var max = parseInt(this.max);
+
+                                if (value < min) this.value = min;
+                                if (value > max) this.value = max;
+                            });
+                        </script>
+
+                        <!-- iziToast JS -->
+                        <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+
+                        <!-- Script to display notifications using iziToast -->
+                        <c:if test="${not empty successMessage}">
+                            <script>
+                                iziToast.success({
+                                    title: 'Thành công!',
+                                    message: '${successMessage}',
+                                    position: 'topRight',
+                                    timeout: 5000
+                                });
+                            </script>
+                        </c:if>
+
+                        <c:if test="${not empty errorMessage}">
+                            <script>
+                                iziToast.error({
+                                    title: 'Lỗi!',
+                                    message: '${errorMessage}',
+                                    position: 'topRight',
+                                    timeout: 5000
+                                });
+                            </script>
+                        </c:if>
+
+
+                        <!-- Include Footer -->
+                        <jsp:include page="../common/footer.jsp" />
+
+
+
+
+
                     </div>
 
-                    <script>
-                        // Toggle sidebar function
-                        function toggleSidebar() {
-                            var sidebar = document.getElementById('sidebar');
-                            var content = document.getElementById('content');
-                            sidebar.classList.toggle('active');
-                            content.classList.toggle('shifted');
-                        }
-
-                        // Check authentication status
-                        var isAuthenticated = <c:choose><c:when test="${pageContext.request.userPrincipal != null}">true</c:when><c:otherwise>false</c:otherwise></c:choose>;
-
-
-                        // Buy now function
-                        function buyNow() {
-                            var form = document.getElementById('productForm');
-                            form.action = '<c:url value="/product/${product.slug}/buy-now"/>';
-                            form.submit();
-                        }
-
-                        // Validate quantity input
-                        document.getElementById('quantity').addEventListener('input', function () {
-                            var value = parseInt(this.value);
-                            var min = parseInt(this.min);
-                            var max = parseInt(this.max);
-
-                            if (value < min) this.value = min;
-                            if (value > max) this.value = max;
-                        });
-                    </script>
 
 
                     <!-- Script to display notifications using iziToast -->
                     <c:if test="${not empty successMessage}">
                         <script>
                             iziToast.success({
-                                title: 'Thành công!',
+                                title: 'Success!',
                                 message: '${successMessage}',
                                 position: 'topRight',
                                 timeout: 5000
@@ -248,80 +290,13 @@
                     <c:if test="${not empty errorMessage}">
                         <script>
                             iziToast.error({
-                                title: 'Lỗi!',
+                                title: 'Error!',
                                 message: '${errorMessage}',
                                 position: 'topRight',
                                 timeout: 5000
                             });
                         </script>
                     </c:if>
-
-
-                    <!-- Buy Now Modal -->
-                    <div class="modal fade" id="buyNowModal" tabindex="-1" aria-labelledby="buyNowModalLabel"
-                        aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="buyNowModalLabel">
-                                        <i class="fas fa-shopping-cart text-success"></i> Mua ngay
-                                    </h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <img src="${product.productUrl}" alt="${product.name}"
-                                                class="img-fluid rounded">
-                                        </div>
-                                        <div class="col-md-8">
-                                            <h6 class="fw-bold">${product.name}</h6>
-                                            <p class="text-muted small">${product.category.name}</p>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="h5 text-success mb-0">
-                                                    <fmt:formatNumber value="${product.price}" type="currency"
-                                                        currencySymbol="" maxFractionDigits="0" />đ
-                                                </span>
-                                                <span class="text-muted">Kho: ${product.stock}</span>
-                                            </div>
-                                            <hr>
-                                            <div class="mb-3">
-                                                <label class="form-label fw-bold">Số lượng:</label>
-                                                <input type="number" id="modalQuantity" class="form-control" value="1"
-                                                    min="1" max="${product.stock}" style="width: 100px;">
-                                            </div>
-                                            <div class="d-flex justify-content-between">
-                                                <span class="fw-bold">Tổng cộng:</span>
-                                                <span class="h6 text-success" id="totalPrice">
-                                                    <fmt:formatNumber value="${product.price}" type="currency"
-                                                        currencySymbol="" maxFractionDigits="0" />đ
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                    <button type="button" class="btn btn-success" onclick="confirmBuyNow()">
-                                        <i class="fas fa-check"></i> Xác nhận mua
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Include Footer -->
-                    <jsp:include page="../common/footer.jsp" />
-
-
-
-
-
-                    </div>
-
-
-
 
                     <!-- Page-specific JavaScript -->
                     <c:if test="${not empty pageJS}">
@@ -332,7 +307,6 @@
 
                     <!-- Common JavaScript -->
                     <script>
-
                         // Toggle sidebar function
                         function toggleSidebar() {
                             var sidebar = document.getElementById('sidebar');
@@ -374,12 +348,6 @@
                                     }, 300);
                                 }, 5000);
                             });
-
-                            // Add event listener for modal quantity change
-                            var modalQuantity = document.getElementById('modalQuantity');
-                            if (modalQuantity) {
-                                modalQuantity.addEventListener('input', updateTotalPrice);
-                            }
                         });
                     </script>
                 </body>

@@ -43,7 +43,8 @@ public class Order extends BaseEntity {
     private BigDecimal productPrice;
 
     @Column(nullable = false)
-    private Integer quantity;
+    @Builder.Default
+    private Integer quantity = 1;
 
     @Column(name = "product_data", columnDefinition = "JSON")
     private String productData;
@@ -51,7 +52,7 @@ public class Order extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     @Builder.Default
-    private OrderStatus status = OrderStatus.PENDING_PAYMENT;
+    private OrderStatus status = OrderStatus.PENDING;
 
     @Column(name = "total_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal totalAmount;
