@@ -51,7 +51,7 @@
                         <li><a href="#">Đăng ký bán hàng</a></li>
                     </sec:authorize>
 
-                    <sec:authorize access="isAuthenticated() and hasRole('SELLER') and !hasRole('ADMIN')">
+                    <sec:authorize access="isAuthenticated() and hasRole('SELLER')">
                         <li><a href="/seller/dashboard">Bảng điều khiển người bán</a></li>
                         <li><a href="/seller/dashboard">Báo cáo</a></li>
                     </sec:authorize>
