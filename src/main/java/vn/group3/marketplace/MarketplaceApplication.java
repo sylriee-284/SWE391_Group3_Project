@@ -11,7 +11,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 // org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration.class
 // })
 @EntityScan(basePackages = "vn.group3.marketplace.domain.entity")
-@EnableJpaAuditing
+@EnableJpaAuditing(auditorAwareRef = "auditorAwareImpl")
+
 public class MarketplaceApplication {
 
 	public static void main(String[] args) {
