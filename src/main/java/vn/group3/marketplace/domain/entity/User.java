@@ -34,6 +34,7 @@ public class User extends BaseEntity {
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
+    @Column(length = 20)
     private String phone;
     private String fullName;
     private LocalDate dateOfBirth;
@@ -51,19 +52,14 @@ public class User extends BaseEntity {
     @Builder.Default
     private BigDecimal balance = BigDecimal.ZERO;
 
-    // One-to-Many với UserRole
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // Many-to-Many với Role (JPA tự động tạo bảng trung gian)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     @Builder.Default
-    private Set<UserRole> userRoles = new HashSet<>();
+    private Set<Role> roles = new HashSet<>();
 
     // One-to-One với SellerStore
     @OneToOne(mappedBy = "owner", cascade = CascadeType.ALL)
     private SellerStore sellerStore;
 
-    // Convenience method to get roles
-    public Set<Role> getRoles() {
-        return userRoles.stream()
-                .map(UserRole::getRole)
-                .collect(java.util.stream.Collectors.toSet());
-    }
 }

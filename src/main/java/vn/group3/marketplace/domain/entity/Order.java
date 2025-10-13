@@ -14,9 +14,7 @@ import vn.group3.marketplace.domain.enums.OrderStatus;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "orders", uniqueConstraints = {
-        @UniqueConstraint(name = "uniq_orders_storage", columnNames = { "product_storage_id" })
-})
+@Table(name = "orders")
 @Access(AccessType.FIELD)
 public class Order extends BaseEntity {
     @Id
@@ -34,10 +32,6 @@ public class Order extends BaseEntity {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
-
-    // @ManyToOne(fetch = FetchType.EAGER)
-    // @JoinColumn(name = "product_storage_id")
-    // private ProductStorage productStorage;
 
     @Column(name = "product_name", nullable = false)
     private String productName;
