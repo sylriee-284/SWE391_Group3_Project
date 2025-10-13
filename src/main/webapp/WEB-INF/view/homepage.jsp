@@ -44,7 +44,7 @@
                                             <div class="mb-3">
                                                 <a
                                                     href="<c:url value='/category/${parentCategory.name.toLowerCase()}'/>">
-                                                    <img src="<c:url value='/images/${parentCategory.name}.png'/>"
+                                                    <img src="<c:url value='/images/categories/${parentCategory.name.toLowerCase()}.png'/>"
                                                         alt="${parentCategory.name}" class="img-fluid"
                                                         style="width:70px;height:70px;">
                                                 </a>
@@ -73,8 +73,9 @@
                                     <div class="card-body text-center">
                                         <div class="mb-3">
                                             <a href="#">
-                                                <img src="<c:url value='/images/tuongtac.png'/>" alt="Tăng tương tác"
-                                                    class="img-fluid" style="width:70px;height:70px;">
+                                                <img src="<c:url value='/images/categories/tuongtac.png'/>"
+                                                    alt="Tăng tương tác" class="img-fluid"
+                                                    style="width:70px;height:70px;">
                                             </a>
                                         </div>
                                         <h5 class="card-title text-success">
@@ -93,7 +94,7 @@
                                     <div class="card-body text-center">
                                         <div class="mb-3">
                                             <a href="#">
-                                                <img src="<c:url value='/images/dichvuphanmem.png'/>"
+                                                <img src="<c:url value='/images/categories/dichvuphanmem.png'/>"
                                                     alt="Dịch vụ phần mềm" class="img-fluid"
                                                     style="width:70px;height:70px;">
                                             </a>
@@ -114,8 +115,8 @@
                                     <div class="card-body text-center">
                                         <div class="mb-3">
                                             <a href="#">
-                                                <img src="<c:url value='/images/blockchain.png'/>" alt="Blockchain"
-                                                    class="img-fluid" style="width:70px;height:70px;">
+                                                <img src="<c:url value='/images/categories/blockchain.png'/>"
+                                                    alt="Blockchain" class="img-fluid" style="width:70px;height:70px;">
                                             </a>
                                         </div>
                                         <h5 class="card-title text-success">
@@ -133,8 +134,9 @@
                                     <div class="card-body text-center">
                                         <div class="mb-3">
                                             <a href="#">
-                                                <img src="<c:url value='/images/dvkhac.jpg'/>" alt="Dịch vụ khác"
-                                                    class="img-fluid" style="width:70px;height:70px;">
+                                                <img src="<c:url value='/images/categories/dvkhac.jpg'/>"
+                                                    alt="Dịch vụ khác" class="img-fluid"
+                                                    style="width:70px;height:70px;">
                                             </a>
                                         </div>
                                         <h5 class="card-title text-success">

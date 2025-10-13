@@ -45,33 +45,50 @@
                         </li>
                     </ul>
 
-                    <li><a href="#">Feedback</a></li>
+                    <!-- <li><a href="#">Feedback</a></li> -->
                     <sec:authorize
                         access="isAuthenticated() and hasRole('USER') and !hasRole('SELLER') and !hasRole('ADMIN')">
                         <li><a href="#">Đăng ký bán hàng</a></li>
                     </sec:authorize>
 
                     <sec:authorize access="isAuthenticated() and hasRole('SELLER')">
-                        <li><a href="/seller/dashboard">Bảng điều khiển người bán</a></li>
-                        <li><a href="/seller/dashboard">Báo cáo</a></li>
+                        <!-- Cửa hàng của tôi -->
+                        <li class="mt-2">
+                            <a class="d-flex justify-content-between align-items-center text-decoration-none text-white"
+                                data-bs-toggle="collapse" href="#sellerMenu" role="button" aria-expanded="false"
+                                aria-controls="sellerMenu">
+                                🏪 Cửa hàng của tôi
+                                <i class="fas fa-chevron-down"></i>
+                            </a>
+                            <ul class="collapse list-unstyled ms-3 mt-2" id="sellerMenu">
+                                <li><a href="/seller/dashboard" class="text-white text-decoration-none">📊 Bảng điều
+                                        khiển người bán</a></li>
+                                <li><a href="/seller/store-info" class="text-white text-decoration-none">🏪 Thông tin
+                                        cửa hàng</a></li>
+                                <li><a href="/seller/products" class="text-white text-decoration-none">📦 Quản lý sản
+                                        phẩm</a></li>
+                                <li><a href="/seller/reports" class="text-white text-decoration-none">📈 Báo cáo & thống
+                                        kê</a></li>
+                            </ul>
+                        </li>
                     </sec:authorize>
 
                     <sec:authorize access="hasRole('ADMIN')">
-                        <li><a href="/admin/dashboard">Bảng điều khiển Admin</a></li>
-
-                        <!-- Quản lý platform -->
-                        <li>
+                        <!-- Quản lý Admin -->
+                        <li class="mt-2">
                             <a class="d-flex justify-content-between align-items-center text-decoration-none text-white"
                                 data-bs-toggle="collapse" href="#adminMenu" role="button" aria-expanded="false"
                                 aria-controls="adminMenu">
-                                Quản lý platform
+                                👨‍💼 Quản lý Admin
                                 <i class="fas fa-chevron-down"></i>
                             </a>
                             <ul class="collapse list-unstyled ms-3 mt-2" id="adminMenu">
-                                <li><a href="#" class="text-white text-decoration-none">Quản lý người dùng</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">Quản lý cửa hàng</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">Quản lý mặt hàng</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">Cài đặt platform</a></li>
+                                <li><a href="/admin/dashboard" class="text-white text-decoration-none">📊 Bảng điều
+                                        khiển Admin</a></li>
+                                <li><a href="#" class="text-white text-decoration-none">👥 Quản lý người dùng</a></li>
+                                <li><a href="#" class="text-white text-decoration-none">🏪 Quản lý cửa hàng</a></li>
+                                <li><a href="#" class="text-white text-decoration-none">📦 Quản lý mặt hàng</a></li>
+                                <li><a href="#" class="text-white text-decoration-none">⚙️ Cài đặt platform</a></li>
                             </ul>
                         </li>
                     </sec:authorize>
