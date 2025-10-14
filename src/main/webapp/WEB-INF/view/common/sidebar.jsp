@@ -88,7 +88,9 @@
                                 <li><a href="#" class="text-white text-decoration-none">👥 Quản lý người dùng</a></li>
                                 <li><a href="#" class="text-white text-decoration-none">🏪 Quản lý cửa hàng</a></li>
                                 <li><a href="#" class="text-white text-decoration-none">📦 Quản lý mặt hàng</a></li>
+                                <li><a href="#" class="text-white text-decoration-none">💳 Đơn rút tiền</a></li>
                                 <li><a href="#" class="text-white text-decoration-none">⚙️ Cài đặt platform</a></li>
+                                <li><a href="#" class="text-white text-decoration-none">📈 Báo cáo & thống kê</a></li>
                             </ul>
                         </li>
                     </sec:authorize>

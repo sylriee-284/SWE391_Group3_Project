@@ -4,6 +4,10 @@ import java.util.regex.Pattern;
 
 public class ValidationUtils {
 
+    private ValidationUtils() {
+        // Private constructor to prevent instantiation
+    }
+
     // Username validation
     public static boolean isValidUsername(String username) {
         if (username == null || username.trim().isEmpty()) {
@@ -34,13 +38,13 @@ public class ValidationUtils {
             return false;
         }
 
-        // Check minimum length 8 characters
-        if (password.length() < 8) {
+        // Check minimum length 12 characters
+        if (password.length() < 12) {
             return false;
         }
 
-        // Check starts with uppercase
-        if (!Pattern.matches("^[A-Z].*", password)) {
+        // Check maximum length 128 characters
+        if (password.length() > 128) {
             return false;
         }
 
@@ -80,7 +84,7 @@ public class ValidationUtils {
 
     // Get password validation error message
     public static String getPasswordErrorMessage() {
-        return "Password: at least 8 characters, start with uppercase, must have at least 1 uppercase, 1 lowercase, 1 number";
+        return "Password: ít nhất 12 ký tự, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và ký tự đặc biệt (đề xuất)";
     }
 
     // Get email validation error message
