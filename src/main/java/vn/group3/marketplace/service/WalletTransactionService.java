@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.group3.marketplace.domain.entity.User;
 import vn.group3.marketplace.domain.entity.WalletTransaction;
 import vn.group3.marketplace.domain.enums.WalletTransactionType;
+import vn.group3.marketplace.domain.enums.WalletTransactionStatus;
 import vn.group3.marketplace.repository.WalletTransactionRepository;
 
 import java.util.List;
@@ -35,13 +36,14 @@ public class WalletTransactionService {
         return walletTransactionRepository.findByUserAndTypeOrderByIdDesc(user, type, pageable);
     }
 
-    public Page<WalletTransaction> getTransactionsByUserAndStatus(User user, String status, int page, int size) {
+    public Page<WalletTransaction> getTransactionsByUserAndStatus(User user, WalletTransactionStatus status, int page,
+            int size) {
         Pageable pageable = PageRequest.of(page, size);
         return walletTransactionRepository.findByUserAndPaymentStatusOrderByIdDesc(user, status, pageable);
     }
 
     public Page<WalletTransaction> getTransactionsByUserAndTypeAndStatus(User user, WalletTransactionType type,
-            String status, int page, int size) {
+            WalletTransactionStatus status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return walletTransactionRepository.findByUserAndTypeAndPaymentStatusOrderByIdDesc(user, type, status,
                 pageable);
@@ -75,7 +77,7 @@ public class WalletTransactionService {
         return walletTransactionRepository.countByUserAndType(user, type);
     }
 
-    public long countTransactionsByUserAndStatus(User user, String status) {
+    public long countTransactionsByUserAndStatus(User user, WalletTransactionStatus status) {
         return walletTransactionRepository.countByUserAndPaymentStatus(user, status);
     }
 }

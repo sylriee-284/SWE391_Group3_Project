@@ -156,14 +156,7 @@
                                     <!-- Thông tin giao dịch -->
                                     <div class="col-md-6">
                                         <h6 class="mb-1">
-                                            <c:choose>
-                                                <c:when test='${transaction.type.name() eq "DEPOSIT"}'>Deposit</c:when>
-                                                <c:when test='${transaction.type.name() eq "WITHDRAWAL"}'>Withdrawal
-                                                </c:when>
-                                                <c:when test='${transaction.type.name() eq "PAYMENT"}'>Payment</c:when>
-                                                <c:when test='${transaction.type.name() eq "REFUND"}'>Refund</c:when>
-                                                <c:otherwise>Transfer</c:otherwise>
-                                            </c:choose>
+                                            ${transaction.type}
 
                                             <!-- Payment Method -->
                                             <c:if test="${transaction.paymentMethod != null}">
@@ -214,25 +207,10 @@
 
                                     <!-- Status & Action -->
                                     <div class="col-md-2 text-end">
-                                        <span class="badge 
-                                                <c:choose>
-                                                    <c:when test='${transaction.paymentStatus == "
-                                            SUCCESS"}'>status-success</c:when>
-                                            <c:when test='${transaction.paymentStatus == "PENDING"}'>status-pending
-                                            </c:when>
-                                            <c:otherwise>status-failed</c:otherwise>
-                                            </c:choose> mb-2">
-
-                                            <c:choose>
-                                                <c:when test='${transaction.paymentStatus == "SUCCESS"}'>Success
-                                                </c:when>
-                                                <c:when test='${transaction.paymentStatus == "PENDING"}'>Pending
-                                                </c:when>
-                                                <c:when test='${transaction.paymentStatus == "FAILED"}'>Failed</c:when>
-                                                <c:when test='${transaction.paymentStatus == "CANCELLED"}'>Cancelled
-                                                </c:when>
-                                                <c:otherwise>${transaction.paymentStatus}</c:otherwise>
-                                            </c:choose>
+                                        <span class="badge ${transaction.paymentStatus == 'SUCCESS' ? 'status-success' : 
+                                                 transaction.paymentStatus == 'PENDING' ? 'status-pending' : 
+                                                 'status-failed'} mb-2">
+                                            ${transaction.paymentStatus}
                                         </span>
                                         <br>
                                         <a href="/wallet/transactions/${transaction.id}"

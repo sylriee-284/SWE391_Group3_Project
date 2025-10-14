@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import jakarta.persistence.*;
 import lombok.*;
 import vn.group3.marketplace.domain.enums.WalletTransactionType;
+import vn.group3.marketplace.domain.enums.WalletTransactionStatus;
 
 @Getter
 @Setter
@@ -39,8 +40,9 @@ public class WalletTransaction extends BaseEntity {
     @Column(name = "payment_ref", length = 100)
     private String paymentRef;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", length = 50)
-    private String paymentStatus;
+    private WalletTransactionStatus paymentStatus;
 
     @Column(name = "payment_method", length = 50)
     private String paymentMethod;
@@ -53,11 +55,11 @@ public class WalletTransaction extends BaseEntity {
         this.paymentRef = paymentRef;
     }
 
-    public String getPaymentStatus() {
+    public WalletTransactionStatus getPaymentStatus() {
         return paymentStatus;
     }
 
-    public void setPaymentStatus(String paymentStatus) {
+    public void setPaymentStatus(WalletTransactionStatus paymentStatus) {
         this.paymentStatus = paymentStatus;
     }
 

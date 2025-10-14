@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import vn.group3.marketplace.domain.entity.User;
 import vn.group3.marketplace.domain.entity.WalletTransaction;
 import vn.group3.marketplace.domain.enums.WalletTransactionType;
+import vn.group3.marketplace.domain.enums.WalletTransactionStatus;
 
 @Repository
 public interface WalletTransactionRepository extends JpaRepository<WalletTransaction, Long> {
@@ -30,13 +31,14 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
     /**
      * Tìm giao dịch theo user và trạng thái thanh toán
      */
-    Page<WalletTransaction> findByUserAndPaymentStatusOrderByIdDesc(User user, String status, Pageable pageable);
+    Page<WalletTransaction> findByUserAndPaymentStatusOrderByIdDesc(User user, WalletTransactionStatus status,
+            Pageable pageable);
 
     /**
      * Tìm giao dịch theo user, loại giao dịch và trạng thái thanh toán
      */
     Page<WalletTransaction> findByUserAndTypeAndPaymentStatusOrderByIdDesc(User user, WalletTransactionType type,
-            String status, Pageable pageable);
+            WalletTransactionStatus status, Pageable pageable);
 
     /**
      * Tìm giao dịch gần đây của user (top 10)
@@ -56,6 +58,6 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
     /**
      * Đếm số giao dịch theo trạng thái
      */
-    long countByUserAndPaymentStatus(User user, String status);
+    long countByUserAndPaymentStatus(User user, WalletTransactionStatus status);
 
 }

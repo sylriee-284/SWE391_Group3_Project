@@ -9,6 +9,7 @@ import vn.group3.marketplace.domain.entity.User;
 // Wallet entity removed - balance stored on User directly
 import vn.group3.marketplace.domain.entity.WalletTransaction;
 import vn.group3.marketplace.domain.enums.WalletTransactionType;
+import vn.group3.marketplace.domain.enums.WalletTransactionStatus;
 import vn.group3.marketplace.repository.UserRepository;
 import vn.group3.marketplace.repository.WalletTransactionRepository;
 
@@ -44,7 +45,7 @@ public class WalletService {
                 .type(WalletTransactionType.DEPOSIT)
                 .amount(amount)
                 .paymentRef(paymentRef)
-                .paymentStatus("PENDING")
+                .paymentStatus(WalletTransactionStatus.PENDING)
                 .paymentMethod("VNPAY")
                 .note("Nạp tiền qua VNPay")
                 .build();
@@ -69,7 +70,7 @@ public class WalletService {
             logger.debug("Current status: {}", transaction.getPaymentStatus());
 
             // Kiểm tra transaction chưa được xử lý
-            if (!"PENDING".equals(transaction.getPaymentStatus())) {
+            if (transaction.getPaymentStatus() != WalletTransactionStatus.PENDING) {
                 logger.warn("Transaction already processed, status: {}", transaction.getPaymentStatus());
                 return;
             }
@@ -84,7 +85,7 @@ public class WalletService {
             }
 
             // Cập nhật trạng thái transaction
-            transaction.setPaymentStatus("SUCCESS");
+            transaction.setPaymentStatus(WalletTransactionStatus.SUCCESS);
             walletTransactionRepository.save(transaction);
             logger.info("Updated transaction status to SUCCESS");
         } else {

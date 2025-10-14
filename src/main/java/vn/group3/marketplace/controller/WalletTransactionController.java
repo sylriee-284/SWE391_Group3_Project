@@ -9,10 +9,9 @@ import org.springframework.web.bind.annotation.*;
 import vn.group3.marketplace.domain.entity.User;
 import vn.group3.marketplace.domain.entity.WalletTransaction;
 import vn.group3.marketplace.domain.enums.WalletTransactionType;
+import vn.group3.marketplace.domain.enums.WalletTransactionStatus;
 import vn.group3.marketplace.security.CustomUserDetails;
 import vn.group3.marketplace.service.WalletTransactionService;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/wallet/transactions")
@@ -51,8 +50,9 @@ public class WalletTransactionController {
             // Cả hai filter - ưu tiên cao nhất
             try {
                 WalletTransactionType transactionType = WalletTransactionType.valueOf(type.toUpperCase());
+                WalletTransactionStatus transactionStatus = WalletTransactionStatus.valueOf(status.toUpperCase());
                 transactions = walletTransactionService.getTransactionsByUserAndTypeAndStatus(user, transactionType,
-                        status, page, size);
+                        transactionStatus, page, size);
                 model.addAttribute("selectedType", type);
                 model.addAttribute("selectedStatus", status);
             } catch (IllegalArgumentException e) {
@@ -69,7 +69,13 @@ public class WalletTransactionController {
             }
         } else if (hasStatus) {
             // Chỉ filter theo status
-            transactions = walletTransactionService.getTransactionsByUserAndStatus(user, status, page, size);
+            try {
+                WalletTransactionStatus transactionStatus = WalletTransactionStatus.valueOf(status.toUpperCase());
+                transactions = walletTransactionService.getTransactionsByUserAndStatus(user, transactionStatus, page,
+                        size);
+            } catch (IllegalArgumentException e) {
+                transactions = walletTransactionService.getTransactionsByUser(user, page, size);
+            }
             model.addAttribute("selectedStatus", status);
         } else {
             // Không có filter - lấy tất cả
@@ -89,9 +95,10 @@ public class WalletTransactionController {
 
         // 📝 Dropdown options
         model.addAttribute("transactionTypes", WalletTransactionType.values());
-        model.addAttribute("paymentStatuses", new String[] { "PENDING", "SUCCESS", "FAILED", "CANCELLED" });
+        model.addAttribute("paymentStatuses", WalletTransactionStatus.values());
 
         return "wallet/transactions";
+
     }
 
     /**

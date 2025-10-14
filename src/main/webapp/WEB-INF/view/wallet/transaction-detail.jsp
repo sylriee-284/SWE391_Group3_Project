@@ -81,24 +81,24 @@
                                     </div>
                                     <div class="col-md-2">
                                         <span class="${
-                                        (transaction.paymentStatus eq 'SUCCESS') ? 'status-success' : 
-                                        (transaction.paymentStatus eq 'PENDING') ? 'status-pending' : 'status-failed'
+                                        (transaction.paymentStatus.name() eq 'SUCCESS') ? 'status-success' : 
+                                        (transaction.paymentStatus.name() eq 'PENDING') ? 'status-pending' : 'status-failed'
                                     }">
 
                                             <c:choose>
-                                                <c:when test='${transaction.paymentStatus eq "SUCCESS"}'>
+                                                <c:when test='${transaction.paymentStatus.name() eq "SUCCESS"}'>
                                                     <i class="fas fa-check-circle"></i> Success
                                                 </c:when>
-                                                <c:when test='${transaction.paymentStatus eq "PENDING"}'>
+                                                <c:when test='${transaction.paymentStatus.name() eq "PENDING"}'>
                                                     <i class="fas fa-clock"></i> Pending
                                                 </c:when>
-                                                <c:when test='${transaction.paymentStatus eq "FAILED"}'>
+                                                <c:when test='${transaction.paymentStatus.name() eq "FAILED"}'>
                                                     <i class="fas fa-times-circle"></i> Failed
                                                 </c:when>
-                                                <c:when test='${transaction.paymentStatus eq "CANCELLED"}'>
+                                                <c:when test='${transaction.paymentStatus.name() eq "CANCELLED"}'>
                                                     <i class="fas fa-ban"></i> Cancelled
                                                 </c:when>
-                                                <c:otherwise>${transaction.paymentStatus}</c:otherwise>
+                                                <c:otherwise>${transaction.paymentStatus.name()}</c:otherwise>
                                             </c:choose>
                                         </span>
                                     </div>
@@ -276,7 +276,7 @@
                                         <i class="fas fa-wallet"></i> My Wallet
                                     </a>
                                     <c:if
-                                        test='${transaction.paymentStatus == "SUCCESS" && transaction.type == "DEPOSIT"}'>
+                                        test='${transaction.paymentStatus.name() == "SUCCESS" && transaction.type.name() == "DEPOSIT"}'>
                                         <a href="/wallet/deposit" class="btn btn-success">
                                             <i class="fas fa-plus"></i> Add More Funds
                                         </a>
