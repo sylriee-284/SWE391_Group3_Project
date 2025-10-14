@@ -3,10 +3,12 @@ package vn.group3.marketplace.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import vn.group3.marketplace.domain.entity.Category;
 import vn.group3.marketplace.domain.entity.Product;
 import vn.group3.marketplace.domain.entity.SellerStore;
@@ -17,11 +19,19 @@ import vn.group3.marketplace.repository.ProductStorageRepository;
 import vn.group3.marketplace.repository.SellerStoreRepository;
 import vn.group3.marketplace.service.ProductService;
 
+import jakarta.validation.Valid;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.beans.propertyeditors.StringTrimmerEditor;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.nio.file.*;
 
 @Controller
 @RequestMapping("/seller/products")
@@ -33,10 +43,55 @@ public class SellerProductController {
     private final ProductStorageRepository storageRepo;
     private final SellerStoreRepository storeRepo;
 
-    private static final Long DEFAULT_STORE_ID = 1L; // TODO: lấy từ session của bạn
+    private static final Long DEFAULT_STORE_ID = 1L;
+
+    @Value("${app.upload.dir:uploads}")
+    private String uploadDir;
+
+    // Trim đầu/cuối; chuỗi toàn khoảng trắng => null (kích hoạt @NotBlank)
+    @InitBinder
+    public void initBinder(WebDataBinder binder) {
+        binder.registerCustomEditor(String.class, new StringTrimmerEditor(true));
+    }
 
     private Long resolveStoreId(Long storeId) {
         return Optional.ofNullable(storeId).orElse(DEFAULT_STORE_ID);
+    }
+
+    // Lấy tối đa 4 danh mục cha để hiển thị nhanh
+    private List<Category> top4Parents() {
+        List<Category> parents = categoryRepo.findByParentIsNullAndIsDeletedFalseOrderByNameAsc();
+        return parents.size() > 4 ? parents.subList(0, 4) : parents;
+    }
+
+    // Lưu ảnh vào thư mục uploads và trả về đường dẫn public
+    private String saveImageToUploads(MultipartFile file) throws Exception {
+        if (file == null || file.isEmpty())
+            return null;
+
+        // Kiểm tra MIME & size (<= 10MB)
+        long maxBytes = 10L * 1024 * 1024;
+        if (file.getSize() > maxBytes) {
+            throw new IllegalArgumentException("Ảnh vượt quá 10MB.");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !(contentType.equals("image/jpeg") || contentType.equals("image/png"))) {
+            throw new IllegalArgumentException("Chỉ hỗ trợ ảnh JPG hoặc PNG.");
+        }
+
+        Path root = Paths.get(uploadDir);
+        Files.createDirectories(root);
+
+        String original = file.getOriginalFilename();
+        String ext = ".jpg";
+        if (original != null && original.lastIndexOf('.') >= 0) {
+            ext = original.substring(original.lastIndexOf('.')).toLowerCase();
+        }
+        String filename = UUID.randomUUID().toString().replace("-", "") + ext;
+        Path dest = root.resolve(filename);
+        Files.copy(file.getInputStream(), dest, StandardCopyOption.REPLACE_EXISTING);
+
+        return "/uploads/" + filename;
     }
 
     // ============ LIST ============
@@ -54,7 +109,6 @@ public class SellerProductController {
 
         Long sid = resolveStoreId(storeId);
 
-        // Parse khoảng ngày (from inclusive, to exclusive)
         LocalDateTime createdFrom = null;
         LocalDateTime createdToExclusive = null;
         try {
@@ -67,27 +121,25 @@ public class SellerProductController {
         } catch (Exception ignored) {
         }
 
-        // Gọi service với ĐẦY ĐỦ tham số (lọc trực tiếp ở DB)
         Page<Product> data = productService.search(
                 sid, q, status, categoryId,
                 parentCategoryId, createdFrom, createdToExclusive,
                 PageRequest.of(page, size));
 
-        // Chuẩn bị danh mục lớn / danh mục con cho UI filter
-        List<Category> allCats = categoryRepo.findAll();
+        // Phục vụ filter ở trang danh sách
+        List<Category> allCats = categoryRepo.findByIsDeletedFalse();
         List<Category> parentCategories = allCats.stream()
                 .filter(c -> c.getParent() == null)
-                .sorted((a, b) -> a.getName().compareToIgnoreCase(b.getName()))
+                .sorted(Comparator.comparing(Category::getName, String.CASE_INSENSITIVE_ORDER))
                 .collect(Collectors.toList());
 
         List<Category> subCategories = parentCategoryId == null
                 ? Collections.emptyList()
                 : allCats.stream()
                         .filter(c -> c.getParent() != null && Objects.equals(c.getParent().getId(), parentCategoryId))
-                        .sorted((a, b) -> a.getName().compareToIgnoreCase(b.getName()))
+                        .sorted(Comparator.comparing(Category::getName, String.CASE_INSENSITIVE_ORDER))
                         .collect(Collectors.toList());
 
-        // Model attributes cho view
         model.addAttribute("page", data);
         model.addAttribute("q", q);
         model.addAttribute("status", status);
@@ -117,28 +169,63 @@ public class SellerProductController {
 
         model.addAttribute("form", form);
         model.addAttribute("storeId", sid);
-        model.addAttribute("categories", categoryRepo.findAll());
         model.addAttribute("formMode", "CREATE");
+        model.addAttribute("parentCategories", top4Parents());
+        model.addAttribute("subCategories", Collections.emptyList());
+
         return "seller/product-form";
     }
 
     // ============ CREATE ============
     @PostMapping
-    public String create(@ModelAttribute("form") Product form,
+    public String create(@Valid @ModelAttribute("form") Product form,
+            BindingResult binding,
             @RequestParam(value = "storeId", required = false) Long storeId,
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            Model model,
             RedirectAttributes ra) {
+
         Long sid = resolveStoreId(storeId);
         SellerStore store = new SellerStore();
         store.setId(sid);
         form.setSellerStore(store);
 
-        if (form.getPrice() == null || form.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            ra.addFlashAttribute("error", "Giá phải lớn hơn 0.");
-            return "redirect:/seller/products/new?storeId=" + sid;
+        // Upload ảnh (nếu có)
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                String imagePath = saveImageToUploads(imageFile);
+                form.setProductUrl(imagePath);
+            } catch (Exception e) {
+                binding.rejectValue("productUrl", "image.invalid", e.getMessage());
+            }
+        }
+
+        // Kiểm tra giá > 0 nếu entity chưa có constraint
+        if (form.getPrice() == null || form.getPrice().compareTo(BigDecimal.valueOf(0.01)) < 0) {
+            binding.rejectValue("price", "price.min", "Giá phải lớn hơn 0.");
+        }
+
+        if (binding.hasErrors()) {
+            // nạp lại dropdown khi có lỗi
+            model.addAttribute("storeId", sid);
+            model.addAttribute("formMode", "CREATE");
+            model.addAttribute("parentCategories", top4Parents());
+
+            List<Category> subCats = Collections.emptyList();
+            if (form.getCategory() != null && form.getCategory().getId() != null) {
+                Category current = categoryRepo.findById(form.getCategory().getId()).orElse(null);
+                if (current != null && current.getParent() != null) {
+                    subCats = categoryRepo.findByParentAndIsDeletedFalse(current.getParent());
+                    model.addAttribute("selectedParentId", current.getParent().getId());
+                    model.addAttribute("selectedChildId", current.getId());
+                }
+            }
+            model.addAttribute("subCategories", subCats);
+            return "seller/product-form";
         }
 
         productService.create(form);
-        ra.addFlashAttribute("success", " Thêm sản phẩm mới thành công!");
+        ra.addFlashAttribute("success", "Thêm sản phẩm mới thành công!");
         return "redirect:/seller/products?storeId=" + sid;
     }
 
@@ -152,21 +239,92 @@ public class SellerProductController {
 
         model.addAttribute("form", form);
         model.addAttribute("storeId", sid);
-        model.addAttribute("categories", categoryRepo.findAll());
         model.addAttribute("formMode", "UPDATE");
+
+        List<Category> parents = top4Parents();
+        model.addAttribute("parentCategories", parents);
+
+        List<Category> subCats = Collections.emptyList();
+        Long selectedParentId = null;
+        Long selectedChildId = null;
+
+        if (form.getCategory() != null) {
+            Category current = form.getCategory();
+            Category parent = (current.getParent() == null) ? current : current.getParent();
+            selectedParentId = parent != null ? parent.getId() : null;
+            selectedChildId = current.getId();
+            if (parent != null) {
+                subCats = categoryRepo.findByParentAndIsDeletedFalse(parent);
+            }
+        }
+
+        model.addAttribute("selectedParentId", selectedParentId);
+        model.addAttribute("selectedChildId", selectedChildId);
+        model.addAttribute("subCategories", subCats);
+
         return "seller/product-form";
     }
 
     // ============ UPDATE ============
     @PostMapping("/{id}")
     public String update(@PathVariable Long id,
-            @ModelAttribute("form") Product form,
+            @Valid @ModelAttribute("form") Product form,
+            BindingResult binding,
             @RequestParam(value = "storeId", required = false) Long storeId,
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            Model model,
             RedirectAttributes ra) {
+
         Long sid = resolveStoreId(storeId);
         form.setId(id);
+
+        Product existed = productService.getOwned(id, sid);
+
+        // Ảnh: nếu upload mới thì validate; nếu không, giữ ảnh cũ
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                String imagePath = saveImageToUploads(imageFile);
+                form.setProductUrl(imagePath);
+            } catch (Exception e) {
+                binding.rejectValue("productUrl", "image.invalid", e.getMessage());
+            }
+        } else {
+            form.setProductUrl(existed.getProductUrl());
+        }
+
+        // Kiểm tra giá > 0 nếu entity chưa có constraint
+        if (form.getPrice() == null || form.getPrice().compareTo(BigDecimal.valueOf(0.01)) < 0) {
+            binding.rejectValue("price", "price.min", "Giá phải lớn hơn 0.");
+        }
+
+        if (binding.hasErrors()) {
+            model.addAttribute("storeId", sid);
+            model.addAttribute("formMode", "UPDATE");
+
+            List<Category> parents = top4Parents();
+            model.addAttribute("parentCategories", parents);
+
+            List<Category> subCats = Collections.emptyList();
+            Long selectedParentId = null;
+            Long selectedChildId = null;
+
+            if (form.getCategory() != null) {
+                Category current = form.getCategory();
+                Category parent = (current.getParent() == null) ? current : current.getParent();
+                selectedParentId = parent != null ? parent.getId() : null;
+                selectedChildId = current.getId();
+                if (parent != null)
+                    subCats = categoryRepo.findByParentAndIsDeletedFalse(parent);
+            }
+
+            model.addAttribute("selectedParentId", selectedParentId);
+            model.addAttribute("selectedChildId", selectedChildId);
+            model.addAttribute("subCategories", subCats);
+            return "seller/product-form";
+        }
+
         productService.update(form, sid);
-        ra.addFlashAttribute("success", " Sửa sản phẩm thành công!");
+        ra.addFlashAttribute("success", "Sửa sản phẩm thành công!");
         return "redirect:/seller/products?storeId=" + sid;
     }
 
@@ -182,14 +340,34 @@ public class SellerProductController {
         return "redirect:/seller/products?storeId=" + sid;
     }
 
-    // ============ SOFT DELETE ============
-    @PostMapping("/{id}/delete")
-    public String softDelete(@PathVariable Long id,
-            @RequestParam(value = "storeId", required = false) Long storeId,
-            RedirectAttributes ra) {
-        Long sid = resolveStoreId(storeId);
-        productService.softDelete(id, sid, 1L); // TODO: thay bằng userId thực tế
-        ra.addFlashAttribute("success", "Đã xóa (ẩn) sản phẩm #" + id);
-        return "redirect:/seller/products?storeId=" + sid;
+    // ============ API: trả danh mục con (JSON) ============
+    @GetMapping(value = "/categories", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public List<Option> childrenByParent(@RequestParam("parentId") Long parentId) {
+        List<Category> children = categoryRepo.findByParent_IdAndIsDeletedFalseOrderByNameAsc(parentId);
+        List<Option> out = new ArrayList<>();
+        for (Category c : children) {
+            out.add(new Option(c.getId(), c.getName()));
+        }
+        return out;
+    }
+
+    // DTO đơn giản cho JSON
+    public static class Option {
+        private final Long id;
+        private final String name;
+
+        public Option(Long id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
     }
 }
