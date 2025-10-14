@@ -34,6 +34,10 @@ public class User extends BaseEntity {
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
+    // @Transient
+    // private String roleName; // 👈 chỉ dùng hiển thị trên form, không lưu xuống
+    // DB
+
     private String phone;
     private String fullName;
     private LocalDate dateOfBirth;
@@ -51,10 +55,16 @@ public class User extends BaseEntity {
     @Builder.Default
     private BigDecimal balance = BigDecimal.ZERO;
 
-    // One-to-Many với UserRole
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, // 🔑 BẮT BUỘC
+            fetch = FetchType.LAZY)
     @Builder.Default
     private Set<UserRole> userRoles = new HashSet<>();
+
+    // (tuỳ chọn) helper thay roles
+    public void replaceRoles(Set<UserRole> newRoles) {
+        this.userRoles.clear();
+        this.userRoles.addAll(newRoles);
+    }
 
     // One-to-One với SellerStore
     @OneToOne(mappedBy = "owner", cascade = CascadeType.ALL)
@@ -65,5 +75,10 @@ public class User extends BaseEntity {
         return userRoles.stream()
                 .map(UserRole::getRole)
                 .collect(java.util.stream.Collectors.toSet());
+    }
+
+    public boolean hasRole(String roleCode) {
+        return this.getRoles().stream()
+                .anyMatch(r -> r.getCode().equalsIgnoreCase(roleCode));
     }
 }
