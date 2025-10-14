@@ -142,22 +142,13 @@
                                                 <div class="card product-card border-0 shadow-sm">
                                                     <div class="card-body">
                                                         <div class="text-center mb-3">
-                                                            <c:choose>
-                                                                <c:when test="${not empty product.productUrl}">
-                                                                    <img src="${product.productUrl}"
-                                                                        alt="${product.name}"
-                                                                        class="product-image rounded">
-                                                                </c:when>
-                                                                <c:otherwise>
-                                                                    <div
-                                                                        class="product-image bg-light rounded d-flex align-items-center justify-content-center">
-                                                                        <i class="fas fa-image fa-3x text-muted"></i>
-                                                                    </div>
-                                                                </c:otherwise>
-                                                            </c:choose>
+                                                            <img src="<c:url value='/images/products/${product.id}.png'/>"
+                                                                data-fallback-url="<c:out value='${product.productUrl}'/>"
+                                                                alt="${product.name}" class="product-image rounded"
+                                                                onerror="handleImgError(this)" />
                                                         </div>
                                                         <h6 class="card-title">
-                                                            <a href="<c:url value='/product/${product.id}'/>"
+                                                            <a href="<c:url value='/product/${product.slug}'/>"
                                                                 class="text-decoration-none text-dark">
                                                                 ${product.name}
                                                             </a>
@@ -182,14 +173,32 @@
                                                                 Kho: ${product.stock}
                                                             </small>
                                                         </div>
-                                                        <div class="mt-2">
+                                                        <div
+                                                            class="mt-2 d-flex justify-content-between align-items-center">
                                                             <small class="text-success">
                                                                 <i class="fas fa-tag"></i>
                                                                 ${product.category.name}
                                                             </small>
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-store"></i>
+                                                                ${product.sellerStore.storeName}
+                                                            </small>
+                                                        </div>
+                                                        <div class="mt-2">
+                                                            <div class="rating">
+                                                                <c:forEach begin="1" end="5" var="star">
+                                                                    <i class="fas fa-star ${star <= product.rating ? 'text-warning' : 'text-muted'}"
+                                                                        style="font-size: 0.8em;"></i>
+                                                                </c:forEach>
+                                                                <small class="ms-1 text-muted">
+                                                                    ${product.rating}/5
+                                                                    <span class="text-muted"> Total review:
+                                                                        ${product.ratingCount}</span>
+                                                                </small>
+                                                            </div>
                                                         </div>
                                                         <div class="mt-3">
-                                                            <a href="<c:url value='/product/${product.id}'/>"
+                                                            <a href="<c:url value='/product/${product.slug}'/>"
                                                                 class="btn btn-success btn-sm w-100">
                                                                 <i class="fas fa-eye"></i> Xem chi tiết
                                                             </a>
@@ -310,6 +319,31 @@
 
                     <!-- Common JavaScript -->
                     <script>
+                        // Image fallback: try .png, then productUrl, then placeholder
+                        function handleImgError(img) {
+                            try {
+                                const src = img.getAttribute('src') || '';
+                                const fallback = (img.dataset && img.dataset.fallbackUrl) ? img.dataset.fallbackUrl : '';
+                                if (/\.jpg$/i.test(src)) {
+                                    img.onerror = function () { handleImgError(img); };
+                                    img.src = src.replace(/\.jpg$/i, '.png');
+                                    return;
+                                }
+                                if (fallback && src !== fallback) {
+                                    img.onerror = function () { setPlaceholder(img); };
+                                    img.src = fallback;
+                                    return;
+                                }
+                                setPlaceholder(img);
+                            } catch (e) {
+                                setPlaceholder(img);
+                            }
+                        }
+
+                        function setPlaceholder(img) {
+                            img.onerror = null;
+                            img.src = '<c:url value="/images/others.png"/>';
+                        }
                         // Toggle sidebar function
                         function toggleSidebar() {
                             var sidebar = document.getElementById('sidebar');

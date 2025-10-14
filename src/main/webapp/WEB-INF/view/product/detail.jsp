@@ -50,20 +50,11 @@
                                 <!-- Product Image -->
                                 <div class="col-lg-6 mb-4">
                                     <div class="text-center">
-                                        <c:choose>
-                                            <c:when test="${not empty product.productUrl}">
-                                                <img src="${product.productUrl}" alt="${product.name}"
-                                                    class="product-image">
-                                            </c:when>
-                                            <c:otherwise>
-                                                <div class="product-placeholder">
-                                                    <div class="text-center">
-                                                        <i class="fas fa-image fa-4x text-muted mb-3"></i>
-                                                        <p class="text-muted">Chưa có hình ảnh</p>
-                                                    </div>
-                                                </div>
-                                            </c:otherwise>
-                                        </c:choose>
+                                        <img id="product-main-image"
+                                            src="<c:url value='/images/products/${product.id}.png'/>"
+                                            data-fallback-url="<c:out value='${product.productUrl}'/>"
+                                            alt="${product.name}" class="product-image"
+                                            onerror="handleImgError(this)" />
                                     </div>
                                 </div>
 
@@ -80,7 +71,11 @@
                                                     <i
                                                         class="fas fa-star ${star <= product.rating ? 'text-warning' : 'text-muted'}"></i>
                                                 </c:forEach>
-                                                <span class="ms-2">${product.rating}/5</span>
+                                                <small class="ms-1 text-muted">
+                                                    ${product.rating}/5
+                                                    <span class="text-muted"> Total review:
+                                                        ${product.ratingCount}</span>
+                                                </small>
                                             </div>
                                         </div>
 
@@ -107,15 +102,6 @@
                                                 <div class="flex-grow-1">
 
                                                     <h6 class="mb-1 text-dark">Người bán: ${shop.storeName}</h6>
-
-
-                                                    <div>
-                                                        <span
-                                                            class="badge ${shop.status == 'ACTIVE' ? 'bg-success' : 'bg-warning'}">
-                                                            <i class="fas fa-circle me-1"></i>${shop.status ==
-                                                            'ACTIVE' ? 'Đang hoạt động' : 'Tạm ngưng'}
-                                                        </span>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -138,15 +124,6 @@
                                                         Hết hàng
                                                     </c:otherwise>
                                                 </c:choose>
-                                            </span>
-                                        </div>
-
-                                        <!-- Product Status -->
-                                        <div class="mb-4">
-                                            <span
-                                                class="badge ${product.status == 'ACTIVE' ? 'bg-success' : 'bg-warning'} fs-6">
-                                                <i class="fas fa-circle"></i>
-                                                ${product.status == 'ACTIVE' ? 'Đang bán' : 'Tạm ngưng'}
                                             </span>
                                         </div>
 
@@ -205,10 +182,6 @@
                                     </div>
                                 </div>
                             </div>
-
-
-
-
                         </div>
                     </div>
 
@@ -230,6 +203,7 @@
                             if (!isAuthenticated) {
                                 // User not logged in - redirect to login with error message
                                 window.location.href = '<c:url value="/login"/>?errorMessage=' + encodeURIComponent('Bạn cần đăng nhập để thực hiện chức năng này');
+                                form.action = '<c:url value="/product/${product.slug}/buy-now"/>';
                                 return;
                             }
 
@@ -322,8 +296,11 @@
                                 <div class="modal-body">
                                     <div class="row">
                                         <div class="col-md-4">
-                                            <img src="${product.productUrl}" alt="${product.name}"
-                                                class="img-fluid rounded">
+                                            <img id="product-modal-image"
+                                                src="<c:url value='/images/products/${product.id}.jpg'/>"
+                                                data-fallback-url="<c:out value='${product.productUrl}'/>"
+                                                alt="${product.name}" class="img-fluid rounded"
+                                                onerror="handleImgError(this)" />
                                         </div>
                                         <div class="col-md-8">
                                             <h6 class="fw-bold">${product.name}</h6>
@@ -364,15 +341,7 @@
                     <!-- Include Footer -->
                     <jsp:include page="../common/footer.jsp" />
 
-
-
-
-
                     </div>
-
-
-
-
                     <!-- Page-specific JavaScript -->
                     <c:if test="${not empty pageJS}">
                         <c:forEach var="js" items="${pageJS}">
@@ -382,6 +351,34 @@
 
                     <!-- Common JavaScript -->
                     <script>
+                        // Image fallback: try .png, then productUrl, then placeholder
+                        function handleImgError(img) {
+                            try {
+                                const src = img.getAttribute('src') || '';
+                                const fallback = (img.dataset && img.dataset.fallbackUrl) ? img.dataset.fallbackUrl : '';
+                                // If currently .jpg, try .png
+                                if (/\.jpg$/i.test(src)) {
+                                    img.onerror = function () { handleImgError(img); };
+                                    img.src = src.replace(/\.jpg$/i, '.png');
+                                    return;
+                                }
+                                // If we haven't tried fallback URL yet
+                                if (fallback && src !== fallback) {
+                                    img.onerror = function () { setPlaceholder(img); };
+                                    img.src = fallback;
+                                    return;
+                                }
+                                // Otherwise, set placeholder
+                                setPlaceholder(img);
+                            } catch (e) {
+                                setPlaceholder(img);
+                            }
+                        }
+
+                        function setPlaceholder(img) {
+                            img.onerror = null;
+                            img.src = '<c:url value="/images/others.png"/>';
+                        }
 
                         // Toggle sidebar function
                         function toggleSidebar() {
