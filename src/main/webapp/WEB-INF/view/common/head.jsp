@@ -41,3 +41,6 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/profile.css">
     <!-- transaction-detail CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/transaction-detail.css">
+
+    <!-- Custom Styles CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/styles.css">
