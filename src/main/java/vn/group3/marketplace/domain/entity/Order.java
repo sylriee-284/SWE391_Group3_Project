@@ -1,6 +1,8 @@
 package vn.group3.marketplace.domain.entity;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -51,7 +53,7 @@ public class Order extends BaseEntity {
     @Column(name = "total_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal totalAmount;
 
-    // ProductStorage items assigned to this order (one-to-many)
-    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
-    private java.util.List<ProductStorage> productStorages;
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "order")
+    private List<ProductStorage> productStorages = new ArrayList<>();
+
 }
