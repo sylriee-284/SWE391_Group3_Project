@@ -15,41 +15,41 @@ import org.springframework.web.servlet.view.JstlView;
 @EnableWebMvc
 public class WebMvcConfig implements WebMvcConfigurer {
 
-    @Bean
-    public ViewResolver viewResolver() {
-        final InternalResourceViewResolver bean = new InternalResourceViewResolver();
-        bean.setViewClass(JstlView.class);
-        bean.setPrefix("/WEB-INF/view/");
-        bean.setSuffix(".jsp");
-        return bean;
-    }
+        @Bean
+        public ViewResolver viewResolver() {
+                final InternalResourceViewResolver bean = new InternalResourceViewResolver();
+                bean.setViewClass(JstlView.class);
+                bean.setPrefix("/WEB-INF/view/");
+                bean.setSuffix(".jsp");
+                return bean;
+        }
 
-    @Override
-    public void configureViewResolvers(@NonNull ViewResolverRegistry registry) {
-        registry.viewResolver(viewResolver());
-    }
+        @Override
+        public void configureViewResolvers(@NonNull ViewResolverRegistry registry) {
+                registry.viewResolver(viewResolver());
+        }
 
-    @Override
-    public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
-        // Images
-        registry.addResourceHandler("/images/**")
-                .addResourceLocations("classpath:/static/images/");
+        @Override
+        public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
+                // Images
+                registry.addResourceHandler("/images/**")
+                                .addResourceLocations("classpath:/static/images/");
 
-        // CSS files
-        registry.addResourceHandler("/resources/css/**")
-                .addResourceLocations("classpath:/static/resources/css/");
+                // CSS files
+                registry.addResourceHandler("/resources/css/**")
+                                .addResourceLocations("classpath:/static/resources/css/");
 
-        // JS files
-        registry.addResourceHandler("/resources/js/**")
-                .addResourceLocations("classpath:/static/resources/js/");
+                // JS files
+                registry.addResourceHandler("/resources/js/**")
+                                .addResourceLocations("classpath:/static/resources/js/");
 
-        // All resources
-        registry.addResourceHandler("/resources/**")
-                .addResourceLocations("classpath:/static/resources/");
+                // All resources
+                registry.addResourceHandler("/resources/**")
+                                .addResourceLocations("classpath:/static/resources/");
 
-        // Static resources fallback
-        registry.addResourceHandler("/**")
-                .addResourceLocations("classpath:/static/");
-    }
+                // Static resources fallback
+                registry.addResourceHandler("/**")
+                                .addResourceLocations("classpath:/static/");
+        }
 
 }
