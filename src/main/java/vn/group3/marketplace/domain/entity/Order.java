@@ -50,4 +50,8 @@ public class Order extends BaseEntity {
 
     @Column(name = "total_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal totalAmount;
+
+    // ProductStorage items assigned to this order (one-to-many)
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
+    private java.util.List<ProductStorage> productStorages;
 }

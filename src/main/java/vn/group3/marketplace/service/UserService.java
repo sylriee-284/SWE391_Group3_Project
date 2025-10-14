@@ -42,14 +42,10 @@ public class UserService {
                 .build();
 
         // Assign default role
-        Role role = roleRepository.findByCode("USER")
-                .orElseThrow(() -> new RuntimeException("Role USER does not exist"));
-        UserRole userRole = UserRole.builder()
-                .user(user)
-                .role(role)
-                .id(new UserRole.UserRoleId(null, null)) // id sẽ được tự động set khi persist
-                .build();
-        user.getUserRoles().add(userRole);
+    Role role = roleRepository.findByCode("USER")
+        .orElseThrow(() -> new RuntimeException("Role USER does not exist"));
+    // Project uses ManyToMany `roles` on User entity. Add role to user's roles set.
+    user.getRoles().add(role);
 
         // Save user (cascade sẽ tự động lưu userRole)
         userRepository.save(user);
