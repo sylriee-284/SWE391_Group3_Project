@@ -79,6 +79,7 @@ public class OrderController {
             pages.add(i);
         }
 
+        // Add all model attributes
         model.addAttribute("orders", ordersPage.getContent());
         model.addAttribute("currentPage", currentPage);
         model.addAttribute("totalPages", totalPages);
@@ -87,8 +88,8 @@ public class OrderController {
         model.addAttribute("pages", pages);
         model.addAttribute("hasPrev", currentPage > 0);
         model.addAttribute("hasNext", currentPage + 1 < totalPages);
-        model.addAttribute("orderStatuses", OrderStatus.values());
-        model.addAttribute("selectedStatus", status != null ? status.name() : null);
+        model.addAttribute("orderStatuses", OrderStatus.values()); // Send all enum values
+        model.addAttribute("selectedStatus", status); // Current selected status
         model.addAttribute("isSeller", isSeller);
         model.addAttribute("key", key);
 
@@ -139,6 +140,8 @@ public class OrderController {
         model.addAttribute("deliveredStorages", order.getProductStorages());
         model.addAttribute("order", order);
         model.addAttribute("isSeller", hasAuthority(currentUser, "ROLE_SELLER"));
+        model.addAttribute("orderStatuses", OrderStatus.values()); // Send all enum values
+        model.addAttribute("selectedStatus", order.getStatus()); // Current order status
         return "order/detail";
     }
 }

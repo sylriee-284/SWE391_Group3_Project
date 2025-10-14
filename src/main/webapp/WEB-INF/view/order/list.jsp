@@ -49,24 +49,12 @@
                                                     <input type="hidden" name="size" value="${size}">
                                                     <select name="status" class="form-select form-select-sm"
                                                         style="width: auto;" onchange="this.form.submit()">
-                                                        <option value="">All Status</option>
+                                                        <option value="">All Orders</option>
                                                         <c:forEach items="${orderStatuses}" var="status">
-                                                            <c:if
-                                                                test="${status == 'PENDING' || status == 'COMPLETED' || status == 'CANCELLED'}">
-                                                                <option value="${status}" ${status==selectedStatus
-                                                                    ? 'selected' : '' }>
-                                                                    <c:choose>
-                                                                        <c:when test="${status == 'PENDING'}">Pending
-                                                                        </c:when>
-                                                                        <c:when test="${status == 'COMPLETED'}">
-                                                                            Completed
-                                                                        </c:when>
-                                                                        <c:when test="${status == 'CANCELLED'}">
-                                                                            Cancelled
-                                                                        </c:when>
-                                                                    </c:choose>
-                                                                </option>
-                                                            </c:if>
+                                                            <option value="${status}" ${status==selectedStatus
+                                                                ? 'selected' : '' }>
+                                                                ${status}
+                                                            </option>
                                                         </c:forEach>
                                                     </select>
 

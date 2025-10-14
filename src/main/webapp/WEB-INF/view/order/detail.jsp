@@ -43,17 +43,18 @@
                                                 class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                                                 <h5 class="mb-0"><i class="bi bi-info-circle"></i> Order #${order.id}
                                                 </h5>
-                                                <span class="badge
-                            ${order.status=='PENDING' ? 'bg-warning' :
-                            order.status=='COMPLETED' ? 'bg-success' :
-                            order.status=='CANCELLED' ? 'bg-danger' :
-                            'bg-light'} fs-6">
-                                                    <c:choose>
-                                                        <c:when test="${order.status == 'PENDING'}">Pending</c:when>
-                                                        <c:when test="${order.status == 'COMPLETED'}">Completed</c:when>
-                                                        <c:when test="${order.status == 'CANCELLED'}">Cancelled</c:when>
-                                                        <c:otherwise>${order.status}</c:otherwise>
-                                                    </c:choose>
+                                                <span class="badge fs-6">
+                                                    <c:forEach items="${orderStatuses}" var="status">
+                                                        <c:if test="${order.status == status}">
+                                                            <span class="badge
+                                                                ${status == 'PENDING' ? 'bg-warning' :
+                                                                status == 'COMPLETED' ? 'bg-success' :
+                                                                status == 'CANCELLED' ? 'bg-danger' :
+                                                                'bg-light'}">
+                                                                ${status}
+                                                            </span>
+                                                        </c:if>
+                                                    </c:forEach>
                                                 </span>
                                             </div>
                                             <div class="card-body">
@@ -74,24 +75,17 @@
                                                             <tr>
                                                                 <td class="text-muted">Status:</td>
                                                                 <td>
-                                                                    <span class="badge
-                                            ${order.status=='PENDING' ? 'bg-warning' :
-                                            order.status=='COMPLETED' ? 'bg-success' :
-                                            order.status=='CANCELLED' ? 'bg-danger' :
-                                            'bg-light'}">
-                                                                        <c:choose>
-                                                                            <c:when test="${order.status == 'PENDING'}">
-                                                                                Pending
-                                                                            </c:when>
-                                                                            <c:when
-                                                                                test="${order.status == 'COMPLETED'}">
-                                                                                Completed</c:when>
-                                                                            <c:when
-                                                                                test="${order.status == 'CANCELLED'}">
-                                                                                Cancelled</c:when>
-                                                                            <c:otherwise>${order.status}</c:otherwise>
-                                                                        </c:choose>
-                                                                    </span>
+                                                                    <c:forEach items="${orderStatuses}" var="status">
+                                                                        <c:if test="${order.status == status}">
+                                                                            <span class="badge
+                                                                                ${status == 'PENDING' ? 'bg-warning' :
+                                                                                status == 'COMPLETED' ? 'bg-success' :
+                                                                                status == 'CANCELLED' ? 'bg-danger' :
+                                                                                'bg-light'}">
+                                                                                ${status}
+                                                                            </span>
+                                                                        </c:if>
+                                                                    </c:forEach>
                                                                 </td>
                                                             </tr>
                                                             <tr>
