@@ -1,0 +1,102 @@
+<!-- ==================== FILTER COMPONENT ====================
+    HƯỚNG DẪN SỬ DỤNG:
+    1. Copy toàn bộ code này vào project của bạn
+    2. Thêm class .filter-section vào container
+    3. Tùy chỉnh các trường filter theo nhu cầu
+    4. CSS đã được định nghĩa trong file css/styles.css
+========================================================== -->
+
+<div class="filter-section">
+    <!-- Row 1: Basic Filters -->
+    <div class="row filter-row">
+        <div class="col-md-2">
+            <div class="filter-label">Mã trung gian</div>
+            <input type="text" class="form-control" placeholder="Mã trung gian">
+        </div>
+        <div class="col-md-2">
+            <div class="filter-label">Chủ đề trung gian</div>
+            <input type="text" class="form-control" placeholder="Chủ đề">
+        </div>
+        <div class="col-md-2">
+            <div class="filter-label">Phương thức...</div>
+            <input type="text" class="form-control" placeholder="Phương thức">
+        </div>
+        <div class="col-md-3">
+            <div class="filter-label">Giá tiền</div>
+            <div class="row g-2">
+                <div class="col">
+                    <input type="text" class="form-control" placeholder="Từ">
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" placeholder="Đến">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="filter-label">Bên chịu phí...</div>
+            <select class="form-select">
+                <option>All</option>
+                <option>Bên bán</option>
+                <option>Bên mua</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Row 2: Advanced Filters -->
+    <div class="row filter-row">
+        <div class="col-md-2">
+            <div class="filter-label">Phí trung gian</div>
+            <input type="text" class="form-control" placeholder="Phí">
+        </div>
+        <div class="col-md-2">
+            <div class="filter-label">Tổng phí cần...</div>
+            <input type="text" class="form-control" placeholder="Tổng phí">
+        </div>
+        <div class="col-md-2">
+            <div class="filter-label">Người bán</div>
+            <input type="text" class="form-control" placeholder="Người bán">
+        </div>
+        <div class="col-md-3">
+            <div class="filter-label">Thời gian tạo</div>
+            <div class="row g-2">
+                <div class="col">
+                    <input type="date" class="form-control">
+                </div>
+                <div class="col">
+                    <input type="date" class="form-control">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="filter-label">Cập nhật cuối</div>
+            <div class="row g-2">
+                <div class="col">
+                    <input type="date" class="form-control">
+                </div>
+                <div class="col">
+                    <input type="date" class="form-control">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 3: Action Buttons -->
+    <div class="row mt-3">
+        <div class="col-md-12 d-flex justify-content-between">
+            <div>
+                <button class="btn btn-add me-2">+</button>
+                <button class="btn btn-light me-2">Từ</button>
+                <button class="btn btn-light me-2">Đến</button>
+                <button class="btn btn-light me-2">Từ</button>
+                <button class="btn btn-light">Đến</button>
+            </div>
+            <div>
+                <button class="btn btn-collapse me-2">
+                    <i class="bi bi-x-circle"></i> BỎ LỌC
+                </button>
+                <button class="btn btn-outline-secondary">THU GỌN ></button>
+            </div>
+        </div>
+    </div>
+</div>
+

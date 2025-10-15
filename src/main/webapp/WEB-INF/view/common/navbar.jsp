@@ -34,10 +34,6 @@
                         <a href="#" class="btn btn-outline-light btn-sm me-2">FAQs</a>
                     </div>
 
-                    <!-- <div class="d-flex align-items-center ms-auto">
-                    <a href="/login" class="btn btn-warning btn-sm">Đăng nhập</a>
-                </div> -->
-
                     <div class="d-flex align-items-center ms-auto">
                         <!-- Nếu chưa login -->
                         <sec:authorize access="!isAuthenticated()">

@@ -1,0 +1,206 @@
+<!-- ==================== TABLE COMPONENT ====================
+    HƯỚNG DẪN SỬ DỤNG:
+    1. Copy toàn bộ code này vào project của bạn
+    2. Đảm bảo table có id="resizableTable"
+    3. Thêm class "sortable" vào th cần sort
+    4. Thêm data-column="INDEX" và data-type="text|number|date" vào th
+    5. CSS và JS đã được định nghĩa trong các file riêng
+    
+    FEATURES:
+    - ✅ Resizable columns (kéo dãn cột)
+    - ✅ Sortable columns (sắp xếp A-Z, 0-9, date)
+    - ✅ CRUD operations (Thêm, Sửa, Xóa)
+    - ✅ Detail modal
+    - ✅ Responsive table
+========================================================== -->
+
+<div class="table-container">
+    <table class="resizable-table" id="resizableTable">
+        <thead>
+            <tr>
+                <!-- Column 0: Mã trung gian (text) -->
+                <th class="sortable" style="width: 120px;" data-column="0" data-type="text">
+                    Mã trung gian
+                    <div class="resizer"></div>
+                </th>
+                
+                <!-- Column 1: Chủ đề (text) -->
+                <th class="sortable" style="width: 150px;" data-column="1" data-type="text">
+                    Chủ đề trung...
+                    <div class="resizer"></div>
+                </th>
+                
+                <!-- Column 2: Phương thức (text) -->
+                <th class="sortable" style="width: 120px;" data-column="2" data-type="text">
+                    Phương thức...
+                    <div class="resizer"></div>
+                </th>
+                
+                <!-- Column 3: Giá tiền (number) -->
+                <th class="sortable" style="width: 100px;" data-column="3" data-type="number">
+                    Giá tiền
+                    <div class="resizer"></div>
+                </th>
+                
+                <!-- Column 4: Bên chịu phí (text) -->
+                <th class="sortable" style="width: 100px;" data-column="4" data-type="text">
+                    Bên chịu phí...
+                    <div class="resizer"></div>
+                </th>
+                
+                <!-- Column 5: Phí trung gian (number) -->
+                <th class="sortable" style="width: 120px;" data-column="5" data-type="number">
+                    Phí trung gian
+                    <div class="resizer"></div>
+                </th>
+                
+                <!-- Column 6: Tổng phí (number) -->
+                <th class="sortable" style="width: 120px;" data-column="6" data-type="number">
+                    Tổng phí cần...
+                    <div class="resizer"></div>
+                </th>
+                
+                <!-- Column 7: Người bán (text) -->
+                <th class="sortable" style="width: 120px;" data-column="7" data-type="text">
+                    Người bán
+                    <div class="resizer"></div>
+                </th>
+                
+                <!-- Column 8: Thời gian tạo (date) -->
+                <th class="sortable" style="width: 140px;" data-column="8" data-type="date">
+                    Thời gian tạo
+                    <div class="resizer"></div>
+                </th>
+                
+                <!-- Column 9: Cập nhật cuối (date) -->
+                <th class="sortable" style="width: 140px;" data-column="9" data-type="date">
+                    Cập nhật cuối
+                    <div class="resizer"></div>
+                </th>
+                
+                <!-- Column 10: Hành động (no sort) -->
+                <th style="width: 120px;">
+                    Hành động
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Sample Row 1 -->
+            <tr>
+                <td>1feb71d0-82...</td>
+                <td>Tài khoản vô...</td>
+                <td>123</td>
+                <td>20,000,000</td>
+                <td>Bên bán</td>
+                <td>1,000,000</td>
+                <td>20,000,000</td>
+                <td>Thaloke</td>
+                <td>26/08/2025 0...</td>
+                <td>26/08/2025 0...</td>
+                <td>
+                    <!-- View Details Button -->
+                    <button class="btn btn-sm btn-info me-1" 
+                            onclick="showDetail('1feb71d0-82...', 'Tài khoản vô...', '123', '20,000,000', 'Bên bán', '1,000,000', '20,000,000', 'Thaloke', '26/08/2025 0...', '26/08/2025 0...')">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                    <!-- Edit Button -->
+                    <button class="btn btn-sm btn-warning me-1" 
+                            onclick="showEditModal('1feb71d0-82...', 'Tài khoản vô...', '123', '20,000,000', 'Bên bán', '1,000,000', '20,000,000', 'Thaloke')">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <!-- Delete Button -->
+                    <button class="btn btn-sm btn-danger" 
+                            onclick="showDeleteModal('1feb71d0-82...', 'Tài khoản vô...')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            
+            <!-- Sample Row 2 -->
+            <tr>
+                <td>9ccdb5f0-d4...</td>
+                <td>account fifa</td>
+                <td>Facebook</td>
+                <td>100,000</td>
+                <td>Bên mua</td>
+                <td>5,000</td>
+                <td>105,000</td>
+                <td>hoan456</td>
+                <td>27/02/2024 0...</td>
+                <td>27/02/2024 0...</td>
+                <td>
+                    <!-- View Details Button -->
+                    <button class="btn btn-sm btn-info me-1" 
+                            onclick="showDetail('9ccdb5f0-d4...', 'account fifa', 'Facebook', '100,000', 'Bên mua', '5,000', '105,000', 'hoan456', '27/02/2024 0...', '27/02/2024 0...')">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                    <!-- Edit Button -->
+                    <button class="btn btn-sm btn-warning me-1" 
+                            onclick="showEditModal('9ccdb5f0-d4...', 'account fifa', 'Facebook', '100,000', 'Bên mua', '5,000', '105,000', 'hoan456')">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <!-- Delete Button -->
+                    <button class="btn btn-sm btn-danger" 
+                            onclick="showDeleteModal('9ccdb5f0-d4...', 'account fifa')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+<div class="pagination-container">
+    <div>
+        <span>Trang</span>
+        <select class="form-select d-inline-block" style="width: 80px; margin: 0 10px;">
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+        </select>
+        <span>/ 1</span>
+    </div>
+    <div>
+        <span>10 Bản ghi</span>
+    </div>
+    <nav>
+        <ul class="pagination mb-0">
+            <li class="page-item disabled">
+                <a class="page-link" href="#">«</a>
+            </li>
+            <li class="page-item active">
+                <a class="page-link" href="#">1</a>
+            </li>
+            <li class="page-item disabled">
+                <a class="page-link" href="#">»</a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<!-- ==================== NOTES ====================
+    
+    ACTION BUTTONS:
+    
+    1. View Detail (Info button - Blue):
+       onclick="showDetail(ma, chude, phuongthuc, giatien, benchiuphi, phitrunggian, tongphi, nguoiban, thoigiantao, capnhat)"
+    
+    2. Edit (Warning button - Yellow):
+       onclick="showEditModal(ma, chude, phuongthuc, giatien, benchiuphi, phitrunggian, tongphi, nguoiban)"
+    
+    3. Delete (Danger button - Red):
+       onclick="showDeleteModal(ma, name)"
+    
+    BUTTON HTML STRUCTURE:
+    <button class="btn btn-sm btn-info me-1" onclick="showDetail(...)">
+        <i class="bi bi-info-circle"></i>
+    </button>
+    <button class="btn btn-sm btn-warning me-1" onclick="showEditModal(...)">
+        <i class="bi bi-pencil"></i>
+    </button>
+    <button class="btn btn-sm btn-danger" onclick="showDeleteModal(...)">
+        <i class="bi bi-trash"></i>
+    </button>
+
+========================================================== -->

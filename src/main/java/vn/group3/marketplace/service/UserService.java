@@ -58,6 +58,16 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
+    // Check if username is available for new registration
+    public boolean isUsernameAvailable(String username) {
+        return !userRepository.findByUsername(username).isPresent();
+    }
+
+    // Check if email is available for new registration
+    public boolean isEmailAvailable(String email) {
+        return !userRepository.findByEmail(email).isPresent();
+    }
+
     public void resetPassword(String newPassword, String email) {
         String encodedPassword = passwordEncoder.encode(newPassword);
         userRepository.updatePassword(encodedPassword, email);

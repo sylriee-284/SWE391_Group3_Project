@@ -44,7 +44,7 @@
                                     <div class="card border-success">
                                         <div class="card-body text-center">
                                             <div class="mb-3">
-                                                <img src="<c:url value='/images/${parentCategory.name}.png'/>"
+                                                <img src="<c:url value='/images/categories/${parentCategory.name.toLowerCase()}.png'/>"
                                                     alt="${parentCategory.name}" class="img-fluid"
                                                     style="width:80px;height:80px;">
                                             </div>

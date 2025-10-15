@@ -85,12 +85,12 @@
                                     <label class="form-label" for="password">Password</label>
                                     <input type="password" id="password" name="password"
                                         class="form-control form-control-lg" placeholder="Enter password"
-                                        pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Z][a-zA-Z\d]{7,}$"
-                                        title="Password: ít nhất 8 ký tự, bắt đầu bằng chữ hoa, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số"
-                                        required />
+                                        pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{12,128}$"
+                                        title="Password: ít nhất 12 ký tự, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và ký tự đặc biệt (đề xuất)"
+                                        maxlength="128" required />
                                     <div class="invalid-feedback" id="passwordError">
-                                        Password: ít nhất 8 ký tự, bắt đầu bằng chữ hoa, có ít nhất 1 chữ hoa, 1 chữ
-                                        thường, 1 số
+                                        Password: ít nhất 12 ký tự, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và ký tự
+                                        đặc biệt (đề xuất)
                                     </div>
                                 </div>
 
@@ -137,13 +137,13 @@
                                     }
 
                                     function validatePassword(password) {
-                                        // Kiểm tra độ dài ít nhất 8 ký tự
-                                        if (password.length < 8) {
+                                        // Kiểm tra độ dài ít nhất 12 ký tự
+                                        if (password.length < 12) {
                                             return false;
                                         }
 
-                                        // Kiểm tra bắt đầu bằng chữ hoa
-                                        if (!/^[A-Z]/.test(password)) {
+                                        // Kiểm tra độ dài tối đa 128 ký tự
+                                        if (password.length > 128) {
                                             return false;
                                         }
 
@@ -212,7 +212,7 @@
                                             e.preventDefault();
                                             iziToast.error({
                                                 title: 'Lỗi!',
-                                                message: 'Password: ít nhất 8 ký tự, bắt đầu bằng chữ hoa, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số',
+                                                message: 'Password: ít nhất 12 ký tự, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và ký tự đặc biệt (đề xuất)',
                                                 position: 'topRight',
                                                 timeout: 5000
                                             });
