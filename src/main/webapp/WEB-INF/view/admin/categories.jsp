@@ -39,15 +39,20 @@
                         </h3>
 
                         <div>
-                            <c:if test="${not empty parentCategory}">
-                                <a class="btn btn-primary"
-                                    href="${pageContext.request.contextPath}/admin/categories/${parentCategory.id}/subcategories/add">
-                                    + Thêm danh mục con
-                                </a>
-                                <a class="btn btn-outline-secondary ms-2"
-                                    href="${pageContext.request.contextPath}/admin/categories">← Quay về danh mục
-                                    CHA</a>
-                            </c:if>
+                            <c:choose>
+                                <c:when test="${not empty parentCategory}">
+                                    <a class="btn btn-primary"
+                                        href="${pageContext.request.contextPath}/admin/categories/${parentCategory.id}/subcategories/add">
+                                        + Thêm danh mục con
+                                    </a>
+                                    <a class="btn btn-outline-secondary ms-2"
+                                        href="${pageContext.request.contextPath}/admin/categories">← Quay về danh mục
+                                        CHA</a>
+                                </c:when>
+                                <c:otherwise>
+                                    <%-- đang ở màn danh mục CHA: không cần nút gì thêm --%>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
                     </div>
 
@@ -67,31 +72,45 @@
                                     <td>${c.id}</td>
                                     <td>${c.name}</td>
                                     <td>${c.description}</td>
+
                                     <td class="text-center">
-                                        <span class="badge bg-success">ACTIVE</span>
+                                        <%-- Nút đổi trạng thái: luôn POST (có CSRF) --%>
+                                            <form method="post"
+                                                action="${pageContext.request.contextPath}/admin/categories/toggle/${c.id}"
+                                                class="d-inline">
+                                                <input type="hidden" name="${_csrf.parameterName}"
+                                                    value="${_csrf.token}" />
+                                                <button type="submit"
+                                                    class="badge ${c.isActive ? 'bg-success' : 'bg-secondary'} border-0"
+                                                    style="cursor:pointer" title="Nhấp để đổi trạng thái">
+                                                    <c:out value="${c.isActive ? 'ACTIVE' : 'INACTIVE'}" />
+                                                </button>
+                                            </form>
                                     </td>
+
                                     <td class="text-end">
                                         <c:choose>
                                             <c:when test="${empty parentCategory}">
-                                                <!-- ✳️ CHẾ ĐỘ CHA: Sửa + Chi tiết -->
-                                                <a class="btn btn-sm btn-outline-primary"
-                                                    href="${pageContext.request.contextPath}/admin/categories/edit/${c.id}">Sửa</a>
-                                                <a class="btn btn-sm btn-success ms-1"
-                                                    href="${pageContext.request.contextPath}/admin/categories/${c.id}/subcategories">
-                                                    Chi tiết
-                                                </a>
+                                                <%-- CHẾ ĐỘ CHA: Sửa + Chi tiết --%>
+                                                    <a class="btn btn-sm btn-outline-primary"
+                                                        href="${pageContext.request.contextPath}/admin/categories/edit/${c.id}">Sửa</a>
+                                                    <a class="btn btn-sm btn-success ms-1"
+                                                        href="${pageContext.request.contextPath}/admin/categories/${c.id}/subcategories">Chi
+                                                        tiết</a>
                                             </c:when>
                                             <c:otherwise>
-                                                <!-- ✳️ CHẾ ĐỘ CON: CRUD đầy đủ -->
-                                                <a class="btn btn-sm btn-outline-primary"
-                                                    href="${pageContext.request.contextPath}/admin/categories/edit/${c.id}">Sửa</a>
+                                                <%-- CHẾ ĐỘ CON: Sửa + Xoá --%>
+                                                    <a class="btn btn-sm btn-outline-primary"
+                                                        href="${pageContext.request.contextPath}/admin/categories/edit/${c.id}">Sửa</a>
 
-                                                <form class="d-inline" method="post"
-                                                    action="${pageContext.request.contextPath}/admin/categories/delete/${c.id}"
-                                                    onsubmit="return confirm('Xoá danh mục con này?');">
-                                                    <button class="btn btn-sm btn-outline-danger ms-1"
-                                                        type="submit">Xoá</button>
-                                                </form>
+                                                    <form class="d-inline" method="post"
+                                                        action="${pageContext.request.contextPath}/admin/categories/delete/${c.id}"
+                                                        onsubmit="return confirm('Xoá danh mục con này?');">
+                                                        <input type="hidden" name="${_csrf.parameterName}"
+                                                            value="${_csrf.token}" />
+                                                        <button class="btn btn-sm btn-outline-danger ms-1"
+                                                            type="submit">Xoá</button>
+                                                    </form>
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
@@ -120,8 +139,10 @@
                         </div>
                     </c:if>
 
-
                 </div>
+
+
+
 
                 <!-- Include Footer -->
                 <jsp:include page="../common/footer.jsp" />

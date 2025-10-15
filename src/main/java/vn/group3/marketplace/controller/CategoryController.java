@@ -36,35 +36,23 @@ public class CategoryController {
     // ===================== DANH SÁCH CHA =====================
     @GetMapping
     public String listParentCategories(Model model) {
-        // ✳️ CHANGED: chỉ load danh mục CHA (parentId == null hoặc 0)
-        List<Category> parents = categoryService.findParentCategories();
-        model.addAttribute("categories", parents);
-        model.addAttribute("parentCategory", null); // ✳️ để JSP biết đang ở chế độ CHA
+        List<Category> list = categoryService.findParentCategories(); // show cả active + inactive, trừ deleted
+        model.addAttribute("categories", list);
+        model.addAttribute("parentCategory", null);
         model.addAttribute("pageTitle", "Quản lý danh mục (CHA)");
         return "admin/categories";
     }
 
     // ===================== DANH SÁCH CON (CÓ PHÂN TRANG) =====================
     @GetMapping("/{parentId}/subcategories")
-    public String listSubcategories(
-            @PathVariable Long parentId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            Model model) {
-        var parent = categoryService.getById(parentId)
+    public String listSubcategories(@PathVariable Long parentId, Model model) {
+        Category parent = categoryService.getById(parentId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục cha ID: " + parentId));
 
-        var pageData = categoryService.findSubcategoriesByParentId(parentId, page, size);
-
-        // để JSP hiện danh sách như cũ:
-        model.addAttribute("categories", pageData.getContent());
-
-        // truyền thêm info phân trang nếu bạn muốn vẽ nút Prev/Next:
-        model.addAttribute("pageData", pageData);
-        model.addAttribute("currentPage", page);
-        model.addAttribute("pageSize", size);
+        List<Category> list = categoryService.findSubcategoriesByParentId(parentId); // show cả active + inactive
 
         model.addAttribute("parentCategory", parent);
+        model.addAttribute("categories", list);
         model.addAttribute("pageTitle", "Danh mục con của: " + parent.getName());
         return "admin/categories";
     }
@@ -135,6 +123,72 @@ public class CategoryController {
         categoryService.softDelete(id); // 🔸 thay cho deleteById
         ra.addFlashAttribute("success", "Đã xoá (ẩn) danh mục con.");
         return "redirect:/admin/categories/" + parentId + "/subcategories";
+    }
+
+    // --------------------- TÁCH RIÊNG: TẠO CHA ---------------------
+    // [FIX] (path): KHÔNG dùng /admin/categories/create nữa vì đã có prefix của
+    // class
+    @PostMapping("/create")
+    public String create(@ModelAttribute("category") Category cat, RedirectAttributes ra) {
+        boolean isNew = (cat.getId() == null);
+        categoryService.save(cat);
+
+        if (cat.getParentId() != null && cat.getParentId() != 0) {
+            ra.addFlashAttribute("success", (isNew ? "Đã thêm" : "Đã cập nhật") + " danh mục con.");
+            return "redirect:/admin/categories/" + cat.getParentId() + "/subcategories";
+        } else {
+            ra.addFlashAttribute("success", (isNew ? "Đã thêm" : "Đã cập nhật") + " danh mục cha.");
+            return "redirect:/admin/categories";
+        }
+    }
+
+    // --------------------- TÁCH RIÊNG: TẠO CON ---------------------
+    // [FIX] (path): KHÔNG dùng /admin/categories/{parentId}/subcategories/create
+    // với prefix lặp
+    @PostMapping("/{parentId}/subcategories/create")
+    public String createChild(@PathVariable Long parentId,
+            @ModelAttribute Category category,
+            RedirectAttributes ra) {
+        category.setParentId(parentId);
+        categoryService.save(category);
+        ra.addFlashAttribute("success", "Tạo danh mục con thành công!");
+        return "redirect:/admin/categories/" + parentId + "/subcategories";
+    }
+
+    // --------------------- TÁCH RIÊNG: CẬP NHẬT ---------------------
+    // (tuỳ bạn giữ /save hoặc tách riêng /update — cả hai đều OK)
+    @PostMapping("/update/{id}")
+    public String update(@PathVariable Long id,
+            @ModelAttribute("category") Category cat,
+            RedirectAttributes ra) {
+        cat.setId(id); // đảm bảo cập nhật đúng record
+        categoryService.save(cat);
+
+        if (cat.getParentId() != null && cat.getParentId() != 0) {
+            ra.addFlashAttribute("success", "Đã cập nhật danh mục con.");
+            return "redirect:/admin/categories/" + cat.getParentId() + "/subcategories";
+        } else {
+            ra.addFlashAttribute("success", "Đã cập nhật danh mục cha.");
+            return "redirect:/admin/categories";
+        }
+    }
+
+    // --------------------- ĐỔI TRẠNG THÁI (POST) ---------------------
+    // ĐỔI TRẠNG THÁI (ACTIVE/INACTIVE) – POST
+    @PostMapping("/toggle/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String toggleCategory(@PathVariable Long id,
+            @RequestHeader(value = "referer", required = false) String referer,
+            RedirectAttributes ra) {
+        Category updated = categoryService.toggleStatusAndReturn(id);
+        ra.addFlashAttribute("successMessage", "Đã đổi trạng thái danh mục!");
+
+        if (referer != null && referer.contains("/edit/")) {
+            return (updated.getParentId() != null && updated.getParentId() != 0)
+                    ? "redirect:/admin/categories/" + updated.getParentId() + "/subcategories"
+                    : "redirect:/admin/categories";
+        }
+        return "redirect:" + (referer != null ? referer : "/admin/categories");
     }
 
 }

@@ -29,31 +29,34 @@ public class UserService {
 
     @Transactional
     public void registerUser(String username, String email, String rawPassword) {
-        // Check username duplicate
         if (userRepository.findByUsername(username).isPresent()) {
             throw new IllegalArgumentException("Username already exists!");
         }
-
-        // Check email duplicate
         if (userRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("Email already exists!");
         }
 
-        // Create new user with default balance
         User user = User.builder()
                 .username(username)
                 .email(email)
                 .passwordHash(passwordEncoder.encode(rawPassword))
                 .status(UserStatus.ACTIVE)
-                .balance(BigDecimal.ZERO) // Balance is stored directly in User
+                .balance(BigDecimal.ZERO)
                 .build();
 
-        // Assign default role
+        // Lưu trước để có ID
+        user = userRepository.save(user);
+
+        // Gán mặc định USER (KHÔNG set EmbeddedId)
         Role role = roleRepository.findByCode("USER")
                 .orElseThrow(() -> new RuntimeException("Role USER does not exist"));
-        user.getRoles().add(role);
 
-        // Save user
+        user.getUserRoles().clear();
+        UserRole ur = new UserRole();
+        ur.setUser(user);
+        ur.setRole(role);
+        user.getUserRoles().add(ur);
+
         userRepository.save(user);
     }
 
@@ -90,32 +93,29 @@ public class UserService {
                 .filter(u -> !Boolean.TRUE.equals(u.getIsDeleted()));
     }
 
+    @Transactional
     public User createUser(User user) {
         user.setId(null);
         user.setIsDeleted(false);
-
-        // Status: tôn trọng form; nếu trống thì mặc định ACTIVE
-        if (user.getStatus() == null) {
+        if (user.getStatus() == null)
             user.setStatus(UserStatus.ACTIVE);
-        }
-
-        // Balance: nếu null thì set 0
-        if (user.getBalance() == null) {
+        if (user.getBalance() == null)
             user.setBalance(BigDecimal.ZERO);
-        }
-
-        // Password: form không có ô password -> đặt password tạm và mã hoá
         if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
-            String tempPassword = "ChangeMe@123"; // hoặc sinh ngẫu nhiên
-            user.setPasswordHash(passwordEncoder.encode(tempPassword));
-            // (tuỳ chọn) bạn có thể log/hiển thị tempPassword ở thông báo flash nếu muốn
+            user.setPasswordHash(passwordEncoder.encode("ChangeMe@123"));
         }
 
-        // Role: nếu chưa có role thì gán mặc định USER
-        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+        // Lưu trước để có ID
+        user = userRepository.save(user);
+
+        // Nếu chưa có role => mặc định USER (KHÔNG set EmbeddedId)
+        if (user.getUserRoles() == null || user.getUserRoles().isEmpty()) {
             Role role = roleRepository.findByCode("USER")
                     .orElseThrow(() -> new RuntimeException("Role USER does not exist"));
-            user.getRoles().add(role);
+            UserRole ur = new UserRole();
+            ur.setUser(user);
+            ur.setRole(role);
+            user.getUserRoles().add(ur);
         }
 
         return userRepository.save(user);
@@ -186,78 +186,110 @@ public class UserService {
     }
 
     @Transactional
-    public void saveUserWithRoles(User user, List<String> roleCodes) {
-        userRepository.save(user); // lưu trước để có id
+    public void saveUserWithRoles(User incoming, List<String> roleCodes) {
+        final boolean creating = (incoming.getId() == null);
 
-        if (roleCodes != null && !roleCodes.isEmpty()) {
-            Set<UserRole> userRoleSet = new HashSet<>();
+        // Lấy entity managed khi sửa, hoặc new khi tạo
+        User user = creating
+                ? new User()
+                : userRepository.findById(incoming.getId())
+                        .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-            for (String code : roleCodes) {
-                Role role = roleRepository.findByCode(code)
-                        .orElseThrow(() -> new RuntimeException("Role không tồn tại: " + code));
+        // copy field
+        user.setUsername(incoming.getUsername());
+        user.setEmail(incoming.getEmail());
+        user.setFullName(incoming.getFullName());
+        user.setPhone(incoming.getPhone());
+        user.setGender(incoming.getGender());
+        user.setStatus(incoming.getStatus() != null ? incoming.getStatus() : UserStatus.ACTIVE);
+        user.setBalance(incoming.getBalance() != null ? incoming.getBalance() : BigDecimal.ZERO);
 
-                UserRole ur = new UserRole();
-                ur.setId(new UserRole.UserRoleId(user.getId(), role.getId())); // 🔑 Quan trọng
-                ur.setUser(user);
-                ur.setRole(role);
-                userRoleSet.add(ur);
-            }
-
-            user.setUserRoles(userRoleSet);
-            userRepository.save(user);
-        }
-    }
-
-    @Transactional
-    public void saveUserWithRolesAndPassword(User user, List<String> roleCodes, String passwordPlain) {
-        // 1️⃣ Lấy bản ghi cũ nếu đang cập nhật
-        User existing = user.getId() != null
-                ? userRepository.findById(user.getId()).orElse(new User())
-                : new User();
-
-        // 2️⃣ Xử lý mật khẩu
-        if (passwordPlain != null && !passwordPlain.isBlank()) {
-            user.setPasswordHash(passwordEncoder.encode(passwordPlain));
-        } else if (user.getId() == null) {
-            // Tạo mới mà không nhập mật khẩu => mật khẩu mặc định
-            user.setPasswordHash(passwordEncoder.encode("ChangeMe@123"));
-        } else {
-            // Sửa mà để trống => giữ mật khẩu cũ
-            user.setPasswordHash(existing.getPasswordHash());
-        }
-
-        // 3️⃣ Xử lý các field mặc định
-        if (user.getStatus() == null)
-            user.setStatus(UserStatus.ACTIVE);
-        if (user.getBalance() == null)
-            user.setBalance(BigDecimal.ZERO);
-        if (user.getIsDeleted() == null)
+        if (creating) {
             user.setIsDeleted(false);
+            if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
+                user.setPasswordHash(passwordEncoder.encode("ChangeMe@123"));
+            }
+            // BẮT BUỘC lưu trước để có ID (vì dùng @MapsId)
+            user = userRepository.save(user);
+        }
 
-        // 4️⃣ Lưu lần đầu để có ID (nếu là user mới)
-        user = userRepository.save(user);
+        // XÓA toàn bộ roles cũ rồi FLUSH để tránh "re-saved by cascade"
+        user.getUserRoles().clear();
+        userRepository.flush();
 
-        // 5️⃣ Xử lý Roles
-        Set<UserRole> userRoleSet = new HashSet<>();
+        // Tập role mới (mặc định USER nếu không chọn)
+        List<String> codes = (roleCodes == null || roleCodes.isEmpty()) ? List.of("USER") : roleCodes;
 
-        List<String> effectiveRoles = (roleCodes != null && !roleCodes.isEmpty())
-                ? roleCodes
-                : List.of("USER"); // fallback nếu không chọn
-
-        for (String code : effectiveRoles) {
+        for (String code : codes) {
             Role role = roleRepository.findByCode(code)
                     .orElseThrow(() -> new RuntimeException("Role không tồn tại: " + code));
 
             UserRole ur = new UserRole();
-            ur.setId(new UserRole.UserRoleId(user.getId(), role.getId()));
             ur.setUser(user);
             ur.setRole(role);
-            userRoleSet.add(ur);
+            // 🔑 Điền EmbeddedId để Hibernate không nhầm trạng thái
+            ur.getId().setUserId(user.getId());
+            ur.getId().setRoleId(role.getId());
+
+            user.getUserRoles().add(ur);
         }
 
-        user.setUserRoles(userRoleSet);
+        userRepository.save(user);
+    }
 
-        // 6️⃣ Lưu cuối (1 lần thôi)
+    @Transactional
+    public void saveUserWithRolesAndPassword(User incoming,
+            List<String> roleCodes,
+            String passwordPlain) {
+        final boolean creating = (incoming.getId() == null);
+
+        User user = creating
+                ? new User()
+                : userRepository.findById(incoming.getId())
+                        .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // copy field
+        user.setUsername(incoming.getUsername());
+        user.setEmail(incoming.getEmail());
+        user.setFullName(incoming.getFullName());
+        user.setPhone(incoming.getPhone());
+        user.setGender(incoming.getGender());
+        user.setStatus(incoming.getStatus() != null ? incoming.getStatus() : UserStatus.ACTIVE);
+        user.setBalance(incoming.getBalance() != null ? incoming.getBalance() : BigDecimal.ZERO);
+
+        // password
+        if (passwordPlain != null && !passwordPlain.isBlank()) {
+            user.setPasswordHash(passwordEncoder.encode(passwordPlain));
+        } else if (creating) {
+            user.setPasswordHash(passwordEncoder.encode("ChangeMe@123"));
+        }
+
+        if (creating) {
+            user.setIsDeleted(false);
+            // BẮT BUỘC lưu trước để có ID
+            user = userRepository.save(user);
+        }
+
+        // Clear + FLUSH để xóa hẳn các hàng cũ trước khi add mới
+        user.getUserRoles().clear();
+        userRepository.flush();
+
+        List<String> codes = (roleCodes == null || roleCodes.isEmpty()) ? List.of("USER") : roleCodes;
+
+        for (String code : codes) {
+            Role role = roleRepository.findByCode(code)
+                    .orElseThrow(() -> new RuntimeException("Role không tồn tại: " + code));
+
+            UserRole ur = new UserRole();
+            ur.setUser(user);
+            ur.setRole(role);
+            // 🔑 Điền khóa lồng
+            ur.getId().setUserId(user.getId());
+            ur.getId().setRoleId(role.getId());
+
+            user.getUserRoles().add(ur);
+        }
+
         userRepository.save(user);
     }
 

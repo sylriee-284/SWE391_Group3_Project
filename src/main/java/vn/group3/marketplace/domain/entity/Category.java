@@ -18,8 +18,20 @@ import java.util.List;
 @Access(AccessType.FIELD)
 public class Category extends BaseEntity {
 
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
     @Column(name = "is_deleted")
     private Boolean isDeleted = false;
+
+    // getter/setter nếu không dùng Lombok @Getter/@Setter
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;

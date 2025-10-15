@@ -90,7 +90,7 @@ public class AdminController {
         return "admin/users";
     }
 
-    @PostMapping("/admin/users/save")
+    @PostMapping("/users/save")
     public String saveUser(@ModelAttribute User user,
             @RequestParam(value = "roles", required = false) List<String> roles,
             RedirectAttributes ra) {

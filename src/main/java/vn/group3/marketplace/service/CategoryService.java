@@ -32,25 +32,28 @@ public class CategoryService {
     // ========================= DANH MỤC CHA =========================
     public List<Category> findParentCategories() {
         String jpql = """
-                    SELECT c
-                    FROM Category c
-                    WHERE (c.parentId IS NULL OR c.parentId = 0)
-                      AND (c.isDeleted = false OR c.isDeleted IS NULL)
-                    ORDER BY c.id ASC
+                SELECT c FROM Category c
+                WHERE (c.parentId IS NULL OR c.parentId = 0)
+                  AND (c.isDeleted = false OR c.isDeleted IS NULL)
+                ORDER BY c.id ASC
                 """;
         return em.createQuery(jpql, Category.class).getResultList();
     }
 
     public Page<Category> findParentCategories(int page, int size) {
-        String base = "FROM Category c WHERE (c.parentId IS NULL OR c.parentId = 0) AND (c.isDeleted = false OR c.isDeleted IS NULL)";
+        String base = """
+                FROM Category c
+                WHERE (c.parentId IS NULL OR c.parentId = 0)
+                  AND (c.isDeleted = false OR c.isDeleted IS NULL)
+                """;
+
         String select = "SELECT c " + base + " ORDER BY c.id ASC";
         String count = "SELECT COUNT(c) " + base;
 
-        TypedQuery<Category> q = em.createQuery(select, Category.class);
-        q.setFirstResult(page * size);
-        q.setMaxResults(size);
-        List<Category> content = q.getResultList();
-
+        List<Category> content = em.createQuery(select, Category.class)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
         Long total = em.createQuery(count, Long.class).getSingleResult();
         return new PageImpl<>(content, PageRequest.of(page, size), total);
     }
@@ -58,11 +61,10 @@ public class CategoryService {
     // ========================= DANH MỤC CON =========================
     public List<Category> findSubcategoriesByParentId(Long parentId) {
         String jpql = """
-                    SELECT c
-                    FROM Category c
-                    WHERE c.parentId = :pid
-                      AND (c.isDeleted = false OR c.isDeleted IS NULL)
-                    ORDER BY c.id ASC
+                SELECT c FROM Category c
+                WHERE c.parentId = :pid
+                  AND (c.isDeleted = false OR c.isDeleted IS NULL)
+                ORDER BY c.id ASC
                 """;
         return em.createQuery(jpql, Category.class)
                 .setParameter("pid", parentId)
@@ -70,20 +72,23 @@ public class CategoryService {
     }
 
     public Page<Category> findSubcategoriesByParentId(Long parentId, int page, int size) {
-        String base = "FROM Category c WHERE c.parentId = :pid AND (c.isDeleted = false OR c.isDeleted IS NULL)";
+        String base = """
+                FROM Category c
+                WHERE c.parentId = :pid
+                  AND (c.isDeleted = false OR c.isDeleted IS NULL)
+                """;
+
         String select = "SELECT c " + base + " ORDER BY c.id ASC";
         String count = "SELECT COUNT(c) " + base;
 
-        TypedQuery<Category> q = em.createQuery(select, Category.class)
-                .setParameter("pid", parentId);
-        q.setFirstResult(page * size);
-        q.setMaxResults(size);
-        List<Category> content = q.getResultList();
-
+        List<Category> content = em.createQuery(select, Category.class)
+                .setParameter("pid", parentId)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
         Long total = em.createQuery(count, Long.class)
                 .setParameter("pid", parentId)
                 .getSingleResult();
-
         return new PageImpl<>(content, PageRequest.of(page, size), total);
     }
 
@@ -107,11 +112,13 @@ public class CategoryService {
 
     @Transactional
     public void softDelete(Long id) {
-        Category cat = categoryRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục ID: " + id));
-        cat.setIsDeleted(true);
-        cat.setDeletedAt(LocalDateTime.now());
-        categoryRepository.save(cat);
+        Category c = categoryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy category id=" + id));
+        if (Boolean.TRUE.equals(c.getIsDeleted()))
+            return; // đã xóa rồi thì thôi
+        c.setIsDeleted(true);
+        c.setIsActive(false); // tùy bạn: có thể set false luôn cho rõ
+        categoryRepository.save(c);
     }
 
     public boolean hasChildren(Long parentId) {
@@ -121,4 +128,41 @@ public class CategoryService {
                 .getSingleResult();
         return cnt != null && cnt > 0;
     }
+
+    @Transactional
+    public Category create(Category c) {
+        // chuẩn hoá parentId
+        if (c.getParentId() != null && c.getParentId() == 0) {
+            c.setParentId(null);
+        }
+        c.setIsDeleted(false);
+        c.setDeletedAt(null);
+        return categoryRepository.save(c);
+    }
+
+    @Transactional
+    public Category update(Long id, Category form) {
+        Category c = categoryRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy category id=" + id));
+        // (tuỳ nhu cầu) nếu được phép đổi parentId thì chuẩn hoá luôn:
+        if (form.getParentId() != null && form.getParentId() == 0) {
+            form.setParentId(null);
+        }
+        c.setName(form.getName());
+        c.setDescription(form.getDescription());
+        // (nếu muốn cho phép đổi parent) c.setParentId(form.getParentId());
+        return categoryRepository.save(c);
+    }
+
+    @Transactional
+    public Category toggleStatusAndReturn(Long id) {
+        Category c = categoryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy category id=" + id));
+        if (Boolean.TRUE.equals(c.getIsDeleted())) {
+            throw new IllegalStateException("Bản ghi đã bị xóa, không thể đổi trạng thái.");
+        }
+        c.setIsActive(!Boolean.TRUE.equals(c.getIsActive())); // chỉ flip isActive
+        return categoryRepository.save(c);
+    }
+
 }
