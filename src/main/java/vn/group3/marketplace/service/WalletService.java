@@ -20,8 +20,6 @@ import java.util.Optional;
 public class WalletService {
 
     private static final Logger logger = LoggerFactory.getLogger(WalletService.class);
-
-    // walletRepository removed
     private final WalletTransactionRepository walletTransactionRepository;
     private final UserRepository userRepository;
 
@@ -104,6 +102,7 @@ public class WalletService {
     /**
      * Trả về userId liên kết với paymentRef nếu có.
      */
+
     public java.util.Optional<Long> findUserIdByPaymentRef(String paymentRef) {
         try {
             java.util.Optional<WalletTransaction> txOpt = walletTransactionRepository.findByPaymentRef(paymentRef);
