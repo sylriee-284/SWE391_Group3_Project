@@ -74,16 +74,13 @@
                                         <h1 class="mb-3">${product.name}</h1>
 
                                         <!-- Rating Stars -->
-                                        <div class="mt-2">
+                                        <div class="mb-3">
                                             <div class="rating">
                                                 <c:forEach begin="1" end="5" var="star">
-                                                    <i class="fas fa-star ${star <= product.rating ? 'text-warning' : 'text-muted'}"
-                                                        style="font-size: 0.8em;"></i>
+                                                    <i
+                                                        class="fas fa-star ${star <= product.rating ? 'text-warning' : 'text-muted'}"></i>
                                                 </c:forEach>
-
-                                                <span class="text-muted">${product.ratingCount}
-                                                    Review</span>
-                                                </small>
+                                                <span class="ms-2">${product.rating}/5</span>
                                             </div>
                                         </div>
 
@@ -112,6 +109,13 @@
                                                     <h6 class="mb-1 text-dark">Người bán: ${shop.storeName}</h6>
 
 
+                                                    <div>
+                                                        <span
+                                                            class="badge ${shop.status == 'ACTIVE' ? 'bg-success' : 'bg-warning'}">
+                                                            <i class="fas fa-circle me-1"></i>${shop.status ==
+                                                            'ACTIVE' ? 'Đang hoạt động' : 'Tạm ngưng'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -137,7 +141,14 @@
                                             </span>
                                         </div>
 
-
+                                        <!-- Product Status -->
+                                        <div class="mb-4">
+                                            <span
+                                                class="badge ${product.status == 'ACTIVE' ? 'bg-success' : 'bg-warning'} fs-6">
+                                                <i class="fas fa-circle"></i>
+                                                ${product.status == 'ACTIVE' ? 'Đang bán' : 'Tạm ngưng'}
+                                            </span>
+                                        </div>
 
                                         <!-- Quantity and Action Buttons -->
                                         <c:if test="${product.status == 'ACTIVE' && product.stock > 0}">
@@ -487,12 +498,51 @@
                         // Check authentication status
                         var isAuthenticated = <c:choose><c:when test="${pageContext.request.userPrincipal != null}">true</c:when><c:otherwise>false</c:otherwise></c:choose>;
 
-
-                        // Buy now function
+                        // Buy now function - Show modal
                         function buyNow() {
-                            var form = document.getElementById('productForm');
-                            form.action = '<c:url value="/product/${product.slug}/buy-now"/>';
-                            form.submit();
+                            // Check if user is authenticated
+                            if (!isAuthenticated) {
+                                // User not logged in - redirect to login with error message
+                                window.location.href = '<c:url value="/login"/>?errorMessage=' + encodeURIComponent('Bạn cần đăng nhập để thực hiện chức năng này');
+                                return;
+                            }
+
+                            // User is logged in - proceed with buy now
+                            var quantity = document.getElementById('quantity').value;
+                            document.getElementById('modalQuantity').value = quantity;
+                            updateTotalPrice();
+
+                            // Show modal
+                            var modal = new bootstrap.Modal(document.getElementById('buyNowModal'));
+                            modal.show();
+                        }
+
+                        // Update total price in modal
+                        function updateTotalPrice() {
+                            var quantity = parseInt(document.getElementById('modalQuantity').value) || 1;
+                            var price = parseFloat('${product.price}');
+                            var total = quantity * price;
+
+                            document.getElementById('totalPrice').textContent =
+                                new Intl.NumberFormat('vi-VN').format(total) + 'đ';
+                        }
+
+                        // Confirm buy now
+                        function confirmBuyNow() {
+                            var quantity = document.getElementById('modalQuantity').value;
+                            var productName = '${product.name}';
+                            var price = parseFloat('${product.price}');
+                            var total = quantity * price;
+
+                            // Show confirmation popup
+                            if (confirm('Bạn có chắc chắn muốn mua sản phẩm "' + productName + '" với số lượng ' + quantity + ' và tổng tiền ' + new Intl.NumberFormat('vi-VN').format(total) + 'đ?')) {
+                                // Close modal
+                                var modal = bootstrap.Modal.getInstance(document.getElementById('buyNowModal'));
+                                modal.hide();
+
+                                // Redirect to homepage with order modal
+                                window.location.href = '<c:url value="/homepage"/>?showOrderModal=true';
+                            }
                         }
 
                         // Validate quantity input

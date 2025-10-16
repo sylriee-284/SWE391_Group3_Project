@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jakarta.mail.MessagingException;
-import vn.group3.marketplace.domain.entity.Order;
 
 @Service
 public class EmailService {
@@ -93,24 +92,6 @@ public class EmailService {
                 "<p>If you did not create an account with us, please ignore this email.</p>" +
                 "<br>" +
                 "<p>Welcome to MMO Market System!</p>" +
-                "<p>Best regards,<br>MMO Market System Team</p>" +
-                "</body></html>";
-        sendEmail(to, subject, body);
-    }
-
-    public void sendOrderConfirmationEmail(Order order) throws MessagingException {
-        String subject = "Order Confirmation - MMO Market System";
-        String to = order.getBuyer().getEmail();
-        String body = "<html><body>" +
-                "<h2>Thank you</h2>" +
-                "<p>You have purchased from MMO Market System.</p>" +
-                "<br>" +
-                "<p><strong>Order Number:</strong> " + order.getId() + "</p>" +
-                "<p><strong>Order Date:</strong> " + order.getCreatedAt() + "</p>" +
-                "<p><strong>Product:</strong> " + order.getProductName() + "</p>" +
-                "<p><strong>Quantity:</strong> " + order.getQuantity() + "</p>" +
-                "<p><strong>Total:</strong> " + order.getTotalAmount() + " ₫</p>" +
-                "<br>" +
                 "<p>Best regards,<br>MMO Market System Team</p>" +
                 "</body></html>";
         sendEmail(to, subject, body);
