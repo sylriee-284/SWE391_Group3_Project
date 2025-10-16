@@ -38,9 +38,35 @@
                                 </ol>
                             </nav>
 
-                            <<<<<<< HEAD <!-- Main Content -->
-                                <div class="content" id="content">
-                                    <br />
+                            <!-- Category Header -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card border-success">
+                                        <div class="card-body text-center">
+                                            <div class="mb-3">
+                                                <img src="<c:url value='/images/categories/${parentCategory.name.toLowerCase()}.png'/>"
+                                                    alt="${parentCategory.name}" class="img-fluid"
+                                                    style="width:80px;height:80px;">
+                                            </div>
+                                            <h2 class="card-title text-success">${parentCategory.name}</h2>
+                                            <p class="card-text">${parentCategory.description}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filter and Search Section -->
+                            <div class="filter-section">
+                                <form method="get"
+                                    action="<c:url value='/category/${parentCategory.name.toLowerCase()}'/>"
+                                    id="filterForm">
+                                    <div class="row">
+                                        <!-- Search Box -->
+                                        <div class="col-md-4 mb-3">
+                                            <label for="keyword" class="form-label">Tìm kiếm sản phẩm:</label>
+                                            <input type="text" class="form-control" id="keyword" name="keyword"
+                                                value="${keyword}" placeholder="Nhập từ khóa...">
+                                        </div>
 
                                     <div class="container-fluid">
                                         <!-- Breadcrumb -->

@@ -59,12 +59,12 @@
                             <div class="form-group">
                                 <input type="password" class="input-lg form-control" name="newPassword" id="password1"
                                     placeholder="Mật khẩu mới" autocomplete="off"
-                                    pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Z][a-zA-Z\d]{7,}$"
-                                    title="Password: ít nhất 8 ký tự, bắt đầu bằng chữ hoa, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số"
-                                    required>
+                                    pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{12,128}$"
+                                    title="Password: ít nhất 12 ký tự, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và ký tự đặc biệt (đề xuất)"
+                                    maxlength="128" required>
                                 <div class="invalid-feedback" id="passwordError">
-                                    Password: ít nhất 8 ký tự, bắt đầu bằng chữ hoa, có ít nhất 1 chữ hoa, 1 chữ thường,
-                                    1 số
+                                    Password: ít nhất 12 ký tự, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và ký tự đặc
+                                    biệt (đề xuất)
                                 </div>
                             </div>
                             <div class="form-group">
@@ -107,13 +107,13 @@
 
                 // Validation functions
                 function validatePassword(password) {
-                    // Check minimum length 8 characters
-                    if (password.length < 8) {
+                    // Check minimum length 12 characters
+                    if (password.length < 12) {
                         return false;
                     }
 
-                    // Check starts with uppercase
-                    if (!/^[A-Z]/.test(password)) {
+                    // Check maximum length 128 characters
+                    if (password.length > 128) {
                         return false;
                     }
 
@@ -200,7 +200,7 @@
                         e.preventDefault();
                         iziToast.error({
                             title: 'Error!',
-                            message: 'Password: at least 8 characters, start with uppercase, must have at least 1 uppercase, 1 lowercase, 1 number',
+                            message: 'Password: ít nhất 12 ký tự, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và ký tự đặc biệt (đề xuất)',
                             position: 'topRight',
                             timeout: 5000
                         });
