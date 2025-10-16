@@ -152,7 +152,8 @@
                             <div class="row mb-3">
                                 <div class="col-12">
                                     <p class="text-muted">
-                                        Hiển thị ${products.numberOfElements} trên tổng ${totalElements} sản
+                                        Hiển thị ${products.numberOfElements} trên tổng
+                                        ${totalElements} sản
                                         phẩm
                                         <c:if test="${not empty keyword}">
                                             cho từ khóa "<strong>${keyword}</strong>"
@@ -534,6 +535,7 @@
                             });
                         });
                     </script>
+                    >>>>>>> main
                 </body>
 
                 </html>

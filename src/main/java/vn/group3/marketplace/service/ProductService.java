@@ -144,6 +144,16 @@ public class ProductService {
     }
 
     /**
+     * Get product by slug
+     * 
+     * @param slug Product slug
+     * @return Product or null if not found
+     */
+    public Product getProductBySlug(String slug) {
+        return productRepository.findBySlugWithDetails(slug).orElse(null);
+    }
+
+    /**
      * Get active product by ID
      * 
      * @param productId Product ID
