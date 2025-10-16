@@ -24,7 +24,8 @@
                             <ul class="collapse list-unstyled ms-3 mt-2" id="paymentMenu">
                                 <li><a href="/wallet/deposit" class="text-white text-decoration-none">➕ Nạp tiền</a>
                                 </li>
-                                <li><a href="/wallet/history" class="text-white text-decoration-none">📜 Lịch sử giao
+                                <li><a href="/wallet/transactions" class="text-white text-decoration-none">📜 Lịch sử
+                                        giao
                                         dịch</a></li>
 
                                 <!-- Chỉ hiển thị nếu user có role SELLER -->
@@ -50,14 +51,14 @@
                         </li>
                     </ul>
 
-                    <!-- Đăng ký bán hàng -->
+                    <!-- <li><a href="#">Feedback</a></li> -->
                     <sec:authorize
                         access="isAuthenticated() and hasRole('USER') and !hasRole('SELLER') and !hasRole('ADMIN')">
                         <li><a href="#">🛍️ Đăng ký bán hàng</a></li>
                     </sec:authorize>
 
-                    <!-- Dành cho người bán -->
                     <sec:authorize access="isAuthenticated() and hasRole('SELLER')">
+                        <!-- Cửa hàng của tôi -->
                         <li class="mt-2">
                             <a class="d-flex justify-content-between align-items-center text-decoration-none text-white"
                                 data-bs-toggle="collapse" href="#sellerMenu" role="button" aria-expanded="false"
@@ -65,26 +66,22 @@
                                 🏪 Cửa hàng của tôi
                                 <i class="fas fa-chevron-down"></i>
                             </a>
-
                             <ul class="collapse list-unstyled ms-3 mt-2" id="sellerMenu">
                                 <li><a href="/seller/dashboard" class="text-white text-decoration-none">📊 Bảng điều
                                         khiển người bán</a></li>
                                 <li><a href="/seller/store-info" class="text-white text-decoration-none">🏪 Thông tin
                                         cửa hàng</a></li>
+                                <li><a href="/seller/products" class="text-white text-decoration-none">📦 Quản lý sản
+                                        phẩm</a></li>
                                 <li><a href="/seller/reports" class="text-white text-decoration-none">📈 Báo cáo & thống
                                         kê</a></li>
-
-                                <!-- 🆕 Các mục mới thêm -->
-                                <li><a href="/seller/products" class="text-white text-decoration-none">🗂️ Danh mục sản
-                                        phẩm</a></li>
-                                <li><a href="/seller/products/new" class="text-white text-decoration-none">➕ Thêm sản
-                                        phẩm mới</a></li>
                             </ul>
                         </li>
                     </sec:authorize>
 
                     <!-- Quản lý Admin -->
                     <sec:authorize access="hasRole('ADMIN')">
+                        <!-- Quản lý Admin -->
                         <li class="mt-2">
                             <a class="d-flex justify-content-between align-items-center text-decoration-none text-white"
                                 data-bs-toggle="collapse" href="#adminMenu" role="button" aria-expanded="false"

@@ -18,7 +18,7 @@
                                 Category
                             </button>
                             <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
-                                <c:forEach var="cat" items="${categories}">
+                                <c:forEach var="cat" items="${parentCategories}">
                                     <li>
                                         <a class="dropdown-item" href="/category/${cat.name.toLowerCase()}">
                                             ${cat.name}
@@ -33,10 +33,6 @@
                         <a href="#" class="btn btn-outline-light btn-sm me-2">Tools</a>
                         <a href="#" class="btn btn-outline-light btn-sm me-2">FAQs</a>
                     </div>
-
-                    <!-- <div class="d-flex align-items-center ms-auto">
-                    <a href="/login" class="btn btn-warning btn-sm">Đăng nhập</a>
-                </div> -->
 
                     <div class="d-flex align-items-center ms-auto">
                         <!-- Nếu chưa login -->

@@ -3,6 +3,7 @@ package vn.group3.marketplace.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Getter
@@ -27,12 +28,9 @@ public class Role extends BaseEntity {
 
     private String description;
 
-    // === Many-to-Many với Permission thông qua role_permissions ===
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "role_permissions", joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
-    private Set<Permission> permissions;
+    // Many-to-Many với User (mappedBy để tránh duplicate bảng trung gian)
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
+    @Builder.Default
+    private Set<User> users = new HashSet<>();
 
-    // One-to-Many với UserRole
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<UserRole> userRoles;
 }

@@ -21,4 +21,6 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     List<Category> findByParent_IdAndIsDeletedFalseOrderByNameAsc(Long parentId);
 
+    java.util.Optional<Category> findByNameAndIsDeletedFalse(String name);
+
 }

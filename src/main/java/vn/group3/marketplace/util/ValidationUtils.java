@@ -1,8 +1,14 @@
 package vn.group3.marketplace.util;
 
+import java.math.BigDecimal;
 import java.util.regex.Pattern;
+import vn.group3.marketplace.dto.OrderTask;
 
 public class ValidationUtils {
+
+    private ValidationUtils() {
+        // Private constructor to prevent instantiation
+    }
 
     // Username validation
     public static boolean isValidUsername(String username) {
@@ -34,13 +40,13 @@ public class ValidationUtils {
             return false;
         }
 
-        // Check minimum length 8 characters
-        if (password.length() < 8) {
+        // Check minimum length 12 characters
+        if (password.length() < 12) {
             return false;
         }
 
-        // Check starts with uppercase
-        if (!Pattern.matches("^[A-Z].*", password)) {
+        // Check maximum length 128 characters
+        if (password.length() > 128) {
             return false;
         }
 
@@ -80,11 +86,60 @@ public class ValidationUtils {
 
     // Get password validation error message
     public static String getPasswordErrorMessage() {
-        return "Password: at least 8 characters, start with uppercase, must have at least 1 uppercase, 1 lowercase, 1 number";
+        return "Password: ít nhất 12 ký tự, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và ký tự đặc biệt (đề xuất)";
     }
 
     // Get email validation error message
     public static String getEmailErrorMessage() {
         return "Invalid email format";
+    }
+
+    // Validate order data
+    public static boolean validateOrderData(OrderTask orderTask) {
+        if (orderTask == null) {
+            return false;
+        }
+
+        // Validate userId
+        if (orderTask.getUserId() == null || orderTask.getUserId() <= 0) {
+            return false;
+        }
+
+        // Validate productId
+        if (orderTask.getProductId() == null || orderTask.getProductId() <= 0) {
+            return false;
+        }
+
+        // Validate sellerStoreId
+        if (orderTask.getSellerStoreId() == null || orderTask.getSellerStoreId() <= 0) {
+            return false;
+        }
+
+        // Validate quantity
+        if (orderTask.getQuantity() == null || orderTask.getQuantity() <= 0) {
+            return false;
+        }
+
+        // Validate totalAmount
+        if (orderTask.getTotalAmount() == null || orderTask.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            return false;
+        }
+
+        // Validate productName
+        if (orderTask.getProductName() == null || orderTask.getProductName().trim().isEmpty()) {
+            return false;
+        }
+
+        // Validate productData (optional but if present should not be empty)
+        if (orderTask.getProductData() != null && orderTask.getProductData().trim().isEmpty()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    // Get order validation error message
+    public static String getOrderValidationErrorMessage() {
+        return "Order validation failed: userId, productId, sellerStoreId must be positive, quantity must be > 0, totalAmount must be > 0, productName cannot be empty";
     }
 }
