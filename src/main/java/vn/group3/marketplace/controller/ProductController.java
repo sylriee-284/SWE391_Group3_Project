@@ -22,9 +22,9 @@ public class ProductController {
      * @return Product detail view
      */
 
-    @GetMapping("/{productId}")
-    public String getProductDetail(@PathVariable Long productId, Model model) {
-        Product product = productService.getProductById(productId);
+    @GetMapping("/{slug}")
+    public String getProductDetail(@PathVariable String slug, Model model) {
+        Product product = productService.getProductBySlug(slug);
 
         if (product == null) {
             model.addAttribute("errorMessage", "Không tìm thấy sản phẩm");
