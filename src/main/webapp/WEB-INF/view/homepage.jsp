@@ -44,7 +44,7 @@
                                             <div class="mb-3">
                                                 <a
                                                     href="<c:url value='/category/${parentCategory.name.toLowerCase()}'/>">
-                                                    <img src="<c:url value='/images/${parentCategory.name}.png'/>"
+                                                    <img src="<c:url value='/images/categories/${parentCategory.name.toLowerCase()}.png'/>"
                                                         alt="${parentCategory.name}" class="img-fluid"
                                                         style="width:70px;height:70px;">
                                                 </a>
@@ -73,8 +73,9 @@
                                     <div class="card-body text-center">
                                         <div class="mb-3">
                                             <a href="#">
-                                                <img src="<c:url value='/images/tuongtac.png'/>" alt="Tăng tương tác"
-                                                    class="img-fluid" style="width:70px;height:70px;">
+                                                <img src="<c:url value='/images/categories/tuongtac.png'/>"
+                                                    alt="Tăng tương tác" class="img-fluid"
+                                                    style="width:70px;height:70px;">
                                             </a>
                                         </div>
                                         <h5 class="card-title text-success">
@@ -93,7 +94,7 @@
                                     <div class="card-body text-center">
                                         <div class="mb-3">
                                             <a href="#">
-                                                <img src="<c:url value='/images/dichvuphanmem.png'/>"
+                                                <img src="<c:url value='/images/categories/dichvuphanmem.png'/>"
                                                     alt="Dịch vụ phần mềm" class="img-fluid"
                                                     style="width:70px;height:70px;">
                                             </a>
@@ -114,8 +115,8 @@
                                     <div class="card-body text-center">
                                         <div class="mb-3">
                                             <a href="#">
-                                                <img src="<c:url value='/images/blockchain.png'/>" alt="Blockchain"
-                                                    class="img-fluid" style="width:70px;height:70px;">
+                                                <img src="<c:url value='/images/categories/blockchain.png'/>"
+                                                    alt="Blockchain" class="img-fluid" style="width:70px;height:70px;">
                                             </a>
                                         </div>
                                         <h5 class="card-title text-success">
@@ -133,8 +134,9 @@
                                     <div class="card-body text-center">
                                         <div class="mb-3">
                                             <a href="#">
-                                                <img src="<c:url value='/images/dvkhac.jpg'/>" alt="Dịch vụ khác"
-                                                    class="img-fluid" style="width:70px;height:70px;">
+                                                <img src="<c:url value='/images/categories/dvkhac.jpg'/>"
+                                                    alt="Dịch vụ khác" class="img-fluid"
+                                                    style="width:70px;height:70px;">
                                             </a>
                                         </div>
                                         <h5 class="card-title text-success">
@@ -212,6 +214,42 @@
 
                 </div>
 
+                <!-- Order Success Modal -->
+                <div class="modal fade" id="orderSuccessModal" tabindex="-1" aria-labelledby="orderSuccessModalLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="orderSuccessModalLabel">
+                                    <i class="fas fa-check-circle"></i> Đơn hàng đã được ghi nhận
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <div class="mb-4">
+                                    <i class="fas fa-shopping-cart fa-4x text-success mb-3"></i>
+                                    <h4 class="text-success">Đơn hàng đã được ghi nhận và đang được xử lý</h4>
+                                    <p class="text-muted">Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất</p>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <button type="button" class="btn btn-outline-secondary w-100"
+                                            data-bs-dismiss="modal">
+                                            <i class="fas fa-home"></i> Về trang chủ
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button type="button" class="btn btn-success w-100" onclick="viewOrders()">
+                                            <i class="fas fa-list"></i> Xem đơn hàng
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Script to display notifications using iziToast -->
                 <c:if test="${not empty successMessage}">
                     <script>
@@ -223,6 +261,23 @@
                         });
                     </script>
                 </c:if>
+
+                <!-- Script to show order modal -->
+                <c:if test="${showOrderModal}">
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            var modal = new bootstrap.Modal(document.getElementById('orderSuccessModal'));
+                            modal.show();
+                        });
+                    </script>
+                </c:if>
+
+                <!-- JavaScript functions -->
+                <script>
+                    function viewOrders() {
+                        window.location.href = '<c:url value="/orders"/>';
+                    }
+                </script>
 
                 <c:if test="${not empty errorMessage}">
                     <script>

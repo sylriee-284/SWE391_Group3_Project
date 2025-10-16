@@ -1,12 +1,16 @@
 package vn.group3.marketplace.security;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import vn.group3.marketplace.domain.entity.*;
+import vn.group3.marketplace.domain.enums.Gender;
+import vn.group3.marketplace.domain.enums.UserStatus;
 
 public class CustomUserDetails implements UserDetails {
 
@@ -74,4 +78,29 @@ public class CustomUserDetails implements UserDetails {
     public User getUser() {
         return user;
     }
+
+    public String getFullName() {
+        return user.getFullName();
+    }
+
+    public String getPhone() {
+        return user.getPhone();
+    }
+
+    public Set<Role> getRoles() {
+        return user.getRoles();
+    }
+
+    public Gender getGender() {
+        return user.getGender();
+    }
+
+    public UserStatus getStatus() {
+        return user.getStatus();
+    }
+
+    public LocalDate getDateOfBirth() {
+        return user.getDateOfBirth();
+    }
+
 }

@@ -17,13 +17,13 @@ public class SecurityConfig {
                 http
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers("/", "/homepage", "/products/**",
-                                                                "/login", "/logout", "/register",
+                                                .requestMatchers("/", "/homepage", "/products/**", "/login", "/logout",
+                                                                "/register",
                                                                 "/login/captcha", "/forgot-password", "/reset-password",
                                                                 "/debug/**",
                                                                 "/css/**", "/js/**", "/images/**", "/resources/**",
-                                                                "/webjars/**", "/static/**",
-                                                                "/WEB-INF/view/**")
+                                                                "/webjars/**",
+                                                                "/static/**", "/WEB-INF/view/**")
                                                 .permitAll()
                                                 .requestMatchers("/chat/**").authenticated()
                                                 .requestMatchers("/admin/**").hasRole("ADMIN")
