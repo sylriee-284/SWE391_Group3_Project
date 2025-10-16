@@ -172,6 +172,8 @@ public class ValidationUtils {
                 }
                 return "Giá trị không hợp lệ";
         }
+    }
+
     // Validate order data
     public static boolean validateOrderData(OrderTask orderTask) {
         if (orderTask == null) {
