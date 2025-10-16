@@ -20,13 +20,17 @@
                     <!-- Include Sidebar -->
                     <jsp:include page="../common/sidebar.jsp" />
 
+                    <!-- Sidebar Overlay for Mobile -->
+                    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()" role="button"
+                        tabindex="0" onKeyPress="if(event.key === 'Enter') toggleSidebar()"></div>
+
                     <!-- Main Content Area -->
                     <div class="content" id="content">
-                        <div class="container mt-4">
+                        <div class="container-fluid">
                             <!--  Header và thống kê -->
-                            <div class="row">
+                            <div class="row mb-4">
                                 <div class="col-12">
-                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <div class="d-flex justify-content-between align-items-center">
                                         <div>
                                             <h2><i class="fas fa-history"></i> Transaction History</h2>
                                             <p class="text-muted">Manage and track your wallet transactions</p>
@@ -42,12 +46,13 @@
 
                             <!-- Filter Section -->
                             <div class="filter-section">
-                                <form method="get" action="/wallet/transactions">
+                                <form method="get" action="/wallet/transactions" id="filterForm">
                                     <!-- Row 1: Basic Filters -->
-                                    <div class="row filter-row">
+                                    <div class="row filter-row align-items-end">
                                         <div class="col-md-3">
                                             <div class="filter-label">Transaction Type</div>
-                                            <select class="form-select" id="type" name="type">
+                                            <select class="form-select" id="type" name="type"
+                                                onchange="this.form.submit()">
                                                 <option value="">All</option>
                                                 <c:forEach var="transactionType" items="${transactionTypes}">
                                                     <option value="${transactionType}" ${selectedType==transactionType
@@ -57,31 +62,11 @@
                                                 </c:forEach>
                                             </select>
                                         </div>
-                                        <!-- <div class="col-md-3">
-                                            <div class="filter-label">Transaction Type</div>
-                                            <select class="form-select" id="type" name="type">
-                                                <option value="">All</option>
-                                                <c:forEach var="transactionType" items="${transactionTypes}">
-                                                    <option value="${transactionType}" ${selectedType==transactionType
-                                                        ? 'selected' : '' }>
-                                                        <c:choose>
-                                                            <c:when test="${transactionType == 'DEPOSIT'}">Deposit
-                                                            </c:when>
-                                                            <c:when test="${transactionType == 'WITHDRAWAL'}">Withdrawal
-                                                            </c:when>
-                                                            <c:when test="${transactionType == 'PAYMENT'}">Payment
-                                                            </c:when>
-                                                            <c:when test="${transactionType == 'REFUND'}">Refund
-                                                            </c:when>
-                                                            <c:otherwise>${transactionType}</c:otherwise>
-                                                        </c:choose>
-                                                    </option>
-                                                </c:forEach>
-                                            </select>
-                                        </div> -->
+
                                         <div class="col-md-3">
                                             <div class="filter-label">Status</div>
-                                            <select class="form-select" id="status" name="status">
+                                            <select class="form-select" id="status" name="status"
+                                                onchange="this.form.submit()">
                                                 <option value="">All</option>
                                                 <c:forEach var="paymentStatus" items="${paymentStatuses}">
                                                     <option value="${paymentStatus}" ${selectedStatus==paymentStatus
@@ -91,144 +76,144 @@
                                                 </c:forEach>
                                             </select>
                                         </div>
+
+                                        <div class="col-md-3">
+                                            <a href="/wallet/transactions" class="btn btn-outline-secondary">
+                                                <i class="fas fa-refresh"></i> Reset Filters
+                                            </a>
+                                        </div>
                                     </div>
 
-                            </div>
-
-
-
-                            <!-- Row 3: Action Buttons -->
-                            <div class="row mt-3">
-                                <div class="col-md-12 d-flex justify-content-end">
-                                    <button type="submit" class="btn btn-primary me-2">
-                                        <i class="fas fa-search"></i> Apply Filters
-                                    </button>
-                                    <a href="/wallet/transactions" class="btn btn-outline-secondary">
-                                        <i class="fas fa-refresh"></i> Reset
-                                    </a>
-                                </div>
                             </div>
                             </form>
-                        </div>
 
-
-                        <!-- Danh sách giao dịch -->
-                        <c:choose>
-                            <c:when test="${transactions.content.size() > 0}">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">Transaction List</h5>
-                                    </div>
-                                    <div class="table-responsive">
-                                        <table id="resizableTable"
-                                            class="table table-bordered table-striped table-hover resizable-table">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th class="sortable" data-column="0" data-type="text">
-                                                        Type
-                                                        <div class="resizer"></div>
-                                                    </th>
-                                                    <th class="sortable" data-column="1" data-type="date">
-                                                        Date
-                                                        <div class="resizer"></div>
-                                                    </th>
-                                                    <th class="sortable" data-column="2" data-type="text">
-                                                        Payment Method
-                                                        <div class="resizer"></div>
-                                                    </th>
-                                                    <th class="sortable" data-column="3" data-type="text">
-                                                        Reference ID
-                                                        <div class="resizer"></div>
-                                                    </th>
-                                                    <th class="sortable" data-column="4" data-type="number">
-                                                        Amount
-                                                        <div class="resizer"></div>
-                                                    </th>
-                                                    <th class="sortable" data-column="5" data-type="text">
-                                                        Status
-                                                        <div class="resizer"></div>
-                                                    </th>
-                                                    <th>Actions <div class="resizer"></div>
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <c:forEach var="transaction" items="${transactions.content}">
-                                                    <tr>
-                                                        <td>
-                                                            <c:choose>
-                                                                <c:when test='${transaction.type.name() eq "DEPOSIT"}'>
-                                                                    <i class="fas fa-plus-circle text-success"></i>
-                                                                </c:when>
-                                                                <c:when
-                                                                    test='${transaction.type.name() eq "WITHDRAWAL"}'>
-                                                                    <i class="fas fa-minus-circle text-danger"></i>
-                                                                </c:when>
-                                                                <c:when test='${transaction.type.name() eq "PAYMENT"}'>
-                                                                    <i class="fas fa-shopping-cart text-warning"></i>
-                                                                </c:when>
-                                                                <c:when test='${transaction.type.name() eq "REFUND"}'>
-                                                                    <i class="fas fa-undo text-info"></i>
-                                                                </c:when>
-                                                                <c:otherwise>
-                                                                    <i class="fas fa-exchange-alt text-primary"></i>
-                                                                </c:otherwise>
-                                                            </c:choose>
-                                                            ${transaction.type}
-                                                        </td>
-                                                        <td>${fn:substring(transaction.createdAt, 0, 19)}</td>
-                                                        <td>${transaction.paymentMethod}</td>
-                                                        <td>
-                                                            <c:choose>
-                                                                <c:when test='${transaction.type.name() eq "DEPOSIT"}'>
-                                                                    ${transaction.paymentRef}
-                                                                </c:when>
-                                                                <c:when test='${transaction.type.name() eq "PAYMENT"}'>
-                                                                    <a href="/orders/${transaction.orderId}"
-                                                                        class="text-decoration-none">
-                                                                        #${transaction.orderId}
+                            <!-- Danh sách giao dịch -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <c:choose>
+                                        <c:when test="${transactions.content.size() > 0}">
+                                            <div class="table-responsive-xl">
+                                                <table id="resizableTable"
+                                                    class="table table-striped table-hover resizable-table align-middle">
+                                                    <thead class="table-light text-nowrap">
+                                                        <tr>
+                                                            <th class="sortable" data-column="0" data-type="text">
+                                                                Type
+                                                                <div class="resizer"></div>
+                                                            </th>
+                                                            <th class="sortable" data-column="1" data-type="date">
+                                                                Date
+                                                                <div class="resizer"></div>
+                                                            </th>
+                                                            <th class="sortable" data-column="2" data-type="text">
+                                                                Payment Method
+                                                                <div class="resizer"></div>
+                                                            </th>
+                                                            <th class="sortable" data-column="3" data-type="text">
+                                                                Reference ID
+                                                                <div class="resizer"></div>
+                                                            </th>
+                                                            <th class="sortable" data-column="4" data-type="number">
+                                                                Amount
+                                                                <div class="resizer"></div>
+                                                            </th>
+                                                            <th class="sortable" data-column="5" data-type="text">
+                                                                Status
+                                                                <div class="resizer"></div>
+                                                            </th>
+                                                            <th>Actions <div class="resizer"></div>
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <c:forEach var="transaction" items="${transactions.content}">
+                                                            <tr>
+                                                                <td>
+                                                                    <c:choose>
+                                                                        <c:when
+                                                                            test='${transaction.type.name() eq "DEPOSIT"}'>
+                                                                            <i
+                                                                                class="fas fa-plus-circle text-success"></i>
+                                                                        </c:when>
+                                                                        <c:when
+                                                                            test='${transaction.type.name() eq "WITHDRAWAL"}'>
+                                                                            <i
+                                                                                class="fas fa-minus-circle text-danger"></i>
+                                                                        </c:when>
+                                                                        <c:when
+                                                                            test='${transaction.type.name() eq "PAYMENT"}'>
+                                                                            <i
+                                                                                class="fas fa-shopping-cart text-warning"></i>
+                                                                        </c:when>
+                                                                        <c:when
+                                                                            test='${transaction.type.name() eq "REFUND"}'>
+                                                                            <i class="fas fa-undo text-info"></i>
+                                                                        </c:when>
+                                                                        <c:otherwise>
+                                                                            <i
+                                                                                class="fas fa-exchange-alt text-primary"></i>
+                                                                        </c:otherwise>
+                                                                    </c:choose>
+                                                                    ${transaction.type}
+                                                                </td>
+                                                                <td>${fn:substring(transaction.createdAt, 0,
+                                                                    19)}</td>
+                                                                <td>${transaction.paymentMethod}</td>
+                                                                <td>
+                                                                    <c:choose>
+                                                                        <c:when
+                                                                            test='${transaction.type.name() eq "DEPOSIT"}'>
+                                                                            ${transaction.paymentRef}
+                                                                        </c:when>
+                                                                        <c:when
+                                                                            test='${transaction.type.name() eq "PAYMENT"}'>
+                                                                            <a href="/orders/${transaction.orderId}"
+                                                                                class="text-decoration-none">
+                                                                                #${transaction.orderId}
+                                                                            </a>
+                                                                        </c:when>
+                                                                        <c:otherwise>
+                                                                            -
+                                                                        </c:otherwise>
+                                                                    </c:choose>
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    <c:choose>
+                                                                        <c:when
+                                                                            test='${transaction.type.name() eq "DEPOSIT" || transaction.type.name() eq "REFUND"}'>
+                                                                            <span class="text-success">+
+                                                                                <fmt:formatNumber
+                                                                                    value="${transaction.amount}"
+                                                                                    type="number" pattern="#,###" />
+                                                                            </span>
+                                                                        </c:when>
+                                                                        <c:otherwise>
+                                                                            <span class="text-danger">-
+                                                                                <fmt:formatNumber
+                                                                                    value="${transaction.amount}"
+                                                                                    type="number" pattern="#,###" />
+                                                                            </span>
+                                                                        </c:otherwise>
+                                                                    </c:choose>
+                                                                    VNĐ
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <span
+                                                                        class="badge bg-${transaction.paymentStatus == 'SUCCESS' ? 'success' : transaction.paymentStatus == 'PENDING' ? 'warning' : 'danger'}">
+                                                                        ${transaction.paymentStatus}
+                                                                    </span>
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <a href="/wallet/transactions/${transaction.id}"
+                                                                        class="btn btn-sm btn-primary">
+                                                                        <i class="fas fa-eye"></i> View
                                                                     </a>
-                                                                </c:when>
-                                                                <c:otherwise>
-                                                                    -
-                                                                </c:otherwise>
-                                                            </c:choose>
-                                                        </td>
-                                                        <td class="text-end">
-                                                            <c:choose>
-                                                                <c:when
-                                                                    test='${transaction.type.name() eq "DEPOSIT" || transaction.type.name() eq "REFUND"}'>
-                                                                    <span class="text-success">+
-                                                                        <fmt:formatNumber value="${transaction.amount}"
-                                                                            type="number" pattern="#,###" />
-                                                                    </span>
-                                                                </c:when>
-                                                                <c:otherwise>
-                                                                    <span class="text-danger">-
-                                                                        <fmt:formatNumber value="${transaction.amount}"
-                                                                            type="number" pattern="#,###" />
-                                                                    </span>
-                                                                </c:otherwise>
-                                                            </c:choose>
-                                                            VNĐ
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <span
-                                                                class="badge bg-${transaction.paymentStatus == 'SUCCESS' ? 'success' : transaction.paymentStatus == 'PENDING' ? 'warning' : 'danger'}">
-                                                                ${transaction.paymentStatus}
-                                                            </span>
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <a href="/wallet/transactions/${transaction.id}"
-                                                                class="btn btn-sm btn-primary">
-                                                                <i class="fas fa-eye"></i> View
-                                                            </a>
-                                                        </td>
-                                                    </tr>
-                                                </c:forEach>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        </c:forEach>
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                 </div>
 
                                 <!-- Pagination -->
@@ -277,26 +262,27 @@
                                         </div>
                                     </div>
                                 </c:if>
-                            </c:when>
-                            <c:otherwise>
-                                <!-- 📭 Empty state -->
-                                <div class="text-center py-5">
-                                    <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-                                    <h4 class="text-muted">No transactions yet</h4>
-                                    <p class="text-muted">You haven't made any transactions or no matching
-                                        transactions were
-                                        found for the current filters.</p>
-                                    <a href="/wallet/deposit" class="btn btn-primary">
-                                        <i class="fas fa-plus"></i> Deposit now
-                                    </a>
-                                </div>
-                            </c:otherwise>
-                        </c:choose>
-                    </div>
+                                </c:when>
+                                <c:otherwise>
+                                    <!-- 📭 Empty state -->
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                                        <h4 class="text-muted">No transactions yet</h4>
+                                        <p class="text-muted">You haven't made any transactions or no
+                                            matching
+                                            transactions were
+                                            found for the current filters.</p>
+                                        <a href="/wallet/deposit" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> Deposit now
+                                        </a>
+                                    </div>
+                                </c:otherwise>
+                                </c:choose>
+                            </div>
 
 
 
-                    </div>
+                        </div>
                     </div>
 
                     <!-- Include Footer -->
