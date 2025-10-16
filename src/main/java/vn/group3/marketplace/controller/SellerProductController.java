@@ -53,6 +53,7 @@ public class SellerProductController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(String.class, new StringTrimmerEditor(true));
     }
+    // test
 
     private Long resolveStoreId(Long storeId) {
         return Optional.ofNullable(storeId).orElse(DEFAULT_STORE_ID);
