@@ -27,12 +27,12 @@ public class UserController {
      */
     private void refreshAuthenticationContext(String username) {
         try {
-            System.out.println("🔄 Refreshing authentication context for: " + username);
+            System.out.println("Refreshing authentication context for: " + username);
 
             // Get fresh user data from database
             User freshUser = userService.getFreshUserByUsername(username);
             if (freshUser == null) {
-                System.out.println("❌ Cannot refresh context: user not found");
+                System.out.println("Cannot refresh context: user not found");
                 return;
             }
 
@@ -51,11 +51,11 @@ public class UserController {
             // Set the new authentication in SecurityContext
             SecurityContextHolder.getContext().setAuthentication(newAuth);
 
-            System.out.println("✅ Authentication context refreshed successfully!");
-            System.out.println("🔄 New context user: " + newUserDetails.getFullName());
+            System.out.println("Authentication context refreshed successfully!");
+            System.out.println("New context user: " + newUserDetails.getFullName());
 
         } catch (Exception e) {
-            System.out.println("❌ Error refreshing authentication context: " + e.getMessage());
+            System.out.println("Error refreshing authentication context: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -127,11 +127,11 @@ public class UserController {
             String username = auth.getName();
 
             // Debug current authentication context
-            System.out.println("🔐 BEFORE UPDATE - Authentication Context:");
+            System.out.println("BEFORE UPDATE - Authentication Context:");
             if (auth.getPrincipal() instanceof CustomUserDetails) {
                 CustomUserDetails currentUserDetails = (CustomUserDetails) auth.getPrincipal();
-                System.out.println("🔐 Context User: " + currentUserDetails.getFullName());
-                System.out.println("🔐 Context Email: " + currentUserDetails.getEmail());
+                System.out.println("Context User: " + currentUserDetails.getFullName());
+                System.out.println("Context Email: " + currentUserDetails.getEmail());
             }
 
             // Get fresh user data for update (bypass cache)
@@ -193,11 +193,11 @@ public class UserController {
 
             // Debug authentication context sau khi refresh
             Authentication newAuth = SecurityContextHolder.getContext().getAuthentication();
-            System.out.println("🔐 AFTER REFRESH - Authentication Context:");
+            System.out.println("AFTER REFRESH - Authentication Context:");
             if (newAuth.getPrincipal() instanceof CustomUserDetails) {
                 CustomUserDetails newUserDetails = (CustomUserDetails) newAuth.getPrincipal();
-                System.out.println("🔐 New Context User: " + newUserDetails.getFullName());
-                System.out.println("🔐 New Context Email: " + newUserDetails.getEmail());
+                System.out.println("New Context User: " + newUserDetails.getFullName());
+                System.out.println("New Context Email: " + newUserDetails.getEmail());
             }
 
             System.out.println("=== UPDATE SUCCESS - SIMPLE APPROACH ===");
