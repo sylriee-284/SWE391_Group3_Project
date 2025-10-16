@@ -118,4 +118,57 @@ public class WalletService {
             return java.util.Optional.empty();
         }
     }
+
+    /**
+     * Xử lý trừ tiền khi mua hàng
+     */
+    @Transactional
+    public void processPurchasePayment(Long userId, java.math.BigDecimal amount, String orderId) {
+        logger.info("=== Processing Purchase Payment ===");
+        logger.info("User ID: {}, Amount: {}, Order ID: {}", userId, amount, orderId);
+
+        // Lấy user từ database
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        // Tạo transaction trước với trạng thái PENDING
+        WalletTransaction transaction = WalletTransaction.builder()
+                .user(user)
+                .type(WalletTransactionType.PAYMENT)
+                .amount(amount)
+                .paymentRef(orderId)
+                .paymentStatus(WalletTransactionStatus.PENDING)
+                .paymentMethod("INTERNAL")
+                .note("Thanh toán đơn hàng #" + orderId)
+                .build();
+
+        transaction = walletTransactionRepository.save(transaction);
+
+        try {
+            // Cập nhật số dư bằng UPDATE nguyên tử
+            // Chỉ trừ khi số dư đủ (balance >= amount)
+            int rows = userRepository.decrementBalance(userId, amount);
+
+            if (rows != 1) {
+                logger.error("Failed to decrement balance for userId={}", userId);
+                transaction.setPaymentStatus(WalletTransactionStatus.FAILED);
+                walletTransactionRepository.save(transaction);
+                throw new RuntimeException("Insufficient balance");
+            }
+
+            // Cập nhật trạng thái transaction thành công
+            transaction.setPaymentStatus(WalletTransactionStatus.SUCCESS);
+            walletTransactionRepository.save(transaction);
+
+            logger.info("Withdrawal processed successfully for userId={}", userId);
+
+        } catch (Exception e) {
+            // Nếu có lỗi, cập nhật transaction thành FAILED
+            transaction.setPaymentStatus(WalletTransactionStatus.FAILED);
+            walletTransactionRepository.save(transaction);
+            throw e;
+        }
+
+        logger.info("=== Withdrawal Processing Complete ===");
+    }
 }
