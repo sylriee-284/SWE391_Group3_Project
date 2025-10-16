@@ -59,6 +59,11 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
+    // Optimized: Check both username and email in single query
+    public Optional<User> findByUsernameOrEmail(String username, String email) {
+        return userRepository.findByUsernameOrEmail(username, email);
+    }
+
     // Check if username is available for new registration
     public boolean isUsernameAvailable(String username) {
         return !userRepository.findByUsername(username).isPresent();

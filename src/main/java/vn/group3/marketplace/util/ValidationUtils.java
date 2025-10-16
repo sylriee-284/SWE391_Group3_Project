@@ -8,6 +8,13 @@ public class ValidationUtils {
         // Private constructor to prevent instantiation
     }
 
+    // Pre-compiled patterns for better performance (avoid recompiling on every
+    // call)
+    private static final Pattern USERNAME_PATTERN = Pattern.compile("^[A-Za-z0-9_]+$");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    private static final Pattern PHONE_PATTERN = Pattern.compile("^[+]?[0-9]{10,15}$");
+    private static final Pattern NUMERIC_STRING_PATTERN = Pattern.compile("^\\d+$");
+
     // Username validation
     public static boolean isValidUsername(String username) {
         if (username == null || username.trim().isEmpty()) {
@@ -19,8 +26,8 @@ public class ValidationUtils {
             return false;
         }
 
-        // Check only contains letters, numbers and _
-        if (!Pattern.matches("^[A-Za-z0-9_]+$", username)) {
+        // Check only contains letters, numbers and _ (use pre-compiled pattern)
+        if (!USERNAME_PATTERN.matcher(username).matches()) {
             return false;
         }
 
@@ -38,32 +45,32 @@ public class ValidationUtils {
             return false;
         }
 
-        // Check minimum length 12 characters
-        if (password.length() < 12) {
+        // Check length 12-128 characters
+        if (password.length() < 12 || password.length() > 128) {
             return false;
         }
 
-        // Check maximum length 128 characters
-        if (password.length() > 128) {
-            return false;
+        // Use simple loops instead of regex for better performance
+        boolean hasUppercase = false;
+        boolean hasLowercase = false;
+        boolean hasDigit = false;
+
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                hasUppercase = true;
+            } else if (Character.isLowerCase(c)) {
+                hasLowercase = true;
+            } else if (Character.isDigit(c)) {
+                hasDigit = true;
+            }
+
+            // Early exit if all conditions met
+            if (hasUppercase && hasLowercase && hasDigit) {
+                return true;
+            }
         }
 
-        // Check has at least 1 uppercase
-        if (!Pattern.matches(".*[A-Z].*", password)) {
-            return false;
-        }
-
-        // Check has at least 1 lowercase
-        if (!Pattern.matches(".*[a-z].*", password)) {
-            return false;
-        }
-
-        // Check has at least 1 number
-        if (!Pattern.matches(".*\\d.*", password)) {
-            return false;
-        }
-
-        return true;
+        return hasUppercase && hasLowercase && hasDigit;
     }
 
     // Email validation
@@ -72,9 +79,7 @@ public class ValidationUtils {
             return false;
         }
 
-        // Regex pattern for email validation
-        String emailPattern = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
-        return Pattern.matches(emailPattern, email);
+        return EMAIL_PATTERN.matcher(email).matches();
     }
 
     // Get username validation error message
@@ -90,5 +95,80 @@ public class ValidationUtils {
     // Get email validation error message
     public static String getEmailErrorMessage() {
         return "Invalid email format";
+    }
+
+    // Validate phone number format
+    public static boolean isValidPhone(String phone) {
+        if (phone == null || phone.trim().isEmpty()) {
+            return false;
+        }
+        return PHONE_PATTERN.matcher(phone).matches();
+    }
+
+    // Validate numeric string (only digits)
+    public static boolean isValidNumericString(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return false;
+        }
+        return NUMERIC_STRING_PATTERN.matcher(value).matches();
+    }
+
+    // Universal validator for import templates
+    // Validates value based on validation_rule
+    public static boolean validateByRule(String value, String rule) {
+        if (rule == null || rule.isEmpty()) {
+            return true;
+        }
+
+        if (value == null || value.trim().isEmpty()) {
+            return false;
+        }
+
+        String trimmedValue = value.trim();
+
+        switch (rule) {
+            case "email_format":
+                return isValidEmail(trimmedValue);
+
+            case "phone_format":
+                return isValidPhone(trimmedValue);
+
+            case "numeric_string":
+                return isValidNumericString(trimmedValue);
+            case "email_or_phone":
+                return isValidEmail(trimmedValue) || isValidPhone(trimmedValue);
+        }
+
+        // Parameterized rules
+        if (rule.startsWith("min_length:")) {
+            int minLength = Integer.parseInt(rule.substring(11));
+            return trimmedValue.length() >= minLength;
+        }
+
+        // Default: accept all
+        return true;
+    }
+
+    // Get error message for validation rule
+    public static String getValidationErrorMessage(String rule) {
+        if (rule == null || rule.isEmpty()) {
+            return "Giá trị không hợp lệ";
+        }
+
+        switch (rule) {
+            case "email_format":
+                return "Email không đúng định dạng";
+            case "phone_format":
+                return "Số điện thoại không đúng định dạng";
+            case "numeric_string":
+                return "Chỉ chấp nhận số";
+            case "email_or_phone":
+                return "Phải là email hoặc số điện thoại hợp lệ";
+            default:
+                if (rule.startsWith("min_length:")) {
+                    return "Tối thiểu " + rule.substring(11) + " ký tự";
+                }
+                return "Giá trị không hợp lệ";
+        }
     }
 }

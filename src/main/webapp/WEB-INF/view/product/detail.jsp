@@ -68,11 +68,11 @@
                                         <h1 class="mb-3">${product.name}</h1>
 
                                         <!-- Rating Stars -->
-                                        <div class="mt-2">
+                                        <div class="mb-3">
                                             <div class="rating">
                                                 <c:forEach begin="1" end="5" var="star">
-                                                    <i class="fas fa-star ${star <= product.rating ? 'text-warning' : 'text-muted'}"
-                                                        style="font-size: 0.8em;"></i>
+                                                    <i
+                                                        class="fas fa-star ${star <= product.rating ? 'text-warning' : 'text-muted'}"></i>
                                                 </c:forEach>
                                                 <small class="ms-1 text-muted">
                                                     ${product.rating}/5
@@ -200,8 +200,7 @@
                         // Check authentication status
                         var isAuthenticated = <c:choose><c:when test="${pageContext.request.userPrincipal != null}">true</c:when><c:otherwise>false</c:otherwise></c:choose>;
 
-
-                        // Buy now function
+                        // Buy now function - Show modal
                         function buyNow() {
                             // Check if user is authenticated
                             if (!isAuthenticated) {
