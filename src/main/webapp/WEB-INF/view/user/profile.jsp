@@ -47,220 +47,194 @@
                                                     </p>
                                                 </div>
 
-                                                <!-- View Mode Section -->
-                                                <div id="viewMode">
-                                                    <!-- Basic Information Section -->
-                                                    <div class="form-section">
-                                                        <h4><i class="fas fa-user-circle text-primary"></i> Thông tin cơ
-                                                            bản</h4>
-                                                        <div class="row">
-                                                            <div class="col-md-6 mb-3">
-                                                                <label class="form-label">Tên đăng nhập</label>
-                                                                <div
-                                                                    class="form-control-plaintext border rounded p-2 bg-light">
-                                                                    <i class="fas fa-user me-2"></i>${user.username}
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-6 mb-3">
-                                                                <label class="form-label">Email</label>
-                                                                <div
-                                                                    class="form-control-plaintext border rounded p-2 bg-light">
-                                                                    <i
-                                                                        class="fas fa-envelope me-2 text-primary"></i>${user.email}
-                                                                </div>
+                                                <!-- Basic Information Section -->
+                                                <div class="form-section">
+                                                    <h4><i class="fas fa-user-circle text-primary"></i> Thông
+                                                        tin cơ bản
+                                                    </h4>
+                                                    <div class="row">
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Tên đăng nhập</label>
+                                                            <div
+                                                                class="form-control-plaintext border rounded p-2 bg-light">
+                                                                <i class="fas fa-user me-2"></i>${user.username}
                                                             </div>
                                                         </div>
-                                                        <div class="row">
-                                                            <div class="col-md-6 mb-3">
-                                                                <label class="form-label">Họ và tên</label>
-                                                                <div class="form-control-plaintext border rounded p-2">
-                                                                    <i class="fas fa-id-card me-2 text-success"></i>
-                                                                    <c:choose>
-                                                                        <c:when test="${not empty user.fullName}">
-                                                                            ${user.fullName}
-                                                                        </c:when>
-                                                                        <c:otherwise>
-                                                                            <span class="text-muted">Chưa cập
-                                                                                nhật</span>
-                                                                        </c:otherwise>
-                                                                    </c:choose>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-6 mb-3">
-                                                                <label class="form-label">Số điện thoại</label>
-                                                                <div class="form-control-plaintext border rounded p-2">
-                                                                    <i class="fas fa-phone me-2 text-info"></i>
-                                                                    <c:choose>
-                                                                        <c:when test="${not empty user.phone}">
-                                                                            ${user.phone}
-                                                                        </c:when>
-                                                                        <c:otherwise>
-                                                                            <span class="text-muted">Chưa cập
-                                                                                nhật</span>
-                                                                        </c:otherwise>
-                                                                    </c:choose>
-                                                                </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Email</label>
+                                                            <div class="form-control-plaintext border rounded p-2">
+                                                                <i
+                                                                    class="fas fa-envelope me-2 text-primary"></i>${user.email}
                                                             </div>
                                                         </div>
                                                     </div>
-
-                                                    <!-- Personal Information Section -->
-                                                    <div class="form-section">
-                                                        <h4><i class="fas fa-id-card text-info"></i> Thông tin cá nhân
-                                                        </h4>
-                                                        <div class="row">
-                                                            <div class="col-md-6 mb-3">
-                                                                <label class="form-label">Ngày sinh</label>
-                                                                <div class="form-control-plaintext border rounded p-2">
-                                                                    <i
-                                                                        class="fas fa-birthday-cake me-2 text-warning"></i>
-                                                                    <c:choose>
-                                                                        <c:when test="${user.dateOfBirth != null}">
-                                                                            ${user.dateOfBirth}
-                                                                        </c:when>
-                                                                        <c:otherwise>
-                                                                            <span class="text-muted">Chưa cập
-                                                                                nhật</span>
-                                                                        </c:otherwise>
-                                                                    </c:choose>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-6 mb-3">
-                                                                <label class="form-label">Giới tính</label>
-                                                                <div class="form-control-plaintext border rounded p-2">
-                                                                    <i class="fas fa-venus-mars me-2 text-purple"></i>
-                                                                    <c:choose>
-                                                                        <c:when test="${user.gender == 'MALE'}">Nam
-                                                                        </c:when>
-                                                                        <c:when test="${user.gender == 'FEMALE'}">Nữ
-                                                                        </c:when>
-                                                                        <c:when test="${user.gender == 'OTHER'}">Khác
-                                                                        </c:when>
-                                                                        <c:otherwise>
-                                                                            <span class="text-muted">Chưa cập
-                                                                                nhật</span>
-                                                                        </c:otherwise>
-                                                                    </c:choose>
-                                                                </div>
+                                                    <div class="row">
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Họ và tên</label>
+                                                            <div class="form-control-plaintext border rounded p-2">
+                                                                <i class="fas fa-id-card me-2 text-success"></i>
+                                                                <c:choose>
+                                                                    <c:when test="${not empty user.fullName}">
+                                                                        ${user.fullName}</c:when>
+                                                                    <c:otherwise><span class="text-muted">Chưa
+                                                                            cập
+                                                                            nhật</span></c:otherwise>
+                                                                </c:choose>
                                                             </div>
                                                         </div>
-                                                    </div>
-
-                                                    <!-- Edit Button -->
-                                                    <div class="d-flex justify-content-end mb-3">
-                                                        <button type="button" class="btn btn-outline-primary"
-                                                            onclick="toggleEditMode()">
-                                                            <i class="fas fa-edit"></i> Chỉnh sửa
-                                                        </button>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Số điện thoại</label>
+                                                            <div class="form-control-plaintext border rounded p-2">
+                                                                <i class="fas fa-phone me-2 text-info"></i>
+                                                                <c:choose>
+                                                                    <c:when test="${not empty user.phone}">
+                                                                        ${user.phone}
+                                                                    </c:when>
+                                                                    <c:otherwise><span class="text-muted">Chưa
+                                                                            cập
+                                                                            nhật</span></c:otherwise>
+                                                                </c:choose>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                <!-- Edit Form -->
-                                                <form id="profileForm" action="/user/profile/update" method="POST"
-                                                    style="display: none;">
-                                                    <sec:csrfInput />
-                                                    <input type="hidden" name="email" value="${user.email}">
-
-                                                    <!-- Basic Information Section -->
-                                                    <div class="form-section">
-                                                        <h4><i class="fas fa-user-circle text-primary"></i> Thông tin cơ
-                                                            bản</h4>
-                                                        <div class="row">
-                                                            <div class="col-md-6 mb-3">
-                                                                <label class="form-label">Họ và tên</label>
-                                                                <div class="input-group">
-                                                                    <span class="input-group-text">
-                                                                        <i class="fas fa-id-card text-success"></i>
-                                                                    </span>
-                                                                    <input type="text" class="form-control"
-                                                                        name="fullName" value="${user.fullName}"
-                                                                        placeholder="Nhập họ và tên">
-                                                                </div>
+                                                <!-- Personal Information Section -->
+                                                <div class="form-section">
+                                                    <h4><i class="fas fa-id-card text-info"></i> Thông tin cá
+                                                        nhân</h4>
+                                                    <div class="row">
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Ngày sinh</label>
+                                                            <div class="form-control-plaintext border rounded p-2">
+                                                                <i class="fas fa-birthday-cake me-2 text-warning"></i>
+                                                                <!-- Debug: ${user.dateOfBirth} -->
+                                                                <c:choose>
+                                                                    <c:when test="${user.dateOfBirth != null}">
+                                                                        ${user.dateOfBirth}
+                                                                    </c:when>
+                                                                    <c:otherwise>
+                                                                        <span class="text-muted">Chưa cập
+                                                                            nhật</span>
+                                                                    </c:otherwise>
+                                                                </c:choose>
                                                             </div>
-                                                            <div class="col-md-6 mb-3">
-                                                                <label class="form-label">Số điện thoại</label>
-                                                                <div class="input-group">
-                                                                    <span class="input-group-text">
-                                                                        <i class="fas fa-phone text-info"></i>
-                                                                    </span>
-                                                                    <input type="tel" class="form-control" name="phone"
-                                                                        value="${user.phone}"
-                                                                        placeholder="Nhập số điện thoại">
-                                                                </div>
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Giới tính</label>
+                                                            <div class="form-control-plaintext border rounded p-2">
+                                                                <i class="fas fa-venus-mars me-2 text-purple"></i>
+                                                                <!-- Debug: ${user.gender} -->
+                                                                <c:choose>
+                                                                    <c:when test="${user.gender == 'MALE'}">Nam
+                                                                    </c:when>
+                                                                    <c:when test="${user.gender == 'FEMALE'}">Nữ
+                                                                    </c:when>
+                                                                    <c:when test="${user.gender == 'OTHER'}">
+                                                                        Khác
+                                                                    </c:when>
+                                                                    <c:otherwise>
+                                                                        <span class="text-muted">Chưa cập
+                                                                            nhật</span>
+                                                                    </c:otherwise>
+                                                                </c:choose>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Account Status Section -->
+                                                <div class="form-section">
+                                                    <h4><i class="fas fa-shield-alt text-warning"></i> Trạng
+                                                        thái tài
+                                                        khoản</h4>
+                                                    <div class="row">
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Trạng thái</label>
+                                                            <div>
+                                                                <span
+                                                                    class="status-badge ${user.status == 'ACTIVE' ? 'status-active' : (user.status == 'INACTIVE' ? 'status-inactive' : 'status-suspended')}">
+                                                                    <i class="fas fa-circle"></i>
+                                                                    <c:choose>
+                                                                        <c:when test="${user.status == 'ACTIVE'}">
+                                                                            Hoạt
+                                                                            động</c:when>
+                                                                        <c:when test="${user.status == 'INACTIVE'}">
+                                                                            Không hoạt động</c:when>
+                                                                        <c:when test="${user.status == 'SUSPENDED'}">
+                                                                            Bị
+                                                                            tạm khóa</c:when>
+                                                                        <c:otherwise>Bị cấm</c:otherwise>
+                                                                    </c:choose>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Vai trò</label>
+                                                            <div>
+                                                                <c:forEach var="role" items="${user.roles}"
+                                                                    varStatus="status">
+                                                                    <span
+                                                                        class="badge bg-primary me-1">${role.name}</span>
+                                                                </c:forEach>
                                                             </div>
                                                         </div>
                                                     </div>
 
-                                                    <!-- Personal Information Section -->
-                                                    <div class="form-section">
-                                                        <h4><i class="fas fa-id-card text-info"></i> Thông tin cá nhân
-                                                        </h4>
-                                                        <div class="row">
-                                                            <div class="col-md-6 mb-3">
-                                                                <label class="form-label">Ngày sinh</label>
-                                                                <div class="input-group">
-                                                                    <span class="input-group-text">
-                                                                        <i
-                                                                            class="fas fa-birthday-cake text-warning"></i>
-                                                                    </span>
-                                                                    <input type="date" class="form-control"
-                                                                        name="dateOfBirth" value="${user.dateOfBirth}">
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-6 mb-3">
-                                                                <label class="form-label">Giới tính</label>
-                                                                <div class="input-group">
-                                                                    <span class="input-group-text">
-                                                                        <i class="fas fa-venus-mars text-purple"></i>
-                                                                    </span>
-                                                                    <select class="form-select" name="gender">
-                                                                        <option value="MALE" ${user.gender=='MALE'
-                                                                            ? 'selected' : '' }>Nam</option>
-                                                                        <option value="FEMALE" ${user.gender=='FEMALE'
-                                                                            ? 'selected' : '' }>Nữ</option>
-                                                                        <option value="OTHER" ${user.gender=='OTHER'
-                                                                            ? 'selected' : '' }>Khác</option>
-                                                                    </select>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <!-- Action Buttons -->
-                                                    <div class="d-flex justify-content-end mb-3">
-                                                        <button type="submit" class="btn btn-success me-2">
-                                                            <i class="fas fa-save"></i> Lưu
-                                                        </button>
-                                                        <button type="button" class="btn btn-secondary"
-                                                            onclick="cancelEdit()">
-                                                            <i class="fas fa-times"></i> Hủy
-                                                        </button>
-                                                    </div>
-                                                </form>
-                                                <!-- Script toggleEditMode/cancelEdit đơn giản -->
-                                                <script>
-                                                    function toggleEditMode() {
-                                                        var viewMode = document.getElementById('viewMode');
-                                                        var profileForm = document.getElementById('profileForm');
-                                                        if (viewMode && profileForm) {
-                                                            viewMode.style.display = 'none';
-                                                            profileForm.style.display = 'block';
-                                                        }
-                                                    }
-                                                    function cancelEdit() {
-                                                        var viewMode = document.getElementById('viewMode');
-                                                        var profileForm = document.getElementById('profileForm');
-                                                        if (viewMode && profileForm) {
-                                                            viewMode.style.display = 'block';
-                                                            profileForm.style.display = 'none';
-                                                        }
-                                                    }
-                                                </script>
+                                                </div>
 
 
                                             </div>
 
-
+                                            <!-- Quick Actions -->
+                                            <div class="profile-card">
+                                                <h4 class="text-center mb-4"><i class="fas fa-rocket text-primary"></i>
+                                                    Thao tác nhanh</h4>
+                                                <div class="quick-actions">
+                                                    <div class="action-card">
+                                                        <div class="action-icon text-primary">
+                                                            <i class="fas fa-edit"></i>
+                                                        </div>
+                                                        <h6>Chỉnh sửa</h6>
+                                                        <p class="text-muted small">Cập nhật thông tin cá nhân
+                                                        </p>
+                                                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#editProfileModal">Chỉnh
+                                                            sửa</button>
+                                                    </div>
+                                                    <div class="action-card">
+                                                        <div class="action-icon text-warning">
+                                                            <i class="fas fa-key"></i>
+                                                        </div>
+                                                        <h6>Đổi mật khẩu</h6>
+                                                        <p class="text-muted small">Thay đổi mật khẩu đăng nhập
+                                                        </p>
+                                                        <a href="#" class="btn btn-outline-warning btn-sm">Đổi
+                                                            mật
+                                                            khẩu</a>
+                                                    </div>
+                                                    <div class="action-card">
+                                                        <div class="action-icon text-success">
+                                                            <i class="fas fa-shopping-bag"></i>
+                                                        </div>
+                                                        <h6>Đơn hàng</h6>
+                                                        <p class="text-muted small">Xem lịch sử đơn hàng</p>
+                                                        <a href="/user/orders"
+                                                            class="btn btn-outline-success btn-sm">Xem đơn
+                                                            hàng</a>
+                                                    </div>
+                                                    <div class="action-card">
+                                                        <div class="action-icon text-info">
+                                                            <i class="fas fa-wallet"></i>
+                                                        </div>
+                                                        <h6>Ví tiền</h6>
+                                                        <p class="text-muted small">Quản lý ví và giao dịch</p>
+                                                        <a href="/wallet/detail" class="btn btn-outline-info btn-sm">Xem
+                                                            ví</a>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -282,59 +256,8 @@
                                     }
                                 }
 
-                                // Format date to dd/MM/yyyy
-                                function formatDate(date) {
-                                    if (!date) return '';
-                                    const d = new Date(date);
-                                    if (isNaN(d.getTime())) return '';
-                                    const day = String(d.getDate()).padStart(2, '0');
-                                    const month = String(d.getMonth() + 1).padStart(2, '0');
-                                    const year = d.getFullYear();
-                                    return `${day}/${month}/${year}`;
-                                }
-
-                                // Parse date from dd/MM/yyyy to yyyy-MM-dd
-                                function parseDate(dateStr) {
-                                    if (!dateStr) return '';
-                                    const [day, month, year] = dateStr.split('/');
-                                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                                }
-
-                                // Store original values
-                                let originalValues = {};
-
-
-
-                                // Submit form handler
-                                document.getElementById('profileForm').addEventListener('submit', function (e) {
-                                    // Xử lý ngày sinh trước khi submit nếu cần
-                                    const dateOfBirthInput = document.getElementById('dateOfBirth');
-                                    if (dateOfBirthInput && dateOfBirthInput.value) {
-                                        // Đảm bảo định dạng yyyy-MM-dd
-                                        const date = new Date(dateOfBirthInput.value);
-                                        if (!isNaN(date.getTime())) {
-                                            dateOfBirthInput.value = date.toISOString().split('T')[0];
-                                        }
-                                    }
-                                });
-
-
-                                // Password change function
-                                function togglePasswordModal() {
-                                    // Implementation for password change modal
-                                }
-
                                 // Check URL parameters for success/error messages
                                 document.addEventListener('DOMContentLoaded', function () {
-                                    // Format ngày sinh khi trang load
-                                    const dateOfBirthInput = document.getElementById('dateOfBirth');
-                                    if (dateOfBirthInput && dateOfBirthInput.value) {
-                                        // Đảm bảo ngày sinh được hiển thị đúng định dạng trong input
-                                        const formattedDate = new Date(dateOfBirthInput.value).toISOString().split('T')[0];
-                                        dateOfBirthInput.value = formattedDate;
-                                    }
-
-                                    // Check URL parameters for messages
                                     const urlParams = new URLSearchParams(window.location.search);
                                     if (urlParams.get('success') === 'true') {
                                         iziToast.success({

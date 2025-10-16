@@ -56,12 +56,4 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         "LEFT JOIN FETCH s.owner " +
                         "WHERE p.id = :productId AND p.isDeleted = false")
         java.util.Optional<Product> findByIdWithDetails(@Param("productId") Long productId);
-
-        @Query("SELECT p FROM Product p " +
-                        "LEFT JOIN FETCH p.category c " +
-                        "LEFT JOIN FETCH c.parent " +
-                        "LEFT JOIN FETCH p.sellerStore s " +
-                        "LEFT JOIN FETCH s.owner " +
-                        "WHERE p.slug = :slug AND p.isDeleted = false")
-        java.util.Optional<Product> findBySlugWithDetails(@Param("slug") String slug);
 }

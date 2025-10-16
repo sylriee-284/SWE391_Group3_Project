@@ -10,7 +10,7 @@ public class AdminController {
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-        // Load report data: orders, users, revenue...
+        // Load report data: orders, users, revenue, disputes...
         return "admin/dashboard";
     }
 
