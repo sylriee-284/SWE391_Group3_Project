@@ -102,7 +102,6 @@ public class WalletService {
     /**
      * Trả về userId liên kết với paymentRef nếu có.
      */
-
     public java.util.Optional<Long> findUserIdByPaymentRef(String paymentRef) {
         try {
             java.util.Optional<WalletTransaction> txOpt = walletTransactionRepository.findByPaymentRef(paymentRef);
