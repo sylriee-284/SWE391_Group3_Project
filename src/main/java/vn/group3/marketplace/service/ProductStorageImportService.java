@@ -185,8 +185,7 @@ public class ProductStorageImportService {
         }
     }
 
-    // Import storage data - Main method
-    @Transactional
+    // Import storage data
     public ImportResult importStorage(Long productId, List<ProductStorageImportDTO> dtoList) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
@@ -206,21 +205,19 @@ public class ProductStorageImportService {
             }
 
             try {
-                // Save to product_storage
+                // Save product storage
                 saveProductStorage(product, dto);
                 successCount++;
             } catch (Exception e) {
                 errorCount++;
                 dto.addError("Lỗi lưu dữ liệu: " + e.getMessage());
                 errorRecords.add(dto);
-                log.error("Error saving storage for product {}: {}", productId, e.getMessage());
             }
         }
 
-        // Update product stock
+        // Update product stock after successful imports
         if (successCount > 0) {
-            product.setStock(product.getStock() + successCount);
-            productRepository.save(product);
+            updateProductStock(productId, successCount);
         }
 
         return ImportResult.builder()
@@ -230,17 +227,23 @@ public class ProductStorageImportService {
                 .build();
     }
 
+    @Transactional
     private void saveProductStorage(Product product, ProductStorageImportDTO dto) throws Exception {
-        // Convert data map to JSON string
         String jsonData = objectMapper.writeValueAsString(dto.getData());
-
         ProductStorage storage = ProductStorage.builder()
                 .product(product)
                 .status(ProductStorageStatus.AVAILABLE)
                 .payloadJson(jsonData)
                 .build();
-
         storageRepository.save(storage);
     }
 
+    // Update product stock
+    @Transactional
+    private void updateProductStock(Long productId, int quantity) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+        product.setStock(product.getStock() + quantity);
+        productRepository.save(product);
+    }
 }
