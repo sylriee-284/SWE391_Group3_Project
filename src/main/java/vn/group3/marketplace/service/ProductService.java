@@ -1,85 +1,43 @@
 package vn.group3.marketplace.service;
 
-import java.time.LocalDateTime;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import vn.group3.marketplace.domain.entity.Product;
-import vn.group3.marketplace.domain.enums.ProductStatus;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import vn.group3.marketplace.domain.entity.Category;
 import vn.group3.marketplace.domain.entity.Product;
+import vn.group3.marketplace.domain.entity.SellerStore;
 import vn.group3.marketplace.domain.enums.ProductStatus;
 import vn.group3.marketplace.repository.ProductRepository;
+import vn.group3.marketplace.repository.SellerStoreRepository;
 
+import java.time.LocalDateTime;
+
+/**
+ * Unified ProductService class. This replaces the previous interface +
+ * implementation
+ * by providing a single concrete Spring @Service containing all product-related
+ * operations used across the application.
+ */
 @Service
 @RequiredArgsConstructor
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final SellerStoreRepository storeRepository;
 
-    /**
-     * Get products by parent category with pagination
-     * 
-     * @param parentCategory The parent category
-     * @param page           Page number (0-based)
-     * @param size           Page size
-     * @param sortBy         Sort field
-     * @param sortDirection  Sort direction (asc/desc)
-     * @return Page of products
-     */
-
-    Page<Product> search(Long storeId, String q, ProductStatus status, Long categoryId, Pageable pageable);
-
-    Product getOwned(Long id, Long storeId);
-
-    Product create(Product p);
-
-    Product update(Product p, Long storeId);
-
-    void toggle(Long id, Long storeId, ProductStatus toStatus);
-
-    void softDelete(Long id, Long storeId, Long userId);
-
-    boolean isSlugTaken(Long storeId, String slug, Long excludeId);
-
-    Page<Product> search(Long storeId,
-            String q,
-            ProductStatus status,
-            Long categoryId,
-            Long parentCategoryId,
-            LocalDateTime createdFrom,
-            LocalDateTime createdTo,
-            Pageable pageable);
-
+    /* --- Search / listing helpers (category-based) --- */
     public Page<Product> getProductsByParentCategory(Category parentCategory, int page, int size,
             String sortBy, String sortDirection) {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        return productRepository.findByParentCategoryId(
-                parentCategory.getId(),
-                ProductStatus.ACTIVE,
-                pageable);
+        return productRepository.findByParentCategoryId(parentCategory.getId(), ProductStatus.ACTIVE, pageable);
     }
 
-    /**
-     * Get products by parent category with search keyword and pagination
-     * 
-     * @param parentCategory The parent category
-     * @param keyword        Search keyword
-     * @param page           Page number (0-based)
-     * @param size           Page size
-     * @param sortBy         Sort field
-     * @param sortDirection  Sort direction (asc/desc)
-     * @return Page of products
-     */
     public Page<Product> searchProductsByParentCategory(Category parentCategory, String keyword,
             int page, int size, String sortBy, String sortDirection) {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
@@ -89,47 +47,20 @@ public class ProductService {
             return getProductsByParentCategory(parentCategory, page, size, sortBy, sortDirection);
         }
 
-        return productRepository.findByParentCategoryIdAndKeyword(
-                parentCategory.getId(),
-                ProductStatus.ACTIVE,
-                keyword.trim(),
-                pageable);
+        return productRepository.findByParentCategoryIdAndKeyword(parentCategory.getId(), ProductStatus.ACTIVE,
+                keyword.trim(), pageable);
     }
 
-    /**
-     * Get products by specific child category with pagination
-     * 
-     * @param category      The child category
-     * @param page          Page number (0-based)
-     * @param size          Page size
-     * @param sortBy        Sort field
-     * @param sortDirection Sort direction (asc/desc)
-     * @return Page of products
-     */
-    public Page<Product> getProductsByCategory(Category category, int page, int size,
-            String sortBy, String sortDirection) {
+    public Page<Product> getProductsByCategory(Category category, int page, int size, String sortBy,
+            String sortDirection) {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        return productRepository.findByCategoryId(
-                category.getId(),
-                ProductStatus.ACTIVE,
-                pageable);
+        return productRepository.findByCategoryId(category.getId(), ProductStatus.ACTIVE, pageable);
     }
 
-    /**
-     * Get products by specific child category with search keyword and pagination
-     * 
-     * @param category      The child category
-     * @param keyword       Search keyword
-     * @param page          Page number (0-based)
-     * @param size          Page size
-     * @param sortBy        Sort field
-     * @param sortDirection Sort direction (asc/desc)
-     * @return Page of products
-     */
-    public Page<Product> searchProductsByCategory(Category category, String keyword,
-            int page, int size, String sortBy, String sortDirection) {
+    public Page<Product> searchProductsByCategory(Category category, String keyword, int page, int size,
+            String sortBy, String sortDirection) {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
@@ -137,54 +68,108 @@ public class ProductService {
             return getProductsByCategory(category, page, size, sortBy, sortDirection);
         }
 
-        return productRepository.findByCategoryIdAndKeyword(
-                category.getId(),
-                ProductStatus.ACTIVE,
-                keyword.trim(),
+        return productRepository.findByCategoryIdAndKeyword(category.getId(), ProductStatus.ACTIVE, keyword.trim(),
                 pageable);
     }
 
-    /**
-     * Count products by parent category
-     * 
-     * @param parentCategory The parent category
-     * @return Number of products
-     */
     public Long countProductsByParentCategory(Category parentCategory) {
         return productRepository.countByParentCategoryId(parentCategory.getId(), ProductStatus.ACTIVE);
     }
 
-    /**
-     * Get product by ID
-     * 
-     * @param productId Product ID
-     * @return Product or null if not found
-     */
+    /* --- Generic retrievals --- */
     public Product getProductById(Long productId) {
         return productRepository.findByIdWithDetails(productId).orElse(null);
     }
 
-    /**
-     * Get product by slug
-     * 
-     * @param slug Product slug
-     * @return Product or null if not found
-     */
     public Product getProductBySlug(String slug) {
         return productRepository.findBySlugWithDetails(slug).orElse(null);
     }
 
-    /**
-     * Get active product by ID
-     * 
-     * @param productId Product ID
-     * @return Active product or null if not found or inactive
-     */
     public Product getActiveProductById(Long productId) {
         Product product = getProductById(productId);
-        if (product != null && product.getStatus() == ProductStatus.ACTIVE && !product.getIsDeleted()) {
+        if (product != null && product.getStatus() == ProductStatus.ACTIVE
+                && !Boolean.TRUE.equals(product.getIsDeleted())) {
             return product;
         }
         return null;
     }
+
+    /* --- Methods from previous interface/impl --- */
+    public Page<Product> search(Long storeId, String q, ProductStatus status, Long categoryId, Pageable pageable) {
+        return productRepository.search(storeId, q, status, categoryId, null, null, null, pageable);
+    }
+
+    public Page<Product> search(Long storeId, String q, ProductStatus status,
+            Long categoryId, Long parentCategoryId,
+            LocalDateTime createdFrom, LocalDateTime createdTo,
+            Pageable pageable) {
+        return productRepository.search(storeId, q, status, categoryId, parentCategoryId, createdFrom, createdTo,
+                pageable);
+    }
+
+    public Product getOwned(Long id, Long storeId) {
+        return productRepository.findById(id)
+                .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
+                .filter(p -> p.getSellerStore() != null && p.getSellerStore().getId().equals(storeId))
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Không tìm thấy sản phẩm hoặc không thuộc cửa hàng của bạn."));
+    }
+
+    @Transactional
+    public Product create(Product p) {
+        SellerStore store = storeRepository.findById(p.getSellerStore().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Store không tồn tại."));
+        if (p.getSlug() != null
+                && productRepository.existsBySellerStore_IdAndSlugIgnoreCaseAndIsDeletedFalse(store.getId(),
+                        p.getSlug())) {
+            throw new IllegalArgumentException("Slug đã tồn tại trong cửa hàng.");
+        }
+        if (p.getStatus() == null)
+            p.setStatus(ProductStatus.ACTIVE);
+        p.setIsDeleted(false);
+        return productRepository.save(p);
+    }
+
+    @Transactional
+    public Product update(Product p, Long storeId) {
+        Product db = getOwned(p.getId(), storeId);
+        if (p.getSlug() != null
+                && productRepository.existsBySellerStore_IdAndSlugIgnoreCaseAndIdNotAndIsDeletedFalse(storeId,
+                        p.getSlug(), p.getId())) {
+            throw new IllegalArgumentException("Slug đã tồn tại trong cửa hàng.");
+        }
+        db.setName(p.getName());
+        db.setSlug(p.getSlug());
+        db.setProductUrl(p.getProductUrl());
+        db.setDescription(p.getDescription());
+        db.setPrice(p.getPrice());
+        db.setCategory(p.getCategory());
+        db.setStatus(p.getStatus());
+        db.setStock(p.getStock());
+        return productRepository.save(db);
+    }
+
+    @Transactional
+    public void toggle(Long id, Long storeId, ProductStatus toStatus) {
+        Product db = getOwned(id, storeId);
+        db.setStatus(toStatus);
+        productRepository.save(db);
+    }
+
+    @Transactional
+    public void softDelete(Long id, Long storeId, Long userId) {
+        Product db = getOwned(id, storeId);
+        db.setStatus(ProductStatus.INACTIVE);
+        db.setIsDeleted(true);
+        db.setDeletedBy(userId);
+        productRepository.save(db);
+    }
+
+    public boolean isSlugTaken(Long storeId, String slug, Long excludeId) {
+        return excludeId == null
+                ? productRepository.existsBySellerStore_IdAndSlugIgnoreCaseAndIsDeletedFalse(storeId, slug)
+                : productRepository.existsBySellerStore_IdAndSlugIgnoreCaseAndIdNotAndIsDeletedFalse(storeId, slug,
+                        excludeId);
+    }
+
 }
