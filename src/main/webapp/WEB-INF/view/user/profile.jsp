@@ -24,6 +24,9 @@
                     <!-- Include Sidebar -->
                     <jsp:include page="../common/sidebar.jsp" />
 
+                    <!-- Sidebar Overlay for Mobile -->
+                    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
                     <!-- Main Content Area -->
                     <div class="content" id="content">
                         <!-- Page Content will be inserted here -->
