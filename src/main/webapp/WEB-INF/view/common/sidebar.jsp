@@ -21,7 +21,8 @@
                             <ul class="collapse list-unstyled ms-3 mt-2" id="paymentMenu">
                                 <li><a href="/wallet/deposit" class="text-white text-decoration-none">➕ Nạp tiền</a>
                                 </li>
-                                <li><a href="/wallet/history" class="text-white text-decoration-none">📜 Lịch sử giao
+                                <li><a href="/wallet/transactions" class="text-white text-decoration-none">📜 Lịch sử
+                                        giao
                                         dịch</a></li>
                             </ul>
                             <!-- Chỉ hiển thị nếu user có role SELLER -->
