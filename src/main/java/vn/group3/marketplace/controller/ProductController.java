@@ -1,12 +1,13 @@
 package vn.group3.marketplace.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.group3.marketplace.domain.entity.Product;
+import vn.group3.marketplace.security.CustomUserDetails;
 import vn.group3.marketplace.service.ProductService;
 
 @Controller
@@ -25,7 +26,9 @@ public class ProductController {
      */
 
     @GetMapping("/{slug}")
-    public String getProductDetail(@PathVariable String slug, Model model) {
+    public String getProductDetail(@PathVariable String slug,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            Model model) {
         Product product = productService.getProductBySlug(slug);
 
         if (product == null) {
@@ -43,6 +46,13 @@ public class ProductController {
         model.addAttribute("product", product);
         model.addAttribute("shop", product.getSellerStore());
         model.addAttribute("shopOwner", product.getSellerStore().getOwner());
+
+        // Add user balance if user is authenticated
+        if (currentUser != null) {
+            model.addAttribute("userBalance", currentUser.getBalance());
+        } else {
+            model.addAttribute("userBalance", java.math.BigDecimal.ZERO);
+        }
 
         return "product/detail";
     }
