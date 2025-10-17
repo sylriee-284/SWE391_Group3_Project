@@ -28,6 +28,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                                                 AND (:parentCategoryId IS NULL OR (p.category.parent IS NOT NULL AND p.category.parent.id = :parentCategoryId))
                                                 AND (:createdFrom IS NULL OR p.createdAt >= :createdFrom)
                                                 AND (:createdTo   IS NULL OR p.createdAt <  :createdTo)
+                                                AND (:minPrice IS NULL OR p.price >= :minPrice)
+                                                AND (:maxPrice IS NULL OR p.price <= :maxPrice)
+                                                AND (:idFrom IS NULL OR p.id >= :idFrom)
+                                                AND (:idTo IS NULL OR p.id <= :idTo)
                                         ORDER BY p.updatedAt DESC
                         """)
         Page<Product> search(
@@ -38,6 +42,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         @Param("parentCategoryId") Long parentCategoryId,
                         @Param("createdFrom") LocalDateTime createdFrom,
                         @Param("createdTo") LocalDateTime createdTo,
+                        @Param("minPrice") java.math.BigDecimal minPrice,
+                        @Param("maxPrice") java.math.BigDecimal maxPrice,
+                        @Param("idFrom") Long idFrom,
+                        @Param("idTo") Long idTo,
                         Pageable pageable);
 
         boolean existsBySellerStore_IdAndSlugIgnoreCaseAndIsDeletedFalse(Long storeId, String slug);

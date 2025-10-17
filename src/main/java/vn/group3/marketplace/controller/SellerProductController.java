@@ -104,6 +104,10 @@ public class SellerProductController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String fromDate, // yyyy-MM-dd
             @RequestParam(required = false) String toDate, // yyyy-MM-dd
+            @RequestParam(required = false) String minPrice,
+            @RequestParam(required = false) String maxPrice,
+            @RequestParam(required = false) Long idFrom,
+            @RequestParam(required = false) Long idTo,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             Model model) {
@@ -122,9 +126,22 @@ public class SellerProductController {
         } catch (Exception ignored) {
         }
 
+        java.math.BigDecimal minP = null, maxP = null;
+        try {
+            if (minPrice != null && !minPrice.trim().isEmpty())
+                minP = new java.math.BigDecimal(minPrice);
+        } catch (Exception ignored) {
+        }
+        try {
+            if (maxPrice != null && !maxPrice.trim().isEmpty())
+                maxP = new java.math.BigDecimal(maxPrice);
+        } catch (Exception ignored) {
+        }
+
         Page<Product> data = productService.search(
                 sid, q, status, categoryId,
                 parentCategoryId, createdFrom, createdToExclusive,
+                minP, maxP, idFrom, idTo,
                 PageRequest.of(page, size));
 
         // Phục vụ filter ở trang danh sách
@@ -151,6 +168,10 @@ public class SellerProductController {
         model.addAttribute("storeId", sid);
         model.addAttribute("parentCategories", parentCategories);
         model.addAttribute("subCategories", subCategories);
+        model.addAttribute("minPrice", minPrice);
+        model.addAttribute("maxPrice", maxPrice);
+        model.addAttribute("idFrom", idFrom);
+        model.addAttribute("idTo", idTo);
         model.addAttribute("ProductStatus", ProductStatus.values());
         model.addAttribute("storageStatusAvailable", ProductStorageStatus.AVAILABLE);
 
@@ -166,7 +187,11 @@ public class SellerProductController {
         SellerStore store = new SellerStore();
         store.setId(sid);
         form.setSellerStore(store);
-        form.setStatus(ProductStatus.ACTIVE);
+        // For new products created by seller, default status should be INACTIVE per
+        // requirement
+        form.setStatus(ProductStatus.INACTIVE);
+        // Stock should be null for new product and not input by seller
+        form.setStock(null);
 
         model.addAttribute("form", form);
         model.addAttribute("storeId", sid);
@@ -324,9 +349,38 @@ public class SellerProductController {
             return "seller/product-form";
         }
 
-        productService.update(form, sid);
-        ra.addFlashAttribute("success", "Sửa sản phẩm thành công!");
-        return "redirect:/seller/products?storeId=" + sid;
+        try {
+            productService.update(form, sid);
+            ra.addFlashAttribute("success", "Sửa sản phẩm thành công!");
+            return "redirect:/seller/products?storeId=" + sid;
+        } catch (IllegalArgumentException ex) {
+            // Bind error to status field so it shows on the form
+            binding.rejectValue("status", "status.invalid", ex.getMessage());
+
+            model.addAttribute("storeId", sid);
+            model.addAttribute("formMode", "UPDATE");
+
+            List<Category> parents = top4Parents();
+            model.addAttribute("parentCategories", parents);
+
+            List<Category> subCats = Collections.emptyList();
+            Long selectedParentId = null;
+            Long selectedChildId = null;
+
+            if (form.getCategory() != null) {
+                Category current = form.getCategory();
+                Category parent = (current.getParent() == null) ? current : current.getParent();
+                selectedParentId = parent != null ? parent.getId() : null;
+                selectedChildId = current.getId();
+                if (parent != null)
+                    subCats = categoryRepo.findByParentAndIsDeletedFalse(parent);
+            }
+
+            model.addAttribute("selectedParentId", selectedParentId);
+            model.addAttribute("selectedChildId", selectedChildId);
+            model.addAttribute("subCategories", subCats);
+            return "seller/product-form";
+        }
     }
 
     // ============ TOGGLE STATUS ============
@@ -336,8 +390,12 @@ public class SellerProductController {
             @RequestParam(value = "storeId", required = false) Long storeId,
             RedirectAttributes ra) {
         Long sid = resolveStoreId(storeId);
-        productService.toggle(id, sid, to);
-        ra.addFlashAttribute("success", "Đã chuyển trạng thái sản phẩm #" + id + " sang " + to);
+        try {
+            productService.toggle(id, sid, to);
+            ra.addFlashAttribute("success", "Đã chuyển trạng thái sản phẩm #" + id + " sang " + to);
+        } catch (IllegalArgumentException ex) {
+            ra.addFlashAttribute("errorMessage", ex.getMessage());
+        }
         return "redirect:/seller/products?storeId=" + sid;
     }
 
@@ -351,6 +409,80 @@ public class SellerProductController {
             out.add(new Option(c.getId(), c.getName()));
         }
         return out;
+    }
+
+    // ============ DETAIL (view-only) ============
+    @GetMapping("/{id}")
+    public String detail(@PathVariable Long id,
+            @RequestParam(value = "storeId", required = false) Long storeId,
+            Model model) {
+        Long sid = resolveStoreId(storeId);
+
+        // Use getOwned to ensure seller can only view their product in seller context
+        Product product = productService.getOwned(id, sid);
+
+        model.addAttribute("product", product);
+        model.addAttribute("storeId", sid);
+
+        return "seller/product-detail";
+    }
+
+    // ============ AJAX: cập nhật nhanh (dùng cho modal) ============
+    @PostMapping(value = "/{id}/ajax-update", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object> ajaxUpdate(@PathVariable Long id,
+            @RequestBody Map<String, Object> payload,
+            @RequestParam(value = "storeId", required = false) Long storeId) {
+        Long sid = resolveStoreId(storeId);
+        Map<String, Object> out = new HashMap<>();
+        try {
+            Product existing = productService.getOwned(id, sid);
+
+            // apply simple updates
+            String name = (String) payload.get("name");
+            String slug = (String) payload.get("slug");
+            Object priceObj = payload.get("price");
+            Object stockObj = payload.get("stock");
+            String statusStr = (String) payload.get("status");
+
+            if (name != null)
+                existing.setName(name);
+            if (slug != null)
+                existing.setSlug(slug);
+            if (priceObj != null) {
+                try {
+                    existing.setPrice(new java.math.BigDecimal(String.valueOf(priceObj)));
+                } catch (Exception ignored) {
+                }
+            }
+            if (stockObj != null) {
+                try {
+                    existing.setStock(Integer.valueOf(String.valueOf(stockObj)));
+                } catch (Exception ignored) {
+                }
+            }
+            if (statusStr != null) {
+                try {
+                    existing.setStatus(ProductStatus.valueOf(statusStr));
+                } catch (Exception ignored) {
+                }
+            }
+
+            // Delegate to service.update for validation and persist
+            productService.update(existing, sid);
+
+            out.put("ok", true);
+            out.put("message", "Cập nhật thành công");
+            return out;
+        } catch (IllegalArgumentException ex) {
+            out.put("ok", false);
+            out.put("message", ex.getMessage());
+            return out;
+        } catch (Exception ex) {
+            out.put("ok", false);
+            out.put("message", "Lỗi hệ thống");
+            return out;
+        }
     }
 
     // DTO đơn giản cho JSON

@@ -96,15 +96,19 @@ public class ProductService {
 
     /* --- Methods from previous interface/impl --- */
     public Page<Product> search(Long storeId, String q, ProductStatus status, Long categoryId, Pageable pageable) {
-        return productRepository.search(storeId, q, status, categoryId, null, null, null, pageable);
+        return productRepository.search(storeId, q, status, categoryId, (Long) null, (java.time.LocalDateTime) null,
+                (java.time.LocalDateTime) null, (java.math.BigDecimal) null, (java.math.BigDecimal) null,
+                (Long) null, (Long) null, pageable);
     }
 
     public Page<Product> search(Long storeId, String q, ProductStatus status,
             Long categoryId, Long parentCategoryId,
             LocalDateTime createdFrom, LocalDateTime createdTo,
+            java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice,
+            Long idFrom, Long idTo,
             Pageable pageable) {
         return productRepository.search(storeId, q, status, categoryId, parentCategoryId, createdFrom, createdTo,
-                pageable);
+                minPrice, maxPrice, idFrom, idTo, pageable);
     }
 
     public Product getOwned(Long id, Long storeId) {
@@ -144,14 +148,33 @@ public class ProductService {
         db.setDescription(p.getDescription());
         db.setPrice(p.getPrice());
         db.setCategory(p.getCategory());
-        db.setStatus(p.getStatus());
-        db.setStock(p.getStock());
+        // If submitted status is non-null, validate it and then update.
+        if (p.getStatus() != null) {
+            // If attempted to set ACTIVE, ensure stock exists
+            if (p.getStatus() == ProductStatus.ACTIVE) {
+                Integer stockToCheck = p.getStock() != null ? p.getStock() : db.getStock();
+                if (stockToCheck == null || stockToCheck <= 0) {
+                    throw new IllegalArgumentException("Vui lòng nhập hàng");
+                }
+            }
+            db.setStatus(p.getStatus());
+        }
+        if (p.getStock() != null) {
+            db.setStock(p.getStock());
+        }
         return productRepository.save(db);
     }
 
     @Transactional
     public void toggle(Long id, Long storeId, ProductStatus toStatus) {
         Product db = getOwned(id, storeId);
+        // If trying to activate, ensure there is stock available
+        if (toStatus == ProductStatus.ACTIVE) {
+            Integer stock = db.getStock();
+            if (stock == null || stock <= 0) {
+                throw new IllegalArgumentException("Vui lòng nhập hàng");
+            }
+        }
         db.setStatus(toStatus);
         productRepository.save(db);
     }

@@ -14,6 +14,7 @@
                         </c:choose>
                     </title>
                     <jsp:include page="../common/head.jsp" />
+                    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/product-form.css">
                 </head>
 
                 <body>
@@ -24,152 +25,203 @@
                     <span id="prefill" data-parent="${selectedParentId}" data-child="${selectedChildId}"></span>
 
                     <div class="content" id="content">
-                        <div class="container mt-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h4>
-                                    <c:choose>
-                                        <c:when test="${formMode=='CREATE'}">Thêm sản phẩm</c:when>
-                                        <c:otherwise>Cập nhật sản phẩm #${form.id}</c:otherwise>
-                                    </c:choose>
-                                </h4>
+                        <div class="product-form-container">
+                            <div class="product-form-wrapper">
+                                <div class="product-form-header">
+                                    <h4 class="product-form-title">
+                                        <c:choose>
+                                            <c:when test="${formMode=='CREATE'}">Thêm sản phẩm</c:when>
+                                            <c:otherwise>Cập nhật sản phẩm #${form.id}</c:otherwise>
+                                        </c:choose>
+                                    </h4>
 
-                                <c:url var="backUrl" value="/seller/products">
-                                    <c:param name="storeId" value="${storeId}" />
-                                </c:url>
-                                <a class="btn btn-outline-secondary" href="${backUrl}">← Danh sách</a>
-                            </div>
-
-                            <!-- Action tùy theo mode -->
-                            <c:choose>
-                                <c:when test="${formMode=='CREATE'}">
-                                    <c:url var="formAction" value="/seller/products">
+                                    <c:url var="backUrl" value="/seller/products">
                                         <c:param name="storeId" value="${storeId}" />
                                     </c:url>
-                                </c:when>
-                                <c:otherwise>
-                                    <c:url var="formAction" value="/seller/products/${form.id}">
-                                        <c:param name="storeId" value="${storeId}" />
-                                    </c:url>
-                                </c:otherwise>
-                            </c:choose>
-
-                            <!-- Quan trọng: modelAttribute="form" trùng với Controller -->
-                            <form:form id="productForm" method="post" action="${formAction}" modelAttribute="form"
-                                enctype="multipart/form-data">
-                                <c:if test="${not empty _csrf}">
-                                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
-                                </c:if>
-
-                                <div class="card">
-                                    <div class="card-body row g-3">
-
-                                        <!-- Tên sản phẩm -->
-                                        <div class="col-md-6">
-                                            <label class="form-label">Tên sản phẩm</label>
-                                            <form:input path="name" cssClass="form-control" required="required"
-                                                maxlength="120" data-noblank="true" />
-                                            <form:errors path="name" cssClass="text-danger small" />
-                                        </div>
-
-                                        <!-- Slug -->
-                                        <div class="col-md-6">
-                                            <label class="form-label">Slug (duy nhất trong store)</label>
-                                            <form:input path="slug" cssClass="form-control" required="required"
-                                                maxlength="120" pattern="^[a-z0-9-]{2,120}$" data-noblank="true" />
-                                            <div class="form-text">Chỉ a-z, 0-9, dấu gạch ngang (-), 2–120 ký tự.</div>
-                                            <form:errors path="slug" cssClass="text-danger small" />
-                                        </div>
-
-                                        <!-- Danh mục CHA (không bind) -->
-                                        <div class="col-md-6">
-                                            <label class="form-label">Tùy chọn danh mục</label>
-                                            <select class="form-select" id="parentCategory">
-                                                <option value="">-- Tùy chọn danh mục --</option>
-                                                <c:forEach var="pc" items="${parentCategories}">
-                                                    <option value="${pc.id}" <c:if
-                                                        test="${not empty selectedParentId && selectedParentId == pc.id}">
-                                                        selected</c:if>>
-                                                        ${pc.name}
-                                                    </option>
-                                                </c:forEach>
-                                            </select>
-                                        </div>
-
-                                        <!-- Danh mục CON (bind vào category.id) -->
-                                        <div class="col-md-6">
-                                            <label class="form-label">Danh mục</label>
-                                            <form:select path="category.id" cssClass="form-select" required="required">
-                                                <form:option value="">-- Chọn danh mục --</form:option>
-                                                <c:forEach var="c" items="${subCategories}">
-                                                    <form:option value="${c.id}">${c.name}</form:option>
-                                                </c:forEach>
-                                            </form:select>
-                                            <form:errors path="category" cssClass="text-danger small" />
-                                            <form:errors path="category.id" cssClass="text-danger small" />
-                                        </div>
-
-                                        <!-- Giá -->
-                                        <div class="col-md-6">
-                                            <label class="form-label">Giá</label>
-                                            <form:input path="price" type="number" step="0.01" min="0.01"
-                                                cssClass="form-control" required="required" />
-                                            <form:errors path="price" cssClass="text-danger small" />
-                                        </div>
-
-                                        <!-- Trạng thái -->
-                                        <div class="col-md-6">
-                                            <label class="form-label">Trạng thái</label>
-                                            <form:select path="status" cssClass="form-select" required="required">
-                                                <form:option value="ACTIVE">ACTIVE</form:option>
-                                                <form:option value="INACTIVE">INACTIVE</form:option>
-                                            </form:select>
-                                            <form:errors path="status" cssClass="text-danger small" />
-                                        </div>
-
-                                        <!-- Ảnh đại diện (upload) -->
-                                        <div class="col-md-12">
-                                            <label class="form-label">Ảnh đại diện sản phẩm</label>
-                                            <input class="form-control" type="file" name="imageFile"
-                                                accept="image/jpeg,image/png" />
-                                            <c:if test="${not empty form.productUrl}">
-                                                <div class="mt-2">
-                                                    <img src="${form.productUrl}" alt="Ảnh sản phẩm"
-                                                        style="max-height:160px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fff" />
-                                                    <div class="form-text">Ảnh hiện tại. Nếu không chọn ảnh mới, sẽ giữ
-                                                        nguyên.</div>
-                                                </div>
-                                            </c:if>
-                                            <div class="form-text">Chỉ JPG/PNG, tối đa 10MB.</div>
-                                            <form:errors path="productUrl" cssClass="text-danger small" />
-                                        </div>
-
-                                        <!-- Mô tả -->
-                                        <div class="col-md-12">
-                                            <label class="form-label">Mô tả</label>
-                                            <form:textarea path="description" rows="4" cssClass="form-control"
-                                                maxlength="2000" />
-                                            <form:errors path="description" cssClass="text-danger small" />
-                                        </div>
-
-                                        <!-- Stock (tồn hiển thị) -->
-                                        <div class="col-md-4">
-                                            <label class="form-label">Tồn hiển thị (stock)</label>
-                                            <form:input path="stock" type="number" min="0" cssClass="form-control" />
-                                            <form:errors path="stock" cssClass="text-danger small" />
-                                        </div>
-
-                                        <div class="col-md-8 d-flex align-items-end justify-content-end">
-                                            <button class="btn btn-primary px-4" type="submit">
-                                                <c:choose>
-                                                    <c:when test="${formMode=='CREATE'}">Lưu mới</c:when>
-                                                    <c:otherwise>Lưu thay đổi</c:otherwise>
-                                                </c:choose>
-                                            </button>
-                                        </div>
-
-                                    </div>
+                                    <a class="product-form-back-btn" href="${backUrl}">← Danh sách</a>
                                 </div>
-                            </form:form>
+
+                                <!-- Action tùy theo mode -->
+                                <c:choose>
+                                    <c:when test="${formMode=='CREATE'}">
+                                        <c:url var="formAction" value="/seller/products">
+                                            <c:param name="storeId" value="${storeId}" />
+                                        </c:url>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:url var="formAction" value="/seller/products/${form.id}">
+                                            <c:param name="storeId" value="${storeId}" />
+                                        </c:url>
+                                    </c:otherwise>
+                                </c:choose>
+
+                                <!-- Quan trọng: modelAttribute="form" trùng với Controller -->
+                                <form:form id="productForm" method="post" action="${formAction}" modelAttribute="form"
+                                    enctype="multipart/form-data">
+                                    <c:if test="${not empty _csrf}">
+                                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+                                    </c:if>
+
+                                    <div class="product-form-card">
+                                        <div class="product-form-body">
+                                            <div class="product-form-grid">
+
+                                                <!-- Tên sản phẩm -->
+                                                <div class="product-form-group">
+                                                    <label class="product-form-label">Tên sản phẩm</label>
+                                                    <form:input path="name" cssClass="product-form-control"
+                                                        required="required" maxlength="120" data-noblank="true" />
+                                                    <form:errors path="name" cssClass="product-form-error" />
+                                                </div>
+
+                                                <!-- Slug -->
+                                                <div class="product-form-group">
+                                                    <label class="product-form-label">Slug (duy nhất trong
+                                                        store)</label>
+                                                    <form:input path="slug" cssClass="product-form-control"
+                                                        required="required" maxlength="120" pattern="^[a-z0-9-]{2,120}$"
+                                                        data-noblank="true" />
+                                                    <div class="product-form-text">Chỉ a-z, 0-9, dấu gạch ngang (-),
+                                                        2–120 ký tự.</div>
+                                                    <form:errors path="slug" cssClass="product-form-error" />
+                                                </div>
+
+                                                <!-- Danh mục CHA (không bind) -->
+                                                <div class="product-form-group">
+                                                    <label class="product-form-label">Tùy chọn danh mục</label>
+                                                    <select class="product-form-select" id="parentCategory">
+                                                        <option value="">-- Tùy chọn danh mục --</option>
+                                                        <c:forEach var="pc" items="${parentCategories}">
+                                                            <option value="${pc.id}" <c:if
+                                                                test="${not empty selectedParentId && selectedParentId == pc.id}">
+                                                                selected</c:if>>
+                                                                ${pc.name}
+                                                            </option>
+                                                        </c:forEach>
+                                                    </select>
+                                                </div>
+
+                                                <!-- Danh mục CON (bind vào category.id) -->
+                                                <div class="product-form-group">
+                                                    <label class="product-form-label">Danh mục</label>
+                                                    <form:select path="category.id" cssClass="product-form-select"
+                                                        required="required">
+                                                        <form:option value="">-- Chọn danh mục --</form:option>
+                                                        <c:forEach var="c" items="${subCategories}">
+                                                            <form:option value="${c.id}">${c.name}</form:option>
+                                                        </c:forEach>
+                                                    </form:select>
+                                                    <form:errors path="category" cssClass="product-form-error" />
+                                                    <form:errors path="category.id" cssClass="product-form-error" />
+                                                </div>
+
+                                                <!-- Giá -->
+                                                <div class="product-form-group">
+                                                    <label class="product-form-label">Giá</label>
+                                                    <form:input path="price" type="number" step="0.01" min="0.01"
+                                                        cssClass="product-form-control" required="required" />
+                                                    <form:errors path="price" cssClass="product-form-error" />
+                                                </div>
+
+                                                <!-- Trạng thái: nếu CREATE thì ẩn và giữ giá trị INACTIVE; nếu UPDATE thì hiển thị select -->
+                                                <c:choose>
+                                                    <c:when test="${formMode=='CREATE'}">
+                                                        <input type="hidden" name="status" value="INACTIVE" />
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <!-- If stock is not present or <=0, disable status selection and show hint -->
+                                                        <c:choose>
+                                                            <c:when test="${form.stock == null || form.stock <= 0}">
+                                                                <div class="product-form-group">
+                                                                    <label class="product-form-label">Trạng thái</label>
+                                                                    <form:select path="status"
+                                                                        cssClass="product-form-select"
+                                                                        disabled="disabled">
+                                                                        <form:option value="ACTIVE">ACTIVE</form:option>
+                                                                        <form:option value="INACTIVE">INACTIVE
+                                                                        </form:option>
+                                                                    </form:select>
+                                                                    <div class="product-form-text text-danger">Vui lòng
+                                                                        nhập hàng trước
+                                                                        khi kích hoạt.</div>
+                                                                    <form:errors path="status"
+                                                                        cssClass="product-form-error" />
+                                                                </div>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <div class="product-form-group">
+                                                                    <label class="product-form-label">Trạng thái</label>
+                                                                    <form:select path="status"
+                                                                        cssClass="product-form-select"
+                                                                        required="required">
+                                                                        <form:option value="ACTIVE">ACTIVE</form:option>
+                                                                        <form:option value="INACTIVE">INACTIVE
+                                                                        </form:option>
+                                                                    </form:select>
+                                                                    <form:errors path="status"
+                                                                        cssClass="product-form-error" />
+                                                                </div>
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                    </c:otherwise>
+                                                </c:choose>
+
+                                                <!-- Ảnh đại diện (upload) -->
+                                                <div class="product-form-group product-form-full-width">
+                                                    <label class="product-form-label">Ảnh đại diện sản phẩm</label>
+                                                    <input class="product-form-control" type="file" name="imageFile"
+                                                        accept="image/jpeg,image/png" />
+                                                    <c:if test="${not empty form.productUrl}">
+                                                        <div class="product-image-container">
+                                                            <img src="${form.productUrl}" alt="Ảnh sản phẩm"
+                                                                class="product-image-preview" />
+                                                            <div class="product-form-text">Ảnh hiện tại. Nếu không chọn
+                                                                ảnh mới, sẽ giữ
+                                                                nguyên.</div>
+                                                        </div>
+                                                    </c:if>
+                                                    <div class="product-form-text">Chỉ JPG/PNG, tối đa 10MB.</div>
+                                                    <form:errors path="productUrl" cssClass="product-form-error" />
+                                                </div>
+
+                                                <!-- Mô tả -->
+                                                <div class="product-form-group product-form-full-width">
+                                                    <label class="product-form-label">Mô tả</label>
+                                                    <form:textarea path="description" rows="4"
+                                                        cssClass="product-form-control" maxlength="200" />
+                                                    <form:errors path="description" cssClass="product-form-error" />
+                                                </div>
+
+                                                <!-- Stock: CREATE -> không hiển thị input; UPDATE -> chỉ được xem (plaintext) -->
+                                                <c:choose>
+                                                    <c:when test="${formMode=='CREATE'}">
+                                                        <!-- nothing: seller cannot set stock on create -->
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <div class="product-form-group">
+                                                            <label class="product-form-label">Tồn hiển thị
+                                                                (stock)</label>
+                                                            <div class="product-form-plaintext">${form.stock}</div>
+                                                            <form:errors path="stock" cssClass="product-form-error" />
+                                                        </div>
+                                                    </c:otherwise>
+                                                </c:choose>
+
+                                                <!-- Submit Button -->
+                                                <div class="product-form-submit-container">
+                                                    <button class="product-form-submit-btn" type="submit">
+                                                        <c:choose>
+                                                            <c:when test="${formMode=='CREATE'}">Lưu mới</c:when>
+                                                            <c:otherwise>Lưu thay đổi</c:otherwise>
+                                                        </c:choose>
+                                                    </button>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form:form>
+                            </div>
                         </div>
                     </div>
 
@@ -246,31 +298,37 @@
                                 if (!el) return true;
                                 const raw = el.value || '';
                                 const trimmed = raw.trim();
-                                if (raw.length && trimmed.length === 0) { el.setCustomValidity('only-spaces'); return false; }
+                                if (raw.length === 0) { el.setCustomValidity('Vui lòng nhập nội dung'); return false; }
+                                if (trimmed.length === 0) { el.setCustomValidity('Vui lòng nhập nội dung phù hợp'); return false; }
                                 el.setCustomValidity(''); return true;
                             }
                             function vSlug() {
                                 if (!slugEl) return true;
                                 const v = (slugEl.value || '').trim();
+                                if (v.length === 0) { slugEl.setCustomValidity('Vui lòng nhập nội dung'); return false; }
                                 const ok = /^[a-z0-9-]{2,120}$/.test(v);
-                                if (!ok) { slugEl.setCustomValidity('invalid-slug'); return false; }
+                                if (!ok) { slugEl.setCustomValidity('Slug không hợp lệ. Chỉ a-z, 0-9 và - (2-120 ký tự)'); return false; }
                                 slugEl.setCustomValidity(''); return true;
                             }
                             function vCategory() {
                                 if (!catEl) return true;
-                                if (!catEl.value) { catEl.setCustomValidity('required'); return false; }
+                                if (!catEl.value) { catEl.setCustomValidity('Vui lòng nhập nội dung'); return false; }
                                 catEl.setCustomValidity(''); return true;
                             }
                             function vPrice() {
                                 if (!priceEl) return true;
                                 const val = parseFloat(priceEl.value);
-                                if (isNaN(val) || val < 0.01) { priceEl.setCustomValidity('price-min'); return false; }
+                                if (isNaN(val)) { priceEl.setCustomValidity('Vui lòng nhập nội dung'); return false; }
+                                if (val < 0.01) { priceEl.setCustomValidity('Giá phải lớn hơn hoặc bằng 0.01'); return false; }
                                 priceEl.setCustomValidity(''); return true;
                             }
                             function vDesc() {
                                 if (!descEl) return true;
                                 const v = descEl.value || '';
-                                if (v.length > 2000) { descEl.setCustomValidity('too-long'); return false; }
+                                const trimmed = v.trim();
+                                if (v.length === 0) { descEl.setCustomValidity('Vui lòng nhập nội dung'); return false; }
+                                if (trimmed.length === 0) { descEl.setCustomValidity('Vui lòng nhập nội dung phù hợp'); return false; }
+                                if (v.length > 200) { descEl.setCustomValidity('Mô tả tối đa 200 ký tự'); return false; }
                                 descEl.setCustomValidity(''); return true;
                             }
 
@@ -281,18 +339,22 @@
                             descEl?.addEventListener('input', vDesc);
 
                             form.addEventListener('submit', function (e) {
-                                const ok = [
+                                const validations = [
                                     noBlank(nameEl),
-                                    noBlank(slugEl) && vSlug(),
+                                    vSlug(),
                                     vCategory(),
                                     vPrice(),
                                     vDesc()
-                                ].every(Boolean);
+                                ];
 
-                                if (!form.checkValidity() || !ok) {
+                                const ok = validations.every(Boolean) && form.checkValidity();
+                                if (!ok) {
                                     e.preventDefault(); e.stopPropagation();
                                     const firstInvalid = form.querySelector(':invalid');
-                                    if (firstInvalid) firstInvalid.focus({ preventScroll: false });
+                                    if (firstInvalid) {
+                                        firstInvalid.reportValidity();
+                                        firstInvalid.focus({ preventScroll: false });
+                                    }
                                 }
                                 form.classList.add('was-validated');
                             });
