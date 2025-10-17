@@ -124,16 +124,6 @@ public class ProductService {
     }
 
     /**
-     * Get product by ID
-     * 
-     * @param productId Product ID
-     * @return Product or null if not found
-     */
-    public Product getProductById(Long productId) {
-        return productRepository.findByIdWithDetails(productId).orElse(null);
-    }
-
-    /**
      * Get product by slug
      * 
      * @param slug Product slug
@@ -141,6 +131,16 @@ public class ProductService {
      */
     public Product getProductBySlug(String slug) {
         return productRepository.findBySlugWithDetails(slug).orElse(null);
+    }
+
+    /**
+     * Get product by ID
+     * 
+     * @param productId Product ID
+     * @return Product or null if not found
+     */
+    public Product getProductById(Long productId) {
+        return productRepository.findByIdWithDetails(productId).orElse(null);
     }
 
     /**

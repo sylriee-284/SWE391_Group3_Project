@@ -1,8 +1,6 @@
 package vn.group3.marketplace.util;
 
-import java.math.BigDecimal;
 import java.util.regex.Pattern;
-import vn.group3.marketplace.dto.OrderTask;
 
 public class ValidationUtils {
 

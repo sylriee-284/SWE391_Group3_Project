@@ -32,15 +32,15 @@ public class WalletController {
     private final WalletService walletService;
     private final VNPayService vnpayService;
     private final UserRepository userRepository;
-    private final vn.group3.marketplace.service.UserSerialTaskService depositQueueService;
+    private final vn.group3.marketplace.service.WalletTransactionQueueService walletTransactionQueueService;
 
     public WalletController(WalletService walletService, VNPayService vnpayService,
             UserRepository userRepository,
-            vn.group3.marketplace.service.UserSerialTaskService depositQueueService) {
+            vn.group3.marketplace.service.WalletTransactionQueueService walletTransactionQueueService) {
         this.walletService = walletService;
         this.vnpayService = vnpayService;
         this.userRepository = userRepository;
-        this.depositQueueService = depositQueueService;
+        this.walletTransactionQueueService = walletTransactionQueueService;
     }
 
     @GetMapping
@@ -149,7 +149,7 @@ public class WalletController {
                 // Tìm userId từ paymentRef bằng API rõ ràng trên WalletService
                 Long partitionUserId = walletService.findUserIdByPaymentRef(paymentRef).orElse(0L);
 
-                var future = depositQueueService.enqueueDeposit(partitionUserId, paymentRef);
+                var future = walletTransactionQueueService.enqueueDeposit(partitionUserId, paymentRef);
 
                 // Chờ tối đa 10 giây để hoàn tất xử lý (để có thể refresh session ngay lập tức)
                 try {
@@ -174,6 +174,22 @@ public class WalletController {
             return "wallet/failure";
         }
     }
+
+    /**
+     * Xử lý thanh toán đơn hàng bằng ví
+     */
+
+    // Đưa vào queue xử lý
+    // var future = walletTransactionQueueService.enqueuePurchasePayment(
+    // currentUser.getId(),
+    // amount,
+    // orderId);
+
+    // Chờ tối đa 10 giây
+    // future.get(10, java.util.concurrent.TimeUnit.SECONDS);
+
+    // // Refresh session để cập nhật số dư
+    // refreshAuthenticationContext();
 
     /**
      * Refresh authentication context để cập nhật thông tin user trong session

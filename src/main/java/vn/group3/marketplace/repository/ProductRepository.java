@@ -64,4 +64,5 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         "LEFT JOIN FETCH s.owner " +
                         "WHERE p.slug = :slug AND p.isDeleted = false")
         java.util.Optional<Product> findBySlugWithDetails(@Param("slug") String slug);
+
 }
