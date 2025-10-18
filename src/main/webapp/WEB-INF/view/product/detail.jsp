@@ -104,7 +104,12 @@
 
                                                 <div class="flex-grow-1">
 
-                                                    <h6 class="mb-1 text-dark">Người bán: ${shop.storeName}</h6>
+                                                    <h6 class="mb-1 text-dark">Người bán:
+                                                        <a href="<c:url value='/store/${shop.id}/infor'/>"
+                                                            class="text-decoration-none text-dark">
+                                                            ${shop.storeName}
+                                                        </a>
+                                                    </h6>
                                                 </div>
                                             </div>
                                         </div>

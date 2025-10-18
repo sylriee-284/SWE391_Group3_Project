@@ -174,10 +174,13 @@
                                                 <div class="card product-card border-0 shadow-sm">
                                                     <div class="card-body">
                                                         <div class="text-center mb-3">
-                                                            <img src="<c:url value='/images/products/${product.id}.png'/>"
-                                                                data-fallback-url="<c:out value='${product.productUrl}'/>"
-                                                                alt="${product.name}" class="product-image rounded"
-                                                                onerror="handleImgError(this)" />
+                                                            <a href="<c:url value='/product/${product.slug}'/>"
+                                                                class="text-decoration-none text-dark">
+                                                                <img src="<c:url value='/images/products/${product.id}.png'/>"
+                                                                    data-fallback-url="<c:out value='${product.productUrl}'/>"
+                                                                    alt="${product.name}" class="product-image rounded"
+                                                                    onerror="handleImgError(this)" />
+                                                            </a>
                                                         </div>
                                                         <h6 class="card-title">
                                                             <a href="<c:url value='/product/${product.slug}'/>"
@@ -212,8 +215,11 @@
                                                                 ${product.category.name}
                                                             </small>
                                                             <small class="text-muted">
-                                                                <i class="fas fa-store"></i>
-                                                                ${product.sellerStore.storeName}
+                                                                <a href="<c:url value='/store/${product.sellerStore.id}/infor'/>"
+                                                                    class="text-decoration-none text-muted">
+                                                                    <i class="fas fa-store"></i>
+                                                                    ${product.sellerStore.storeName}
+                                                                </a>
                                                             </small>
                                                         </div>
                                                         <div class="mt-2">
