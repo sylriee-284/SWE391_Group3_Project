@@ -12,7 +12,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.*;
-import vn.group3.marketplace.config.GlobalConfig;
 import vn.group3.marketplace.security.CustomUserDetailsService;
 import vn.group3.marketplace.service.*;
 import vn.group3.marketplace.util.ValidationUtils;
@@ -121,15 +120,15 @@ public class AuthController {
 
         // Check if username or email already exists
         try {
-            if (userService.findByUsername(username).isPresent()) {
-                model.addAttribute("errorMessage", "Username already exists!");
-                model.addAttribute("username", username);
-                model.addAttribute("email", email);
-                return "register";
-            }
-
-            if (userService.findByEmail(email).isPresent()) {
-                model.addAttribute("errorMessage", "Email already exists!");
+            var existingUser = userService.findByUsernameOrEmail(username, email);
+            if (existingUser.isPresent()) {
+                var user = existingUser.get();
+                // Check which field matches to show correct error message
+                if (user.getUsername().equals(username)) {
+                    model.addAttribute("errorMessage", "Username already exists!");
+                } else {
+                    model.addAttribute("errorMessage", "Email already exists!");
+                }
                 model.addAttribute("username", username);
                 model.addAttribute("email", email);
                 return "register";

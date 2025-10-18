@@ -44,19 +44,13 @@ public class UserService {
                 .balance(BigDecimal.ZERO)
                 .build();
 
-        // Lưu trước để có ID
-        user = userRepository.save(user);
-
-        // Gán mặc định USER (KHÔNG set EmbeddedId)
+        // Assign default role
         Role role = roleRepository.findByCode("USER")
                 .orElseThrow(() -> new RuntimeException("Role USER does not exist"));
+        // Project uses ManyToMany `roles` on User entity. Add role to user's roles set.
+        user.getRoles().add(role);
 
-        user.getUserRoles().clear();
-        UserRole ur = new UserRole();
-        ur.setUser(user);
-        ur.setRole(role);
-        user.getUserRoles().add(ur);
-
+        // Save user (cascade sẽ tự động lưu userRole)
         userRepository.save(user);
     }
 
@@ -66,6 +60,11 @@ public class UserService {
 
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    // Optimized: Check both username and email in single query
+    public Optional<User> findByUsernameOrEmail(String username, String email) {
+        return userRepository.findByUsernameOrEmail(username, email);
     }
 
     // Check if username is available for new registration

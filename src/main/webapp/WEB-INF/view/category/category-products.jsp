@@ -24,6 +24,9 @@
                     <!-- Include Sidebar -->
                     <jsp:include page="../common/sidebar.jsp" />
 
+                    <!-- Sidebar Overlay for Mobile -->
+                    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
                     <!-- Main Content Area -->
                     <div class="content" id="content">
                         <!-- Page Content will be inserted here -->
@@ -60,17 +63,18 @@
                                 <form method="get"
                                     action="<c:url value='/category/${parentCategory.name.toLowerCase()}'/>"
                                     id="filterForm">
-                                    <div class="row">
+                                    <!-- Row 1: Main Filters -->
+                                    <div class="row filter-row">
                                         <!-- Search Box -->
                                         <div class="col-md-4 mb-3">
-                                            <label for="keyword" class="form-label">Tìm kiếm sản phẩm:</label>
+                                            <div class="filter-label">Tìm kiếm sản phẩm</div>
                                             <input type="text" class="form-control" id="keyword" name="keyword"
                                                 value="${keyword}" placeholder="Nhập từ khóa...">
                                         </div>
 
                                         <!-- Category Filter -->
                                         <div class="col-md-3 mb-3">
-                                            <label for="childCategory" class="form-label">Danh mục con:</label>
+                                            <div class="filter-label">Danh mục con</div>
                                             <select class="form-select" id="childCategory" name="childCategory">
                                                 <option value="">Tất cả danh mục con</option>
                                                 <c:forEach var="childCat" items="${childCategories}">
@@ -85,7 +89,7 @@
 
                                         <!-- Sort Options -->
                                         <div class="col-md-2 mb-3">
-                                            <label for="sort" class="form-label">Sắp xếp theo:</label>
+                                            <div class="filter-label">Sắp xếp theo</div>
                                             <select class="form-select" id="sort" name="sort">
                                                 <option value="name" <c:if test="${sortBy == 'name'}">selected
                                                     </c:if>>Tên</option>
@@ -98,7 +102,7 @@
 
                                         <!-- Sort Direction -->
                                         <div class="col-md-2 mb-3">
-                                            <label for="direction" class="form-label">Thứ tự:</label>
+                                            <div class="filter-label">Thứ tự</div>
                                             <select class="form-select" id="direction" name="direction">
                                                 <option value="asc" <c:if test="${sortDirection == 'asc'}">
                                                     selected</c:if>>Tăng dần</option>
@@ -109,9 +113,36 @@
 
                                         <!-- Filter Button -->
                                         <div class="col-md-1 mb-3 d-flex align-items-end">
-                                            <button type="submit" class="btn btn-success w-100">
+                                            <button type="submit" class="btn btn-success w-100" title="Tìm kiếm">
                                                 <i class="fas fa-search"></i>
                                             </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Row 2: Action Buttons -->
+                                    <div class="row mt-2">
+                                        <div class="col-md-12 d-flex justify-content-between">
+                                            <div>
+                                                <c:if
+                                                    test="${not empty keyword || selectedChildCategory != null || sortBy != 'name' || sortDirection != 'asc'}">
+                                                    <span class="badge bg-secondary me-2">
+                                                        <i class="fas fa-filter"></i> Đang lọc
+                                                    </span>
+                                                </c:if>
+                                            </div>
+                                            <div>
+                                                <c:if test="${not empty keyword || selectedChildCategory != null}">
+                                                    <a href="<c:url value='/category/${parentCategory.name.toLowerCase()}'/>"
+                                                        class="btn btn-collapse me-2">
+                                                        <i class="fas fa-times-circle"></i> BỎ LỌC
+                                                    </a>
+                                                </c:if>
+                                                <button type="button" class="btn btn-outline-secondary"
+                                                    onclick="toggleFilterSection()">
+                                                    <span id="filterToggleText">THU GỌN</span> <i
+                                                        class="fas fa-chevron-up" id="filterToggleIcon"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </form>
@@ -121,7 +152,8 @@
                             <div class="row mb-3">
                                 <div class="col-12">
                                     <p class="text-muted">
-                                        Hiển thị ${products.numberOfElements} trên tổng ${totalElements} sản
+                                        Hiển thị ${products.numberOfElements} trên tổng
+                                        ${totalElements} sản
                                         phẩm
                                         <c:if test="${not empty keyword}">
                                             cho từ khóa "<strong>${keyword}</strong>"
@@ -142,22 +174,13 @@
                                                 <div class="card product-card border-0 shadow-sm">
                                                     <div class="card-body">
                                                         <div class="text-center mb-3">
-                                                            <c:choose>
-                                                                <c:when test="${not empty product.productUrl}">
-                                                                    <img src="${product.productUrl}"
-                                                                        alt="${product.name}"
-                                                                        class="product-image rounded">
-                                                                </c:when>
-                                                                <c:otherwise>
-                                                                    <div
-                                                                        class="product-image bg-light rounded d-flex align-items-center justify-content-center">
-                                                                        <i class="fas fa-image fa-3x text-muted"></i>
-                                                                    </div>
-                                                                </c:otherwise>
-                                                            </c:choose>
+                                                            <img src="<c:url value='/images/products/${product.id}.png'/>"
+                                                                data-fallback-url="<c:out value='${product.productUrl}'/>"
+                                                                alt="${product.name}" class="product-image rounded"
+                                                                onerror="handleImgError(this)" />
                                                         </div>
                                                         <h6 class="card-title">
-                                                            <a href="<c:url value='/product/${product.id}'/>"
+                                                            <a href="<c:url value='/product/${product.slug}'/>"
                                                                 class="text-decoration-none text-dark">
                                                                 ${product.name}
                                                             </a>
@@ -182,14 +205,32 @@
                                                                 Kho: ${product.stock}
                                                             </small>
                                                         </div>
-                                                        <div class="mt-2">
+                                                        <div
+                                                            class="mt-2 d-flex justify-content-between align-items-center">
                                                             <small class="text-success">
                                                                 <i class="fas fa-tag"></i>
                                                                 ${product.category.name}
                                                             </small>
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-store"></i>
+                                                                ${product.sellerStore.storeName}
+                                                            </small>
+                                                        </div>
+                                                        <div class="mt-2">
+                                                            <div class="rating">
+                                                                <c:forEach begin="1" end="5" var="star">
+                                                                    <i class="fas fa-star ${star <= product.rating ? 'text-warning' : 'text-muted'}"
+                                                                        style="font-size: 0.8em;"></i>
+                                                                </c:forEach>
+                                                                <small class="ms-1 text-muted">
+                                                                    ${product.rating}/5
+                                                                    <span class="text-muted"> Total review:
+                                                                        ${product.ratingCount}</span>
+                                                                </small>
+                                                            </div>
                                                         </div>
                                                         <div class="mt-3">
-                                                            <a href="<c:url value='/product/${product.id}'/>"
+                                                            <a href="<c:url value='/product/${product.slug}'/>"
                                                                 class="btn btn-success btn-sm w-100">
                                                                 <i class="fas fa-eye"></i> Xem chi tiết
                                                             </a>
@@ -225,79 +266,177 @@
 
                             <!-- Pagination -->
                             <c:if test="${totalPages > 1}">
-                                <div class="row mt-4">
-                                    <div class="col-12">
-                                        <nav aria-label="Product pagination">
-                                            <ul class="pagination justify-content-center">
-                                                <!-- Previous page -->
-                                                <li class="page-item <c:if test=" ${!hasPrevious}">disabled
-                            </c:if>">
-                            <a class="page-link" href="<c:url value='/category/${parentCategory.name.toLowerCase()}'>
-                                                <c:param name='page' value='${previousPage}'/>
-                                                <c:param name='size' value='${size}'/>
-                                                <c:param name='sort' value='${sortBy}'/>
-                                                <c:param name='direction' value='${sortDirection}'/>
-                                                <c:if test='${not empty keyword}'>
-                                                    <c:param name='keyword' value='${keyword}'/>
-                                                </c:if>
-                                                <c:if test='${selectedChildCategory != null}'>
-                                                    <c:param name='childCategory' value='${selectedChildCategory}'/>
-                                                </c:if>
-                                             </c:url>">
-                                <i class="fas fa-chevron-left"></i> Trước
-                            </a>
-                            </li>
+                                <div class="pagination-container">
+                                    <nav>
+                                        <ul class="pagination mb-0">
+                                            <!-- First page -->
+                                            <li class="page-item ${currentPage == 0 ? 'disabled' : ''}">
+                                                <c:choose>
+                                                    <c:when test="${currentPage == 0}">
+                                                        <a class="page-link" href="#" aria-label="First">
+                                                            <span aria-hidden="true">&laquo;&laquo;</span>
+                                                        </a>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <c:url var="firstUrl"
+                                                            value="/category/${parentCategory.name.toLowerCase()}">
+                                                            <c:param name="page" value="0" />
+                                                            <c:param name="size" value="${size}" />
+                                                            <c:param name="sort" value="${sortBy}" />
+                                                            <c:param name="direction" value="${sortDirection}" />
+                                                            <c:if test="${not empty keyword}">
+                                                                <c:param name="keyword" value="${keyword}" />
+                                                            </c:if>
+                                                            <c:if test="${selectedChildCategory != null}">
+                                                                <c:param name="childCategory"
+                                                                    value="${selectedChildCategory}" />
+                                                            </c:if>
+                                                        </c:url>
+                                                        <a class="page-link" href="${firstUrl}" aria-label="First">
+                                                            <span aria-hidden="true">&laquo;&laquo;</span>
+                                                        </a>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </li>
 
-                            <!-- Page numbers -->
-                            <c:forEach begin="0" end="${totalPages - 1}" var="pageNum">
-                                <c:if test="${pageNum >= currentPage - 2 && pageNum <= currentPage + 2}">
-                                    <li class="page-item <c:if test='${pageNum == currentPage}'>active</c:if>">
-                                        <a class="page-link" href="<c:url value='/category/${parentCategory.name.toLowerCase()}'>
-                                                        <c:param name='page' value='${pageNum}'/>
-                                                        <c:param name='size' value='${size}'/>
-                                                        <c:param name='sort' value='${sortBy}'/>
-                                                        <c:param name='direction' value='${sortDirection}'/>
-                                                        <c:if test='${not empty keyword}'>
-                                                            <c:param name='keyword' value='${keyword}'/>
-                                                        </c:if>
-                                                        <c:if test='${selectedChildCategory != null}'>
-                                                            <c:param name='childCategory' value='${selectedChildCategory}'/>
-                                                        </c:if>
-                                                     </c:url>">
-                                            ${pageNum + 1}
-                                        </a>
-                                    </li>
-                                </c:if>
-                            </c:forEach>
+                                            <!-- Previous page -->
+                                            <li class="page-item ${!hasPrevious ? 'disabled' : ''}">
+                                                <c:choose>
+                                                    <c:when test="${!hasPrevious}">
+                                                        <a class="page-link" href="#" aria-label="Previous">
+                                                            <span aria-hidden="true">&laquo;</span>
+                                                        </a>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <c:url var="prevUrl"
+                                                            value="/category/${parentCategory.name.toLowerCase()}">
+                                                            <c:param name="page" value="${previousPage}" />
+                                                            <c:param name="size" value="${size}" />
+                                                            <c:param name="sort" value="${sortBy}" />
+                                                            <c:param name="direction" value="${sortDirection}" />
+                                                            <c:if test="${not empty keyword}">
+                                                                <c:param name="keyword" value="${keyword}" />
+                                                            </c:if>
+                                                            <c:if test="${selectedChildCategory != null}">
+                                                                <c:param name="childCategory"
+                                                                    value="${selectedChildCategory}" />
+                                                            </c:if>
+                                                        </c:url>
+                                                        <a class="page-link" href="${prevUrl}" aria-label="Previous">
+                                                            <span aria-hidden="true">&laquo;</span>
+                                                        </a>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </li>
 
-                            <!-- Next page -->
-                            <li class="page-item <c:if test=" ${!hasNext}">disabled</c:if>">
-                                <a class="page-link" href="<c:url value='/category/${parentCategory.name.toLowerCase()}'>
-                                                <c:param name='page' value='${nextPage}'/>
-                                                <c:param name='size' value='${size}'/>
-                                                <c:param name='sort' value='${sortBy}'/>
-                                                <c:param name='direction' value='${sortDirection}'/>
-                                                <c:if test='${not empty keyword}'>
-                                                    <c:param name='keyword' value='${keyword}'/>
-                                                </c:if>
-                                                <c:if test='${selectedChildCategory != null}'>
-                                                    <c:param name='childCategory' value='${selectedChildCategory}'/>
-                                                </c:if>
-                                             </c:url>">
-                                    Sau <i class="fas fa-chevron-right"></i>
-                                </a>
-                            </li>
-                            </ul>
-                            </nav>
+                                            <!-- Page numbers -->
+                                            <c:forEach begin="0" end="${totalPages - 1}" var="pageNum">
+                                                <c:choose>
+                                                    <c:when
+                                                        test="${pageNum < 5 || (pageNum >= currentPage - 2 && pageNum <= currentPage + 2) || pageNum >= totalPages - 1}">
+                                                        <c:url var="pageUrl"
+                                                            value="/category/${parentCategory.name.toLowerCase()}">
+                                                            <c:param name="page" value="${pageNum}" />
+                                                            <c:param name="size" value="${size}" />
+                                                            <c:param name="sort" value="${sortBy}" />
+                                                            <c:param name="direction" value="${sortDirection}" />
+                                                            <c:if test="${not empty keyword}">
+                                                                <c:param name="keyword" value="${keyword}" />
+                                                            </c:if>
+                                                            <c:if test="${selectedChildCategory != null}">
+                                                                <c:param name="childCategory"
+                                                                    value="${selectedChildCategory}" />
+                                                            </c:if>
+                                                        </c:url>
+                                                        <li class="page-item ${pageNum == currentPage ? 'active' : ''}">
+                                                            <a class="page-link" href="${pageUrl}">${pageNum + 1}</a>
+                                                        </li>
+                                                    </c:when>
+                                                    <c:when test="${pageNum == 5 && currentPage > 7}">
+                                                        <li class="page-item disabled">
+                                                            <span class="page-link">...</span>
+                                                        </li>
+                                                    </c:when>
+                                                    <c:when
+                                                        test="${pageNum == totalPages - 2 && currentPage < totalPages - 8}">
+                                                        <li class="page-item disabled">
+                                                            <span class="page-link">...</span>
+                                                        </li>
+                                                    </c:when>
+                                                </c:choose>
+                                            </c:forEach>
+
+                                            <!-- Next page -->
+                                            <li class="page-item ${!hasNext ? 'disabled' : ''}">
+                                                <c:choose>
+                                                    <c:when test="${!hasNext}">
+                                                        <a class="page-link" href="#" aria-label="Next">
+                                                            <span aria-hidden="true">&raquo;</span>
+                                                        </a>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <c:url var="nextUrl"
+                                                            value="/category/${parentCategory.name.toLowerCase()}">
+                                                            <c:param name="page" value="${nextPage}" />
+                                                            <c:param name="size" value="${size}" />
+                                                            <c:param name="sort" value="${sortBy}" />
+                                                            <c:param name="direction" value="${sortDirection}" />
+                                                            <c:if test="${not empty keyword}">
+                                                                <c:param name="keyword" value="${keyword}" />
+                                                            </c:if>
+                                                            <c:if test="${selectedChildCategory != null}">
+                                                                <c:param name="childCategory"
+                                                                    value="${selectedChildCategory}" />
+                                                            </c:if>
+                                                        </c:url>
+                                                        <a class="page-link" href="${nextUrl}" aria-label="Next">
+                                                            <span aria-hidden="true">&raquo;</span>
+                                                        </a>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </li>
+
+                                            <!-- Last page -->
+                                            <li class="page-item ${currentPage == totalPages - 1 ? 'disabled' : ''}">
+                                                <c:choose>
+                                                    <c:when test="${currentPage == totalPages - 1}">
+                                                        <a class="page-link" href="#" aria-label="Last">
+                                                            <span aria-hidden="true">&raquo;&raquo;</span>
+                                                        </a>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <c:url var="lastUrl"
+                                                            value="/category/${parentCategory.name.toLowerCase()}">
+                                                            <c:param name="page" value="${totalPages - 1}" />
+                                                            <c:param name="size" value="${size}" />
+                                                            <c:param name="sort" value="${sortBy}" />
+                                                            <c:param name="direction" value="${sortDirection}" />
+                                                            <c:if test="${not empty keyword}">
+                                                                <c:param name="keyword" value="${keyword}" />
+                                                            </c:if>
+                                                            <c:if test="${selectedChildCategory != null}">
+                                                                <c:param name="childCategory"
+                                                                    value="${selectedChildCategory}" />
+                                                            </c:if>
+                                                        </c:url>
+                                                        <a class="page-link" href="${lastUrl}" aria-label="Last">
+                                                            <span aria-hidden="true">&raquo;&raquo;</span>
+                                                        </a>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </li>
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </c:if>
                         </div>
                     </div>
-                    </c:if>
-                    </div>
-                    </div>
 
 
 
 
+                    <!-- Include Footer -->
+                    <jsp:include page="../common/footer.jsp" />
                     <!-- Include Footer -->
                     <jsp:include page="../common/footer.jsp" />
 
@@ -307,9 +446,60 @@
                             <script src="${pageContext.request.contextPath}${js}"></script>
                         </c:forEach>
                     </c:if>
+                    <!-- Page-specific JavaScript -->
+                    <c:if test="${not empty pageJS}">
+                        <c:forEach var="js" items="${pageJS}">
+                            <script src="${pageContext.request.contextPath}${js}"></script>
+                        </c:forEach>
+                    </c:if>
 
                     <!-- Common JavaScript -->
                     <script>
+                        // Image fallback: try .png, then productUrl, then placeholder
+                        function handleImgError(img) {
+                            try {
+                                const src = img.getAttribute('src') || '';
+                                const fallback = (img.dataset && img.dataset.fallbackUrl) ? img.dataset.fallbackUrl : '';
+                                if (/\.jpg$/i.test(src)) {
+                                    img.onerror = function () { handleImgError(img); };
+                                    img.src = src.replace(/\.jpg$/i, '.png');
+                                    return;
+                                }
+                                if (fallback && src !== fallback) {
+                                    img.onerror = function () { setPlaceholder(img); };
+                                    img.src = fallback;
+                                    return;
+                                }
+                                setPlaceholder(img);
+                            } catch (e) {
+                                setPlaceholder(img);
+                            }
+                        }
+
+                        function setPlaceholder(img) {
+                            img.onerror = null;
+                            img.src = '<c:url value="/images/others.png"/>';
+                        }
+
+                        // Toggle filter section
+                        function toggleFilterSection() {
+                            var filterSection = document.querySelector('.filter-section .filter-row');
+                            var toggleText = document.getElementById('filterToggleText');
+                            var toggleIcon = document.getElementById('filterToggleIcon');
+
+                            if (filterSection.style.display === 'none') {
+                                filterSection.style.display = 'flex';
+                                toggleText.textContent = 'THU GỌN';
+                                toggleIcon.classList.remove('fa-chevron-down');
+                                toggleIcon.classList.add('fa-chevron-up');
+                            } else {
+                                filterSection.style.display = 'none';
+                                toggleText.textContent = 'MỞ RỘNG';
+                                toggleIcon.classList.remove('fa-chevron-up');
+                                toggleIcon.classList.add('fa-chevron-down');
+                            }
+                        }
+
                         // Toggle sidebar function
                         function toggleSidebar() {
                             var sidebar = document.getElementById('sidebar');
@@ -319,20 +509,40 @@
                             if (sidebar && content) {
                                 sidebar.classList.toggle('active');
                                 content.classList.toggle('shifted');
+                                if (sidebar && content) {
+                                    sidebar.classList.toggle('active');
+                                    content.classList.toggle('shifted');
 
-                                // Toggle overlay for mobile
-                                if (overlay) {
-                                    overlay.classList.toggle('active');
+                                    // Toggle overlay for mobile
+                                    if (overlay) {
+                                        overlay.classList.toggle('active');
+                                    }
                                 }
                             }
+                            // Toggle overlay for mobile
+                            if (overlay) {
+                                overlay.classList.toggle('active');
+                            }
                         }
+
 
                         // Close sidebar when clicking outside on mobile
                         document.addEventListener('click', function (event) {
                             var sidebar = document.getElementById('sidebar');
                             var overlay = document.getElementById('sidebarOverlay');
                             var menuToggle = document.querySelector('.menu-toggle');
+                            // Close sidebar when clicking outside on mobile
+                            document.addEventListener('click', function (event) {
+                                var sidebar = document.getElementById('sidebar');
+                                var overlay = document.getElementById('sidebarOverlay');
+                                var menuToggle = document.querySelector('.menu-toggle');
 
+                                if (sidebar && sidebar.classList.contains('active') &&
+                                    !sidebar.contains(event.target) &&
+                                    !menuToggle.contains(event.target)) {
+                                    toggleSidebar();
+                                }
+                            });
                             if (sidebar && sidebar.classList.contains('active') &&
                                 !sidebar.contains(event.target) &&
                                 !menuToggle.contains(event.target)) {
@@ -353,6 +563,7 @@
                             });
                         });
                     </script>
+                    >>>>>>> main
                 </body>
 
                 </html>
