@@ -35,22 +35,6 @@
                             <a class="btn btn-primary" href="${newUrl}">Thêm sản phẩm</a>
                         </div>
 
-                        <!-- Flash -->
-                        <c:if test="${not empty success}">
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                ${success}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"
-                                    aria-label="Close"></button>
-                            </div>
-                        </c:if>
-                        <c:if test="${not empty error}">
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                ${error}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"
-                                    aria-label="Close"></button>
-                            </div>
-                        </c:if>
-
                         <!-- Filter form -->
                         <form id="filterForm" method="get" action="<c:url value='/seller/products'/>"
                             class="row g-2 mb-3">
@@ -63,13 +47,14 @@
                                 <div class="invalid-feedback">Từ khoá quá dài hoặc không hợp lệ.</div>
                             </div>
 
+                            <!-- CHỈ ACTIVE / INACTIVE -->
                             <div class="col-md-2">
                                 <select class="form-select" name="status" aria-label="Trạng thái">
                                     <option value="">-- Trạng thái --</option>
-                                    <c:forEach var="st" items="${ProductStatus}">
-                                        <option value="${st}" <c:if test="${status == st}">selected</c:if>>${st}
-                                        </option>
-                                    </c:forEach>
+                                    <option value="ACTIVE" <c:if test="${status == 'ACTIVE'}">selected</c:if>>ACTIVE
+                                    </option>
+                                    <option value="INACTIVE" <c:if test="${status == 'INACTIVE'}">selected</c:if>
+                                        >INACTIVE</option>
                                 </select>
                                 <div class="invalid-feedback">Giá trị trạng thái không hợp lệ.</div>
                             </div>
@@ -112,24 +97,10 @@
                             <div class="col-md-2">
                                 <input type="number" class="form-control" name="minPrice" value="${minPrice}"
                                     step="0.01" min="0" placeholder="Giá từ (₫)" />
-                                <div class="form-text">Lọc theo giá: từ</div>
                             </div>
                             <div class="col-md-2">
                                 <input type="number" class="form-control" name="maxPrice" value="${maxPrice}"
                                     step="0.01" min="0" placeholder="Giá đến (₫)" />
-                                <div class="form-text">Lọc theo giá: đến</div>
-                            </div>
-
-                            <!-- ID range -->
-                            <div class="col-md-2">
-                                <input type="number" class="form-control" name="idFrom" value="${idFrom}" min="1"
-                                    placeholder="ID từ" />
-                                <div class="form-text">Lọc theo ID: từ</div>
-                            </div>
-                            <div class="col-md-2">
-                                <input type="number" class="form-control" name="idTo" value="${idTo}" min="1"
-                                    placeholder="ID đến" />
-                                <div class="form-text">Lọc theo ID: đến</div>
                             </div>
 
                             <div class="col-md-2">
@@ -157,10 +128,10 @@
                                         <th class="sortable" style="width:140px;" data-column="4" data-type="text">Trạng
                                             thái<div class="resizer"></div>
                                         </th>
-                                        <th class="sortable" style="width:160px;" data-column="5" data-type="number">Tồn
-                                            mã khả dụng<div class="resizer"></div>
+                                        <th class="sortable" style="width:160px;" data-column="5" data-type="number">Số
+                                            lượng mã khả dụng<div class="resizer"></div>
                                         </th>
-                                        <th style="width:240px;">Hành động</th>
+                                        <th style="width:260px;">Hành động</th>
                                     </tr>
                                 </thead>
 
@@ -237,31 +208,36 @@
                                                     </c:choose>
                                                 </form>
 
-                                                <!-- Chi tiết: mở modal -->
-                                                <button type="button" class="btn-icon btn-action-info" title="Chi tiết"
-                                                    data-bs-toggle="modal" data-bs-target="#productDetailModal"
+                                                <!-- Chi tiết -->
+                                                <button type="button" class="btn btn-sm btn-outline-info me-1"
+                                                    title="Xem chi tiết" data-bs-toggle="modal"
+                                                    data-bs-target="#productDetailModal" data-id="${p.id}"
+                                                    data-name="${fn:escapeXml(p.name)}"
+                                                    data-slug="${fn:escapeXml(p.slug)}"
+                                                    data-category="${p.category != null ? fn:escapeXml(p.category.name) : '-'}"
+                                                    data-price="${p.price}" data-status="${p.status}"
+                                                    data-stock="${p.stock}" data-img="${fn:escapeXml(p.productUrl)}"
+                                                    data-desc="${fn:escapeXml(p.description)}">
+                                                    <i class="bi bi-info-circle-fill"></i>
+                                                    <span class="ms-1">Chi tiết</span>
+                                                </button>
+
+                                                <!-- Sửa -->
+                                                <button type="button" class="btn btn-sm btn-outline-primary me-1"
+                                                    title="Chỉnh sửa" data-bs-toggle="modal"
+                                                    data-bs-target="#productEditModal"
+                                                    data-edit-url="<c:url value='/seller/products/${p.id}/edit'><c:param name='storeId' value='${storeId}'/></c:url>"
                                                     data-id="${p.id}" data-name="${fn:escapeXml(p.name)}"
                                                     data-slug="${fn:escapeXml(p.slug)}"
                                                     data-category="${p.category != null ? fn:escapeXml(p.category.name) : '-'}"
                                                     data-price="${p.price}" data-status="${p.status}"
                                                     data-stock="${p.stock}" data-img="${fn:escapeXml(p.productUrl)}"
                                                     data-desc="${fn:escapeXml(p.description)}">
-                                                    <i class="bi bi-info-circle"></i>
+                                                    <i class="bi bi-pencil-fill"></i>
+                                                    <span class="ms-1">Sửa</span>
                                                 </button>
 
-                                                <!-- Sửa: mở modal -->
-                                                <button type="button" class="btn-icon btn-action-edit" title="Chỉnh sửa"
-                                                    data-bs-toggle="modal" data-bs-target="#productEditModal"
-                                                    data-edit-url="<c:url value='/seller/products/${p.id}/edit'><c:param name='storeId' value='${storeId}'/></c:url>"
-                                                    data-id="${p.id}" data-name="${fn:escapeXml(p.name)}"
-                                                    data-slug="${fn:escapeXml(p.slug)}"
-                                                    data-category="${p.category != null ? fn:escapeXml(p.category.name) : '-'}"
-                                                    data-price="${p.price}" data-status="${p.status}"
-                                                    data-stock="${p.stock}">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-
-                                                <!-- Soft delete (để sẵn nếu cần) -->
+                                                <!-- Xóa mềm (để sẵn) -->
                                                 <c:url var="deleteUrl" value="/seller/products/${p.id}/delete">
                                                     <c:param name="storeId" value="${storeId}" />
                                                 </c:url>
@@ -340,7 +316,7 @@
 
                     <jsp:include page="../common/footer.jsp" />
 
-                    <!-- DETAIL MODAL (from layout.jsp) -->
+                    <!-- DETAIL MODAL -->
                     <div class="modal fade" id="productDetailModal" tabindex="-1" aria-labelledby="productDetailLabel"
                         aria-hidden="true">
                         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -392,7 +368,7 @@
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="detail-item">
-                                                    <label class="detail-label">Tồn:</label>
+                                                    <label class="detail-label">Số lượng hiện tại:</label>
                                                     <div class="detail-value" id="d-stock"></div>
                                                 </div>
                                             </div>
@@ -423,8 +399,9 @@
                                     </div>
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i
-                                            class="bi bi-x-circle"></i> Đóng</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                        <i class="bi bi-x-circle"></i> Đóng
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -442,59 +419,106 @@
                                         aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <form id="editForm">
-                                        <input type="hidden" id="e-id">
-                                        <div class="row mb-3">
-                                            <div class="col-md-6">
-                                                <label class="form-label">Tên sản phẩm</label>
-                                                <input type="text" class="form-control" id="e-name" required>
+                                    <form id="editForm" enctype="multipart/form-data">
+                                        <input type="hidden" id="e-id" name="id">
+                                        <div class="product-form-grid">
+                                            <div class="product-form-group">
+                                                <label class="product-form-label">Tên sản phẩm</label>
+                                                <input type="text" class="product-form-control form-control" id="e-name"
+                                                    name="name" required maxlength="120">
                                             </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">Slug</label>
-                                                <input type="text" class="form-control" id="e-slug" required>
-                                            </div>
-                                        </div>
 
-                                        <div class="row mb-3">
-                                            <div class="col-md-4">
-                                                <label class="form-label">Giá bán (₫)</label>
-                                                <input type="number" class="form-control" id="e-price" min="0"
-                                                    step="0.01" required>
+                                            <div class="product-form-group">
+                                                <label class="product-form-label">Slug</label>
+                                                <input type="text" class="product-form-control form-control" id="e-slug"
+                                                    name="slug" required maxlength="120">
+                                                <div class="product-form-text">Chỉ a-z, 0-9, dấu gạch ngang (-), 2–120
+                                                    ký tự.</div>
                                             </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label">Tồn</label>
-                                                <input type="number" class="form-control" id="e-stock" min="0">
+
+                                            <div class="product-form-group">
+                                                <label class="product-form-label">Tùy chọn danh mục</label>
+                                                <select class="product-form-select form-select" id="e-parentCategory">
+                                                    <option value="">-- Tùy chọn danh mục --</option>
+                                                    <c:forEach var="pc" items="${parentCategories}">
+                                                        <option value="${pc.id}">${pc.name}</option>
+                                                    </c:forEach>
+                                                </select>
                                             </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label">Trạng thái</label>
-                                                <select class="form-select" id="e-status">
+
+                                            <div class="product-form-group">
+                                                <label class="product-form-label">Danh mục</label>
+                                                <select class="product-form-select form-select" id="e-categoryId"
+                                                    name="category.id" required>
+                                                    <option value="">-- Chọn danh mục --</option>
+                                                    <c:forEach var="c" items="${subCategories}">
+                                                        <option value="${c.id}">${c.name}</option>
+                                                    </c:forEach>
+                                                </select>
+                                            </div>
+
+                                            <div class="product-form-group">
+                                                <label class="product-form-label">Giá</label>
+                                                <input type="number" class="product-form-control form-control"
+                                                    id="e-price" name="price" step="0.01" min="0.01" required>
+                                            </div>
+
+                                            <div class="product-form-group">
+                                                <label class="product-form-label">Trạng thái</label>
+                                                <select class="product-form-select form-select" id="e-status"
+                                                    name="status">
                                                     <option value="ACTIVE">ACTIVE</option>
                                                     <option value="INACTIVE">INACTIVE</option>
                                                 </select>
                                             </div>
-                                        </div>
 
-                                        <div class="mb-3">
-                                            <label class="form-label">Danh mục</label>
-                                            <input type="text" class="form-control" id="e-category" disabled>
+                                            <div class="product-form-group product-form-full-width">
+                                                <label class="product-form-label">Ảnh đại diện sản phẩm</label>
+                                                <input class="product-form-control form-control" type="file"
+                                                    id="e-imageFile" name="imageFile" accept="image/jpeg,image/png" />
+                                                <div id="e-currentImage" class="mt-2"></div>
+                                                <div class="product-form-text">Chỉ JPG/PNG, tối đa 10MB.</div>
+                                            </div>
+
+                                            <div class="product-form-group product-form-full-width">
+                                                <label class="product-form-label">Mô tả</label>
+                                                <textarea class="product-form-control form-control" id="e-description"
+                                                    name="description" rows="4" maxlength="200"></textarea>
+                                            </div>
+
+                                            <div class="product-form-group">
+                                                <label class="product-form-label">Số lượng hiện tại:</label>
+                                                <div id="e-stock" class="product-form-plaintext">0</div>
+                                                <input type="hidden" id="e-stock-hidden" name="stock" value="0" />
+                                            </div>
+
                                         </div>
                                     </form>
-                                    <small class="text-muted">* Nút “Cập nhật” dưới đây chỉ minh họa UI. Nếu bạn muốn
-                                        chỉnh sửa thật, mình chuyển sang trang chỉnh sửa đầy đủ.</small>
+                                    <small class="text-muted">* Lưu trong modal sẽ gọi endpoint AJAX; nếu muốn chỉnh sửa
+                                        nâng cao, mở trang đầy đủ từ danh sách.</small>
                                 </div>
+
+                                <!-- FOOTER có thêm nút "Nhập sản phẩm" KHÔNG điều hướng -->
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i
-                                            class="bi bi-x-circle"></i> Hủy</button>
-                                    <button type="button" class="btn btn-success" id="ajaxSaveBtn"><i
-                                            class="bi bi-save"></i> Lưu</button>
-                                    <button type="button" class="btn btn-warning" id="goEditPageBtn"><i
-                                            class="bi bi-check-circle"></i> Tới trang chỉnh sửa</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                        <i class="bi bi-x-circle"></i> Hủy
+                                    </button>
+
+                                    <button type="button" class="btn btn-outline-dark" id="btnImportProductModal"
+                                        data-product-id="">
+                                        <i class="bi bi-box-arrow-in-down"></i>
+                                        <span class="ms-1">Nhập sản phẩm</span>
+                                    </button>
+
+                                    <button type="button" class="btn btn-success" id="ajaxSaveBtn">
+                                        <i class="bi bi-save"></i> Lưu
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- JS to populate modals -->
+                    <!-- JS to populate modals + import button -->
                     <script>
                         (function () {
                             const money = (v) => new Intl.NumberFormat('vi-VN').format(Number(v || 0));
@@ -508,7 +532,6 @@
 
                                 document.getElementById('d-id').textContent = '#' + get('id');
                                 document.getElementById('d-name').textContent = get('name');
-                                // description may contain HTML-safe text; set as textContent
                                 document.getElementById('d-desc').textContent = get('desc') || '';
                                 document.getElementById('d-slug').textContent = get('slug');
                                 document.getElementById('d-category').textContent = get('category');
@@ -531,18 +554,55 @@
                                 const get = (name) => btn.getAttribute('data-' + name) || '';
 
                                 editUrl = get('edit-url');
-                                document.getElementById('e-id').value = get('id');
+                                const idVal = get('id');
+
+                                document.getElementById('e-id').value = idVal;
                                 document.getElementById('e-name').value = get('name');
                                 document.getElementById('e-slug').value = get('slug');
                                 document.getElementById('e-price').value = get('price');
-                                document.getElementById('e-stock').value = get('stock');
-                                document.getElementById('e-status').value = get('status') === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE';
-                                document.getElementById('e-category').value = get('category');
-                            });
 
-                            // Button to go to full edit page
-                            document.getElementById('goEditPageBtn')?.addEventListener('click', function () {
-                                if (editUrl) window.location.href = editUrl;
+                                const stockVal = get('stock');
+                                const eStockView = document.getElementById('e-stock');
+                                const eStockHidden = document.getElementById('e-stock-hidden');
+                                if (eStockView) eStockView.textContent = stockVal;
+                                if (eStockHidden) eStockHidden.value = stockVal;
+
+                                document.getElementById('e-status').value = get('status') === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE';
+
+                                const catText = get('category');
+                                const catSelect = document.getElementById('e-categoryId');
+                                if (catSelect) {
+                                    let found = false;
+                                    Array.from(catSelect.options).forEach(opt => {
+                                        if (opt.text === catText || opt.value === catText) { opt.selected = true; found = true; }
+                                    });
+                                    if (!found) catSelect.value = '';
+                                }
+
+                                const parentSelect = document.getElementById('e-parentCategory');
+                                if (parentSelect) {
+                                    let matched = false;
+                                    Array.from(parentSelect.options).forEach(opt => {
+                                        if (opt.text === catText) { parentSelect.value = opt.value; matched = true; }
+                                    });
+                                    if (!matched) parentSelect.value = '';
+                                }
+
+                                const desc = get('desc');
+                                const descEl = document.getElementById('e-description');
+                                if (descEl) descEl.value = desc || '';
+
+                                const img = get('img');
+                                const imgWrap = document.getElementById('e-currentImage');
+                                if (img && imgWrap) {
+                                    imgWrap.innerHTML = '<img src="' + img + '" alt="img" style="max-height:80px;border-radius:6px;border:1px solid #eee">';
+                                } else if (imgWrap) { imgWrap.innerHTML = ''; }
+
+                                // GẮN ID cho nút "Nhập sản phẩm"
+                                const importBtn = document.getElementById('btnImportProductModal');
+                                if (importBtn) {
+                                    importBtn.dataset.productId = idVal || '';
+                                }
                             });
 
                             // AJAX save in modal
@@ -553,8 +613,10 @@
                                     name: document.getElementById('e-name').value,
                                     slug: document.getElementById('e-slug').value,
                                     price: document.getElementById('e-price').value,
-                                    stock: document.getElementById('e-stock').value,
-                                    status: document.getElementById('e-status').value
+                                    stock: (document.getElementById('e-stock-hidden') ? document.getElementById('e-stock-hidden').value : (document.getElementById('e-stock') ? document.getElementById('e-stock').textContent : '')),
+                                    status: document.getElementById('e-status').value,
+                                    description: document.getElementById('e-description') ? document.getElementById('e-description').value : '',
+                                    categoryId: document.getElementById('e-categoryId') ? document.getElementById('e-categoryId').value : ''
                                 };
                                 const tokenMeta = document.querySelector('meta[name="_csrf"]');
                                 const headerMeta = document.querySelector('meta[name="_csrf_header"]');
@@ -568,7 +630,6 @@
                                     const data = await res.json();
                                     if (data.ok) {
                                         if (window.iziToast) iziToast.success({ title: 'OK', message: data.message, position: 'topRight' });
-                                        // close modal and reload
                                         const modalEl = document.getElementById('productEditModal');
                                         const bs = bootstrap.Modal.getInstance(modalEl);
                                         bs?.hide();
@@ -583,9 +644,24 @@
                                     else alert('Không thể kết nối');
                                 }
                             });
+
+                            // STUB click cho nút "Nhập sản phẩm" (không điều hướng)
+                            document.getElementById('btnImportProductModal')?.addEventListener('click', function () {
+                                const pid = this.dataset.productId || '(chưa có id)';
+                                if (window.iziToast) {
+                                    iziToast.info({
+                                        title: 'Info',
+                                        message: 'Nút "Nhập sản phẩm" (id: ' + pid + ') chưa gắn hành động.',
+                                        position: 'topRight'
+                                    });
+                                } else {
+                                    alert('Nút "Nhập sản phẩm" (id: ' + pid + ') chưa gắn hành động.');
+                                }
+                            });
                         })();
                     </script>
-                    <!-- Toast -->
+
+                    <!-- Toast (global) -->
                     <c:if test="${not empty successMessage}">
                         <script>iziToast.success({ title: 'Success!', message: '${successMessage}', position: 'topRight', timeout: 5000 });</script>
                     </c:if>

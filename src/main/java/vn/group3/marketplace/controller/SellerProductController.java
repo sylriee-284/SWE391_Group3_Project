@@ -53,7 +53,6 @@ public class SellerProductController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(String.class, new StringTrimmerEditor(true));
     }
-    // test
 
     private Long resolveStoreId(Long storeId) {
         return Optional.ofNullable(storeId).orElse(DEFAULT_STORE_ID);
@@ -63,6 +62,11 @@ public class SellerProductController {
     private List<Category> top4Parents() {
         List<Category> parents = categoryRepo.findByParentIsNullAndIsDeletedFalseOrderByNameAsc();
         return parents.size() > 4 ? parents.subList(0, 4) : parents;
+    }
+
+    // Tiện ích lấy max price của store (có thể null)
+    private BigDecimal getStoreMaxPrice(Long storeId) {
+        return storeRepo.findById(storeId).map(SellerStore::getMaxListingPrice).orElse(null);
     }
 
     // Lưu ảnh vào thư mục uploads và trả về đường dẫn public
@@ -175,6 +179,9 @@ public class SellerProductController {
         model.addAttribute("ProductStatus", ProductStatus.values());
         model.addAttribute("storageStatusAvailable", ProductStorageStatus.AVAILABLE);
 
+        // CUNG CẤP max price cho trang danh sách (để modal Sửa áp giới hạn)
+        model.addAttribute("storeMaxListingPrice", getStoreMaxPrice(sid));
+
         return "seller/products";
     }
 
@@ -195,6 +202,8 @@ public class SellerProductController {
 
         model.addAttribute("form", form);
         model.addAttribute("storeId", sid);
+        // load store limit if available
+        model.addAttribute("storeMaxListingPrice", getStoreMaxPrice(sid));
         model.addAttribute("formMode", "CREATE");
         model.addAttribute("parentCategories", top4Parents());
         model.addAttribute("subCategories", Collections.emptyList());
@@ -226,14 +235,21 @@ public class SellerProductController {
             }
         }
 
-        // Kiểm tra giá > 0 nếu entity chưa có constraint
+        // Kiểm tra giá > 0
         if (form.getPrice() == null || form.getPrice().compareTo(BigDecimal.valueOf(0.01)) < 0) {
             binding.rejectValue("price", "price.min", "Giá phải lớn hơn 0.");
+        }
+
+        // Kiểm tra trần giá theo store (nếu có)
+        BigDecimal maxPrice = getStoreMaxPrice(sid);
+        if (maxPrice != null && form.getPrice() != null && form.getPrice().compareTo(maxPrice) > 0) {
+            binding.rejectValue("price", "price.max", "Giá vượt mức tối đa cho phép của cửa hàng.");
         }
 
         if (binding.hasErrors()) {
             // nạp lại dropdown khi có lỗi
             model.addAttribute("storeId", sid);
+            model.addAttribute("storeMaxListingPrice", maxPrice);
             model.addAttribute("formMode", "CREATE");
             model.addAttribute("parentCategories", top4Parents());
 
@@ -251,7 +267,7 @@ public class SellerProductController {
         }
 
         productService.create(form);
-        ra.addFlashAttribute("success", "Thêm sản phẩm mới thành công!");
+        ra.addFlashAttribute("successMessage", "Thêm sản phẩm mới thành công!");
         return "redirect:/seller/products?storeId=" + sid;
     }
 
@@ -287,6 +303,8 @@ public class SellerProductController {
         model.addAttribute("selectedParentId", selectedParentId);
         model.addAttribute("selectedChildId", selectedChildId);
         model.addAttribute("subCategories", subCats);
+        // load store limit if available
+        model.addAttribute("storeMaxListingPrice", getStoreMaxPrice(sid));
 
         return "seller/product-form";
     }
@@ -318,13 +336,20 @@ public class SellerProductController {
             form.setProductUrl(existed.getProductUrl());
         }
 
-        // Kiểm tra giá > 0 nếu entity chưa có constraint
+        // Kiểm tra giá > 0
         if (form.getPrice() == null || form.getPrice().compareTo(BigDecimal.valueOf(0.01)) < 0) {
             binding.rejectValue("price", "price.min", "Giá phải lớn hơn 0.");
         }
 
+        // Kiểm tra trần giá theo store (nếu có)
+        BigDecimal maxPrice = getStoreMaxPrice(sid);
+        if (maxPrice != null && form.getPrice() != null && form.getPrice().compareTo(maxPrice) > 0) {
+            binding.rejectValue("price", "price.max", "Giá vượt mức tối đa cho phép của cửa hàng.");
+        }
+
         if (binding.hasErrors()) {
             model.addAttribute("storeId", sid);
+            model.addAttribute("storeMaxListingPrice", maxPrice);
             model.addAttribute("formMode", "UPDATE");
 
             List<Category> parents = top4Parents();
@@ -351,13 +376,14 @@ public class SellerProductController {
 
         try {
             productService.update(form, sid);
-            ra.addFlashAttribute("success", "Sửa sản phẩm thành công!");
+            ra.addFlashAttribute("successMessage", "Sửa sản phẩm thành công!");
             return "redirect:/seller/products?storeId=" + sid;
         } catch (IllegalArgumentException ex) {
             // Bind error to status field so it shows on the form
             binding.rejectValue("status", "status.invalid", ex.getMessage());
 
             model.addAttribute("storeId", sid);
+            model.addAttribute("storeMaxListingPrice", maxPrice);
             model.addAttribute("formMode", "UPDATE");
 
             List<Category> parents = top4Parents();
@@ -392,7 +418,7 @@ public class SellerProductController {
         Long sid = resolveStoreId(storeId);
         try {
             productService.toggle(id, sid, to);
-            ra.addFlashAttribute("success", "Đã chuyển trạng thái sản phẩm #" + id + " sang " + to);
+            ra.addFlashAttribute("successMessage", "Đã chuyển trạng thái sản phẩm #" + id + " sang " + to);
         } catch (IllegalArgumentException ex) {
             ra.addFlashAttribute("errorMessage", ex.getMessage());
         }
@@ -466,6 +492,33 @@ public class SellerProductController {
                     existing.setStatus(ProductStatus.valueOf(statusStr));
                 } catch (Exception ignored) {
                 }
+            }
+
+            // optional fields: description and category
+            String desc = (String) payload.get("description");
+            Object catIdObj = payload.get("categoryId");
+            if (desc != null)
+                existing.setDescription(desc);
+            if (catIdObj != null) {
+                try {
+                    Long cid = Long.valueOf(String.valueOf(catIdObj));
+                    categoryRepo.findById(cid).ifPresent(existing::setCategory);
+                } catch (Exception ignored) {
+                }
+            }
+
+            // Kiểm tra trần giá theo store khi AJAX lưu nhanh
+            BigDecimal maxPrice = getStoreMaxPrice(sid);
+            if (maxPrice != null && existing.getPrice() != null && existing.getPrice().compareTo(maxPrice) > 0) {
+                out.put("ok", false);
+                out.put("message", "Giá vượt mức tối đa cho phép của cửa hàng.");
+                return out;
+            }
+            // Kiểm tra giá tối thiểu khi AJAX
+            if (existing.getPrice() == null || existing.getPrice().compareTo(BigDecimal.valueOf(0.01)) < 0) {
+                out.put("ok", false);
+                out.put("message", "Giá phải lớn hơn 0.");
+                return out;
             }
 
             // Delegate to service.update for validation and persist

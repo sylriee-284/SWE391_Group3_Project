@@ -58,9 +58,8 @@
                                 <!-- Quan trọng: modelAttribute="form" trùng với Controller -->
                                 <form:form id="productForm" method="post" action="${formAction}" modelAttribute="form"
                                     enctype="multipart/form-data">
-                                    <c:if test="${not empty _csrf}">
-                                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
-                                    </c:if>
+                                    <c:if test="${not empty _csrf}"><input type="hidden" name="${_csrf.parameterName}"
+                                            value="${_csrf.token}" /></c:if>
 
                                     <div class="product-form-card">
                                         <div class="product-form-body">
@@ -115,21 +114,34 @@
                                                     <form:errors path="category.id" cssClass="product-form-error" />
                                                 </div>
 
-                                                <!-- Giá -->
+                                                <!-- Giá (GIỚI HẠN THEO storeMaxListingPrice) -->
                                                 <div class="product-form-group">
                                                     <label class="product-form-label">Giá</label>
+
+                                                    <!-- Lấy max từ Model: storeMaxListingPrice -->
+                                                    <c:set var="priceMax" value="${storeMaxListingPrice}" />
+
                                                     <form:input path="price" type="number" step="0.01" min="0.01"
-                                                        cssClass="product-form-control" required="required" />
+                                                        cssClass="product-form-control" required="required"
+                                                        max="${priceMax}" />
+
+                                                    <c:if test="${priceMax != null}">
+                                                        <div class="product-form-text">
+                                                            Tối đa được phép niêm yết:
+                                                            <fmt:formatNumber value="${priceMax}" type="currency"
+                                                                currencySymbol="₫" />
+                                                        </div>
+                                                    </c:if>
+
                                                     <form:errors path="price" cssClass="product-form-error" />
                                                 </div>
 
-                                                <!-- Trạng thái: nếu CREATE thì ẩn và giữ giá trị INACTIVE; nếu UPDATE thì hiển thị select -->
+                                                <!-- Trạng thái: CREATE -> hidden INACTIVE, UPDATE -> select (lock nếu stock <=0) -->
                                                 <c:choose>
                                                     <c:when test="${formMode=='CREATE'}">
                                                         <input type="hidden" name="status" value="INACTIVE" />
                                                     </c:when>
                                                     <c:otherwise>
-                                                        <!-- If stock is not present or <=0, disable status selection and show hint -->
                                                         <c:choose>
                                                             <c:when test="${form.stock == null || form.stock <= 0}">
                                                                 <div class="product-form-group">
@@ -142,8 +154,7 @@
                                                                         </form:option>
                                                                     </form:select>
                                                                     <div class="product-form-text text-danger">Vui lòng
-                                                                        nhập hàng trước
-                                                                        khi kích hoạt.</div>
+                                                                        nhập hàng trước khi kích hoạt.</div>
                                                                     <form:errors path="status"
                                                                         cssClass="product-form-error" />
                                                                 </div>
@@ -166,7 +177,7 @@
                                                     </c:otherwise>
                                                 </c:choose>
 
-                                                <!-- Ảnh đại diện (upload) -->
+                                                <!-- Ảnh đại diện -->
                                                 <div class="product-form-group product-form-full-width">
                                                     <label class="product-form-label">Ảnh đại diện sản phẩm</label>
                                                     <input class="product-form-control" type="file" name="imageFile"
@@ -176,8 +187,7 @@
                                                             <img src="${form.productUrl}" alt="Ảnh sản phẩm"
                                                                 class="product-image-preview" />
                                                             <div class="product-form-text">Ảnh hiện tại. Nếu không chọn
-                                                                ảnh mới, sẽ giữ
-                                                                nguyên.</div>
+                                                                ảnh mới, sẽ giữ nguyên.</div>
                                                         </div>
                                                     </c:if>
                                                     <div class="product-form-text">Chỉ JPG/PNG, tối đa 10MB.</div>
@@ -192,22 +202,21 @@
                                                     <form:errors path="description" cssClass="product-form-error" />
                                                 </div>
 
-                                                <!-- Stock: CREATE -> không hiển thị input; UPDATE -> chỉ được xem (plaintext) -->
+                                                <!-- Stock: CREATE -> không hiển thị input; UPDATE -> chỉ xem -->
                                                 <c:choose>
                                                     <c:when test="${formMode=='CREATE'}">
-                                                        <!-- nothing: seller cannot set stock on create -->
+                                                        <!-- nothing -->
                                                     </c:when>
                                                     <c:otherwise>
                                                         <div class="product-form-group">
-                                                            <label class="product-form-label">Tồn hiển thị
-                                                                (stock)</label>
+                                                            <label class="product-form-label">Số lượng hiện tại</label>
                                                             <div class="product-form-plaintext">${form.stock}</div>
                                                             <form:errors path="stock" cssClass="product-form-error" />
                                                         </div>
                                                     </c:otherwise>
                                                 </c:choose>
 
-                                                <!-- Submit Button -->
+                                                <!-- Submit -->
                                                 <div class="product-form-submit-container">
                                                     <button class="product-form-submit-btn" type="submit">
                                                         <c:choose>
@@ -282,7 +291,15 @@
                         });
                     </script>
 
-                    <!-- Client-side validation: chống chuỗi toàn khoảng trắng + kiểm pattern/required -->
+                    <!-- Toast notifications -->
+                    <c:if test="${not empty successMessage}">
+                        <script>iziToast.success({ title: 'Success!', message: '${successMessage}', position: 'topRight', timeout: 5000 });</script>
+                    </c:if>
+                    <c:if test="${not empty errorMessage}">
+                        <script>iziToast.error({ title: 'Error!', message: '${errorMessage}', position: 'topRight', timeout: 5000 });</script>
+                    </c:if>
+
+                    <!-- Client-side validation (có thêm vPriceMax) -->
                     <script>
                         (function () {
                             const form = document.getElementById('productForm');
@@ -296,8 +313,7 @@
 
                             function noBlank(el) {
                                 if (!el) return true;
-                                const raw = el.value || '';
-                                const trimmed = raw.trim();
+                                const raw = el.value || ''; const trimmed = raw.trim();
                                 if (raw.length === 0) { el.setCustomValidity('Vui lòng nhập nội dung'); return false; }
                                 if (trimmed.length === 0) { el.setCustomValidity('Vui lòng nhập nội dung phù hợp'); return false; }
                                 el.setCustomValidity(''); return true;
@@ -322,10 +338,26 @@
                                 if (val < 0.01) { priceEl.setCustomValidity('Giá phải lớn hơn hoặc bằng 0.01'); return false; }
                                 priceEl.setCustomValidity(''); return true;
                             }
+                            // NEW: kiểm tra vượt trần từ thuộc tính max (nếu có)
+                            function vPriceMax() {
+                                if (!priceEl) return true;
+                                const maxAttr = priceEl.getAttribute('max');
+                                if (!maxAttr) { priceEl.setCustomValidity(''); return true; }
+                                const maxVal = parseFloat(maxAttr);
+                                const val = parseFloat(priceEl.value);
+                                if (!isNaN(val) && !isNaN(maxVal) && val > maxVal) {
+                                    priceEl.setCustomValidity('Giá vượt mức tối đa cho phép');
+                                    return false;
+                                }
+                                // Không ghi đè lỗi khác nếu đã có; chỉ xóa nếu chúng ta đã đặt
+                                if (priceEl.validationMessage === 'Giá vượt mức tối đa cho phép') {
+                                    priceEl.setCustomValidity('');
+                                }
+                                return true;
+                            }
                             function vDesc() {
                                 if (!descEl) return true;
-                                const v = descEl.value || '';
-                                const trimmed = v.trim();
+                                const v = descEl.value || ''; const trimmed = v.trim();
                                 if (v.length === 0) { descEl.setCustomValidity('Vui lòng nhập nội dung'); return false; }
                                 if (trimmed.length === 0) { descEl.setCustomValidity('Vui lòng nhập nội dung phù hợp'); return false; }
                                 if (v.length > 200) { descEl.setCustomValidity('Mô tả tối đa 200 ký tự'); return false; }
@@ -335,7 +367,7 @@
                             nameEl?.addEventListener('input', () => noBlank(nameEl));
                             slugEl?.addEventListener('input', () => { noBlank(slugEl); vSlug(); });
                             catEl?.addEventListener('change', vCategory);
-                            priceEl?.addEventListener('input', vPrice);
+                            priceEl?.addEventListener('input', () => { vPrice(); vPriceMax(); });
                             descEl?.addEventListener('input', vDesc);
 
                             form.addEventListener('submit', function (e) {
@@ -344,6 +376,7 @@
                                     vSlug(),
                                     vCategory(),
                                     vPrice(),
+                                    vPriceMax(), // NEW
                                     vDesc()
                                 ];
 
