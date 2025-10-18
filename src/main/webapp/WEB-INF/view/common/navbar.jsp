@@ -67,3 +67,70 @@
                     </div>
 
                 </div>
+
+                <!-- Script để cập nhật balance real-time -->
+                <script>
+                    // Function để cập nhật balance trong navbar
+                    function updateBalanceDisplay() {
+                        fetch('/wallet/api/balance')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // Format số tiền
+                                    const balance = new Intl.NumberFormat('vi-VN', {
+                                        maximumFractionDigits: 0
+                                    }).format(data.balance);
+
+                                    // Cập nhật text trong button
+                                    const userDropdown = document.getElementById('userDropdown');
+                                    if (userDropdown) {
+                                        // Sử dụng username từ API response
+                                        const username = data.username || 'User';
+
+                                        // Cập nhật toàn bộ text với balance mới
+                                        userDropdown.innerHTML = '💰 ' + balance + ' VND | Xin chào, ' + username;
+                                    }
+
+                                } else {
+                                    console.error('Failed to update balance:', data.error);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching balance:', error);
+                            });
+                    }
+
+                    // Cập nhật balance mỗi 3 giây
+                    let balanceUpdateInterval;
+
+                    function startBalancePolling() {
+                        // Cập nhật ngay lập tức
+                        updateBalanceDisplay();
+
+                        // Cập nhật định kỳ mỗi 3 giây
+                        balanceUpdateInterval = setInterval(updateBalanceDisplay, 3000);
+                    }
+
+                    function stopBalancePolling() {
+                        if (balanceUpdateInterval) {
+                            clearInterval(balanceUpdateInterval);
+                            balanceUpdateInterval = null;
+                        }
+                    }
+
+                    // Bắt đầu polling khi trang load
+                    document.addEventListener('DOMContentLoaded', function () {
+                        // Chỉ start polling nếu user đã đăng nhập
+                        <sec:authorize access="isAuthenticated()">
+                            startBalancePolling();
+                        </sec:authorize>
+                    });
+
+                    // Dừng polling khi user rời khỏi trang
+                    window.addEventListener('beforeunload', function () {
+                        stopBalancePolling();
+                    });
+
+                    // Expose function để có thể gọi từ các trang khác
+                    window.updateBalanceDisplay = updateBalanceDisplay;
+                </script>

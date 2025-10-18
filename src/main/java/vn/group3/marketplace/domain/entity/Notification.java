@@ -2,6 +2,7 @@ package vn.group3.marketplace.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import vn.group3.marketplace.domain.enums.NotificationType;
 
 @Getter
 @Setter
@@ -21,7 +22,7 @@ public class Notification extends BaseEntity {
     private User user;
 
     @Column(length = 100, nullable = false)
-    private String type;
+    private NotificationType type;
 
     private String title;
 

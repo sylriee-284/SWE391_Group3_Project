@@ -28,13 +28,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
         void updatePassword(String password, String email);
 
         @Modifying
-        @Transactional
         @Query(value = "UPDATE users SET balance = balance + :amount WHERE id = :id", nativeQuery = true)
         int incrementBalance(@org.springframework.data.repository.query.Param("id") Long id,
                         @org.springframework.data.repository.query.Param("amount") java.math.BigDecimal amount);
 
         @Modifying
-        @Transactional
         @Query(value = "UPDATE users SET balance = balance - :amount WHERE id = :id AND balance >= :amount", nativeQuery = true)
         int decrementBalance(@org.springframework.data.repository.query.Param("id") Long id,
                         @org.springframework.data.repository.query.Param("amount") java.math.BigDecimal amount);

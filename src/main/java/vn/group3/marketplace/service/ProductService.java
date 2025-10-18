@@ -156,4 +156,14 @@ public class ProductService {
         }
         return null;
     }
+
+    /**
+     * Get dynamic stock count from ProductStorage table
+     * 
+     * @param productId Product ID
+     * @return Number of available ProductStorage items
+     */
+    public long getDynamicStock(Long productId) {
+        return productRepository.getDynamicStock(productId);
+    }
 }

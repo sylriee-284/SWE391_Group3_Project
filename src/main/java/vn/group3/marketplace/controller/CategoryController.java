@@ -8,6 +8,7 @@ import vn.group3.marketplace.domain.entity.Category;
 import vn.group3.marketplace.domain.entity.Product;
 import vn.group3.marketplace.service.CategoryService;
 import vn.group3.marketplace.service.ProductService;
+import vn.group3.marketplace.service.ProductStorageService;
 
 import java.util.List;
 
@@ -16,10 +17,13 @@ public class CategoryController {
 
     private final CategoryService categoryService;
     private final ProductService productService;
+    private final ProductStorageService productStorageService;
 
-    public CategoryController(CategoryService categoryService, ProductService productService) {
+    public CategoryController(CategoryService categoryService, ProductService productService,
+            ProductStorageService productStorageService) {
         this.categoryService = categoryService;
         this.productService = productService;
+        this.productStorageService = productStorageService;
     }
 
     /**
@@ -81,6 +85,13 @@ public class CategoryController {
 
         // Get child categories for filter
         List<Category> childCategories = categoryService.getChildCategories(parentCategory.getId());
+
+        // Calculate dynamic stock for each product
+        products.getContent().forEach(product -> {
+            long dynamicStock = productStorageService.getAvailableStock(product.getId());
+            // Store dynamic stock in a custom attribute for JSP access
+            product.setStock((int) dynamicStock); // Convert long to int for existing stock field
+        });
 
         // Add attributes to model
         model.addAttribute("parentCategory", parentCategory);
