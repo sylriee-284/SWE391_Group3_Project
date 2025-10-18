@@ -89,4 +89,15 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         @Query("SELECT COUNT(ps) FROM ProductStorage ps WHERE ps.product.id = :productId AND ps.status = 'AVAILABLE' AND ps.order IS NULL")
         long getDynamicStock(@Param("productId") Long productId);
 
+        // Find all active products
+        @Query("SELECT p FROM Product p WHERE p.status = :status AND p.isDeleted = false")
+        Page<Product> findByStatus(@Param("status") ProductStatus status, Pageable pageable);
+
+        // Find all active products by keyword
+        @Query("SELECT p FROM Product p WHERE p.status = :status AND p.isDeleted = false " +
+                        "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+        Page<Product> findByStatusAndKeyword(@Param("status") ProductStatus status,
+                        @Param("keyword") String keyword,
+                        Pageable pageable);
+
 }

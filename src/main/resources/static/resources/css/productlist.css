@@ -67,6 +67,32 @@
     margin-bottom: 0.5rem;
 }
 
+/* Button styling */
+.btn-primary {
+    background-color: #198754;
+    border-color: #198754;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #146c43;
+    border-color: #135e38;
+    color: white;
+}
+
+.btn-primary:focus {
+    background-color: #146c43;
+    border-color: #135e38;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    color: white;
+}
+
+.btn-primary:active {
+    background-color: #146c43;
+    border-color: #135e38;
+    color: white;
+}
+
 .btn-collapse {
     background-color: #dc3545;
     color: white;
