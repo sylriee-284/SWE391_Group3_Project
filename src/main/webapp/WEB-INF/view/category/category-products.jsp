@@ -503,40 +503,19 @@
                             if (sidebar && content) {
                                 sidebar.classList.toggle('active');
                                 content.classList.toggle('shifted');
-                                if (sidebar && content) {
-                                    sidebar.classList.toggle('active');
-                                    content.classList.toggle('shifted');
-
-                                    // Toggle overlay for mobile
-                                    if (overlay) {
-                                        overlay.classList.toggle('active');
-                                    }
-                                }
                             }
-                            // Toggle overlay for mobile
+
                             if (overlay) {
                                 overlay.classList.toggle('active');
                             }
                         }
-
 
                         // Close sidebar when clicking outside on mobile
                         document.addEventListener('click', function (event) {
                             var sidebar = document.getElementById('sidebar');
                             var overlay = document.getElementById('sidebarOverlay');
                             var menuToggle = document.querySelector('.menu-toggle');
-                            // Close sidebar when clicking outside on mobile
-                            document.addEventListener('click', function (event) {
-                                var sidebar = document.getElementById('sidebar');
-                                var overlay = document.getElementById('sidebarOverlay');
-                                var menuToggle = document.querySelector('.menu-toggle');
 
-                                if (sidebar && sidebar.classList.contains('active') &&
-                                    !sidebar.contains(event.target) &&
-                                    !menuToggle.contains(event.target)) {
-                                    toggleSidebar();
-                                }
-                            });
                             if (sidebar && sidebar.classList.contains('active') &&
                                 !sidebar.contains(event.target) &&
                                 !menuToggle.contains(event.target)) {
