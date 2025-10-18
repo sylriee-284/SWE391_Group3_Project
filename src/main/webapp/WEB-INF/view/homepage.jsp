@@ -268,15 +268,144 @@
                         document.addEventListener('DOMContentLoaded', function () {
                             var modal = new bootstrap.Modal(document.getElementById('orderSuccessModal'));
                             modal.show();
+
+                            // Cập nhật balance ngay lập tức sau khi hiển thị modal thành công
+                            setTimeout(function () {
+                                if (window.updateBalanceDisplay) {
+                                    window.updateBalanceDisplay();
+                                }
+                            }, 1000);
+
+                            // Xử lý khi modal được đóng - xóa parameter showOrderModal khỏi URL
+                            var modalElement = document.getElementById('orderSuccessModal');
+
+                            // Event khi modal được đóng hoàn toàn (bao gồm ESC key, backdrop click)
+                            modalElement.addEventListener('hidden.bs.modal', function () {
+                                // Xóa parameter showOrderModal khỏi URL để không hiển thị lại khi refresh
+                                removeShowOrderModalParam();
+                            });
+
+                            // Xử lý khi click các nút đóng modal
+                            // Nút "Về trang chủ"
+                            var homeButton = modalElement.querySelector('button[data-bs-dismiss="modal"]');
+                            if (homeButton) {
+                                homeButton.addEventListener('click', function () {
+                                    // Xóa parameter ngay khi click nút
+                                    removeShowOrderModalParam();
+                                });
+                            }
+
+                            // Nút close (X) ở header
+                            var closeButton = modalElement.querySelector('.btn-close');
+                            if (closeButton) {
+                                closeButton.addEventListener('click', function () {
+                                    // Xóa parameter ngay khi click nút close
+                                    removeShowOrderModalParam();
+                                });
+                            }
                         });
                     </script>
                 </c:if>
 
                 <!-- JavaScript functions -->
                 <script>
+                    // Function để xóa parameter showOrderModal khỏi URL
+                    function removeShowOrderModalParam() {
+                        var url = new URL(window.location);
+                        url.searchParams.delete('showOrderModal');
+                        window.history.replaceState({}, '', url);
+                    }
+
                     function viewOrders() {
+                        // Xóa parameter showOrderModal khỏi URL trước khi chuyển trang
+                        removeShowOrderModalParam();
+
+                        // Chuyển đến trang orders
                         window.location.href = '<c:url value="/orders"/>';
                     }
+                </script>
+
+                <!-- Notification Polling Script -->
+                <script>
+                    let lastNotificationId = null;
+                    let isPolling = false;
+
+                    // Function to show notification
+                    function showNotification(title, message) {
+                        iziToast.info({
+                            title: title,
+                            message: message,
+                            position: 'bottomLeft',
+                            timeout: 5000,
+                            backgroundColor: '#2ecc71',
+                            titleColor: '#fff',
+                            messageColor: '#fff'
+                        });
+                    }
+
+                    // Function to mark notification as read
+                    function markNotificationAsRead(notificationId) {
+                        fetch('/api/notifications/mark-read/' + notificationId, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                            .then(response => response.text())
+                            .then(data => {
+                                // Notification marked as read successfully
+                            })
+                            .catch(error => {
+                                console.error('Error marking notification as read:', error);
+                            });
+                    }
+
+                    // Function to poll for new notifications
+                    function pollNotifications() {
+                        if (isPolling) return;
+                        isPolling = true;
+
+                        fetch('/api/notifications/latest')
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('HTTP ' + response.status);
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                if (data && data.id) {
+                                    if (data.id !== lastNotificationId) {
+                                        lastNotificationId = data.id;
+                                        showNotification(data.title, data.content);
+
+                                        // Mark notification as read after displaying
+                                        markNotificationAsRead(data.id);
+                                    }
+                                } else {
+                                    // If this is the first poll and no notification, set lastNotificationId to 0
+                                    if (lastNotificationId === null) {
+                                        lastNotificationId = 0;
+                                    }
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error polling notifications:', error);
+                            })
+                            .finally(() => {
+                                isPolling = false;
+                            });
+                    }
+
+                    // Start polling when page loads
+                    document.addEventListener('DOMContentLoaded', function () {
+                        // Initial poll after 2 seconds
+                        setTimeout(() => {
+                            pollNotifications();
+                        }, 2000);
+
+                        // Poll every 3 seconds
+                        setInterval(pollNotifications, 3000);
+                    });
                 </script>
 
                 <c:if test="${not empty errorMessage}">

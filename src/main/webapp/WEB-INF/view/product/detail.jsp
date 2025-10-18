@@ -114,14 +114,14 @@
                                         <!-- Stock Status -->
                                         <div class="mb-4">
                                             <span
-                                                class="stock-indicator ${product.stock > 10 ? 'stock-available' : (product.stock > 0 ? 'stock-low' : 'stock-out')}">
+                                                class="stock-indicator ${dynamicStock > 10 ? 'stock-available' : (dynamicStock > 0 ? 'stock-low' : 'stock-out')}">
                                                 <i class="fas fa-boxes"></i>
                                                 <c:choose>
-                                                    <c:when test="${product.stock > 10}">
-                                                        Còn hàng (${product.stock} sản phẩm)
+                                                    <c:when test="${dynamicStock > 10}">
+                                                        Còn hàng (${dynamicStock} sản phẩm)
                                                     </c:when>
-                                                    <c:when test="${product.stock > 0}">
-                                                        Sắp hết hàng (${product.stock} sản phẩm)
+                                                    <c:when test="${dynamicStock > 0}">
+                                                        Sắp hết hàng (${dynamicStock} sản phẩm)
                                                     </c:when>
                                                     <c:otherwise>
                                                         Hết hàng
@@ -131,7 +131,7 @@
                                         </div>
 
                                         <!-- Quantity and Action Buttons -->
-                                        <c:if test="${product.status == 'ACTIVE' && product.stock > 0}">
+                                        <c:if test="${product.status == 'ACTIVE' && dynamicStock > 0}">
                                             <div class="action-buttons">
                                                 <!-- Quantity Selection -->
                                                 <div class="row mb-4">
@@ -139,7 +139,7 @@
                                                         <label class="form-label fw-bold">Số lượng:</label>
                                                         <input type="number" id="quantity" name="quantity"
                                                             class="form-control quantity-input" value="1" min="1"
-                                                            max="${product.stock}" style="width: 100px;">
+                                                            max="${dynamicStock}" style="width: 100px;">
                                                     </div>
                                                 </div>
 
@@ -153,7 +153,7 @@
                                             </div>
                                         </c:if>
 
-                                        <c:if test="${product.status != 'ACTIVE' || product.stock <= 0}">
+                                        <c:if test="${product.status != 'ACTIVE' || dynamicStock <= 0}">
                                             <div class="alert alert-warning text-center">
                                                 <i class="fas fa-exclamation-triangle"></i>
                                                 Sản phẩm hiện tại không thể mua
@@ -200,19 +200,38 @@
                         // Check authentication status
                         var isAuthenticated = <c:choose><c:when test="${pageContext.request.userPrincipal != null}">true</c:when><c:otherwise>false</c:otherwise></c:choose>;
 
+                        // Get user balance (snapshot when page loads)
+                        var userBalance = <c:choose><c:when test="${userBalance != null}">${userBalance}</c:when><c:otherwise>0</c:otherwise></c:choose>;
+
                         // Buy now function - Show modal
                         function buyNow() {
                             // Check if user is authenticated
                             if (!isAuthenticated) {
                                 // User not logged in - redirect to login with error message
                                 window.location.href = '<c:url value="/login"/>?errorMessage=' + encodeURIComponent('Bạn cần đăng nhập để thực hiện chức năng này');
-                                form.action = '<c:url value="/product/${product.slug}/buy-now"/>';
                                 return;
                             }
 
                             // User is logged in - proceed with buy now
                             var quantity = document.getElementById('quantity').value;
                             document.getElementById('modalQuantity').value = quantity;
+
+                            // Reset button to default state
+                            var confirmButton = document.querySelector('#buyNowModal .modal-footer .btn:last-child');
+                            if (confirmButton) {
+                                confirmButton.disabled = false;
+                                confirmButton.innerHTML = '<i class="fas fa-check"></i> Xác nhận mua';
+                                confirmButton.classList.remove('btn-warning');
+                                confirmButton.classList.remove('btn-secondary');
+                                confirmButton.classList.add('btn-success');
+                            }
+
+                            // Hide any existing balance status message
+                            var existingMessage = document.getElementById('balanceStatus');
+                            if (existingMessage) {
+                                existingMessage.remove();
+                            }
+
                             updateTotalPrice();
 
                             // Show modal
@@ -228,6 +247,54 @@
 
                             document.getElementById('totalPrice').textContent =
                                 new Intl.NumberFormat('vi-VN').format(total) + 'đ';
+
+                            // Check balance and update button state
+                            updateConfirmButtonState(total);
+                        }
+
+                        // Update confirm button state based on balance
+                        function updateConfirmButtonState(totalAmount) {
+                            var confirmButton = document.querySelector('#buyNowModal .modal-footer .btn:last-child');
+                            var balanceMessage = document.getElementById('balanceStatus');
+
+                            if (userBalance < totalAmount) {
+                                // Insufficient balance - disable button
+                                if (confirmButton) {
+                                    confirmButton.disabled = true;
+                                    confirmButton.classList.remove('btn-success');
+                                    confirmButton.classList.remove('btn-warning');
+                                    confirmButton.classList.add('btn-secondary');
+                                }
+
+                                // Show balance status message
+                                var messageContainer = document.getElementById('balanceStatusContainer');
+                                if (!balanceMessage && messageContainer) {
+                                    // Create the message element
+                                    var messageDiv = document.createElement('div');
+                                    messageDiv.id = 'balanceStatus';
+                                    messageDiv.className = 'alert alert-warning mt-2';
+                                    messageDiv.innerHTML =
+                                        '<i class="fas fa-wallet"></i> <strong>Số dư không đủ!</strong>';
+                                    messageContainer.appendChild(messageDiv);
+                                } else if (balanceMessage) {
+                                    // Update existing message
+                                    balanceMessage.innerHTML =
+                                        '<i class="fas fa-wallet"></i> <strong>Số dư không đủ!</strong>';
+                                }
+                            } else {
+                                // Sufficient balance - enable button
+                                if (confirmButton) {
+                                    confirmButton.disabled = false;
+                                    confirmButton.classList.remove('btn-secondary');
+                                    confirmButton.classList.remove('btn-warning');
+                                    confirmButton.classList.add('btn-success');
+                                }
+
+                                // Hide balance status message
+                                if (balanceMessage) {
+                                    balanceMessage.remove();
+                                }
+                            }
                         }
 
                         // Confirm buy now
@@ -237,14 +304,23 @@
                             var price = parseFloat('${product.price}');
                             var total = quantity * price;
 
+                            // Check if user has sufficient balance
+                            if (userBalance < total) {
+                                alert('Số dư không đủ!');
+                                return;
+                            }
+
                             // Show confirmation popup
                             if (confirm('Bạn có chắc chắn muốn mua sản phẩm "' + productName + '" với số lượng ' + quantity + ' và tổng tiền ' + new Intl.NumberFormat('vi-VN').format(total) + 'đ?')) {
-                                // Close modal
+                                // Update form with current quantity
+                                document.getElementById('formQuantity').value = quantity;
+
+                                // Close modal first
                                 var modal = bootstrap.Modal.getInstance(document.getElementById('buyNowModal'));
                                 modal.hide();
 
-                                // Redirect to homepage with order modal
-                                window.location.href = '<c:url value="/homepage"/>?showOrderModal=true';
+                                // Submit form - let the server handle redirect
+                                document.getElementById('orderForm').submit();
                             }
                         }
 
@@ -286,7 +362,8 @@
                     <!-- Buy Now Modal -->
                     <div class="modal fade" id="buyNowModal" tabindex="-1" aria-labelledby="buyNowModalLabel"
                         aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-dialog modal-dialog-centered"
+                            style="min-width: 600px; max-width: 600px; min-height: 400px;">
                             <div class="modal-content">
                                 <div class="modal-header">
                                     <h5 class="modal-title" id="buyNowModalLabel">
@@ -295,7 +372,7 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"
                                         aria-label="Close"></button>
                                 </div>
-                                <div class="modal-body">
+                                <div class="modal-body" style="min-height: 280px;">
                                     <div class="row">
                                         <div class="col-md-4">
                                             <img id="product-modal-image"
@@ -312,13 +389,13 @@
                                                     <fmt:formatNumber value="${product.price}" type="currency"
                                                         currencySymbol="" maxFractionDigits="0" />đ
                                                 </span>
-                                                <span class="text-muted">Kho: ${product.stock}</span>
+                                                <span class="text-muted">Kho: ${dynamicStock}</span>
                                             </div>
                                             <hr>
                                             <div class="mb-3">
                                                 <label class="form-label fw-bold">Số lượng:</label>
                                                 <input type="number" id="modalQuantity" class="form-control" value="1"
-                                                    min="1" max="${product.stock}" style="width: 100px;">
+                                                    min="1" max="${dynamicStock}" style="width: 100px;">
                                             </div>
                                             <div class="d-flex justify-content-between">
                                                 <span class="fw-bold">Tổng cộng:</span>
@@ -327,8 +404,26 @@
                                                         currencySymbol="" maxFractionDigits="0" />đ
                                                 </span>
                                             </div>
+                                            <c:if test="${pageContext.request.userPrincipal != null}">
+                                                <div class="d-flex justify-content-between mt-2">
+                                                    <span class="text-muted">Số dư:</span>
+                                                    <span class="text-info" id="currentBalance">
+                                                        <fmt:formatNumber value="${userBalance}" type="currency"
+                                                            currencySymbol="" maxFractionDigits="0" />đ
+                                                    </span>
+                                                </div>
+                                            </c:if>
                                         </div>
                                     </div>
+                                    <!-- Reserved space for balance status message -->
+                                    <div id="balanceStatusContainer" style="min-height: 80px;"></div>
+
+                                    <!-- Form for order processing -->
+                                    <form id="orderForm" method="post" action="<c:url value='/order-process/buy-now'/>"
+                                        style="display: none;">
+                                        <input type="hidden" name="productId" value="${product.id}">
+                                        <input type="hidden" name="quantity" id="formQuantity" value="1">
+                                    </form>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
@@ -428,6 +523,28 @@
                             var modalQuantity = document.getElementById('modalQuantity');
                             if (modalQuantity) {
                                 modalQuantity.addEventListener('input', updateTotalPrice);
+                            }
+
+                            // Reset modal state when modal is hidden
+                            var buyNowModal = document.getElementById('buyNowModal');
+                            if (buyNowModal) {
+                                buyNowModal.addEventListener('hidden.bs.modal', function () {
+                                    // Reset button to default state
+                                    var confirmButton = document.querySelector('#buyNowModal .modal-footer .btn:last-child');
+                                    if (confirmButton) {
+                                        confirmButton.disabled = false;
+                                        confirmButton.innerHTML = '<i class="fas fa-check"></i> Xác nhận mua';
+                                        confirmButton.classList.remove('btn-warning');
+                                        confirmButton.classList.remove('btn-secondary');
+                                        confirmButton.classList.add('btn-success');
+                                    }
+
+                                    // Remove any balance status message
+                                    var balanceMessage = document.getElementById('balanceStatus');
+                                    if (balanceMessage) {
+                                        balanceMessage.remove();
+                                    }
+                                });
                             }
                         });
                     </script>
