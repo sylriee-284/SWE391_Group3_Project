@@ -432,14 +432,8 @@
                         </div>
                     </div>
 
-
-
-
                     <!-- Include Footer -->
                     <jsp:include page="../common/footer.jsp" />
-                    <!-- Include Footer -->
-                    <jsp:include page="../common/footer.jsp" />
-
                     <!-- Page-specific JavaScript -->
                     <c:if test="${not empty pageJS}">
                         <c:forEach var="js" items="${pageJS}">
@@ -563,7 +557,7 @@
                             });
                         });
                     </script>
-                    >>>>>>> main
+
                 </body>
 
                 </html>
