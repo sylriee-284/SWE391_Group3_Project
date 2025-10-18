@@ -74,4 +74,24 @@ public class WalletTransaction extends BaseEntity {
     public Order getOrder() {
         return this.refOrder;
     }
+
+    /**
+     * Convenience property for JSP/EL: exposes the referenced order id.
+     * If the relationship is not set, attempt to parse the paymentRef as an order id.
+     */
+    public Long getOrderId() {
+        if (this.refOrder != null) {
+            return this.refOrder.getId();
+        }
+        if (this.paymentRef != null && !this.paymentRef.isEmpty()) {
+            try {
+                return Long.parseLong(this.paymentRef);
+            } catch (NumberFormatException ex) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    // (duplicate getter removed)
 }
