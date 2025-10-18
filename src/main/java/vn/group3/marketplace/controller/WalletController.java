@@ -1,8 +1,8 @@
 package vn.group3.marketplace.controller;
 
-import vn.group3.marketplace.repository.UserRepository;
 import vn.group3.marketplace.service.VNPayService;
 import vn.group3.marketplace.service.WalletService;
+import vn.group3.marketplace.service.AuthenticationRefreshService;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
@@ -11,9 +11,6 @@ import vn.group3.marketplace.domain.entity.User;
 import vn.group3.marketplace.security.CustomUserDetails;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -31,16 +28,16 @@ public class WalletController {
 
     private final WalletService walletService;
     private final VNPayService vnpayService;
-    private final UserRepository userRepository;
     private final vn.group3.marketplace.service.WalletTransactionQueueService walletTransactionQueueService;
+    private final AuthenticationRefreshService authenticationRefreshService;
 
     public WalletController(WalletService walletService, VNPayService vnpayService,
-            UserRepository userRepository,
-            vn.group3.marketplace.service.WalletTransactionQueueService walletTransactionQueueService) {
+            vn.group3.marketplace.service.WalletTransactionQueueService walletTransactionQueueService,
+            AuthenticationRefreshService authenticationRefreshService) {
         this.walletService = walletService;
         this.vnpayService = vnpayService;
-        this.userRepository = userRepository;
         this.walletTransactionQueueService = walletTransactionQueueService;
+        this.authenticationRefreshService = authenticationRefreshService;
     }
 
     @GetMapping
@@ -54,6 +51,40 @@ public class WalletController {
         model.addAttribute("wallet", java.util.Map.of("balance", balance));
         model.addAttribute("user", user);
         return "wallet/detail";
+    }
+
+    /**
+     * API endpoint để lấy balance hiện tại của user
+     * Dùng cho việc cập nhật balance real-time trên frontend
+     */
+    @GetMapping("/api/balance")
+    @ResponseBody
+    public java.util.Map<String, Object> getCurrentBalance(@AuthenticationPrincipal CustomUserDetails currentUser) {
+        if (currentUser == null) {
+            return java.util.Map.of("error", "Not authenticated");
+        }
+        
+        try {
+            // Refresh authentication context để lấy balance mới nhất
+            authenticationRefreshService.refreshAuthenticationContext();
+            
+            // Lấy balance từ database (fresh data)
+            java.math.BigDecimal balance = walletService.findBalanceByUserId(currentUser.getId())
+                    .orElse(java.math.BigDecimal.ZERO);
+            
+            return java.util.Map.of(
+                "success", true,
+                "balance", balance,
+                "userId", currentUser.getId(),
+                "username", currentUser.getUsername()
+            );
+        } catch (Exception e) {
+            logger.error("Error getting current balance for user {}: {}", currentUser.getId(), e.getMessage(), e);
+            return java.util.Map.of(
+                "success", false,
+                "error", "Failed to get balance: " + e.getMessage()
+            );
+        }
     }
 
     @GetMapping("/deposit")
@@ -159,10 +190,13 @@ public class WalletController {
                     logger.warn(
                             "Deposit processing not finished within timeout for ref={}; returning success page and letting background worker finish",
                             paymentRef);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    logger.warn("Deposit processing interrupted for ref={}", paymentRef);
                 }
 
                 // REFRESH AUTHENTICATION để cập nhật số dư trong session
-                refreshAuthenticationContext();
+                authenticationRefreshService.refreshAuthenticationContext();
 
                 return "wallet/success";
             } catch (Exception e) {
@@ -179,64 +213,6 @@ public class WalletController {
                 logger.error("Error updating transaction status to CANCELLED: {}", e.getMessage(), e);
             }
             return "wallet/failure";
-        }
-    }
-
-    /**
-     * Xử lý thanh toán đơn hàng bằng ví
-     */
-
-    // Đưa vào queue xử lý
-    // var future = walletTransactionQueueService.enqueuePurchasePayment(
-    // currentUser.getId(),
-    // amount,
-    // orderId);
-
-    // Chờ tối đa 10 giây
-    // future.get(10, java.util.concurrent.TimeUnit.SECONDS);
-
-    // // Refresh session để cập nhật số dư
-    // refreshAuthenticationContext();
-
-    /**
-     * Refresh authentication context để cập nhật thông tin user trong session
-     * 
-     * VẤN ĐỀ: Sau khi nạp tiền thành công, database đã cập nhật số dư mới,
-     * nhưng CustomUserDetails trong session vẫn chứa số dư cũ.
-     * 
-     * GIẢI PHÁP: Fetch lại user từ database và cập nhật SecurityContext
-     */
-    private void refreshAuthenticationContext() {
-        try {
-            Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
-            if (currentAuth != null && currentAuth.getPrincipal() instanceof CustomUserDetails) {
-                CustomUserDetails currentUserDetails = (CustomUserDetails) currentAuth.getPrincipal();
-                String username = currentUserDetails.getUsername();
-
-                logger.debug("Refreshing authentication for user: {}", username);
-
-                // Fetch lại user mới từ database (với số dư đã cập nhật)
-                User refreshedUser = userRepository.findByUsername(username).orElse(null);
-                if (refreshedUser != null) {
-                    // Tạo CustomUserDetails mới với thông tin đã cập nhật
-                    CustomUserDetails newUserDetails = new CustomUserDetails(refreshedUser);
-
-                    logger.debug(" Old balance in session: {}", currentUserDetails.getBalance());
-                    logger.debug(" New balance from DB: {}", newUserDetails.getBalance());
-
-                    // Tạo authentication object mới
-                    UsernamePasswordAuthenticationToken newAuth = new UsernamePasswordAuthenticationToken(
-                            newUserDetails,
-                            currentAuth.getCredentials(),
-                            newUserDetails.getAuthorities());
-
-                    // Cập nhật SecurityContext
-                    SecurityContextHolder.getContext().setAuthentication(newAuth);
-                    logger.info("Authentication context refreshed successfully for user={}", username);
-                }
-            }
-        } catch (Exception e) {
-            logger.error("Error refreshing authentication context: {}", e.getMessage(), e);
         }
     }
 
