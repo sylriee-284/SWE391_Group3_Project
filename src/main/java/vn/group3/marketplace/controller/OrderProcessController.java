@@ -14,6 +14,9 @@ import vn.group3.marketplace.service.OrderQueue;
 import vn.group3.marketplace.service.NotificationService;
 import vn.group3.marketplace.domain.enums.NotificationType;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 @Controller
 @RequestMapping("/order-process")
 public class OrderProcessController {
@@ -69,7 +72,8 @@ public class OrderProcessController {
                     "Đặt hàng thất bại",
                     "Có lỗi xảy ra khi tạo đơn hàng: " + e.getMessage());
 
-            return "redirect:/product/" + productId;
+            return "redirect:/homepage?errorMessage="
+                    + URLEncoder.encode("Có lỗi xảy ra khi tạo đơn hàng: " + e.getMessage(), StandardCharsets.UTF_8);
         }
     }
 }
