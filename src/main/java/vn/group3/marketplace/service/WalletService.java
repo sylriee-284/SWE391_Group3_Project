@@ -100,6 +100,35 @@ public class WalletService {
     }
 
     /**
+     * Cập nhật trạng thái giao dịch thành CANCELLED
+     */
+    @Transactional
+    public void updateTransactionStatusToCancelled(String paymentRef) {
+        logger.info("=== Cancelling Transaction ===");
+        logger.info("Payment Ref: {}", paymentRef);
+
+        Optional<WalletTransaction> transactionOpt = walletTransactionRepository.findByPaymentRef(paymentRef);
+        if (transactionOpt.isPresent()) {
+            WalletTransaction transaction = transactionOpt.get();
+
+            logger.debug("Found transaction: {}", transaction.getId());
+            logger.debug("Current status: {}", transaction.getPaymentStatus());
+
+            // Chỉ cập nhật nếu transaction đang ở trạng thái PENDING
+            if (transaction.getPaymentStatus() == WalletTransactionStatus.PENDING) {
+                transaction.setPaymentStatus(WalletTransactionStatus.CANCELLED);
+                walletTransactionRepository.save(transaction);
+                logger.info("Updated transaction status to CANCELLED");
+            } else {
+                logger.warn("Transaction not in PENDING state, current status: {}", transaction.getPaymentStatus());
+            }
+        } else {
+            logger.error("Transaction not found with payment ref: {}", paymentRef);
+        }
+        logger.info("=== Transaction Cancellation Complete ===");
+    }
+
+    /**
      * Trả về userId liên kết với paymentRef nếu có.
      */
     public java.util.Optional<Long> findUserIdByPaymentRef(String paymentRef) {

@@ -171,6 +171,13 @@ public class WalletController {
             }
         } else {
             logger.warn("Payment failed with response code: {}", responseCode);
+            try {
+                // Cập nhật trạng thái giao dịch thành CANCELLED khi thanh toán thất bại
+                walletService.updateTransactionStatusToCancelled(paymentRef);
+                logger.info("Transaction status updated to CANCELLED for ref={}", paymentRef);
+            } catch (Exception e) {
+                logger.error("Error updating transaction status to CANCELLED: {}", e.getMessage(), e);
+            }
             return "wallet/failure";
         }
     }
