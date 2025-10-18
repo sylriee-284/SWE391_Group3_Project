@@ -1,206 +1,126 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-    <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-        <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
-
+<%@ page contentType="text/html; charset=UTF-8" language="java" %>
+    <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+        <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
             <!DOCTYPE html>
-            <html lang="en">
+            <html lang="vi">
 
             <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>
-                    <c:if test="${not empty pageTitle}">${pageTitle} - </c:if>MMO Market System
-                </title>
+                <meta charset="UTF-8" />
+                <title>${formTitle != null ? formTitle : (user.id == null ? 'Tạo tài khoản' : 'Chỉnh sửa tài khoản')} -
+                    MMO Market System</title>
+                <jsp:include page="/WEB-INF/view/common/head.jsp" />
+                <style>
+                    .role-chip {
+                        padding: .25rem .6rem;
+                        border-radius: 999px;
+                        font-size: .85rem;
+                        background: #e6f5fd;
+                    }
 
-                <!-- Include common head with all CSS and JS -->
-                <jsp:include page="../common/head.jsp" />
+                    .form-check-inline .form-check-input {
+                        margin-right: .35rem;
+                    }
+                </style>
             </head>
 
             <body>
-                <!-- Include Navbar -->
-                <jsp:include page="../common/navbar.jsp" />
+                <jsp:include page="/WEB-INF/view/common/navbar.jsp" />
+                <jsp:include page="/WEB-INF/view/common/sidebar.jsp" />
+                <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-                <!-- Include Sidebar -->
-                <jsp:include page="../common/sidebar.jsp" />
+                <div class="main-content" id="mainContent">
+                    <div class="container-fluid">
 
-                <!-- Main Content Area -->
-                <div class="content" id="content">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="mb-0">
+                                ${formTitle != null ? formTitle : (user.id == null ? 'Tạo tài khoản' : 'Chỉnh sửa tài
+                                khoản')}
+                            </h4>
+                            <a class="btn btn-outline-secondary" href="<c:url value='/admin/users'/>">← Quay lại</a>
+                        </div>
 
+                        <!-- Xác định action -->
+                        <c:set var="formAction"
+                            value="${user.id == null ? '/admin/users' : '/admin/users/update/' += user.id}" />
 
-                    <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
-                        <h3 class="m-0">${formTitle}</h3>
-                        <a class="btn btn-outline-secondary" href="<c:url value='/admin/users'/>">← Quay lại</a>
-                    </div>
+                        <div class="card p-3">
+                            <form method="post" action="<c:url value='${formAction}'/>">
+                                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
 
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <c:set var="isEdit" value="${not empty user.id}" />
-
-                            <%-- build action cho create/update --%>
-                                <c:set var="formAction" value="/admin/users" />
-                                <c:if test="${isEdit}">
-                                    <c:set var="formAction" value="/admin/users/update/${user.id}" />
-                                </c:if>
-
-                                <form method="post" action="${pageContext.request.contextPath}${formAction}">
-                                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
-
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label">Username</label>
-                                            <input name="username" class="form-control" value="${user.username}"
-                                                required />
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <label class="form-label">Email</label>
-                                            <input type="email" name="email" class="form-control" value="${user.email}"
-                                                required />
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <label class="form-label">Mật khẩu</label>
-                                            <input type="password" name="passwordPlain" class="form-control"
-                                                placeholder="${isEdit ? 'Để trống nếu không đổi' : 'Nhập mật khẩu'}" />
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <label class="form-label">Họ tên</label>
-                                            <input name="fullName" class="form-control" value="${user.fullName}" />
-                                        </div>
-
-                                        <div class="col-md-3">
-                                            <label class="form-label">Trạng thái</label>
-                                            <select name="status" class="form-select">
-                                                <option value="ACTIVE" ${user.status=='ACTIVE' ? 'selected' : '' }>
-                                                    ACTIVE</option>
-                                                <option value="INACTIVE" ${user.status=='INACTIVE' ? 'selected' : '' }>
-                                                    INACTIVE</option>
-                                            </select>
-                                        </div>
-
-                                        <div class="col-md-3">
-                                            <label class="form-label">Số dư (VND)</label>
-                                            <input type="number" min="0" step="1" name="balance" class="form-control"
-                                                value="${user.balance}" />
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <label class="form-label">Quyền hạn (Roles)</label>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="roles"
-                                                    value="USER" <c:if test="${user.hasRole('USER')}">checked</c:if>>
-                                                <label class="form-check-label">USER</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="roles"
-                                                    value="SELLER" <c:if test="${user.hasRole('SELLER')}">checked</c:if>
-                                                >
-                                                <label class="form-check-label">SELLER</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="roles"
-                                                    value="ADMIN" <c:if test="${user.hasRole('ADMIN')}">checked</c:if>>
-                                                <label class="form-check-label">ADMIN</label>
-                                            </div>
-                                        </div>
-
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Username <span class="text-danger">*</span></label>
+                                        <input class="form-control" name="username" value="${user.username}" required />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Email <span class="text-danger">*</span></label>
+                                        <input class="form-control" type="email" name="email" value="${user.email}"
+                                            required />
                                     </div>
 
-                                    <div class="mt-4">
-                                        <button class="btn btn-primary" type="submit">
-                                            <c:out value="${isEdit ? 'Cập nhật' : 'Tạo mới'}" />
-                                        </button>
-                                        <a class="btn btn-light ms-2" href="<c:url value='/admin/users'/>">Hủy</a>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Mật khẩu <small class="text-muted">(Để trống nếu không
+                                                đổi)</small></label>
+                                        <input class="form-control" type="password" name="passwordPlain"
+                                            autocomplete="new-password" />
                                     </div>
-                                </form>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Họ tên</label>
+                                        <input class="form-control" name="fullName" value="${user.fullName}" />
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Trạng thái</label>
+                                        <select class="form-select" name="status">
+                                            <option value="ACTIVE" <c:if test="${user.status == 'ACTIVE'}">selected
+                                                </c:if>>ACTIVE</option>
+                                            <option value="INACTIVE" <c:if test="${user.status == 'INACTIVE'}">selected
+                                                </c:if>>INACTIVE</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <label class="form-label">Số dư (VND)</label>
+                                        <input class="form-control" name="balance" value="${user.balance}" />
+                                    </div>
+
+                                    <!-- ROLES -->
+                                    <div class="col-12">
+                                        <label class="form-label d-block">Quyền hạn (Roles)</label>
+
+                                        <!-- allRoles: List<Role> ; selectedRoleCodes: List<String> -->
+                                        <c:forEach var="r" items="${allRoles}">
+                                            <div class="form-check form-check-inline mb-2">
+                                                <input class="form-check-input" type="checkbox" id="role-${r.code}"
+                                                    name="roleCodes" value="${r.code}" <c:if
+                                                    test="${selectedRoleCodes != null && selectedRoleCodes.contains(r.code)}">checked
+                                                </c:if> />
+                                                <label class="form-check-label" for="role-${r.code}">
+                                                    <span class="role-chip">${r.code}</span>
+                                                </label>
+                                            </div>
+                                        </c:forEach>
+
+                                        <div class="text-muted small mt-1">Không chọn thì mặc định sẽ là
+                                            <strong>USER</strong>.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex gap-2 mt-4">
+                                    <button class="btn btn-primary" type="submit">${user.id == null ? 'Tạo mới' : 'Cập
+                                        nhật'}</button>
+                                    <a class="btn btn-secondary" href="<c:url value='/admin/users'/>">Hủy</a>
+                                </div>
+                            </form>
                         </div>
                     </div>
-
-
-
-
-
-
                 </div>
 
-                <!-- Include Footer -->
-                <jsp:include page="../common/footer.jsp" />
-
-                <!-- Script to display notifications using iziToast -->
-                <c:if test="${not empty successMessage}">
-                    <script>
-                        iziToast.success({
-                            title: 'Success!',
-                            message: '${successMessage}',
-                            position: 'topRight',
-                            timeout: 5000
-                        });
-                    </script>
-                </c:if>
-
-                <c:if test="${not empty errorMessage}">
-                    <script>
-                        iziToast.error({
-                            title: 'Error!',
-                            message: '${errorMessage}',
-                            position: 'topRight',
-                            timeout: 5000
-                        });
-                    </script>
-                </c:if>
-
-                <!-- Page-specific JavaScript -->
-                <c:if test="${not empty pageJS}">
-                    <c:forEach var="js" items="${pageJS}">
-                        <script src="${pageContext.request.contextPath}${js}"></script>
-                    </c:forEach>
-                </c:if>
-
-                <!-- Common JavaScript -->
+                <jsp:include page="/WEB-INF/view/common/footer.jsp" />
                 <script>
-                    // Toggle sidebar function
-                    function toggleSidebar() {
-                        var sidebar = document.getElementById('sidebar');
-                        var content = document.getElementById('content');
-                        var overlay = document.getElementById('sidebarOverlay');
-
-                        if (sidebar && content) {
-                            sidebar.classList.toggle('active');
-                            content.classList.toggle('shifted');
-
-                            // Toggle overlay for mobile
-                            if (overlay) {
-                                overlay.classList.toggle('active');
-                            }
-                        }
-                    }
-
-                    // Close sidebar when clicking outside on mobile
-                    document.addEventListener('click', function (event) {
-                        var sidebar = document.getElementById('sidebar');
-                        var overlay = document.getElementById('sidebarOverlay');
-                        var menuToggle = document.querySelector('.menu-toggle');
-
-                        if (sidebar && sidebar.classList.contains('active') &&
-                            !sidebar.contains(event.target) &&
-                            !menuToggle.contains(event.target)) {
-                            toggleSidebar();
-                        }
-                    });
-
-                    // Auto-hide alerts after 5 seconds
-                    document.addEventListener('DOMContentLoaded', function () {
-                        var alerts = document.querySelectorAll('.alert');
-                        alerts.forEach(function (alert) {
-                            setTimeout(function () {
-                                alert.style.opacity = '0';
-                                setTimeout(function () {
-                                    alert.remove();
-                                }, 300);
-                            }, 5000);
-                        });
-                    });
+                    function toggleSidebar() { const s = document.getElementById('sidebar'); const m = document.getElementById('mainContent'); if (s) s.classList.toggle('collapsed'); if (m) m.classList.toggle('expanded'); }
                 </script>
             </body>
 

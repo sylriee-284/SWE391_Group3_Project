@@ -28,9 +28,36 @@ public class Role extends BaseEntity {
 
     private String description;
 
-    // Many-to-Many với User (mappedBy để tránh duplicate bảng trung gian)
-    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
+    // ✅ mapping CHÍNH qua bảng trung gian
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private Set<UserRole> userRoles = new HashSet<>();
+
+    // ✅ GIỮ TÊN CŨ, KHÔNG XÓA: thay ManyToMany -> Transient bridge
+    @Transient
     @Builder.Default
     private Set<User> users = new HashSet<>();
 
+    // ✅ bridge: đọc từ userRoles
+    public Set<User> getUsers() {
+        // luôn build từ userRoles để nhất quán
+        return userRoles.stream()
+                .map(UserRole::getUser)
+                .collect(java.util.stream.Collectors.toSet());
+    }
+
+    // ✅ bridge: ghi ngược vào userRoles để vẫn “set users” như cũ
+    public void setUsers(Set<User> users) {
+        this.userRoles.clear();
+        if (users != null) {
+            for (User u : users) {
+                UserRole ur = new UserRole();
+                ur.setUser(u);
+                ur.setRole(this);
+                this.userRoles.add(ur);
+            }
+        }
+        // giữ field users cho code nào lỡ truy cập trực tiếp
+        this.users = users != null ? new HashSet<>(users) : new HashSet<>();
+    }
 }

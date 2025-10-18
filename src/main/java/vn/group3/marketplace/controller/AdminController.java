@@ -3,6 +3,7 @@ package vn.group3.marketplace.controller;
 import java.util.List;
 import java.util.stream.Collectors;
 import vn.group3.marketplace.repository.RoleRepository;
+import vn.group3.marketplace.domain.entity.Role;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -177,57 +178,61 @@ public class AdminController {
         return resp;
     }
 
-    // THÊM MỚI – nhận form tạo user
+    // THÊM MỚI
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/users")
     public String createUser(@ModelAttribute("user") User user,
-            @RequestParam(value = "roles", required = false) List<String> roles,
+            @RequestParam(value = "roleCodes", required = false) java.util.List<String> roleCodes,
             @RequestParam(value = "passwordPlain", required = false) String passwordPlain,
             RedirectAttributes ra) {
-        userService.saveUserWithRolesAndPassword(user, roles, passwordPlain);
+        userService.saveUserWithRolesAndPassword(user, roleCodes, passwordPlain);
         ra.addFlashAttribute("success", "Tạo tài khoản thành công!");
         return "redirect:/admin/users";
     }
 
-    // Form thêm mới tài khoản
+    // Form tạo
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users/create")
     public String showCreateUserForm(Model model) {
         model.addAttribute("user", new User());
         model.addAttribute("formTitle", "Tạo tài khoản mới");
         model.addAttribute("allRoles", roleRepository.findAll());
-        return "admin/user_form"; // JSP form thêm user
+        model.addAttribute("selectedRoleCodes", java.util.Collections.emptyList());
+        return "admin/user_form";
     }
 
-    // Form chỉnh sửa tài khoản
+    // Form sửa
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users/edit/{id}")
     public String showEditUserForm(@PathVariable Long id, Model model) {
         User existing = userService.getUserById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user ID: " + id));
+
         model.addAttribute("user", existing);
         model.addAttribute("formTitle", "Chỉnh sửa tài khoản");
         model.addAttribute("allRoles", roleRepository.findAll());
+
+        // Tạo list code đã chọn để pre-check
+        java.util.List<String> selected = (existing.getRoles() != null)
+                ? existing.getRoles().stream().map(Role::getCode).toList()
+                : java.util.Collections.emptyList();
+        model.addAttribute("selectedRoleCodes", selected);
+
         return "admin/user_form";
     }
 
-    // Xử lý cập nhật
+    // CẬP NHẬT
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/users/update/{id}")
     public String updateUser(@PathVariable Long id,
             @ModelAttribute("user") User updatedUser,
-            @RequestParam(value = "roles", required = false) List<String> roles,
+            @RequestParam(value = "roleCodes", required = false) java.util.List<String> roleCodes,
             @RequestParam(value = "passwordPlain", required = false) String passwordPlain,
-            RedirectAttributes redirectAttributes) {
-        try {
-            updatedUser.setId(id);
-            userService.saveUserWithRolesAndPassword(updatedUser, roles, passwordPlain);
-            redirectAttributes.addFlashAttribute("success", "Cập nhật tài khoản thành công!");
-            return "redirect:/admin/users";
-        } catch (IllegalArgumentException ex) {
-            redirectAttributes.addFlashAttribute("error", ex.getMessage());
-            return "redirect:/admin/users/edit/" + id;
-        }
+            RedirectAttributes ra) {
+        updatedUser.setId(id);
+        userService.saveUserWithRolesAndPassword(updatedUser, roleCodes, passwordPlain);
+        ra.addFlashAttribute("success", "Cập nhật tài khoản thành công!");
+        return "redirect:/admin/users";
     }
 
     // Xóa mềm tài khoản

@@ -1,226 +1,221 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
     <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-        <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
-
+        <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
             <!DOCTYPE html>
-            <html lang="en">
+            <html lang="vi">
 
             <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta charset="UTF-8" />
                 <title>
-                    <c:if test="${not empty pageTitle}">${pageTitle} - </c:if>MMO Market System
+                    <c:out
+                        value="${pageTitle != null ? pageTitle : (parentCategory == null ? 'Quản lý danh mục (CHA)' : ('Danh mục con của: ' += parentCategory.name))}" />
+                    - MMO Market System
                 </title>
-
-                <!-- Include common head with all CSS and JS -->
-                <jsp:include page="../common/head.jsp" />
+                <jsp:include page="/WEB-INF/view/common/head.jsp" />
             </head>
 
             <body>
-                <!-- Include Navbar -->
-                <jsp:include page="../common/navbar.jsp" />
+                <!-- Header + Sidebar -->
+                <jsp:include page="/WEB-INF/view/common/navbar.jsp" />
+                <jsp:include page="/WEB-INF/view/common/sidebar.jsp" />
+                <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-                <!-- Include Sidebar -->
-                <jsp:include page="../common/sidebar.jsp" />
+                <!-- Main -->
+                <div class="main-content" id="mainContent">
+                    <div class="container-fluid">
 
-                <!-- Main Content Area -->
-                <div class="content" id="content">
+                        <!-- Title + Add child (khi đang xem CON) -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="mb-0">
+                                <c:choose>
+                                    <c:when test="${parentCategory == null}">
+                                        Quản lý danh mục (CHA)
+                                    </c:when>
+                                    <c:otherwise>
+                                        Danh mục con của: <strong>
+                                            <c:out value="${parentCategory.name}" />
+                                        </strong>
+                                    </c:otherwise>
+                                </c:choose>
+                            </h4>
 
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3 class="mb-0">
-                            <c:choose>
-                                <c:when test="${not empty parentCategory}">
-                                    Danh mục con của: <strong>${parentCategory.name}</strong>
-                                </c:when>
-                                <c:otherwise>
-                                    Quản lý danh mục (CHA)
-                                </c:otherwise>
-                            </c:choose>
-                        </h3>
-
-                        <div>
-                            <c:choose>
-                                <c:when test="${not empty parentCategory}">
-                                    <a class="btn btn-primary"
-                                        href="${pageContext.request.contextPath}/admin/categories/${parentCategory.id}/subcategories/add">
-                                        + Thêm danh mục con
-                                    </a>
-                                    <a class="btn btn-outline-secondary ms-2"
-                                        href="${pageContext.request.contextPath}/admin/categories">← Quay về danh mục
-                                        CHA</a>
-                                </c:when>
-                                <c:otherwise>
-                                    <%-- đang ở màn danh mục CHA: không cần nút gì thêm --%>
-                                </c:otherwise>
-                            </c:choose>
+                            <c:if test="${parentCategory != null}">
+                                <a href="<c:url value='/admin/categories/${parentCategory.id}/subcategories/add'/>"
+                                    class="btn btn-primary">+ Thêm danh mục con</a>
+                            </c:if>
                         </div>
+
+                        <!-- Filters (nhẹ) -->
+                        <div class="filter-section">
+                            <form method="get" action="">
+                                <div class="row filter-row">
+                                    <div class="col-md-6">
+                                        <div class="filter-label">Tìm theo tên</div>
+                                        <input name="q" value="${fn:escapeXml(param.q)}" type="text"
+                                            class="form-control" placeholder="Tên danh mục...">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="filter-label">Trạng thái</div>
+                                        <select name="active" class="form-select">
+                                            <option value="">Tất cả</option>
+                                            <option value="true" <c:if test="${param.active=='true'}">selected</c:if>
+                                                >Active</option>
+                                            <option value="false" <c:if test="${param.active=='false'}">selected</c:if>
+                                                >Inactive</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end gap-2">
+                                        <button class="btn btn-primary" type="submit">Lọc</button>
+                                        <a class="btn btn-outline-secondary"
+                                            href="<c:url value='${parentCategory == null ? " /admin/categories" :
+                                            ("/admin/categories/" +=parentCategory.id +="/subcategories" )}' />">
+                                        Bỏ lọc
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Table -->
+                        <div class="table-container">
+                            <table class="resizable-table" id="resizableTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width:80px">ID<div class="resizer"></div>
+                                        </th>
+                                        <th style="width:380px">Tên danh mục<div class="resizer"></div>
+                                        </th>
+                                        <th style="width:420px">Mô tả<div class="resizer"></div>
+                                        </th>
+                                        <th style="width:140px">Trạng thái<div class="resizer"></div>
+                                        </th>
+                                        <th style="width:220px">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <c:forEach var="c" items="${categories}">
+                                        <tr>
+                                            <td>${c.id}</td>
+                                            <td>
+                                                <c:out value="${c.name}" />
+                                            </td>
+                                            <td>
+                                                <c:out value="${c.description}" />
+                                            </td>
+                                            <td>
+                                                <span class="badge ${c.isActive ? 'bg-success' : 'bg-secondary'}">
+                                                    ${c.isActive ? 'ACTIVE' : 'INACTIVE'}
+                                                </span>
+                                            </td>
+                                            <td class="d-flex gap-2">
+                                                <!-- Chi tiết / Sửa -->
+                                                <a class="btn btn-sm btn-primary"
+                                                    href="<c:url value='/admin/categories/edit/${c.id}'/>">Chi tiết</a>
+
+                                                <!-- Toggle: POST /toggle/{id} -->
+                                                <form method="post"
+                                                    action="<c:url value='/admin/categories/toggle/${c.id}'/>"
+                                                    class="d-inline">
+                                                    <input type="hidden" name="${_csrf.parameterName}"
+                                                        value="${_csrf.token}" />
+                                                    <button type="submit"
+                                                        class="btn btn-sm ${c.isActive ? 'btn-warning' : 'btn-success'}">
+                                                        ${c.isActive ? 'Tắt' : 'Bật'}
+                                                    </button>
+                                                </form>
+
+                                                <!-- Xoá: POST /delete/{id} -->
+                                                <button class="btn btn-sm btn-danger" data-id="${c.id}"
+                                                    data-name="${fn:escapeXml(c.name)}"
+                                                    onclick="openDeleteCategory(this)">Xoá</button>
+                                            </td>
+                                        </tr>
+                                    </c:forEach>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination (inline, không file riêng) -->
+                        <c:if test="${totalPages != null && totalPages > 1}">
+                            <c:set var="baseUrl" value="${parentCategory == null
+                         ? '/admin/categories'
+                         : '/admin/categories/' += parentCategory.id += '/subcategories'}" />
+                            <nav class="mt-3">
+                                <ul class="pagination justify-content-center">
+                                    <!-- First / Prev -->
+                                    <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
+                                        <a class="page-link"
+                                            href="${pageContext.request.contextPath}${baseUrl}?page=1&size=${pageSize}">&laquo;</a>
+                                    </li>
+                                    <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
+                                        <a class="page-link"
+                                            href="${pageContext.request.contextPath}${baseUrl}?page=${currentPage-1}&size=${pageSize}">&lsaquo;</a>
+                                    </li>
+
+                                    <!-- Window current-2 .. current+2 -->
+                                    <c:set var="start" value="${currentPage-2 < 1 ? 1 : currentPage-2}" />
+                                    <c:set var="end"
+                                        value="${currentPage+2 > totalPages ? totalPages : currentPage+2}" />
+                                    <c:forEach begin="${start}" end="${end}" var="p">
+                                        <li class="page-item ${p == currentPage ? 'active' : ''}">
+                                            <a class="page-link"
+                                                href="${pageContext.request.contextPath}${baseUrl}?page=${p}&size=${pageSize}">${p}</a>
+                                        </li>
+                                    </c:forEach>
+
+                                    <!-- Next / Last -->
+                                    <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
+                                        <a class="page-link"
+                                            href="${pageContext.request.contextPath}${baseUrl}?page=${currentPage+1}&size=${pageSize}">&rsaquo;</a>
+                                    </li>
+                                    <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
+                                        <a class="page-link"
+                                            href="${pageContext.request.contextPath}${baseUrl}?page=${totalPages}&size=${pageSize}">&raquo;</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </c:if>
+
                     </div>
-
-                    <table class="table table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th style="width:60px">ID</th>
-                                <th>Tên</th>
-                                <th>Mô tả</th>
-                                <th style="width:140px" class="text-center">Trạng thái</th>
-                                <th style="width:220px" class="text-end">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <c:forEach var="c" items="${categories}">
-                                <tr>
-                                    <td>${c.id}</td>
-                                    <td>${c.name}</td>
-                                    <td>${c.description}</td>
-
-                                    <td class="text-center">
-                                        <%-- Nút đổi trạng thái: luôn POST (có CSRF) --%>
-                                            <form method="post"
-                                                action="${pageContext.request.contextPath}/admin/categories/toggle/${c.id}"
-                                                class="d-inline">
-                                                <input type="hidden" name="${_csrf.parameterName}"
-                                                    value="${_csrf.token}" />
-                                                <button type="submit"
-                                                    class="badge ${c.isActive ? 'bg-success' : 'bg-secondary'} border-0"
-                                                    style="cursor:pointer" title="Nhấp để đổi trạng thái">
-                                                    <c:out value="${c.isActive ? 'ACTIVE' : 'INACTIVE'}" />
-                                                </button>
-                                            </form>
-                                    </td>
-
-                                    <td class="text-end">
-                                        <c:choose>
-                                            <c:when test="${empty parentCategory}">
-                                                <%-- CHẾ ĐỘ CHA: Sửa + Chi tiết --%>
-                                                    <a class="btn btn-sm btn-outline-primary"
-                                                        href="${pageContext.request.contextPath}/admin/categories/edit/${c.id}">Sửa</a>
-                                                    <a class="btn btn-sm btn-success ms-1"
-                                                        href="${pageContext.request.contextPath}/admin/categories/${c.id}/subcategories">Chi
-                                                        tiết</a>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <%-- CHẾ ĐỘ CON: Sửa + Xoá --%>
-                                                    <a class="btn btn-sm btn-outline-primary"
-                                                        href="${pageContext.request.contextPath}/admin/categories/edit/${c.id}">Sửa</a>
-
-                                                    <form class="d-inline" method="post"
-                                                        action="${pageContext.request.contextPath}/admin/categories/delete/${c.id}"
-                                                        onsubmit="return confirm('Xoá danh mục con này?');">
-                                                        <input type="hidden" name="${_csrf.parameterName}"
-                                                            value="${_csrf.token}" />
-                                                        <button class="btn btn-sm btn-outline-danger ms-1"
-                                                            type="submit">Xoá</button>
-                                                    </form>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </td>
-                                </tr>
-                            </c:forEach>
-                        </tbody>
-                    </table>
-
-                    <c:if test="${not empty parentCategory && not empty pageData}">
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <div>Trang ${pageData.number + 1} / ${pageData.totalPages}</div>
-                            <div>
-                                <c:if test="${pageData.hasPrevious()}">
-                                    <a class="btn btn-sm btn-outline-secondary"
-                                        href="${pageContext.request.contextPath}/admin/categories/${parentCategory.id}/subcategories?page=${pageData.number - 1}&size=${pageData.size}">
-                                        ← Trước
-                                    </a>
-                                </c:if>
-                                <c:if test="${pageData.hasNext()}">
-                                    <a class="btn btn-sm btn-outline-secondary ms-2"
-                                        href="${pageContext.request.contextPath}/admin/categories/${parentCategory.id}/subcategories?page=${pageData.number + 1}&size=${pageData.size}">
-                                        Sau →
-                                    </a>
-                                </c:if>
-                            </div>
-                        </div>
-                    </c:if>
-
                 </div>
 
+                <!-- Delete Modal -->
+                <div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <form class="modal-content" method="post" id="deleteForm">
+                            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title">Xác nhận xóa</h5>
+                                <button type="button" class="btn-close btn-close-white"
+                                    data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Bạn có chắc chắn muốn xóa danh mục:</p>
+                                <h5 class="text-danger" id="deleteCategoryName"></h5>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                <button type="submit" class="btn btn-danger">Xóa</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
-
-
-                <!-- Include Footer -->
-                <jsp:include page="../common/footer.jsp" />
-
-                <!-- Script to display notifications using iziToast -->
-                <c:if test="${not empty successMessage}">
-                    <script>
-                        iziToast.success({
-                            title: 'Success!',
-                            message: '${successMessage}',
-                            position: 'topRight',
-                            timeout: 5000
-                        });
-                    </script>
-                </c:if>
-
-                <c:if test="${not empty errorMessage}">
-                    <script>
-                        iziToast.error({
-                            title: 'Error!',
-                            message: '${errorMessage}',
-                            position: 'topRight',
-                            timeout: 5000
-                        });
-                    </script>
-                </c:if>
-
-                <!-- Page-specific JavaScript -->
-                <c:if test="${not empty pageJS}">
-                    <c:forEach var="js" items="${pageJS}">
-                        <script src="${pageContext.request.contextPath}${js}"></script>
-                    </c:forEach>
-                </c:if>
-
-                <!-- Common JavaScript -->
+                <!-- Footer + Scripts -->
+                <jsp:include page="/WEB-INF/view/common/footer.jsp" />
                 <script>
-                    // Toggle sidebar function
                     function toggleSidebar() {
-                        var sidebar = document.getElementById('sidebar');
-                        var content = document.getElementById('content');
-                        var overlay = document.getElementById('sidebarOverlay');
-
-                        if (sidebar && content) {
-                            sidebar.classList.toggle('active');
-                            content.classList.toggle('shifted');
-
-                            // Toggle overlay for mobile
-                            if (overlay) {
-                                overlay.classList.toggle('active');
-                            }
-                        }
+                        const s = document.getElementById('sidebar'), m = document.getElementById('mainContent');
+                        if (s) s.classList.toggle('collapsed');
+                        if (m) m.classList.toggle('expanded');
                     }
-
-                    // Close sidebar when clicking outside on mobile
-                    document.addEventListener('click', function (event) {
-                        var sidebar = document.getElementById('sidebar');
-                        var overlay = document.getElementById('sidebarOverlay');
-                        var menuToggle = document.querySelector('.menu-toggle');
-
-                        if (sidebar && sidebar.classList.contains('active') &&
-                            !sidebar.contains(event.target) &&
-                            !menuToggle.contains(event.target)) {
-                            toggleSidebar();
-                        }
-                    });
-
-                    // Auto-hide alerts after 5 seconds
-                    document.addEventListener('DOMContentLoaded', function () {
-                        var alerts = document.querySelectorAll('.alert');
-                        alerts.forEach(function (alert) {
-                            setTimeout(function () {
-                                alert.style.opacity = '0';
-                                setTimeout(function () {
-                                    alert.remove();
-                                }, 300);
-                            }, 5000);
-                        });
-                    });
+                    function openDeleteCategory(btn) {
+                        const id = btn.dataset.id, name = btn.dataset.name || '';
+                        document.getElementById('deleteCategoryName').innerText = name;
+                        document.getElementById('deleteForm').action =
+                            '<c:url value="/admin/categories/delete/"/>' + id;
+                        new bootstrap.Modal(document.getElementById('deleteCategoryModal')).show();
+                    }
                 </script>
             </body>
 

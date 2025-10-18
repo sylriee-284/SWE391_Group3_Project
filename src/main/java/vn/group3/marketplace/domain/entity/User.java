@@ -34,10 +34,6 @@ public class User extends BaseEntity {
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
-    // @Transient
-    // private String roleName; // 👈 chỉ dùng hiển thị trên form, không lưu xuống
-    // DB
-
     private String phone;
     private String fullName;
     private LocalDate dateOfBirth;
@@ -55,8 +51,8 @@ public class User extends BaseEntity {
     @Builder.Default
     private BigDecimal balance = BigDecimal.ZERO;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, // 🔑 BẮT BUỘC
-            fetch = FetchType.LAZY)
+    // ✅ KEEP: mapping CHÍNH qua bảng trung gian
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private Set<UserRole> userRoles = new HashSet<>();
 
@@ -70,11 +66,25 @@ public class User extends BaseEntity {
     @OneToOne(mappedBy = "owner", cascade = CascadeType.ALL)
     private SellerStore sellerStore;
 
-    // Convenience method to get roles
+    // ✅ KEEP: API cũ - lấy roles từ userRoles (view, không persist)
+    @Transient
     public Set<Role> getRoles() {
         return userRoles.stream()
                 .map(UserRole::getRole)
                 .collect(java.util.stream.Collectors.toSet());
+    }
+
+    // ✅ ADD (nếu team có dùng setRoles): ghi ngược vào userRoles
+    public void setRoles(Set<Role> roles) {
+        this.userRoles.clear();
+        if (roles != null) {
+            for (Role r : roles) {
+                UserRole ur = new UserRole();
+                ur.setUser(this);
+                ur.setRole(r);
+                this.userRoles.add(ur);
+            }
+        }
     }
 
     public boolean hasRole(String roleCode) {

@@ -39,9 +39,17 @@ public class CategoryController {
 
     // ===================== DANH SÁCH CHA =====================
     @GetMapping
-    public String listParentCategories(Model model) {
-        List<Category> list = categoryService.findParentCategories(); // show cả active + inactive, trừ deleted
-        model.addAttribute("categories", list);
+    public String listParentCategories(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
+
+        var p = categoryService.findParentCategories(page - 1, size); // service 0-based
+        model.addAttribute("categories", p.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", p.getTotalPages());
+        model.addAttribute("pageSize", size);
+
         model.addAttribute("parentCategory", null);
         model.addAttribute("pageTitle", "Quản lý danh mục (CHA)");
         return "admin/categories";
@@ -49,14 +57,22 @@ public class CategoryController {
 
     // ===================== DANH SÁCH CON (CÓ PHÂN TRANG) =====================
     @GetMapping("/{parentId}/subcategories")
-    public String listSubcategories(@PathVariable Long parentId, Model model) {
-        Category parent = categoryService.getById(parentId)
+    public String listSubcategories(
+            @PathVariable Long parentId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
+
+        var parent = categoryService.getById(parentId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục cha ID: " + parentId));
 
-        List<Category> list = categoryService.findSubcategoriesByParentId(parentId); // show cả active + inactive
-
+        var p = categoryService.findSubcategoriesByParentId(parentId, page - 1, size);
         model.addAttribute("parentCategory", parent);
-        model.addAttribute("categories", list);
+        model.addAttribute("categories", p.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", p.getTotalPages());
+        model.addAttribute("pageSize", size);
+
         model.addAttribute("pageTitle", "Danh mục con của: " + parent.getName());
         return "admin/categories";
     }
@@ -86,7 +102,11 @@ public class CategoryController {
 
         Category parent = null;
         if (cat.getParentId() != null && cat.getParentId() != 0) {
+            // đang sửa danh mục CON
             parent = categoryService.getById(cat.getParentId()).orElse(null);
+        } else {
+            // đang sửa danh mục CHA -> nạp children để hiển thị ở dưới form
+            model.addAttribute("children", categoryService.findSubcategoriesByParentId(id));
         }
 
         model.addAttribute("category", cat);

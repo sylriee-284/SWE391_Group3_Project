@@ -303,5 +303,10 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public User getFreshUserByUsername(String username) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getFreshUserByUsername'");
+    }
+
     // --- CRUD: End of Admin Account Management ---
 }

@@ -30,7 +30,7 @@ public class UserController {
             System.out.println("🔄 Refreshing authentication context for: " + username);
 
             // Get fresh user data from database
-            User freshUser = userService.getFreshUserByUsername(username);
+            User freshUser = userService.findByUsername(username).orElse(null);
             if (freshUser == null) {
                 System.out.println("❌ Cannot refresh context: user not found");
                 return;
@@ -71,7 +71,7 @@ public class UserController {
             String username = auth.getName();
 
             // Get fresh user data from database (bypass any cache)
-            User user = userService.getFreshUserByUsername(username);
+            User user = userService.findByUsername(username).orElse(null);
             if (user == null) {
                 model.addAttribute("errorMessage", "Không tìm thấy thông tin người dùng");
                 return "redirect:/";
@@ -135,7 +135,7 @@ public class UserController {
             }
 
             // Get fresh user data for update (bypass cache)
-            User user = userService.getFreshUserByUsername(username);
+            User user = userService.findByUsername(username).orElse(null);
             if (user == null) {
                 model.addAttribute("errorMessage", "Không tìm thấy thông tin người dùng");
                 return "redirect:/user/profile";
@@ -177,7 +177,7 @@ public class UserController {
             }
 
             // Save updated user
-            User updatedUser = userService.updateUser(user);
+            User updatedUser = userService.updateUser(user.getId(), user);
 
             // Debug AFTER update
             System.out.println("=== USER AFTER UPDATE ===");

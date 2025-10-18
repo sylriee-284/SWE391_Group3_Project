@@ -165,4 +165,15 @@ public class CategoryService {
         return categoryRepository.save(c);
     }
 
+    // Lấy toàn bộ danh mục (không bao gồm bản ghi đã xóa), sắp xếp parent trước
+    // child
+    public List<Category> getAllCategories() {
+        String jpql = """
+                    SELECT c FROM Category c
+                    WHERE (c.isDeleted = false OR c.isDeleted IS NULL)
+                    ORDER BY COALESCE(c.parentId, 0), c.id ASC
+                """;
+        return em.createQuery(jpql, Category.class).getResultList();
+    }
+
 }
