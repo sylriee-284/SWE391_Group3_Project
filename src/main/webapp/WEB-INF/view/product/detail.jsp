@@ -114,14 +114,14 @@
                                         <!-- Stock Status -->
                                         <div class="mb-4">
                                             <span
-                                                class="stock-indicator ${product.stock > 10 ? 'stock-available' : (product.stock > 0 ? 'stock-low' : 'stock-out')}">
+                                                class="stock-indicator ${dynamicStock > 10 ? 'stock-available' : (dynamicStock > 0 ? 'stock-low' : 'stock-out')}">
                                                 <i class="fas fa-boxes"></i>
                                                 <c:choose>
-                                                    <c:when test="${product.stock > 10}">
-                                                        Còn hàng (${product.stock} sản phẩm)
+                                                    <c:when test="${dynamicStock > 10}">
+                                                        Còn hàng (${dynamicStock} sản phẩm)
                                                     </c:when>
-                                                    <c:when test="${product.stock > 0}">
-                                                        Sắp hết hàng (${product.stock} sản phẩm)
+                                                    <c:when test="${dynamicStock > 0}">
+                                                        Sắp hết hàng (${dynamicStock} sản phẩm)
                                                     </c:when>
                                                     <c:otherwise>
                                                         Hết hàng
@@ -131,7 +131,7 @@
                                         </div>
 
                                         <!-- Quantity and Action Buttons -->
-                                        <c:if test="${product.status == 'ACTIVE' && product.stock > 0}">
+                                        <c:if test="${product.status == 'ACTIVE' && dynamicStock > 0}">
                                             <div class="action-buttons">
                                                 <!-- Quantity Selection -->
                                                 <div class="row mb-4">
@@ -139,7 +139,7 @@
                                                         <label class="form-label fw-bold">Số lượng:</label>
                                                         <input type="number" id="quantity" name="quantity"
                                                             class="form-control quantity-input" value="1" min="1"
-                                                            max="${product.stock}" style="width: 100px;">
+                                                            max="${dynamicStock}" style="width: 100px;">
                                                     </div>
                                                 </div>
 
@@ -153,7 +153,7 @@
                                             </div>
                                         </c:if>
 
-                                        <c:if test="${product.status != 'ACTIVE' || product.stock <= 0}">
+                                        <c:if test="${product.status != 'ACTIVE' || dynamicStock <= 0}">
                                             <div class="alert alert-warning text-center">
                                                 <i class="fas fa-exclamation-triangle"></i>
                                                 Sản phẩm hiện tại không thể mua
@@ -313,12 +313,15 @@
 
                             // Show confirmation popup
                             if (confirm('Bạn có chắc chắn muốn mua sản phẩm "' + productName + '" với số lượng ' + quantity + ' và tổng tiền ' + new Intl.NumberFormat('vi-VN').format(total) + 'đ?')) {
-                                // Close modal
+                                // Update form with current quantity
+                                document.getElementById('formQuantity').value = quantity;
+
+                                // Close modal first
                                 var modal = bootstrap.Modal.getInstance(document.getElementById('buyNowModal'));
                                 modal.hide();
 
-                                // Redirect to homepage with order modal
-                                window.location.href = '<c:url value="/homepage"/>?showOrderModal=true';
+                                // Submit form - let the server handle redirect
+                                document.getElementById('orderForm').submit();
                             }
                         }
 
@@ -387,13 +390,13 @@
                                                     <fmt:formatNumber value="${product.price}" type="currency"
                                                         currencySymbol="" maxFractionDigits="0" />đ
                                                 </span>
-                                                <span class="text-muted">Kho: ${product.stock}</span>
+                                                <span class="text-muted">Kho: ${dynamicStock}</span>
                                             </div>
                                             <hr>
                                             <div class="mb-3">
                                                 <label class="form-label fw-bold">Số lượng:</label>
                                                 <input type="number" id="modalQuantity" class="form-control" value="1"
-                                                    min="1" max="${product.stock}" style="width: 100px;">
+                                                    min="1" max="${dynamicStock}" style="width: 100px;">
                                             </div>
                                             <div class="d-flex justify-content-between">
                                                 <span class="fw-bold">Tổng cộng:</span>
@@ -415,6 +418,13 @@
                                     </div>
                                     <!-- Reserved space for balance status message -->
                                     <div id="balanceStatusContainer" style="min-height: 80px;"></div>
+
+                                    <!-- Form for order processing -->
+                                    <form id="orderForm" method="post" action="<c:url value='/order-process/buy-now'/>"
+                                        style="display: none;">
+                                        <input type="hidden" name="productId" value="${product.id}">
+                                        <input type="hidden" name="quantity" id="formQuantity" value="1">
+                                    </form>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>

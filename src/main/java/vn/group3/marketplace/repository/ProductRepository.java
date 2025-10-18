@@ -81,8 +81,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         @Query(value = "UPDATE products SET stock = stock + :quantity WHERE id = :productId", nativeQuery = true)
         int incrementStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
 
-        // Check available stock
+        // Check available stock (legacy - from products table)
         @Query("SELECT p.stock FROM Product p WHERE p.id = :productId AND p.status = 'ACTIVE'")
         Optional<Integer> getAvailableStock(@Param("productId") Long productId);
+
+        // Get dynamic stock from ProductStorage table
+        @Query("SELECT COUNT(ps) FROM ProductStorage ps WHERE ps.product.id = :productId AND ps.status = 'AVAILABLE' AND ps.order IS NULL")
+        long getDynamicStock(@Param("productId") Long productId);
 
 }

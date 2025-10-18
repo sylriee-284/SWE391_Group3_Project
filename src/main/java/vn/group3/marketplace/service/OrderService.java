@@ -5,21 +5,28 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jakarta.persistence.EntityNotFoundException;
 import vn.group3.marketplace.domain.entity.*;
 
 import vn.group3.marketplace.domain.enums.*;
+import vn.group3.marketplace.dto.OrderTask;
 import vn.group3.marketplace.repository.*;
 import vn.group3.marketplace.security.CustomUserDetails;
+import vn.group3.marketplace.util.ValidationUtils;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 @Service
 public class OrderService {
 
+    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
     private static final String ORDER_NOT_FOUND_MESSAGE = "Order not found";
 
     public Page<Order> searchByCurrentBuyerAndProductName(OrderStatus status, String key, Pageable pageable) {
@@ -49,19 +56,31 @@ public class OrderService {
     private final EscrowTransactionRepository escrowTransactionRepository;
     private final WalletTransactionRepository walletTransactionRepository;
     private final UserRepository userRepository;
+    private final SellerStoreRepository sellerStoreRepository;
+    private final ProductStorageService productStorageService;
+    private final ObjectMapper objectMapper;
+    private final NotificationService notificationService;
 
     public OrderService(OrderRepository orderRepository,
             ProductRepository productRepository,
             ProductStorageRepository productStorageRepository,
             EscrowTransactionRepository escrowTransactionRepository,
             WalletTransactionRepository walletTransactionRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            SellerStoreRepository sellerStoreRepository,
+            ProductStorageService productStorageService,
+            ObjectMapper objectMapper,
+            NotificationService notificationService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.productStorageRepository = productStorageRepository;
         this.escrowTransactionRepository = escrowTransactionRepository;
         this.walletTransactionRepository = walletTransactionRepository;
         this.userRepository = userRepository;
+        this.sellerStoreRepository = sellerStoreRepository;
+        this.productStorageService = productStorageService;
+        this.objectMapper = objectMapper;
+        this.notificationService = notificationService;
     }
 
     // Helper method để lấy thông tin user hiện tại từ SecurityContext
@@ -162,19 +181,199 @@ public class OrderService {
     }
 
     // Create order
-    public Order createOrder(Order order) {
+    public OrderTask createOrderTask(Long userId, Long productId, Integer quantity) {
+        // 1. Validate authentication
+        if (userId == null) {
+            throw new IllegalArgumentException("User must be authenticated");
+        }
+
+        // 2. Get product information
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Product not found: " + productId));
+        if (product == null) {
+            throw new IllegalArgumentException("Product not found: " + productId);
+        }
+
+        // 3. Validate quantity
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Invalid quantity: " + quantity);
+        }
+
+        // 4. Validate product status
+        if (!product.getStatus().name().equals("ACTIVE")) {
+            throw new IllegalArgumentException("Product is not available");
+        }
+
+        // 5. Calculate total amount
+        BigDecimal totalAmount = product.getPrice().multiply(BigDecimal.valueOf(quantity));
+
+        // 6. Create OrderTask
+        OrderTask orderTask = new OrderTask(
+                userId,
+                product.getId(),
+                product.getSellerStore().getId(),
+                quantity,
+                totalAmount,
+                product.getName());
+
+        return orderTask;
+    }
+
+    // Create order from order task
+    @Transactional
+    public Order createOrderFromTask(OrderTask orderTask) {
+        // Validate order task data
+        if (!ValidationUtils.validateOrderTaskData(orderTask)) {
+            throw new IllegalArgumentException(ValidationUtils.getOrderValidationErrorMessage());
+        }
+
+        // Get entities from database
+        User buyer = userRepository.findById(orderTask.getUserId())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        Product product = productRepository.findById(orderTask.getProductId())
+                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+
+        SellerStore sellerStore = sellerStoreRepository.findById(orderTask.getSellerStoreId())
+                .orElseThrow(
+                        () -> new EntityNotFoundException("Seller store not found: " + orderTask.getSellerStoreId()));
+
+        // Create Order entity
+        Order order = Order.builder()
+                .buyer(buyer)
+                .sellerStore(sellerStore)
+                .product(product)
+                .productName(orderTask.getProductName())
+                .productPrice(product.getPrice())
+                .quantity(orderTask.getQuantity())
+                .productData(orderTask.getProductData())
+                .totalAmount(orderTask.getTotalAmount())
+                .status(OrderStatus.PENDING_PAYMENT)
+                .build();
+
+        // Set createdBy as buyer ID for orders
+        order.setCreatedBy(buyer.getId());
+
         return orderRepository.save(order);
+    }
+
+    // check stock availability
+    public boolean checkStockAvailability(Order order) {
+        Product product = order.getProduct();
+        if (product == null || product.getStock() == null) {
+            return false;
+        }
+
+        long availableStock = productStorageService.getAvailableStock(product.getId());
+        if (availableStock < order.getQuantity()) {
+            return false;
+        }
+
+        return true;
     }
 
     // Update order status
-    public Order updateOrderStatus(Long id, OrderStatus status) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(ORDER_NOT_FOUND_MESSAGE));
+    @Transactional
+    public void updateOrderStatus(Order order, OrderStatus status) {
+        if (order == null) {
+            throw new IllegalArgumentException("Order cannot be null");
+        }
+        if (status == null) {
+            throw new IllegalArgumentException("Status cannot be null");
+        }
         order.setStatus(status);
-        return orderRepository.save(order);
+        orderRepository.save(order);
     }
 
-    // Check stock availability
-
     // decrement stock
+    @Transactional
+    public void decrementStock(Order order) {
+        if (order == null) {
+            throw new IllegalArgumentException("Order cannot be null");
+        }
+        Product product = order.getProduct();
+        if (product == null) {
+            throw new IllegalArgumentException("Product cannot be null");
+        }
+        product.setStock(product.getStock() - order.getQuantity());
+        productRepository.save(product);
+    }
+
+    // Update order based on payment status
+    @Transactional
+    public void updateOrderBasedOnPaymentStatus(Order order, WalletTransactionStatus paymentStatus) {
+        logger.info("Updating order {} status from {} to {}", order.getId(), order.getStatus(), paymentStatus);
+        switch (paymentStatus) {
+            case PAID:
+                // 1. Update order status to PAID
+                order.setStatus(OrderStatus.PAID);
+
+                // 3. Get product storages with quantity (đã valid từ trước)n
+                List<ProductStorage> productStoragesToDeliver = productStorageService
+                        .findByProductIdWithQuantityAvailable(
+                                order.getProduct().getId(),
+                                order.getQuantity(),
+                                ProductStorageStatus.AVAILABLE);
+
+                // 4. Convert productStoragesToDeliver to JSON string
+                try {
+                    // Tạo DTO đơn giản để tránh circular reference và lazy loading issues
+                    List<java.util.Map<String, Object>> productStorageData = productStoragesToDeliver.stream()
+                            .map(ps -> {
+                                java.util.Map<String, Object> data = new java.util.HashMap<>();
+                                data.put("id", ps.getId());
+                                data.put("payloadJson", ps.getPayloadJson());
+                                data.put("payloadMask", ps.getPayloadMask());
+                                data.put("status", ps.getStatus().toString());
+                                data.put("note", ps.getNote());
+                                return data;
+                            })
+                            .collect(java.util.stream.Collectors.toList());
+
+                    String productDataJson = objectMapper.writeValueAsString(productStorageData);
+                    order.setProductData(productDataJson);
+                } catch (JsonProcessingException e) {
+                    logger.error("Failed to convert product storages to JSON: {}", e.getMessage(), e);
+                    throw new RuntimeException("Failed to convert product storages to JSON", e);
+                }
+
+                // 5. Update product storages status to DELIVERED
+                for (ProductStorage productStorage : productStoragesToDeliver) {
+                    productStorage.setStatus(ProductStorageStatus.DELIVERED);
+                    productStorage.setDeliveredAt(java.time.LocalDateTime.now());
+                    productStorage.setOrder(order);
+                }
+                // Save updated product storages
+                productStorageService.saveAll(productStoragesToDeliver);
+                logger.info("Updated {} product storages to DELIVERED status", productStoragesToDeliver.size());
+
+                // 6. Stock is automatically managed by ProductStorage status changes
+                // No need to manually update product.stock since it's calculated dynamically
+                Product product = order.getProduct();
+                long currentDynamicStock = productStorageService.getAvailableStock(product.getId());
+                logger.info("Product {} dynamic stock after order completion: {} (was decremented by {})",
+                        product.getId(), currentDynamicStock, order.getQuantity());
+
+                // 7. Update order status to COMPLETED
+                order.setStatus(OrderStatus.COMPLETED);
+
+                // 8. Save order
+                orderRepository.save(order);
+                logger.info("Order {} status updated to COMPLETED", order.getId());
+
+                break;
+            case FAILED:
+                // 1. Update order status to PAYMENT_FAILED
+                order.setStatus(OrderStatus.PAYMENT_FAILED);
+                orderRepository.save(order);
+                logger.info("Order {} status updated to PAYMENT_FAILED", order.getId());
+
+                break;
+        }
+    }
+
+    // Create order notification
+    public void createOrderNotification(User user, NotificationType type, String title, String content) {
+        notificationService.createNotification(user, type, title, content);
+    }
 }

@@ -12,6 +12,7 @@ import vn.group3.marketplace.domain.enums.WalletTransactionType;
 import vn.group3.marketplace.domain.enums.WalletTransactionStatus;
 import vn.group3.marketplace.repository.UserRepository;
 import vn.group3.marketplace.repository.WalletTransactionRepository;
+import vn.group3.marketplace.service.WalletService;
 
 import java.util.Optional;
 
@@ -122,7 +123,7 @@ public class WalletService {
      * Xử lý trừ tiền khi mua hàng
      */
     @Transactional
-    public void processPurchasePayment(Long userId, java.math.BigDecimal amount, String orderId) {
+    public boolean processPurchasePayment(Long userId, java.math.BigDecimal amount, String orderId) {
         logger.info("=== Processing Purchase Payment ===");
         logger.info("User ID: {}, Amount: {}, Order ID: {}", userId, amount, orderId);
 
@@ -145,29 +146,65 @@ public class WalletService {
 
         try {
             // Cập nhật số dư bằng UPDATE nguyên tử
-            // Chỉ trừ khi số dư đủ (balance >= amount)
+            // Method decrementBalance chỉ trừ khi balance >= amount
             int rows = userRepository.decrementBalance(userId, amount);
 
             if (rows != 1) {
-                logger.error("Failed to decrement balance for userId={}", userId);
+                logger.error("❌ Payment failed for userId={}. Required: {}", userId, amount);
+                logger.error("❌ decrementBalance returned {} rows (expected 1)", rows);
+
                 transaction.setPaymentStatus(WalletTransactionStatus.FAILED);
                 walletTransactionRepository.save(transaction);
-                throw new RuntimeException("Insufficient balance");
+                logger.info("❌ Payment failed due to insufficient balance for userId={}", userId);
+                return false; // Payment failed - KHÔNG throw exception
             }
+
+            // Kiểm tra số dư sau khi trừ tiền
+            User updatedUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+            logger.info("Balance updated successfully - User {} balance: {}",
+                    userId, updatedUser.getBalance());
 
             // Cập nhật trạng thái transaction thành công
             transaction.setPaymentStatus(WalletTransactionStatus.SUCCESS);
             walletTransactionRepository.save(transaction);
 
-            logger.info("Withdrawal processed successfully for userId={}", userId);
+            logger.info("Payment processed successfully for userId={}", userId);
+            return true; // Payment successful
 
         } catch (Exception e) {
-            // Nếu có lỗi, cập nhật transaction thành FAILED
+            // Nếu có lỗi SAU KHI đã trừ tiền thành công, cần rollback
+            logger.error("Payment processing failed for userId={}: {}", userId, e.getMessage());
+
+            // Rollback: hoàn lại tiền vì đã trừ thành công nhưng có lỗi sau đó
+            try {
+                int rollbackRows = userRepository.incrementBalance(userId, amount);
+                if (rollbackRows == 1) {
+                    logger.info("Rollback successful: returned {} to user {}", amount, userId);
+                } else {
+                    logger.warn("Rollback failed: incrementBalance returned {} rows for user {}", rollbackRows, userId);
+                }
+            } catch (Exception rollbackException) {
+                logger.error("Rollback failed for userId={}: {}", userId, rollbackException.getMessage());
+            }
+
+            // Cập nhật transaction thành FAILED
             transaction.setPaymentStatus(WalletTransactionStatus.FAILED);
             walletTransactionRepository.save(transaction);
-            throw e;
+            return false; // Payment failed
         }
 
-        logger.info("=== Withdrawal Processing Complete ===");
     }
+
+    /**
+     * Lấy trạng thái transaction theo order ID
+     */
+    public WalletTransactionStatus getTransactionStatusByOrderId(String orderId) {
+        Optional<WalletTransaction> transactionOpt = walletTransactionRepository.findByPaymentRef(orderId);
+        if (transactionOpt.isPresent()) {
+            return transactionOpt.get().getPaymentStatus();
+        }
+        return WalletTransactionStatus.FAILED; // Default to FAILED if not found
+    }
+
 }
