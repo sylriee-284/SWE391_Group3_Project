@@ -209,7 +209,6 @@
                             if (!isAuthenticated) {
                                 // User not logged in - redirect to login with error message
                                 window.location.href = '<c:url value="/login"/>?errorMessage=' + encodeURIComponent('Bạn cần đăng nhập để thực hiện chức năng này');
-                                form.action = '<c:url value="/product/${product.slug}/buy-now"/>';
                                 return;
                             }
 
