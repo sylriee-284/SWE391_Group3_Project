@@ -1,20 +1,4 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            margin: 0;
-        }
-
-        .main-content {
-            flex: 1;
-        }
-
-        footer {
-            width: 100%;
-        }
-    </style>
     <footer class="bg-dark text-light py-4" style="margin-top:auto;">
         <div class="container">
             <div class="row">
@@ -70,3 +54,4 @@
             </div>
         </div>
     </footer>
+    <script src="${pageContext.request.contextPath}/resources/js/table-filter.js"></script>

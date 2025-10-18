@@ -9,6 +9,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.group3.marketplace.domain.entity.Category;
 import vn.group3.marketplace.security.CustomUserDetails;
 import vn.group3.marketplace.service.CategoryService;
+import vn.group3.marketplace.service.ProductService;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,14 +20,17 @@ import java.util.Optional;
 public class CategoryController {
 
     private final CategoryService categoryService;
+    private final ProductService productService;
 
-    public CategoryController(CategoryService categoryService) {
+    public CategoryController(CategoryService categoryService, ProductService productService) {
         this.categoryService = categoryService;
+        this.productService = productService;
     }
 
     /**
-     * Display category by name
+     * Display category products with filtering and pagination
      */
+    // test
     @GetMapping("/category/{categoryName}")
     public String getCategoryByName(@PathVariable String categoryName) {
         // Simple redirect to homepage for now
