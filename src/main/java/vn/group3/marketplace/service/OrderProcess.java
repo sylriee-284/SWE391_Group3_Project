@@ -8,8 +8,6 @@ import vn.group3.marketplace.repository.*;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 
@@ -18,7 +16,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Component
 public class OrderProcess {
 
-    private static final Logger logger = LoggerFactory.getLogger(OrderProcess.class);
+    private final EscrowTransactionService escrowTransactionService;
+
+    private final ProductService productService;
 
     // Dependencies
     private final OrderQueue orderQueue;
@@ -37,7 +37,8 @@ public class OrderProcess {
     public OrderProcess(OrderQueue orderQueue, OrderService orderService,
             WalletTransactionQueueService walletTransactionQueueService, UserRepository userRepository,
             EmailService emailService, AuthenticationRefreshService authenticationRefreshService,
-            NotificationService notificationService) {
+            NotificationService notificationService, ProductService productService,
+            EscrowTransactionService escrowTransactionService) {
         this.orderQueue = orderQueue;
         this.orderService = orderService;
         this.walletTransactionQueueService = walletTransactionQueueService;
@@ -45,12 +46,13 @@ public class OrderProcess {
         this.emailService = emailService;
         this.authenticationRefreshService = authenticationRefreshService;
         this.notificationService = notificationService;
+        this.productService = productService;
+        this.escrowTransactionService = escrowTransactionService;
     }
 
     @PostConstruct
     public void startOrderProcessing() {
         orderProcessingThread = new Thread(() -> {
-            logger.info("Order processing thread started");
 
             while (isRunning.get()) {
                 try {
@@ -61,14 +63,11 @@ public class OrderProcess {
                     processOrder(orderTask);
 
                 } catch (InterruptedException e) {
-                    logger.info("Order processing thread interrupted");
                     Thread.currentThread().interrupt();
                     break;
                 } catch (Exception e) {
-                    logger.error("Error processing order: {}", e.getMessage(), e);
                 }
             }
-            logger.info("Order processing thread stopped");
         });
 
         orderProcessingThread.setName("OrderProcessingThread");
@@ -100,17 +99,13 @@ public class OrderProcess {
 
                     try {
                         // Wait for payment completion (blocking call) - Tăng timeout lên 30 giây
-                        logger.info("Waiting for payment completion for order {}...", order.getId());
                         Boolean paymentResult = future.get(30, java.util.concurrent.TimeUnit.SECONDS);
 
                         // Immediately refresh authentication context to update user balance in session
                         authenticationRefreshService.refreshAuthenticationContextForUser(orderTask.getUserId());
 
-                        logger.info("Payment result for order {}: {}", order.getId(), paymentResult);
-
                         if (paymentResult != null && paymentResult) {
                             // 5.1. Case payment successful:
-                            logger.info("Updating order {} status to PAID", order.getId());
                             orderService.updateOrderBasedOnPaymentStatus(order, WalletTransactionStatus.PAID);
 
                             // Create notifications for successful process (all 3 stages)
@@ -131,19 +126,21 @@ public class OrderProcess {
                                         "Đơn hàng #" + order.getId() + " đã được xử lý hoàn tất!");
                             }
 
-                            // 6. Send confirmation email
-                            try {
-                                emailService.sendOrderConfirmationEmail(order);
-                            } catch (Exception e) {
-                                logger.error("Failed to send confirmation email for order: {}, error: {}",
-                                        order.getId(), e.getMessage(), e);
-                            }
+                            // 6. Update sold quantity of product
+                            productService.updateSoldQuantity(order.getProduct().getId(), order.getQuantity());
 
-                            logger.info("Order processed successfully: {}", order.getId());
+                            // 7. Send confirmation email
+                            emailService.sendOrderConfirmationEmail(order);
+
+                            // 8. Create escrow transaction
+                            escrowTransactionService.createEscrowTransaction(order);
+
+                            // 9. Schedule escrow transaction release
+                            escrowTransactionService.scheduleEscrowTransactionRelease(order);
+
                         } else {
                             // 5.2. Case payment failed:
                             orderService.updateOrderBasedOnPaymentStatus(order, WalletTransactionStatus.FAILED);
-                            logger.warn("Order payment failed: {}", order.getId());
 
                             // Create notification for failed payment
                             User buyer = userRepository.findById(orderTask.getUserId()).orElse(null);
@@ -164,11 +161,8 @@ public class OrderProcess {
                         }
 
                     } catch (java.util.concurrent.TimeoutException e) {
-                        // Payment timeout - Log chi tiết
-                        logger.error("Order payment timeout after 30 seconds for order: {}", order.getId());
-                        logger.error("Timeout details: {}", e.getMessage());
+                        // Payment timeout
                         orderService.updateOrderBasedOnPaymentStatus(order, WalletTransactionStatus.FAILED);
-                        logger.warn("Order payment timeout: {}", order.getId());
 
                         // Create notification for timeout
                         User buyer = userRepository.findById(orderTask.getUserId()).orElse(null);
@@ -188,7 +182,6 @@ public class OrderProcess {
                     } catch (Exception e) {
                         // Payment error
                         orderService.updateOrderBasedOnPaymentStatus(order, WalletTransactionStatus.FAILED);
-                        logger.error("Order payment error: {}, error: {}", order.getId(), e.getMessage(), e);
 
                         // Create notification for error
                         User buyer = userRepository.findById(orderTask.getUserId()).orElse(null);
