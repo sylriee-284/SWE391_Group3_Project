@@ -2,5 +2,6 @@ package vn.group3.marketplace.domain.enums;
 
 public enum EscrowStatus {
     HELD,
-    RELEASED
+    RELEASED,
+    CANCELLED
 }

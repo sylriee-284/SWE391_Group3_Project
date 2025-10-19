@@ -10,7 +10,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import jakarta.mail.MessagingException;
 import jakarta.servlet.http.*;
 import vn.group3.marketplace.security.CustomUserDetailsService;
 import vn.group3.marketplace.service.*;
@@ -143,7 +142,7 @@ public class AuthController {
             session.setAttribute("registration_password", password);
 
             // Send OTP email
-            emailService.sendEmailWithRegistrationOTP(email, otp);
+            emailService.sendEmailWithRegistrationOTPAsync(email, otp);
 
             redirectAttributes.addFlashAttribute("successMessage",
                     "An OTP has been sent to your email. Please check your inbox and verify your email to complete registration.");
@@ -228,16 +227,12 @@ public class AuthController {
             session.setAttribute("reset_email", email);
 
             // Send reset password OTP email
-            emailService.sendEmailWithResetPasswordOTP(email, otp);
+            emailService.sendEmailWithResetPasswordOTPAsync(email, otp);
             redirectAttributes.addFlashAttribute("successMessage",
                     "An email with the OTP has been sent. Please check your inbox.");
             session.removeAttribute("successMessage");
             return "redirect:/";
 
-        } catch (MessagingException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Failed to send email. Please try again later.");
-            session.removeAttribute("errorMessage");
-            return "forgot-password";
         } catch (Exception e) {
             session.setAttribute("errorMessage", "An unexpected error occurred. Please try again.");
             return "forgot-password";
@@ -351,7 +346,7 @@ public class AuthController {
             session.setAttribute("registration_otp_time", System.currentTimeMillis());
 
             // Send new OTP email
-            emailService.sendEmailWithRegistrationOTP(email, otp);
+            emailService.sendEmailWithRegistrationOTPAsync(email, otp);
 
             model.addAttribute("successMessage", "A new OTP has been sent to your email.");
             return "verify-otp";

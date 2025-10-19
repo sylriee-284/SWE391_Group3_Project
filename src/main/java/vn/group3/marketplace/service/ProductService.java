@@ -242,6 +242,15 @@ public class ProductService {
         return productRepository.getDynamicStock(productId);
     }
 
+    // Update sold quantity of product
+    public void updateSoldQuantity(Long productId, Integer quantity) {
+        Product product = getProductById(productId);
+        if (product != null) {
+            product.setSoldQuantity(product.getSoldQuantity() + quantity);
+            productRepository.save(product);
+        }
+    }
+
     public Product getProductById(Long productId) {
         return productRepository.findByIdWithDetails(productId).orElse(null);
     }
