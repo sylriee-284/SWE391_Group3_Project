@@ -13,11 +13,51 @@
                     </c:choose> - MMO Market System
                 </title>
                 <jsp:include page="/WEB-INF/view/common/head.jsp" />
+                <meta name="_csrf_header" content="${_csrf.headerName}" />
+                <meta name="_csrf" content="${_csrf.token}" />
+
+                <!-- FIX: theo mẫu user.jsp (show/expanded + overlay) -->
                 <style>
-                    /* đệm tránh navbar đè */
+                    :root {
+                        --nav-h: 64px;
+                        --sidebar-w: 260px;
+                    }
+
                     #pageWrap {
-                        padding-top: calc(var(--nav-h, 64px) + 16px);
+                        padding-top: calc(var(--nav-h) + 16px);
                         padding-bottom: 24px;
+                        transition: margin-left .25s ease;
+                    }
+
+                    #pageWrap.expanded {
+                        margin-left: var(--sidebar-w);
+                    }
+
+                    #sidebar {
+                        position: fixed;
+                        top: var(--nav-h);
+                        left: 0;
+                        width: var(--sidebar-w);
+                        height: calc(100vh - var(--nav-h));
+                        z-index: 1040;
+                        transform: translateX(-100%);
+                        transition: transform .25s ease;
+                    }
+
+                    #sidebar.show {
+                        transform: translateX(0);
+                    }
+
+                    .sidebar-overlay {
+                        position: fixed;
+                        inset: 0;
+                        background: rgba(0, 0, 0, .35);
+                        display: none;
+                        z-index: 1030;
+                    }
+
+                    .sidebar-overlay.show {
+                        display: block;
                     }
                 </style>
             </head>
@@ -25,30 +65,44 @@
             <body>
                 <jsp:include page="/WEB-INF/view/common/navbar.jsp" />
                 <jsp:include page="/WEB-INF/view/common/sidebar.jsp" />
-                <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+                <!-- overlay để click ra ngoài đóng -->
+                <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
                 <div id="pageWrap">
                     <div class="container-fluid">
 
-                        <!-- Tiêu đề + Add when CON -->
+                        <!-- Tiêu đề + Add -->
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h4 class="mb-0">
                                 <c:choose>
                                     <c:when test="${parentCategory == null}">Quản lý danh mục (CHA)</c:when>
-                                    <c:otherwise>Danh mục con của: <strong>
+                                    <c:otherwise>
+                                        Danh mục con của: <strong>
                                             <c:out value="${parentCategory.name}" />
-                                        </strong></c:otherwise>
+                                        </strong>
+                                    </c:otherwise>
                                 </c:choose>
                             </h4>
 
-                            <c:if test="${parentCategory != null}">
-                                <a class="btn btn-primary"
-                                    href="<c:url value='/admin/categories/${parentCategory.id}/subcategories/add'/>">+
-                                    Thêm danh mục con</a>
-                            </c:if>
+                            <!-- NOTE: đây là phần đã sửa -->
+                            <c:choose>
+                                <c:when test="${parentCategory == null}">
+                                    <!-- Nút tạo danh mục CHA -->
+                                    <a class="btn btn-primary" href="<c:url value='/admin/categories/add'/>">+ Tạo danh
+                                        mục</a>
+                                    <%-- nếu form add của bạn dùng URL khác (vd: /admin/categories/create-form) thì sửa
+                                        value ở đây --%>
+                                </c:when>
+                                <c:otherwise>
+                                    <!-- Nút thêm danh mục con (giữ nguyên) -->
+                                    <a class="btn btn-primary"
+                                        href="<c:url value='/admin/categories/${parentCategory.id}/subcategories/add'/>">+
+                                        Thêm danh mục con</a>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
 
-                        <!-- Filter -->
+                        <!-- Lọc -->
                         <form method="get" action="">
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -68,15 +122,21 @@
                                 </div>
                                 <div class="col-md-3 d-flex align-items-end gap-2">
                                     <button class="btn btn-primary" type="submit">Lọc</button>
-                                    <!-- SỬA link Bỏ lọc -->
-                                    <a class="btn btn-outline-secondary"
-                                        href="<c:url value='${parentCategory == null ? " /admin/categories" :
-                                        ("/admin/categories/"+parentCategory.id+"/subcategories")}' />">Bỏ lọc</a>
+                                    <c:choose>
+                                        <c:when test="${parentCategory == null}">
+                                            <c:url var="clearUrl" value="/admin/categories" />
+                                        </c:when>
+                                        <c:otherwise>
+                                            <c:url var="clearUrl"
+                                                value="/admin/categories/${parentCategory.id}/subcategories" />
+                                        </c:otherwise>
+                                    </c:choose>
+                                    <a class="btn btn-outline-secondary" href="${clearUrl}">Bỏ lọc</a>
                                 </div>
                             </div>
                         </form>
 
-                        <!-- Table -->
+                        <!-- Bảng -->
                         <div class="table-container mt-3">
                             <table class="table table-hover align-middle">
                                 <thead class="table-light">
@@ -127,20 +187,34 @@
                                                     </button>
                                                 </form>
 
-                                                <button class="btn btn-sm btn-danger" data-id="${c.id}"
-                                                    data-name="${fn:escapeXml(c.name)}"
-                                                    onclick="openDeleteCategory(this)">Xoá</button>
+                                                <!-- XÓA: dùng form POST thật, không phụ thuộc JS/modal -->
+                                                <form method="post"
+                                                    action="<c:url value='/admin/categories/delete/${c.id}'/>"
+                                                    class="d-inline"
+                                                    onsubmit="return confirm('Bạn chắc chắn muốn xoá &quot;${fn:escapeXml(c.name)}&quot;?');">
+                                                    <input type="hidden" name="${_csrf.parameterName}"
+                                                        value="${_csrf.token}" />
+                                                    <button type="submit" class="btn btn-sm btn-danger">Xoá</button>
+                                                </form>
                                             </td>
+
                                         </tr>
                                     </c:forEach>
                                 </tbody>
                             </table>
                         </div>
 
-                        <!-- Pagination -->
+                        <!-- Phân trang -->
                         <c:if test="${totalPages != null && totalPages > 1}">
-                            <c:set var="baseUrl"
-                                value='${parentCategory == null ? "/admin/categories" : ("/admin/categories/"+parentCategory.id+"/subcategories")}' />
+                            <c:choose>
+                                <c:when test="${parentCategory == null}">
+                                    <c:set var="baseUrl" value="/admin/categories" />
+                                </c:when>
+                                <c:otherwise>
+                                    <c:set var="baseUrl" value="/admin/categories/${parentCategory.id}/subcategories" />
+                                </c:otherwise>
+                            </c:choose>
+
                             <nav class="mt-3 mb-5">
                                 <ul class="pagination justify-content-center">
                                     <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
@@ -201,31 +275,56 @@
 
                 <jsp:include page="/WEB-INF/view/common/footer.jsp" />
 
+                <!-- FIX: JS “thò/thụt” theo mẫu user -->
                 <script>
-                    // ===== navbar offset + sidebar toggle (page-local) =====
                     (function () {
                         const wrap = document.getElementById('pageWrap');
                         const nav = document.querySelector('.navbar');
-                        const overlay = document.getElementById('sidebarOverlay');
-                        function applyOffsets() {
-                            if (nav) document.documentElement.style.setProperty('--nav-h', nav.getBoundingClientRect().height + 'px');
-                        }
-                        window.toggleSidebar = function () {
-                            const s = document.getElementById('sidebar');
-                            if (s) s.classList.toggle('collapsed');
-                            if (wrap) wrap.classList.toggle('expanded');
-                            if (overlay) overlay.classList.toggle('show');
-                        };
-                        window.addEventListener('load', applyOffsets);
-                        window.addEventListener('resize', applyOffsets);
-                    })();
+                        const sb = document.getElementById('sidebar');
+                        const ovl = document.getElementById('sidebarOverlay');
 
-                    function openDeleteCategory(btn) {
-                        const id = btn.dataset.id, name = btn.dataset.name || '';
-                        document.getElementById('deleteCategoryName').innerText = name;
-                        document.getElementById('deleteForm').action = '<c:url value="/admin/categories/delete/"/>' + id;
-                        new bootstrap.Modal(document.getElementById('deleteCategoryModal')).show();
-                    }
+                        function applyNavH() {
+                            if (nav) {
+                                document.documentElement.style
+                                    .setProperty('--nav-h', nav.getBoundingClientRect().height + 'px');
+                            }
+                        }
+
+                        window.toggleSidebar = function () {
+                            if (!sb) return;
+                            sb.classList.toggle('show');
+                            if (wrap) wrap.classList.toggle('expanded');
+                            if (ovl) ovl.classList.toggle('show');
+                        };
+
+                        document.addEventListener('click', (e) => {
+                            const t = e.target;
+                            if (t.closest('#sidebarToggle')
+                                || t.closest('.sidebar-toggle')
+                                || t.closest('[data-toggle="sidebar"]')
+                                || t.closest('.navbar .navbar-toggler')
+                                || t.closest('.bi-list') || t.closest('.fa-bars')) {
+                                e.preventDefault(); toggleSidebar();
+                            }
+                            if (t.closest('#sidebarOverlay')) toggleSidebar();
+                        });
+
+                        document.addEventListener('keydown', (e) => {
+                            if (e.key === 'Escape' && sb?.classList.contains('show')) toggleSidebar();
+                        });
+
+                        window.addEventListener('load', applyNavH);
+                        window.addEventListener('resize', applyNavH);
+
+                        // Modal xoá
+                        window.openDeleteCategory = function (btn) {
+                            const id = btn.dataset.id;
+                            const name = btn.dataset.name || '';
+                            document.getElementById('deleteCategoryName').innerText = name;
+                            document.getElementById('deleteForm').action = '<c:url value="/admin/categories/delete/"/>' + id;
+                            new bootstrap.Modal(document.getElementById('deleteCategoryModal')).show();
+                        };
+                    })();
                 </script>
             </body>
 

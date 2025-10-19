@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
     <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-        <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+        <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
             <!DOCTYPE html>
             <html lang="vi">
 
@@ -17,10 +17,51 @@
                     </c:choose> - MMO Market System
                 </title>
                 <jsp:include page="/WEB-INF/view/common/head.jsp" />
+                <meta name="_csrf_header" content="${_csrf.headerName}" />
+                <meta name="_csrf" content="${_csrf.token}" />
+
+                <!-- FIX: theo mẫu user.jsp -->
                 <style>
+                    :root {
+                        --nav-h: 64px;
+                        --sidebar-w: 260px;
+                    }
+
                     #pageWrap {
-                        padding-top: calc(var(--nav-h, 64px) + 16px);
+                        padding-top: calc(var(--nav-h) + 16px);
                         padding-bottom: 24px;
+                        transition: margin-left .25s ease;
+                    }
+
+                    #pageWrap.expanded {
+                        margin-left: var(--sidebar-w);
+                    }
+
+                    #sidebar {
+                        position: fixed;
+                        top: var(--nav-h);
+                        left: 0;
+                        width: var(--sidebar-w);
+                        height: calc(100vh - var(--nav-h));
+                        z-index: 1040;
+                        transform: translateX(-100%);
+                        transition: transform .25s ease;
+                    }
+
+                    #sidebar.show {
+                        transform: translateX(0);
+                    }
+
+                    .sidebar-overlay {
+                        position: fixed;
+                        inset: 0;
+                        background: rgba(0, 0, 0, .35);
+                        display: none;
+                        z-index: 1030;
+                    }
+
+                    .sidebar-overlay.show {
+                        display: block;
                     }
                 </style>
             </head>
@@ -28,7 +69,7 @@
             <body>
                 <jsp:include page="/WEB-INF/view/common/navbar.jsp" />
                 <jsp:include page="/WEB-INF/view/common/sidebar.jsp" />
-                <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+                <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
                 <div id="pageWrap">
                     <div class="container-fluid">
@@ -44,9 +85,16 @@
                                     </c:otherwise>
                                 </c:choose>
                             </h4>
-                            <a class="btn btn-outline-secondary" href="<c:url value='${category.parentId != null ? ("
-                                /admin/categories/"+category.parentId+"/subcategories") : "/admin/categories" }' />">←
-                            Quay lại</a>
+
+                            <c:choose>
+                                <c:when test="${category.parentId != null}">
+                                    <c:url var="backUrl" value="/admin/categories/${category.parentId}/subcategories" />
+                                </c:when>
+                                <c:otherwise>
+                                    <c:url var="backUrl" value="/admin/categories" />
+                                </c:otherwise>
+                            </c:choose>
+                            <a class="btn btn-outline-secondary" href="${backUrl}">← Quay lại</a>
                         </div>
 
                         <!-- Xác định action -->
@@ -96,11 +144,10 @@
                                 </div>
 
                                 <div class="d-flex gap-2 mt-4">
-                                    <button type="submit" class="btn btn-primary">${category.id == null ? 'Tạo mới' :
-                                        'Cập nhật'}</button>
-                                    <a class="btn btn-secondary" href="<c:url value='${category.parentId != null ? ("
-                                        /admin/categories/"+category.parentId+"/subcategories") : "/admin/categories"
-                                        }' />">Hủy</a>
+                                    <button type="submit" class="btn btn-primary">
+                                        ${category.id == null ? 'Tạo mới' : 'Cập nhật'}
+                                    </button>
+                                    <a class="btn btn-secondary" href="${backUrl}">Hủy</a>
                                 </div>
                             </form>
                         </div>
@@ -136,8 +183,10 @@
                                                 <td>
                                                     <c:out value="${c.description}" />
                                                 </td>
-                                                <td><span
-                                                        class="badge ${c.isActive?'bg-success':'bg-secondary'}">${c.isActive?'ACTIVE':'INACTIVE'}</span>
+                                                <td>
+                                                    <span class="badge ${c.isActive?'bg-success':'bg-secondary'}">
+                                                        ${c.isActive?'ACTIVE':'INACTIVE'}
+                                                    </span>
                                                 </td>
                                                 <td class="d-flex gap-2">
                                                     <a class="btn btn-sm btn-primary"
@@ -156,7 +205,7 @@
                                                     <form method="post"
                                                         action="<c:url value='/admin/categories/delete/${c.id}'/>"
                                                         class="d-inline"
-                                                        onsubmit="return confirm('Xoá '+ '${c.name}' +' ?');">
+                                                        onsubmit="return confirm('Xoá ' + '${fn:escapeXml(c.name)}' + ' ?');">
                                                         <input type="hidden" name="${_csrf.parameterName}"
                                                             value="${_csrf.token}" />
                                                         <button class="btn btn-sm btn-danger" type="submit">Xoá</button>
@@ -173,22 +222,47 @@
                 </div>
 
                 <jsp:include page="/WEB-INF/view/common/footer.jsp" />
+
+                <!-- FIX: JS “thò/thụt” theo mẫu user -->
                 <script>
                     (function () {
                         const wrap = document.getElementById('pageWrap');
                         const nav = document.querySelector('.navbar');
-                        const overlay = document.getElementById('sidebarOverlay');
-                        function applyOffsets() {
-                            if (nav) document.documentElement.style.setProperty('--nav-h', nav.getBoundingClientRect().height + 'px');
+                        const sb = document.getElementById('sidebar');
+                        const ovl = document.getElementById('sidebarOverlay');
+
+                        function applyNavH() {
+                            if (nav) {
+                                document.documentElement.style
+                                    .setProperty('--nav-h', nav.getBoundingClientRect().height + 'px');
+                            }
                         }
+
                         window.toggleSidebar = function () {
-                            const s = document.getElementById('sidebar');
-                            if (s) s.classList.toggle('collapsed');
+                            if (!sb) return;
+                            sb.classList.toggle('show');          // 'show' cho sidebar
                             if (wrap) wrap.classList.toggle('expanded');
-                            if (overlay) overlay.classList.toggle('show');
+                            if (ovl) ovl.classList.toggle('show');
                         };
-                        window.addEventListener('load', applyOffsets);
-                        window.addEventListener('resize', applyOffsets);
+
+                        document.addEventListener('click', (e) => {
+                            const t = e.target;
+                            if (t.closest('#sidebarToggle')
+                                || t.closest('.sidebar-toggle')
+                                || t.closest('[data-toggle="sidebar"]')
+                                || t.closest('.navbar .navbar-toggler')
+                                || t.closest('.bi-list') || t.closest('.fa-bars')) {
+                                e.preventDefault(); toggleSidebar();
+                            }
+                            if (t.closest('#sidebarOverlay')) toggleSidebar();
+                        });
+
+                        document.addEventListener('keydown', (e) => {
+                            if (e.key === 'Escape' && sb?.classList.contains('show')) toggleSidebar();
+                        });
+
+                        window.addEventListener('load', applyNavH);
+                        window.addEventListener('resize', applyNavH);
                     })();
                 </script>
             </body>

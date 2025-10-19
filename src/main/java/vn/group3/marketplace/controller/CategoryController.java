@@ -59,6 +59,20 @@ public class CategoryController {
         return "admin/categories";
     }
 
+    // ===================== FORM THÊM CHA =====================
+    @GetMapping("/add")
+    public String showAddParentCategory(Model model) {
+        Category dto = new Category();
+        // tùy ý: mặc định active
+        dto.setIsActive(Boolean.TRUE);
+
+        model.addAttribute("category", dto);
+        model.addAttribute("parentCategory", null); // là CHA
+        model.addAttribute("pageTitle", "Thêm danh mục CHA");
+        model.addAttribute("formMode", "create-parent");
+        return "admin/category_form"; // trỏ tới JSP form dùng chung
+    }
+
     // ===================== DANH SÁCH CON (CÓ PHÂN TRANG) =====================
     @GetMapping("/{parentId}/subcategories")
     public String listSubcategories(
@@ -136,19 +150,26 @@ public class CategoryController {
         }
     }
 
-    // ===================== XOÁ mềm(CHỈ CHO PHÉP XOÁ CON) =====================
+    // ===================== XOÁ mềm =====================
     @PostMapping("/delete/{id}")
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         Category cat = categoryService.getById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục ID: " + id));
 
+        // Nếu là CHA
         if (cat.getParentId() == null || cat.getParentId() == 0) {
-            ra.addFlashAttribute("error", "Không thể xoá danh mục CHA.");
+            if (categoryService.hasChildren(id)) {
+                ra.addFlashAttribute("error", "Danh mục CHA đang có danh mục con, hãy xoá hết CON trước.");
+                return "redirect:/admin/categories";
+            }
+            categoryService.softDelete(id); // xoá mềm CHA
+            ra.addFlashAttribute("success", "Đã xoá (ẩn) danh mục CHA.");
             return "redirect:/admin/categories";
         }
 
+        // Nếu là CON
         Long parentId = cat.getParentId();
-        categoryService.softDelete(id); // 🔸 thay cho deleteById
+        categoryService.softDelete(id);
         ra.addFlashAttribute("success", "Đã xoá (ẩn) danh mục con.");
         return "redirect:/admin/categories/" + parentId + "/subcategories";
     }

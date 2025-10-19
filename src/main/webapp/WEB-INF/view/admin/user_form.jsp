@@ -8,10 +8,51 @@
                 <meta charset="UTF-8" />
                 <title>${user.id == null ? 'Tạo tài khoản' : 'Chỉnh sửa tài khoản'} - MMO Market System</title>
                 <jsp:include page="/WEB-INF/view/common/head.jsp" />
+                <meta name="_csrf_header" content="${_csrf.headerName}" />
+                <meta name="_csrf" content="${_csrf.token}" />
+
+                <!-- Sidebar thò/thụt: show/expanded + overlay -->
                 <style>
+                    :root {
+                        --nav-h: 64px;
+                        --sidebar-w: 260px;
+                    }
+
                     #pageWrap {
-                        padding-top: calc(var(--nav-h, 64px) + 16px);
+                        padding-top: calc(var(--nav-h) + 16px);
                         padding-bottom: 24px;
+                        transition: margin-left .25s ease;
+                    }
+
+                    #pageWrap.expanded {
+                        margin-left: var(--sidebar-w);
+                    }
+
+                    #sidebar {
+                        position: fixed;
+                        top: var(--nav-h);
+                        left: 0;
+                        width: var(--sidebar-w);
+                        height: calc(100vh - var(--nav-h));
+                        z-index: 1040;
+                        transform: translateX(-100%);
+                        transition: transform .25s ease;
+                    }
+
+                    #sidebar.show {
+                        transform: translateX(0);
+                    }
+
+                    .sidebar-overlay {
+                        position: fixed;
+                        inset: 0;
+                        background: rgba(0, 0, 0, .35);
+                        display: none;
+                        z-index: 1030;
+                    }
+
+                    .sidebar-overlay.show {
+                        display: block;
                     }
                 </style>
             </head>
@@ -19,7 +60,7 @@
             <body>
                 <jsp:include page="/WEB-INF/view/common/navbar.jsp" />
                 <jsp:include page="/WEB-INF/view/common/sidebar.jsp" />
-                <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+                <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
                 <div id="pageWrap">
                     <div class="container-fluid">
@@ -53,12 +94,7 @@
                                             required />
                                     </div>
 
-                                    <div class="col-12">
-                                        <label class="form-label">Mật khẩu <small class="text-muted">(Để trống nếu không
-                                                đổi)</small></label>
-                                        <input class="form-control" type="password" name="passwordPlain"
-                                            autocomplete="new-password" />
-                                    </div>
+                                    <!-- (ĐÃ BỎ HOÀN TOÀN TRƯỜNG MẬT KHẨU) -->
 
                                     <div class="col-md-6">
                                         <label class="form-label">Họ tên</label>
@@ -68,16 +104,23 @@
                                     <div class="col-md-6">
                                         <label class="form-label">Trạng thái</label>
                                         <select class="form-select" name="status">
-                                            <option value="ACTIVE" ${user.status=='ACTIVE' ?'selected':''}>ACTIVE
+                                            <option value="ACTIVE" ${user.status=='ACTIVE' ? 'selected' : '' }>ACTIVE
                                             </option>
-                                            <option value="INACTIVE" ${user.status=='INACTIVE' ?'selected':''}>INACTIVE
-                                            </option>
+                                            <option value="INACTIVE" ${user.status=='INACTIVE' ? 'selected' : '' }>
+                                                INACTIVE</option>
                                         </select>
                                     </div>
 
+                                    <!-- Số dư: readonly + nút + ở cuối -->
                                     <div class="col-12">
                                         <label class="form-label">Số dư (VND)</label>
-                                        <input class="form-control" name="balance" value="${user.balance}" />
+                                        <div class="input-group">
+                                            <input class="form-control" name="balance" value="${user.balance}"
+                                                readonly />
+                                            <!-- Nút “+” (đi tới trang nạp tiền chung – có thể chỉnh lại URL tuỳ nghiệp vụ) -->
+                                            <a class="btn btn-outline-success" href="<c:url value='/wallet/deposit'/>"
+                                                title="Nạp thêm">+</a>
+                                        </div>
                                     </div>
 
                                     <!-- ROLES -->
@@ -94,14 +137,14 @@
                                                 </label>
                                             </div>
                                         </c:forEach>
-                                        <div class="text-muted small mt-1">Không chọn thì mặc định sẽ là
-                                            <strong>USER</strong>.</div>
+                                        <!-- (ĐÃ BỎ GHI CHÚ “Không chọn thì mặc định sẽ là USER.”) -->
                                     </div>
                                 </div>
 
                                 <div class="d-flex gap-2 mt-4">
-                                    <button class="btn btn-primary" type="submit">${user.id == null ? 'Tạo mới' : 'Cập
-                                        nhật'}</button>
+                                    <button class="btn btn-primary" type="submit">
+                                        ${user.id == null ? 'Tạo mới' : 'Cập nhật'}
+                                    </button>
                                     <a class="btn btn-secondary" href="<c:url value='/admin/users'/>">Hủy</a>
                                 </div>
                             </form>
@@ -111,22 +154,43 @@
                 </div>
 
                 <jsp:include page="/WEB-INF/view/common/footer.jsp" />
+
+                <!-- JS toggle sidebar theo mẫu dùng show/expanded + overlay -->
                 <script>
                     (function () {
                         const wrap = document.getElementById('pageWrap');
                         const nav = document.querySelector('.navbar');
-                        const overlay = document.getElementById('sidebarOverlay');
-                        function applyOffsets() {
+                        const sb = document.getElementById('sidebar');
+                        const ovl = document.getElementById('sidebarOverlay');
+
+                        function applyNavH() {
                             if (nav) document.documentElement.style.setProperty('--nav-h', nav.getBoundingClientRect().height + 'px');
                         }
                         window.toggleSidebar = function () {
-                            const s = document.getElementById('sidebar');
-                            if (s) s.classList.toggle('collapsed');
+                            if (!sb) return;
+                            sb.classList.toggle('show');
                             if (wrap) wrap.classList.toggle('expanded');
-                            if (overlay) overlay.classList.toggle('show');
+                            if (ovl) ovl.classList.toggle('show');
                         };
-                        window.addEventListener('load', applyOffsets);
-                        window.addEventListener('resize', applyOffsets);
+
+                        document.addEventListener('click', (e) => {
+                            const t = e.target;
+                            if (t.closest('#sidebarToggle')
+                                || t.closest('.sidebar-toggle')
+                                || t.closest('[data-toggle="sidebar"]')
+                                || t.closest('.navbar .navbar-toggler')
+                                || t.closest('.bi-list') || t.closest('.fa-bars')) {
+                                e.preventDefault(); toggleSidebar();
+                            }
+                            if (t.closest('#sidebarOverlay')) toggleSidebar();
+                        });
+
+                        document.addEventListener('keydown', (e) => {
+                            if (e.key === 'Escape' && sb?.classList.contains('show')) toggleSidebar();
+                        });
+
+                        window.addEventListener('load', applyNavH);
+                        window.addEventListener('resize', applyNavH);
                     })();
                 </script>
             </body>

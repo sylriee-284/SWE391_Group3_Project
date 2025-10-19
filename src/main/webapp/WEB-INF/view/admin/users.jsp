@@ -11,10 +11,58 @@
                     <jsp:include page="/WEB-INF/view/common/head.jsp" />
                     <meta name="_csrf_header" content="${_csrf.headerName}" />
                     <meta name="_csrf" content="${_csrf.token}" />
+
+                    <!-- FIX: thay block CSS cũ bằng block này để trang con tự đẩy nội dung khi mở sidebar -->
                     <style>
+                        :root {
+                            --nav-h: 64px;
+                            --sidebar-w: 260px;
+                        }
+
+                        /* có thể đổi theo sidebar thực tế */
+
+                        /* chừa chỗ cho navbar + hiệu ứng đẩy khi mở sidebar */
                         #pageWrap {
-                            padding-top: calc(var(--nav-h, 64px) + 16px);
+                            padding-top: calc(var(--nav-h) + 16px);
                             padding-bottom: 24px;
+                            transition: margin-left .25s ease;
+                        }
+
+                        #pageWrap.expanded {
+                            margin-left: var(--sidebar-w);
+                        }
+
+                        /* khi mở sidebar */
+
+                        /* đảm bảo sidebar luôn nằm trên bảng và không bị navbar đè */
+                        #sidebar {
+                            position: fixed;
+                            top: var(--nav-h);
+                            left: 0;
+                            width: var(--sidebar-w);
+                            height: calc(100vh - var(--nav-h));
+                            z-index: 1040;
+                            transform: translateX(-100%);
+                            transition: transform .25s ease;
+                        }
+
+                        #sidebar.show {
+                            transform: translateX(0);
+                        }
+
+                        /* lớp khi mở */
+
+                        /* lớp phủ */
+                        .sidebar-overlay {
+                            position: fixed;
+                            inset: 0;
+                            background: rgba(0, 0, 0, .35);
+                            display: none;
+                            z-index: 1030;
+                        }
+
+                        .sidebar-overlay.show {
+                            display: block;
                         }
                     </style>
                 </head>
@@ -22,7 +70,8 @@
                 <body>
                     <jsp:include page="/WEB-INF/view/common/navbar.jsp" />
                     <jsp:include page="/WEB-INF/view/common/sidebar.jsp" />
-                    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+                    <!-- FIX: overlay để click ra ngoài đóng -->
+                    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
                     <div id="pageWrap">
                         <div class="container-fluid">
@@ -159,26 +208,52 @@
                     </div>
 
                     <jsp:include page="/WEB-INF/view/common/footer.jsp" />
+
+                    <!-- FIX: JS “thò/thụt” + giữ nguyên các AJAX toggle/hiện số dư -->
                     <script>
-                        // offset + toggleSidebar (local)
                         (function () {
                             const wrap = document.getElementById('pageWrap');
                             const nav = document.querySelector('.navbar');
-                            const overlay = document.getElementById('sidebarOverlay');
-                            function applyOffsets() {
-                                if (nav) document.documentElement.style.setProperty('--nav-h', nav.getBoundingClientRect().height + 'px');
+                            const sb = document.getElementById('sidebar');
+                            const ovl = document.getElementById('sidebarOverlay');
+
+                            function applyNavH() {
+                                if (nav) {
+                                    document.documentElement.style
+                                        .setProperty('--nav-h', nav.getBoundingClientRect().height + 'px');
+                                }
                             }
+
                             window.toggleSidebar = function () {
-                                const s = document.getElementById('sidebar');
-                                if (s) s.classList.toggle('collapsed');
+                                if (!sb) return;
+                                sb.classList.toggle('show');              // FIX: dùng lớp 'show' thay vì 'collapsed'
                                 if (wrap) wrap.classList.toggle('expanded');
-                                if (overlay) overlay.classList.toggle('show');
+                                if (ovl) ovl.classList.toggle('show');
                             };
-                            window.addEventListener('load', applyOffsets);
-                            window.addEventListener('resize', applyOffsets);
+
+                            // Bắt click burger từ navbar mà không cần sửa file common
+                            document.addEventListener('click', (e) => {
+                                const t = e.target;
+                                if (t.closest('#sidebarToggle')
+                                    || t.closest('.sidebar-toggle')
+                                    || t.closest('[data-toggle="sidebar"]')
+                                    || t.closest('.navbar .navbar-toggler')
+                                    || t.closest('.bi-list') || t.closest('.fa-bars')) {
+                                    e.preventDefault(); toggleSidebar();
+                                }
+                                if (t.closest('#sidebarOverlay')) toggleSidebar(); // click overlay để đóng
+                            });
+
+                            // ESC để đóng
+                            document.addEventListener('keydown', (e) => {
+                                if (e.key === 'Escape' && sb?.classList.contains('show')) toggleSidebar();
+                            });
+
+                            window.addEventListener('load', applyNavH);
+                            window.addEventListener('resize', applyNavH);
                         })();
 
-                        // CSRF
+                        // ====== AJAX phần quản lý user (giữ nguyên logic cũ) ======
                         const CSRF_HEADER = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
                         const CSRF_TOKEN = document.querySelector('meta[name="_csrf"]')?.content || '';
 
