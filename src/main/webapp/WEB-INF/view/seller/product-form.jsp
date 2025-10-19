@@ -121,7 +121,7 @@
                                                     <!-- Lấy max từ Model: storeMaxListingPrice -->
                                                     <c:set var="priceMax" value="${storeMaxListingPrice}" />
 
-                                                    <form:input path="price" type="number" step="0.01" min="0.01"
+                                                    <form:input path="price" type="number" step="10000" min="0"
                                                         cssClass="product-form-control" required="required"
                                                         max="${priceMax}" />
 
