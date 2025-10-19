@@ -125,8 +125,8 @@ public class OrderProcess {
                             // 6. Update sold quantity of product
                             productService.updateSoldQuantity(order.getProduct().getId(), order.getQuantity());
 
-                            // 7. Send confirmation email
-                            emailService.sendOrderConfirmationEmail(order);
+                            // 7. Send confirmation email asynchronously
+                            emailService.sendOrderConfirmationEmailAsync(order);
 
                         } else {
                             // 5.2. Case payment failed:
