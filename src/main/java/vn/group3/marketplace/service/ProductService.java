@@ -232,8 +232,6 @@ public class ProductService {
                         storeId, slug, excludeId);
     }
 
-}
-
     /**
      * Get dynamic stock count from ProductStorage table
      * 
@@ -242,5 +240,9 @@ public class ProductService {
      */
     public long getDynamicStock(Long productId) {
         return productRepository.getDynamicStock(productId);
+    }
+
+    public Product getProductById(Long productId) {
+        return productRepository.findByIdWithDetails(productId).orElse(null);
     }
 }
