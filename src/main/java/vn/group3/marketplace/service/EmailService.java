@@ -25,7 +25,7 @@ public class EmailService {
     public void sendEmailAsync(String to, String subject, String body) {
         // Use MimeMessagePreparator to prepare email
         MimeMessagePreparator preparator = mimeMessage -> {
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
             helper.setFrom("noreply@mmomarketsystem.com");
             helper.setTo(to);
             helper.setSubject(subject);
