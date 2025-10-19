@@ -344,10 +344,13 @@ public class OrderService {
                 // Save updated product storages
                 productStorageService.saveAll(productStoragesToDeliver);
 
-                // 7. Update order status to COMPLETED
+                // 7. Process escrow transaction asynchronously
+                escrowTransactionService.processEscrowTransactionAsync(order);
+
+                // 8. Update order status to COMPLETED
                 order.setStatus(OrderStatus.COMPLETED);
 
-                // 8. Save order
+                // 9. Save order
                 orderRepository.save(order);
 
                 break;
