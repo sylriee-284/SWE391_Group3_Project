@@ -6,19 +6,12 @@
 
             <head>
                 <meta charset="UTF-8" />
-                <title>${formTitle != null ? formTitle : (user.id == null ? 'Tạo tài khoản' : 'Chỉnh sửa tài khoản')} -
-                    MMO Market System</title>
+                <title>${user.id == null ? 'Tạo tài khoản' : 'Chỉnh sửa tài khoản'} - MMO Market System</title>
                 <jsp:include page="/WEB-INF/view/common/head.jsp" />
                 <style>
-                    .role-chip {
-                        padding: .25rem .6rem;
-                        border-radius: 999px;
-                        font-size: .85rem;
-                        background: #e6f5fd;
-                    }
-
-                    .form-check-inline .form-check-input {
-                        margin-right: .35rem;
+                    #pageWrap {
+                        padding-top: calc(var(--nav-h, 64px) + 16px);
+                        padding-bottom: 24px;
                     }
                 </style>
             </head>
@@ -28,20 +21,22 @@
                 <jsp:include page="/WEB-INF/view/common/sidebar.jsp" />
                 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-                <div class="main-content" id="mainContent">
+                <div id="pageWrap">
                     <div class="container-fluid">
 
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h4 class="mb-0">
-                                ${formTitle != null ? formTitle : (user.id == null ? 'Tạo tài khoản' : 'Chỉnh sửa tài
-                                khoản')}
-                            </h4>
+                            <h4 class="mb-0">${user.id == null ? 'Tạo tài khoản' : 'Chỉnh sửa tài khoản'}</h4>
                             <a class="btn btn-outline-secondary" href="<c:url value='/admin/users'/>">← Quay lại</a>
                         </div>
 
-                        <!-- Xác định action -->
-                        <c:set var="formAction"
-                            value="${user.id == null ? '/admin/users' : '/admin/users/update/' += user.id}" />
+                        <c:choose>
+                            <c:when test="${user.id == null}">
+                                <c:set var="formAction" value="/admin/users" />
+                            </c:when>
+                            <c:otherwise>
+                                <c:set var="formAction" value="/admin/users/update/${user.id}" />
+                            </c:otherwise>
+                        </c:choose>
 
                         <div class="card p-3">
                             <form method="post" action="<c:url value='${formAction}'/>">
@@ -58,7 +53,7 @@
                                             required />
                                     </div>
 
-                                    <div class="col-md-12">
+                                    <div class="col-12">
                                         <label class="form-label">Mật khẩu <small class="text-muted">(Để trống nếu không
                                                 đổi)</small></label>
                                         <input class="form-control" type="password" name="passwordPlain"
@@ -73,14 +68,14 @@
                                     <div class="col-md-6">
                                         <label class="form-label">Trạng thái</label>
                                         <select class="form-select" name="status">
-                                            <option value="ACTIVE" <c:if test="${user.status == 'ACTIVE'}">selected
-                                                </c:if>>ACTIVE</option>
-                                            <option value="INACTIVE" <c:if test="${user.status == 'INACTIVE'}">selected
-                                                </c:if>>INACTIVE</option>
+                                            <option value="ACTIVE" ${user.status=='ACTIVE' ?'selected':''}>ACTIVE
+                                            </option>
+                                            <option value="INACTIVE" ${user.status=='INACTIVE' ?'selected':''}>INACTIVE
+                                            </option>
                                         </select>
                                     </div>
 
-                                    <div class="col-md-12">
+                                    <div class="col-12">
                                         <label class="form-label">Số dư (VND)</label>
                                         <input class="form-control" name="balance" value="${user.balance}" />
                                     </div>
@@ -88,23 +83,19 @@
                                     <!-- ROLES -->
                                     <div class="col-12">
                                         <label class="form-label d-block">Quyền hạn (Roles)</label>
-
-                                        <!-- allRoles: List<Role> ; selectedRoleCodes: List<String> -->
                                         <c:forEach var="r" items="${allRoles}">
                                             <div class="form-check form-check-inline mb-2">
                                                 <input class="form-check-input" type="checkbox" id="role-${r.code}"
                                                     name="roleCodes" value="${r.code}" <c:if
-                                                    test="${selectedRoleCodes != null && selectedRoleCodes.contains(r.code)}">checked
+                                                    test="${selectedRoleCodes!=null && selectedRoleCodes.contains(r.code)}">checked
                                                 </c:if> />
                                                 <label class="form-check-label" for="role-${r.code}">
-                                                    <span class="role-chip">${r.code}</span>
+                                                    <span class="badge text-bg-info">${r.code}</span>
                                                 </label>
                                             </div>
                                         </c:forEach>
-
                                         <div class="text-muted small mt-1">Không chọn thì mặc định sẽ là
-                                            <strong>USER</strong>.
-                                        </div>
+                                            <strong>USER</strong>.</div>
                                     </div>
                                 </div>
 
@@ -115,12 +106,28 @@
                                 </div>
                             </form>
                         </div>
+
                     </div>
                 </div>
 
                 <jsp:include page="/WEB-INF/view/common/footer.jsp" />
                 <script>
-                    function toggleSidebar() { const s = document.getElementById('sidebar'); const m = document.getElementById('mainContent'); if (s) s.classList.toggle('collapsed'); if (m) m.classList.toggle('expanded'); }
+                    (function () {
+                        const wrap = document.getElementById('pageWrap');
+                        const nav = document.querySelector('.navbar');
+                        const overlay = document.getElementById('sidebarOverlay');
+                        function applyOffsets() {
+                            if (nav) document.documentElement.style.setProperty('--nav-h', nav.getBoundingClientRect().height + 'px');
+                        }
+                        window.toggleSidebar = function () {
+                            const s = document.getElementById('sidebar');
+                            if (s) s.classList.toggle('collapsed');
+                            if (wrap) wrap.classList.toggle('expanded');
+                            if (overlay) overlay.classList.toggle('show');
+                        };
+                        window.addEventListener('load', applyOffsets);
+                        window.addEventListener('resize', applyOffsets);
+                    })();
                 </script>
             </body>
 

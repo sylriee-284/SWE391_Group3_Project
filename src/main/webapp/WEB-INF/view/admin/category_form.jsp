@@ -7,11 +7,22 @@
             <head>
                 <meta charset="UTF-8" />
                 <title>
-                    <c:out
-                        value="${pageTitle != null ? pageTitle : (category.id==null?'Thêm danh mục':'Sửa danh mục')}" />
-                    - MMO Market System
+                    <c:choose>
+                        <c:when test="${category.id == null}">
+                            ${category.parentId == null ? 'Thêm danh mục CHA' : 'Thêm danh mục con'}
+                        </c:when>
+                        <c:otherwise>
+                            ${category.parentId == null ? 'Sửa danh mục CHA' : 'Sửa danh mục con'}
+                        </c:otherwise>
+                    </c:choose> - MMO Market System
                 </title>
                 <jsp:include page="/WEB-INF/view/common/head.jsp" />
+                <style>
+                    #pageWrap {
+                        padding-top: calc(var(--nav-h, 64px) + 16px);
+                        padding-bottom: 24px;
+                    }
+                </style>
             </head>
 
             <body>
@@ -19,24 +30,26 @@
                 <jsp:include page="/WEB-INF/view/common/sidebar.jsp" />
                 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-                <div class="main-content" id="mainContent">
+                <div id="pageWrap">
                     <div class="container-fluid">
+
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h4 class="mb-0">
                                 <c:choose>
-                                    <c:when test="${category.parentId == null}">
-                                        ${category.id == null ? 'Thêm danh mục CHA' : 'Sửa danh mục CHA'}
+                                    <c:when test="${category.id == null}">
+                                        ${category.parentId == null ? 'Thêm danh mục CHA' : 'Thêm danh mục con'}
                                     </c:when>
                                     <c:otherwise>
-                                        ${category.id == null ? 'Thêm danh mục con' : 'Sửa danh mục con'}
+                                        ${category.parentId == null ? 'Sửa danh mục CHA' : 'Sửa danh mục con'}
                                     </c:otherwise>
                                 </c:choose>
                             </h4>
-                            <a class="btn btn-outline-secondary" href="<c:url value='/admin/categories'/>">← Quay
-                                lại</a>
+                            <a class="btn btn-outline-secondary" href="<c:url value='${category.parentId != null ? ("
+                                /admin/categories/"+category.parentId+"/subcategories") : "/admin/categories" }' />">←
+                            Quay lại</a>
                         </div>
 
-                        <!-- Xác định action theo controller -->
+                        <!-- Xác định action -->
                         <c:choose>
                             <c:when test="${category.id != null}">
                                 <c:set var="formAction" value="/admin/categories/update/${category.id}" />
@@ -72,83 +85,82 @@
                                         <textarea class="form-control" rows="4"
                                             name="description">${category.description}</textarea>
                                     </div>
-                                    <div class="col-12">
-                                        <label class="form-label me-2">Trạng thái:</label>
-                                        <span class="badge ${category.isActive ? 'bg-success' : 'bg-secondary'}">
-                                            ${category.isActive ? 'ACTIVE' : 'INACTIVE'}
-                                        </span>
-                                    </div>
+                                    <c:if test="${category.id != null}">
+                                        <div class="col-12">
+                                            <label class="form-label me-2">Trạng thái:</label>
+                                            <span class="badge ${category.isActive?'bg-success':'bg-secondary'}">
+                                                ${category.isActive?'ACTIVE':'INACTIVE'}
+                                            </span>
+                                        </div>
+                                    </c:if>
                                 </div>
 
                                 <div class="d-flex gap-2 mt-4">
                                     <button type="submit" class="btn btn-primary">${category.id == null ? 'Tạo mới' :
                                         'Cập nhật'}</button>
-                                    <a class="btn btn-secondary" href="<c:url value='/admin/categories'/>">Hủy</a>
+                                    <a class="btn btn-secondary" href="<c:url value='${category.parentId != null ? ("
+                                        /admin/categories/"+category.parentId+"/subcategories") : "/admin/categories"
+                                        }' />">Hủy</a>
                                 </div>
                             </form>
                         </div>
 
-                        <!-- BẢNG CON khi đang sửa CHA -->
-                        <c:if test="${category.id != null && category.parentId == null}">
+                        <!-- Bảng con khi sửa CHA -->
+                        <c:if test="${category.id != null && category.parentId == null && not empty children}">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h5 class="mb-0">Danh mục con của: <strong>
                                         <c:out value="${category.name}" />
                                     </strong></h5>
                                 <a href="<c:url value='/admin/categories/${category.id}/subcategories/add'/>"
-                                    class="btn btn-primary">
-                                    + Thêm danh mục con
-                                </a>
+                                    class="btn btn-primary">+ Thêm danh mục con</a>
                             </div>
 
                             <div class="table-container">
-                                <table class="resizable-table" id="resizableTable">
-                                    <thead>
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
                                         <tr>
-                                            <th style="width: 80px">ID<div class="resizer"></div>
-                                            </th>
-                                            <th style="width: 320px">Tên<div class="resizer"></div>
-                                            </th>
-                                            <th style="width: 420px">Mô tả<div class="resizer"></div>
-                                            </th>
-                                            <th style="width: 140px">Trạng thái<div class="resizer"></div>
-                                            </th>
-                                            <th style="width: 240px">Thao tác</th>
+                                            <th style="width:80px">ID</th>
+                                            <th style="width:320px">Tên</th>
+                                            <th style="width:420px">Mô tả</th>
+                                            <th style="width:140px">Trạng thái</th>
+                                            <th style="width:240px">Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <c:forEach var="c" items="${children}">
                                             <tr>
                                                 <td>${c.id}</td>
-                                                <td>${c.name}</td>
+                                                <td>
+                                                    <c:out value="${c.name}" />
+                                                </td>
                                                 <td>
                                                     <c:out value="${c.description}" />
                                                 </td>
-                                                <td>
-                                                    <span class="badge ${c.isActive ? 'bg-success' : 'bg-secondary'}">
-                                                        ${c.isActive ? 'ACTIVE' : 'INACTIVE'}
-                                                    </span>
+                                                <td><span
+                                                        class="badge ${c.isActive?'bg-success':'bg-secondary'}">${c.isActive?'ACTIVE':'INACTIVE'}</span>
                                                 </td>
                                                 <td class="d-flex gap-2">
                                                     <a class="btn btn-sm btn-primary"
                                                         href="<c:url value='/admin/categories/edit/${c.id}'/>">Sửa</a>
-
-                                                    <!-- Toggle con: POST + CSRF -->
                                                     <form method="post"
                                                         action="<c:url value='/admin/categories/toggle/${c.id}'/>"
                                                         class="d-inline">
                                                         <input type="hidden" name="${_csrf.parameterName}"
                                                             value="${_csrf.token}" />
                                                         <button
-                                                            class="btn btn-sm ${c.isActive ? 'btn-warning' : 'btn-success'}"
+                                                            class="btn btn-sm ${c.isActive?'btn-warning':'btn-success'}"
                                                             type="submit">
-                                                            ${c.isActive ? 'Tắt' : 'Bật'}
+                                                            ${c.isActive?'Tắt':'Bật'}
                                                         </button>
                                                     </form>
-
-                                                    <!-- Xoá con: POST + CSRF qua modal -->
-                                                    <button class="btn btn-sm btn-danger" data-id="${c.id}"
-                                                        data-name="${fn:escapeXml(c.name)}"
-                                                        onclick="openDeleteChild(this)">Xoá</button>
+                                                    <form method="post"
+                                                        action="<c:url value='/admin/categories/delete/${c.id}'/>"
+                                                        class="d-inline"
+                                                        onsubmit="return confirm('Xoá '+ '${c.name}' +' ?');">
+                                                        <input type="hidden" name="${_csrf.parameterName}"
+                                                            value="${_csrf.token}" />
+                                                        <button class="btn btn-sm btn-danger" type="submit">Xoá</button>
+                                                    </form>
                                                 </td>
                                             </tr>
                                         </c:forEach>
@@ -156,42 +168,28 @@
                                 </table>
                             </div>
                         </c:if>
-                    </div>
-                </div>
 
-                <!-- MODAL XOÁ dùng chung -->
-                <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <form class="modal-content" method="post" id="deleteChildForm">
-                            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
-                            <div class="modal-header bg-danger text-white">
-                                <h5 class="modal-title">Xác nhận xóa</h5>
-                                <button type="button" class="btn-close btn-close-white"
-                                    data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <p>Bạn có chắc muốn xoá: <strong id="delName"></strong></p>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                <button type="submit" class="btn btn-danger">OK</button>
-                            </div>
-                        </form>
                     </div>
                 </div>
 
                 <jsp:include page="/WEB-INF/view/common/footer.jsp" />
                 <script>
-                    function toggleSidebar() {
-                        const s = document.getElementById('sidebar'), m = document.getElementById('mainContent');
-                        if (s) s.classList.toggle('collapsed'); if (m) m.classList.toggle('expanded');
-                    }
-                    function openDeleteChild(btn) {
-                        document.getElementById('delName').innerText = btn.dataset.name || '';
-                        document.getElementById('deleteChildForm').action =
-                            '<c:url value="/admin/categories/delete/"/>' + btn.dataset.id;
-                        new bootstrap.Modal(document.getElementById('deleteModal')).show();
-                    }
+                    (function () {
+                        const wrap = document.getElementById('pageWrap');
+                        const nav = document.querySelector('.navbar');
+                        const overlay = document.getElementById('sidebarOverlay');
+                        function applyOffsets() {
+                            if (nav) document.documentElement.style.setProperty('--nav-h', nav.getBoundingClientRect().height + 'px');
+                        }
+                        window.toggleSidebar = function () {
+                            const s = document.getElementById('sidebar');
+                            if (s) s.classList.toggle('collapsed');
+                            if (wrap) wrap.classList.toggle('expanded');
+                            if (overlay) overlay.classList.toggle('show');
+                        };
+                        window.addEventListener('load', applyOffsets);
+                        window.addEventListener('resize', applyOffsets);
+                    })();
                 </script>
             </body>
 

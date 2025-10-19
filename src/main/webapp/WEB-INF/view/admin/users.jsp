@@ -6,13 +6,17 @@
                 <html lang="vi">
 
                 <head>
-                    <meta charset="UTF-8">
+                    <meta charset="UTF-8" />
                     <title>Quản lý tài khoản - MMO Market System</title>
                     <jsp:include page="/WEB-INF/view/common/head.jsp" />
-
-                    <!-- CSRF cho fetch -->
                     <meta name="_csrf_header" content="${_csrf.headerName}" />
                     <meta name="_csrf" content="${_csrf.token}" />
+                    <style>
+                        #pageWrap {
+                            padding-top: calc(var(--nav-h, 64px) + 16px);
+                            padding-bottom: 24px;
+                        }
+                    </style>
                 </head>
 
                 <body>
@@ -20,50 +24,43 @@
                     <jsp:include page="/WEB-INF/view/common/sidebar.jsp" />
                     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-                    <div class="main-content" id="mainContent">
+                    <div id="pageWrap">
                         <div class="container-fluid">
 
-                            <!-- Tiêu đề + Thêm tài khoản -->
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h4 class="mb-0">Quản lý tài khoản</h4>
                                 <a class="btn btn-primary" href="<c:url value='/admin/users/create'/>">+ Thêm tài
                                     khoản</a>
                             </div>
 
-                            <!-- Bộ lọc -->
-                            <div class="filter-section">
-                                <form method="get" action="">
-                                    <div class="row g-3">
-                                        <div class="col-md-3">
-                                            <label class="form-label">Trạng thái</label>
-                                            <select name="status" class="form-select">
-                                                <option value="" ${empty statusFilter ? 'selected' : '' }>Tất cả
-                                                </option>
-                                                <option value="ACTIVE" ${statusFilter=='ACTIVE' ? 'selected' : '' }>
-                                                    ACTIVE</option>
-                                                <option value="INACTIVE" ${statusFilter=='INACTIVE' ? 'selected' : '' }>
-                                                    INACTIVE</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Kích thước trang</label>
-                                            <select name="size" class="form-select">
-                                                <c:forEach var="opt" items="${fn:split('10,20,50,100', ',')}">
-                                                    <option value="${opt}" ${pageSize==opt ? 'selected' : '' }>${opt}
-                                                    </option>
-                                                </c:forEach>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6 d-flex align-items-end gap-2">
-                                            <button class="btn btn-primary" type="submit">Lọc</button>
-                                            <a class="btn btn-outline-secondary" href="<c:url value='/admin/users'/>">Bỏ
-                                                lọc</a>
-                                            <a class="btn btn-success" href="<c:url value='/admin/users/create'/>">+
-                                                Thêm tài khoản</a>
-                                        </div>
+                            <!-- Filter -->
+                            <form method="get" action="">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Trạng thái</label>
+                                        <select name="status" class="form-select">
+                                            <option value="" ${empty param.status ? 'selected' : '' }>Tất cả</option>
+                                            <option value="ACTIVE" ${param.status=='ACTIVE' ?'selected':''}>ACTIVE
+                                            </option>
+                                            <option value="INACTIVE" ${param.status=='INACTIVE' ?'selected':''}>INACTIVE
+                                            </option>
+                                        </select>
                                     </div>
-                                </form>
-                            </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Kích thước trang</label>
+                                        <select name="size" class="form-select">
+                                            <c:forEach var="opt" items="${fn:split('10,20,50,100', ',')}">
+                                                <option value="${opt}" ${pageSize==opt?'selected':''}>${opt}</option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 d-flex align-items-end gap-2">
+                                        <button class="btn btn-primary" type="submit">Lọc</button>
+                                        <a class="btn btn-outline-secondary" href="<c:url value='/admin/users'/>">Bỏ
+                                            lọc</a>
+                                    </div>
+                                </div>
+                            </form>
 
                             <!-- Bảng -->
                             <div class="table-container mt-3">
@@ -89,7 +86,6 @@
                                                 <td>
                                                     <c:out value="${u.fullName}" />
                                                 </td>
-
                                                 <td>
                                                     <c:choose>
                                                         <c:when test="${not empty u.roles}">
@@ -97,37 +93,27 @@
                                                                 <span class="badge text-bg-info me-1">${r.code}</span>
                                                             </c:forEach>
                                                         </c:when>
-                                                        <c:otherwise>
-                                                            <span class="badge text-bg-secondary">USER</span>
+                                                        <c:otherwise><span class="badge text-bg-secondary">USER</span>
                                                         </c:otherwise>
                                                     </c:choose>
                                                 </td>
-
-                                                <!-- Balance: ẩn + nút Hiện -->
                                                 <td>
                                                     <span class="text-muted">•••••</span>
                                                     <button type="button"
                                                         class="btn btn-sm btn-light ms-2 btn-show-balance"
-                                                        data-id="${u.id}">
-                                                        Hiện
-                                                    </button>
+                                                        data-id="${u.id}">Hiện</button>
                                                 </td>
-
                                                 <td>
                                                     <span
-                                                        class="badge ${u.status=='ACTIVE' ? 'bg-success' : 'bg-secondary'}">
-                                                        ${u.status}
-                                                    </span>
+                                                        class="badge ${u.status=='ACTIVE' ? 'bg-success' : 'bg-secondary'}">${u.status}</span>
                                                 </td>
-
                                                 <td class="d-flex gap-2">
                                                     <a class="btn btn-sm btn-primary"
                                                         href="<c:url value='/admin/users/edit/${u.id}'/>">Sửa</a>
-
                                                     <button type="button"
-                                                        class="btn btn-sm ${u.status=='ACTIVE' ? 'btn-warning' : 'btn-success'} btn-toggle-status"
+                                                        class="btn btn-sm ${u.status=='ACTIVE'?'btn-warning':'btn-success'} btn-toggle-status"
                                                         data-id="${u.id}">
-                                                        ${u.status=='ACTIVE' ? 'Tắt' : 'Bật'}
+                                                        ${u.status=='ACTIVE'?'Tắt':'Bật'}
                                                     </button>
                                                 </td>
                                             </tr>
@@ -141,31 +127,29 @@
                                 <c:set var="baseUrl">
                                     <c:url value="/admin/users" />
                                 </c:set>
-                                <nav class="mt-3">
+                                <nav class="mt-3 mb-3">
                                     <ul class="pagination justify-content-center">
-
-                                        <!-- Prev -->
                                         <li class="page-item ${currentPage<=1?'disabled':''}">
                                             <a class="page-link"
-                                                href="${baseUrl}?status=${statusFilter}&size=${pageSize}&page=${currentPage-1}">
-                                                «
-                                            </a>
+                                                href="${baseUrl}?status=${param.status}&size=${pageSize}&page=1">&laquo;</a>
                                         </li>
-
-                                        <!-- pages -->
+                                        <li class="page-item ${currentPage<=1?'disabled':''}">
+                                            <a class="page-link"
+                                                href="${baseUrl}?status=${param.status}&size=${pageSize}&page=${currentPage-1}">&lsaquo;</a>
+                                        </li>
                                         <c:forEach var="p" begin="1" end="${totalPages}">
                                             <li class="page-item ${p==currentPage?'active':''}">
                                                 <a class="page-link"
-                                                    href="${baseUrl}?status=${statusFilter}&size=${pageSize}&page=${p}">${p}</a>
+                                                    href="${baseUrl}?status=${param.status}&size=${pageSize}&page=${p}">${p}</a>
                                             </li>
                                         </c:forEach>
-
-                                        <!-- Next -->
                                         <li class="page-item ${currentPage>=totalPages?'disabled':''}">
                                             <a class="page-link"
-                                                href="${baseUrl}?status=${statusFilter}&size=${pageSize}&page=${currentPage+1}">
-                                                »
-                                            </a>
+                                                href="${baseUrl}?status=${param.status}&size=${pageSize}&page=${currentPage+1}">&rsaquo;</a>
+                                        </li>
+                                        <li class="page-item ${currentPage>=totalPages?'disabled':''}">
+                                            <a class="page-link"
+                                                href="${baseUrl}?status=${param.status}&size=${pageSize}&page=${totalPages}">&raquo;</a>
                                         </li>
                                     </ul>
                                 </nav>
@@ -175,14 +159,24 @@
                     </div>
 
                     <jsp:include page="/WEB-INF/view/common/footer.jsp" />
-
                     <script>
-                        function toggleSidebar() {
-                            const s = document.getElementById('sidebar');
-                            const m = document.getElementById('mainContent');
-                            if (s) s.classList.toggle('collapsed');
-                            if (m) m.classList.toggle('expanded');
-                        }
+                        // offset + toggleSidebar (local)
+                        (function () {
+                            const wrap = document.getElementById('pageWrap');
+                            const nav = document.querySelector('.navbar');
+                            const overlay = document.getElementById('sidebarOverlay');
+                            function applyOffsets() {
+                                if (nav) document.documentElement.style.setProperty('--nav-h', nav.getBoundingClientRect().height + 'px');
+                            }
+                            window.toggleSidebar = function () {
+                                const s = document.getElementById('sidebar');
+                                if (s) s.classList.toggle('collapsed');
+                                if (wrap) wrap.classList.toggle('expanded');
+                                if (overlay) overlay.classList.toggle('show');
+                            };
+                            window.addEventListener('load', applyOffsets);
+                            window.addEventListener('resize', applyOffsets);
+                        })();
 
                         // CSRF
                         const CSRF_HEADER = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
@@ -190,9 +184,7 @@
 
                         // Toggle trạng thái (delegation)
                         document.addEventListener('click', async (e) => {
-                            const btn = e.target.closest('.btn-toggle-status');
-                            if (!btn) return;
-
+                            const btn = e.target.closest('.btn-toggle-status'); if (!btn) return;
                             const id = btn.dataset.id;
                             try {
                                 const res = await fetch('<c:url value="/admin/users/toggle/"/>' + id, {
@@ -202,16 +194,13 @@
                                 if (!res.ok && res.status !== 204) throw new Error('HTTP ' + res.status);
                                 location.reload();
                             } catch (err) {
-                                console.error(err);
-                                alert('Đổi trạng thái thất bại!');
+                                console.error(err); alert('Đổi trạng thái thất bại!');
                             }
                         });
 
                         // Hiện số dư (delegation)
                         document.addEventListener('click', async (e) => {
-                            const btn = e.target.closest('.btn-show-balance');
-                            if (!btn) return;
-
+                            const btn = e.target.closest('.btn-show-balance'); if (!btn) return;
                             const id = btn.dataset.id;
                             try {
                                 const res = await fetch('<c:url value="/admin/users/balance/"/>' + id);
@@ -219,8 +208,7 @@
                                 const data = await res.json();
                                 alert('Số dư: ' + (data.balance ?? 0));
                             } catch (err) {
-                                console.error(err);
-                                alert('Không lấy được số dư!');
+                                console.error(err); alert('Không lấy được số dư!');
                             }
                         });
                     </script>

@@ -7,88 +7,84 @@
             <head>
                 <meta charset="UTF-8" />
                 <title>
-                    <c:out
-                        value="${pageTitle != null ? pageTitle : (parentCategory == null ? 'Quản lý danh mục (CHA)' : ('Danh mục con của: ' += parentCategory.name))}" />
-                    - MMO Market System
+                    <c:choose>
+                        <c:when test="${parentCategory == null}">Quản lý danh mục (CHA)</c:when>
+                        <c:otherwise>Danh mục con của: ${parentCategory.name}</c:otherwise>
+                    </c:choose> - MMO Market System
                 </title>
                 <jsp:include page="/WEB-INF/view/common/head.jsp" />
+                <style>
+                    /* đệm tránh navbar đè */
+                    #pageWrap {
+                        padding-top: calc(var(--nav-h, 64px) + 16px);
+                        padding-bottom: 24px;
+                    }
+                </style>
             </head>
 
             <body>
-                <!-- Header + Sidebar -->
                 <jsp:include page="/WEB-INF/view/common/navbar.jsp" />
                 <jsp:include page="/WEB-INF/view/common/sidebar.jsp" />
                 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-                <!-- Main -->
-                <div class="main-content" id="mainContent">
+                <div id="pageWrap">
                     <div class="container-fluid">
 
-                        <!-- Title + Add child (khi đang xem CON) -->
+                        <!-- Tiêu đề + Add when CON -->
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h4 class="mb-0">
                                 <c:choose>
-                                    <c:when test="${parentCategory == null}">
-                                        Quản lý danh mục (CHA)
-                                    </c:when>
-                                    <c:otherwise>
-                                        Danh mục con của: <strong>
+                                    <c:when test="${parentCategory == null}">Quản lý danh mục (CHA)</c:when>
+                                    <c:otherwise>Danh mục con của: <strong>
                                             <c:out value="${parentCategory.name}" />
-                                        </strong>
-                                    </c:otherwise>
+                                        </strong></c:otherwise>
                                 </c:choose>
                             </h4>
 
                             <c:if test="${parentCategory != null}">
-                                <a href="<c:url value='/admin/categories/${parentCategory.id}/subcategories/add'/>"
-                                    class="btn btn-primary">+ Thêm danh mục con</a>
+                                <a class="btn btn-primary"
+                                    href="<c:url value='/admin/categories/${parentCategory.id}/subcategories/add'/>">+
+                                    Thêm danh mục con</a>
                             </c:if>
                         </div>
 
-                        <!-- Filters (nhẹ) -->
-                        <div class="filter-section">
-                            <form method="get" action="">
-                                <div class="row filter-row">
-                                    <div class="col-md-6">
-                                        <div class="filter-label">Tìm theo tên</div>
-                                        <input name="q" value="${fn:escapeXml(param.q)}" type="text"
-                                            class="form-control" placeholder="Tên danh mục...">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="filter-label">Trạng thái</div>
-                                        <select name="active" class="form-select">
-                                            <option value="">Tất cả</option>
-                                            <option value="true" <c:if test="${param.active=='true'}">selected</c:if>
-                                                >Active</option>
-                                            <option value="false" <c:if test="${param.active=='false'}">selected</c:if>
-                                                >Inactive</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3 d-flex align-items-end gap-2">
-                                        <button class="btn btn-primary" type="submit">Lọc</button>
-                                        <a class="btn btn-outline-secondary"
-                                            href="<c:url value='${parentCategory == null ? " /admin/categories" :
-                                            ("/admin/categories/" +=parentCategory.id +="/subcategories" )}' />">
-                                        Bỏ lọc
-                                        </a>
-                                    </div>
+                        <!-- Filter -->
+                        <form method="get" action="">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Tìm theo tên</label>
+                                    <input class="form-control" name="q" value="${fn:escapeXml(param.q)}"
+                                        placeholder="Tên danh mục..." />
                                 </div>
-                            </form>
-                        </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Trạng thái</label>
+                                    <select class="form-select" name="active">
+                                        <option value="">Tất cả</option>
+                                        <option value="true" <c:if test="${param.active=='true'}">selected</c:if>>Active
+                                        </option>
+                                        <option value="false" <c:if test="${param.active=='false'}">selected</c:if>
+                                            >Inactive</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end gap-2">
+                                    <button class="btn btn-primary" type="submit">Lọc</button>
+                                    <!-- SỬA link Bỏ lọc -->
+                                    <a class="btn btn-outline-secondary"
+                                        href="<c:url value='${parentCategory == null ? " /admin/categories" :
+                                        ("/admin/categories/"+parentCategory.id+"/subcategories")}' />">Bỏ lọc</a>
+                                </div>
+                            </div>
+                        </form>
 
                         <!-- Table -->
-                        <div class="table-container">
-                            <table class="resizable-table" id="resizableTable">
-                                <thead>
+                        <div class="table-container mt-3">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
                                     <tr>
-                                        <th style="width:80px">ID<div class="resizer"></div>
-                                        </th>
-                                        <th style="width:380px">Tên danh mục<div class="resizer"></div>
-                                        </th>
-                                        <th style="width:420px">Mô tả<div class="resizer"></div>
-                                        </th>
-                                        <th style="width:140px">Trạng thái<div class="resizer"></div>
-                                        </th>
+                                        <th style="width:80px">ID</th>
+                                        <th style="width:360px">Tên danh mục</th>
+                                        <th style="width:420px">Mô tả</th>
+                                        <th style="width:140px">Trạng thái</th>
                                         <th style="width:220px">Hành động</th>
                                     </tr>
                                 </thead>
@@ -108,11 +104,18 @@
                                                 </span>
                                             </td>
                                             <td class="d-flex gap-2">
-                                                <!-- Chi tiết / Sửa -->
-                                                <a class="btn btn-sm btn-primary"
-                                                    href="<c:url value='/admin/categories/edit/${c.id}'/>">Chi tiết</a>
+                                                <c:choose>
+                                                    <c:when test="${parentCategory == null}">
+                                                        <a class="btn btn-sm btn-primary"
+                                                            href="<c:url value='/admin/categories/${c.id}/subcategories'/>">Chi
+                                                            tiết</a>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <a class="btn btn-sm btn-primary"
+                                                            href="<c:url value='/admin/categories/edit/${c.id}'/>">Sửa</a>
+                                                    </c:otherwise>
+                                                </c:choose>
 
-                                                <!-- Toggle: POST /toggle/{id} -->
                                                 <form method="post"
                                                     action="<c:url value='/admin/categories/toggle/${c.id}'/>"
                                                     class="d-inline">
@@ -124,7 +127,6 @@
                                                     </button>
                                                 </form>
 
-                                                <!-- Xoá: POST /delete/{id} -->
                                                 <button class="btn btn-sm btn-danger" data-id="${c.id}"
                                                     data-name="${fn:escapeXml(c.name)}"
                                                     onclick="openDeleteCategory(this)">Xoá</button>
@@ -135,14 +137,12 @@
                             </table>
                         </div>
 
-                        <!-- Pagination (inline, không file riêng) -->
+                        <!-- Pagination -->
                         <c:if test="${totalPages != null && totalPages > 1}">
-                            <c:set var="baseUrl" value="${parentCategory == null
-                         ? '/admin/categories'
-                         : '/admin/categories/' += parentCategory.id += '/subcategories'}" />
-                            <nav class="mt-3">
+                            <c:set var="baseUrl"
+                                value='${parentCategory == null ? "/admin/categories" : ("/admin/categories/"+parentCategory.id+"/subcategories")}' />
+                            <nav class="mt-3 mb-5">
                                 <ul class="pagination justify-content-center">
-                                    <!-- First / Prev -->
                                     <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
                                         <a class="page-link"
                                             href="${pageContext.request.contextPath}${baseUrl}?page=1&size=${pageSize}">&laquo;</a>
@@ -152,7 +152,6 @@
                                             href="${pageContext.request.contextPath}${baseUrl}?page=${currentPage-1}&size=${pageSize}">&lsaquo;</a>
                                     </li>
 
-                                    <!-- Window current-2 .. current+2 -->
                                     <c:set var="start" value="${currentPage-2 < 1 ? 1 : currentPage-2}" />
                                     <c:set var="end"
                                         value="${currentPage+2 > totalPages ? totalPages : currentPage+2}" />
@@ -163,7 +162,6 @@
                                         </li>
                                     </c:forEach>
 
-                                    <!-- Next / Last -->
                                     <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
                                         <a class="page-link"
                                             href="${pageContext.request.contextPath}${baseUrl}?page=${currentPage+1}&size=${pageSize}">&rsaquo;</a>
@@ -179,7 +177,7 @@
                     </div>
                 </div>
 
-                <!-- Delete Modal -->
+                <!-- Modal xoá -->
                 <div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">
                         <form class="modal-content" method="post" id="deleteForm">
@@ -201,19 +199,31 @@
                     </div>
                 </div>
 
-                <!-- Footer + Scripts -->
                 <jsp:include page="/WEB-INF/view/common/footer.jsp" />
+
                 <script>
-                    function toggleSidebar() {
-                        const s = document.getElementById('sidebar'), m = document.getElementById('mainContent');
-                        if (s) s.classList.toggle('collapsed');
-                        if (m) m.classList.toggle('expanded');
-                    }
+                    // ===== navbar offset + sidebar toggle (page-local) =====
+                    (function () {
+                        const wrap = document.getElementById('pageWrap');
+                        const nav = document.querySelector('.navbar');
+                        const overlay = document.getElementById('sidebarOverlay');
+                        function applyOffsets() {
+                            if (nav) document.documentElement.style.setProperty('--nav-h', nav.getBoundingClientRect().height + 'px');
+                        }
+                        window.toggleSidebar = function () {
+                            const s = document.getElementById('sidebar');
+                            if (s) s.classList.toggle('collapsed');
+                            if (wrap) wrap.classList.toggle('expanded');
+                            if (overlay) overlay.classList.toggle('show');
+                        };
+                        window.addEventListener('load', applyOffsets);
+                        window.addEventListener('resize', applyOffsets);
+                    })();
+
                     function openDeleteCategory(btn) {
                         const id = btn.dataset.id, name = btn.dataset.name || '';
                         document.getElementById('deleteCategoryName').innerText = name;
-                        document.getElementById('deleteForm').action =
-                            '<c:url value="/admin/categories/delete/"/>' + id;
+                        document.getElementById('deleteForm').action = '<c:url value="/admin/categories/delete/"/>' + id;
                         new bootstrap.Modal(document.getElementById('deleteCategoryModal')).show();
                     }
                 </script>
