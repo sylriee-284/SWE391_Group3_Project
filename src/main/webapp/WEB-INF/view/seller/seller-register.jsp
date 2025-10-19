@@ -46,8 +46,18 @@
                                         <div class="alert alert-info mb-4">
                                             <h5><i class="fas fa-info-circle"></i> Thông tin quan trọng:</h5>
                                             <ul class="mb-0">
-                                                <li>Số tiền ký quỹ tối thiểu: <strong>5.000.000 VNĐ</strong></li>
-                                                <li>Giá niêm yết sản phẩm: <strong>10%</strong> số tiền ký quỹ</li>
+                                                <li>Số tiền ký quỹ tối thiểu: <strong>
+                                                        <fmt:formatNumber value="${minDepositAmount}" type="number"
+                                                            pattern="#,###" /> VNĐ
+                                                    </strong></li>
+                                                <li>Giá niêm yết sản phẩm: <strong>
+                                                        <fmt:formatNumber value="${maxListingPriceRate * 100}"
+                                                            type="number" maxFractionDigits="0" />%
+                                                    </strong> số tiền ký quỹ</li>
+                                                <li>Phí nền tảng: <strong>
+                                                        <fmt:formatNumber value="${platformFeeRate * 100}" type="number"
+                                                            maxFractionDigits="0" />%
+                                                    </strong> trên mỗi giao dịch</li>
                                             </ul>
                                         </div>
 
@@ -140,20 +150,52 @@
                                                         </div>
                                                         <div id="depositAmountHelp" class="form-text">
                                                             <i class="fas fa-info-circle"></i>
-                                                            Số tiền ký quỹ tối thiểu là 5.000.000 VNĐ, tăng theo bước
+                                                            Số tiền ký quỹ tối thiểu là
+                                                            <fmt:formatNumber value="${minDepositAmount}" type="number"
+                                                                pattern="#,###" /> VNĐ, tăng theo bước
                                                             100.000 VNĐ
                                                         </div>
                                                         <div id="depositAmountError" class="invalid-feedback">
                                                             Số tiền không hợp lệ
                                                         </div>
                                                     </div>
+
+                                                    <!-- Display Max Listing Price as Input Field -->
+                                                    <div class="col-md-12 mb-3" id="maxListingPriceContainer"
+                                                        style="display: none;">
+                                                        <label class="form-label" for="maxListingPrice">
+                                                            <i class="fas fa-tag text-success"></i> Giá niêm yết tối đa
+                                                            cho mỗi sản phẩm
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text bg-success text-white">
+                                                                <i class="fas fa-money-bill-wave"></i>
+                                                            </span>
+                                                            <input type="text" class="form-control text-end fw-bold"
+                                                                id="maxListingPrice" readonly
+                                                                style="background-color: #d1e7dd; cursor: not-allowed;">
+                                                            <span
+                                                                class="input-group-text bg-success text-white">VNĐ</span>
+                                                        </div>
+
+                                                    </div>
                                                 </div>
                                             </div>
 
                                             <!-- Error Message Display -->
                                             <c:if test="${not empty error}">
-                                                <div class="alert alert-danger mt-3">
-                                                    <i class="fas fa-exclamation-circle"></i> ${error}
+                                                <div
+                                                    class="alert alert-danger mt-3 d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <i class="fas fa-exclamation-circle"></i> ${error}
+                                                    </div>
+                                                    <c:if
+                                                        test="${error.contains('Số dư không đủ') || error.contains('số dư không đủ')}">
+                                                        <a href="${pageContext.request.contextPath}/wallet/deposit"
+                                                            class="btn btn-warning btn-sm ms-3">
+                                                            <i class="fas fa-wallet me-1"></i> Nạp tiền ngay
+                                                        </a>
+                                                    </c:if>
                                                 </div>
                                             </c:if>
 
@@ -223,11 +265,28 @@
                     <!-- Custom Scripts -->
                     <script>
                         $(document).ready(function () {
+                            console.log('=== Seller Registration Script Loaded ===');
+
                             let storeNameTimer;
                             const $storeName = $('#storeName');
                             const $storeNameFeedback = $('#storeNameFeedback');
                             const $depositAmount = $('#depositAmount');
                             const checkUrl = $storeName.data('store-check-url');
+
+                            console.log('Deposit Amount Input Found:', $depositAmount.length > 0);
+                            console.log('Max Listing Price Display Found:', $('#maxListingPriceContainer').length > 0);
+                            console.log('Max Listing Price Input Found:', $('#maxListingPrice').length > 0);
+
+                            // Get user balance from server
+                            const userBalance = parseFloat('${userBalance}') || 0;
+                            console.log('User Balance:', userBalance);
+
+                            // Test function - có thể gọi từ console: testMaxPrice()
+                            window.testMaxPrice = function () {
+                                console.log('=== Testing Max Price Display ===');
+                                $('#depositAmount').val('10000000');
+                                $('#depositAmount').trigger('input');
+                            };
 
                             // Hàm format số thành tiền VNĐ
                             function formatCurrency(number) {
@@ -264,38 +323,100 @@
                                 }, 500);
                             });
 
-                            // Xử lý input số tiền
-                            // Format số tiền khi nhập
-                            $depositAmount.on('input', function (e) {
-                                let value = parseCurrency($(this).val());
-                                if (!isNaN(value)) {
-                                    $(this).val(formatCurrency(value));
+                            // Get settings from model
+                            const minDepositAmount = parseFloat('${minDepositAmount}') || 5000000;
+                            const maxListingPriceRate = parseFloat('${maxListingPriceRate}') || 0.1;
+
+                            console.log('Min Deposit Amount:', minDepositAmount);
+                            console.log('Max Listing Price Rate:', maxListingPriceRate);
+
+                            // Function to update max listing price display
+                            function updateMaxListingPrice(depositAmount) {
+                                console.log('=== updateMaxListingPrice called ===');
+                                console.log('Deposit Amount:', depositAmount);
+                                console.log('Max Listing Price Rate:', maxListingPriceRate);
+
+                                if (depositAmount > 0 && depositAmount >= minDepositAmount) {
+                                    const maxListingPrice = depositAmount * maxListingPriceRate;
+                                    console.log('Calculated Max listing price:', maxListingPrice);
+
+                                    const formattedPrice = formatCurrency(maxListingPrice);
+                                    console.log('Formatted price:', formattedPrice);
+
+                                    // Update input field value
+                                    $('#maxListingPrice').val(formattedPrice);
+                                    // Show container
+                                    $('#maxListingPriceContainer').show();
+                                    console.log('Display should be visible now');
+                                } else {
+                                    console.log('Hiding display - amount too low or zero');
+                                    $('#maxListingPriceContainer').hide();
+                                    $('#maxListingPrice').val('');
+                                }
+                            }
+
+                            // Validate và hiển thị max listing price khi nhập
+                            let isUpdating = false;
+
+                            // Sử dụng cả input và keyup để đảm bảo cập nhật
+                            $depositAmount.on('input keyup', function (e) {
+                                if (isUpdating) return;
+
+                                let inputVal = $(this).val();
+                                console.log('Input value:', inputVal);
+                                let value = parseCurrency(inputVal);
+                                console.log('Parsed value:', value);
+
+                                // Update max listing price ngay khi có giá trị hợp lệ
+                                if (!isNaN(value) && value > 0) {
+                                    console.log('Calling updateMaxListingPrice with:', value);
+                                    updateMaxListingPrice(value);
+                                } else {
+                                    console.log('Hiding max listing price display');
+                                    $('#maxListingPriceContainer').hide();
+                                    $('#maxListingPrice').val('');
                                 }
                             });
 
-                            // Validate số tiền khi nhập xong
+                            // Format số khi blur
                             $depositAmount.on('blur', function () {
+                                isUpdating = true;
                                 let value = parseCurrency($(this).val());
+                                console.log('Blur - Parsed value:', value);
 
                                 if (value > 0) {
-                                    // Kiểm tra giá trị tối thiểu
-                                    if (value < 5000000) {
-                                        value = 5000000;
-                                        toastr.info('Số tiền đã được điều chỉnh lên mức tối thiểu 5.000.000 VNĐ');
+                                    // Kiểm tra giá trị tối thiểu từ database
+                                    if (value < minDepositAmount) {
+                                        value = minDepositAmount;
+                                        iziToast.info({
+                                            title: 'Thông báo',
+                                            message: 'Số tiền đã được điều chỉnh lên mức tối thiểu ' + formatCurrency(minDepositAmount) + ' VNĐ',
+                                            position: 'topRight'
+                                        });
                                     }
                                     // Làm tròn đến 100.000 VNĐ
                                     const roundedValue = Math.round(value / 100000) * 100000;
                                     if (roundedValue !== value) {
                                         value = roundedValue;
-                                        toastr.info('Số tiền đã được làm tròn đến 100.000 VNĐ gần nhất');
+                                        iziToast.info({
+                                            title: 'Thông báo',
+                                            message: 'Số tiền đã được làm tròn đến 100.000 VNĐ gần nhất',
+                                            position: 'topRight'
+                                        });
                                     }
                                     // Cập nhật giá trị và hiển thị
                                     $(this).val(formatCurrency(value));
                                     $(this).removeClass('is-invalid').addClass('is-valid');
+                                    // Update max listing price
+                                    updateMaxListingPrice(value);
                                 } else {
                                     $(this).addClass('is-invalid');
-                                    $('#depositAmountError').text('Vui lòng nhập số tiền từ 5.000.000 VNĐ');
+                                    $('#depositAmountError').text('Vui lòng nhập số tiền từ ' + formatCurrency(minDepositAmount) + ' VNĐ');
+                                    $('#maxListingPriceContainer').hide();
+                                    $('#maxListingPrice').val('');
                                 }
+
+                                isUpdating = false;
                             });
 
                             // Form validation
@@ -303,19 +424,48 @@
                                 const $form = $(this);
                                 const depositAmount = parseCurrency($depositAmount.val());
 
-                                // Kiểm tra số tiền ký quỹ
-                                if (isNaN(depositAmount) || depositAmount < 5000000 || depositAmount % 100000 !== 0) {
+                                // Kiểm tra số tiền ký quỹ phải >= minDepositAmount và chia hết cho 100,000
+                                if (isNaN(depositAmount) || depositAmount < minDepositAmount || depositAmount % 100000 !== 0) {
                                     e.preventDefault();
                                     $depositAmount.addClass('is-invalid');
-                                    $('#depositAmountError').text('Số tiền phải từ 5.000.000 VNĐ và chia hết cho 100.000 VNĐ');
-                                    toastr.error('Vui lòng kiểm tra lại số tiền ký quỹ!');
+                                    $('#depositAmountError').text('Số tiền phải từ ' + formatCurrency(minDepositAmount) + ' VNĐ và chia hết cho 100.000 VNĐ');
+                                    iziToast.error({
+                                        title: 'Lỗi',
+                                        message: 'Vui lòng kiểm tra lại số tiền ký quỹ!',
+                                        position: 'topRight'
+                                    });
+                                    return false;
+                                }
+
+                                // Kiểm tra số dư
+                                if (depositAmount > userBalance) {
+                                    e.preventDefault();
+                                    $depositAmount.addClass('is-invalid');
+                                    $('#depositAmountError').text('Số dư không đủ để ký quỹ. Số dư hiện tại: ' + formatCurrency(userBalance) + ' VNĐ');
+
+                                    // Hiển thị modal hoặc toast với nút nạp tiền
+                                    iziToast.warning({
+                                        title: 'Số dư không đủ',
+                                        message: 'Bạn cần nạp thêm ' + formatCurrency(depositAmount - userBalance) + ' VNĐ',
+                                        position: 'topRight',
+                                        timeout: 10000,
+                                        buttons: [
+                                            ['<button><b>Nạp tiền ngay</b></button>', function (instance, toast) {
+                                                window.location.href = '${pageContext.request.contextPath}/wallet/deposit';
+                                            }, true]
+                                        ]
+                                    });
                                     return false;
                                 }
 
                                 // Kiểm tra tên cửa hàng hợp lệ
                                 if ($storeName.hasClass('is-invalid')) {
                                     e.preventDefault();
-                                    toastr.error('Vui lòng chọn tên cửa hàng khác!');
+                                    iziToast.error({
+                                        title: 'Lỗi',
+                                        message: 'Vui lòng chọn tên cửa hàng khác!',
+                                        position: 'topRight'
+                                    });
                                     return false;
                                 }
 

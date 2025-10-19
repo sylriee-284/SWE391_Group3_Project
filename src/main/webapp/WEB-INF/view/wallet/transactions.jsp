@@ -167,10 +167,16 @@
                                                                         </c:when>
                                                                         <c:when
                                                                             test='${transaction.type.name() eq "PAYMENT"}'>
-                                                                            <a href="/orders/${transaction.orderId}"
-                                                                                class="text-decoration-none">
-                                                                                #${transaction.orderId}
-                                                                            </a>
+                                                                            <c:choose>
+                                                                                <c:when
+                                                                                    test="${not empty transaction.orderId}">
+                                                                                    <a href="/orders/${transaction.orderId}"
+                                                                                        class="text-decoration-none">#${transaction.orderId}</a>
+                                                                                </c:when>
+                                                                                <c:otherwise>
+                                                                                    ${transaction.paymentRef}
+                                                                                </c:otherwise>
+                                                                            </c:choose>
                                                                         </c:when>
                                                                         <c:otherwise>
                                                                             -

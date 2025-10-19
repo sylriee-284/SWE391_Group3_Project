@@ -49,7 +49,7 @@
                     <!-- <li><a href="#">Feedback</a></li> -->
                     <sec:authorize
                         access="isAuthenticated() and hasRole('USER') and !hasRole('SELLER') and !hasRole('ADMIN')">
-                        <li><a href="#">Đăng ký bán hàng</a></li>
+                        <li><a href="/seller/register">Đăng ký bán hàng</a></li>
                     </sec:authorize>
 
                     <sec:authorize access="isAuthenticated() and hasRole('SELLER')">

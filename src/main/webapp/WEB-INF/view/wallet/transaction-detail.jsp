@@ -139,7 +139,7 @@
 
                                             <div class="info-row">
                                                 <div class="row">
-                                                    <div class="col-5 info-label">Transaction ID:</div>
+                                                    <div class="col-5 info-label">Payment reference:</div>
                                                     <div class="col-7">
                                                         <c:choose>
                                                             <c:when test="${transaction.paymentRef != null}">
