@@ -26,14 +26,14 @@ public class OrderTask {
 
     public OrderTask(Long userId, Long productId, Long sellerStoreId,
             Integer quantity, BigDecimal totalAmount,
-            String productName, String productData) {
+            String productName) {
         this.userId = userId;
         this.productId = productId;
         this.sellerStoreId = sellerStoreId;
         this.quantity = quantity;
         this.totalAmount = totalAmount;
         this.productName = productName;
-        this.productData = productData;
+        this.productData = null; // Always null when creating OrderTask
         this.createdAt = LocalDateTime.now();
     }
 }

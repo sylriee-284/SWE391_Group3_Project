@@ -1,6 +1,9 @@
 package vn.group3.marketplace.util;
 
+import java.math.BigDecimal;
 import java.util.regex.Pattern;
+
+import vn.group3.marketplace.dto.OrderTask;
 
 public class ValidationUtils {
 
@@ -95,6 +98,55 @@ public class ValidationUtils {
     // Get email validation error message
     public static String getEmailErrorMessage() {
         return "Invalid email format";
+    }
+
+    // Validate order data
+    public static boolean validateOrderTaskData(OrderTask orderTask) {
+        if (orderTask == null) {
+            return false;
+        }
+
+        // Validate userId
+        if (orderTask.getUserId() == null || orderTask.getUserId() <= 0) {
+            return false;
+        }
+
+        // Validate productId
+        if (orderTask.getProductId() == null || orderTask.getProductId() <= 0) {
+            return false;
+        }
+
+        // Validate sellerStoreId
+        if (orderTask.getSellerStoreId() == null || orderTask.getSellerStoreId() <= 0) {
+            return false;
+        }
+
+        // Validate quantity
+        if (orderTask.getQuantity() == null || orderTask.getQuantity() <= 0) {
+            return false;
+        }
+
+        // Validate totalAmount
+        if (orderTask.getTotalAmount() == null || orderTask.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            return false;
+        }
+
+        // Validate productName
+        if (orderTask.getProductName() == null || orderTask.getProductName().trim().isEmpty()) {
+            return false;
+        }
+
+        // Validate productData (optional but if present should not be empty)
+        if (orderTask.getProductData() != null && orderTask.getProductData().trim().isEmpty()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    // Get order validation error message
+    public static String getOrderValidationErrorMessage() {
+        return "Order validation failed: userId, productId, sellerStoreId must be positive, quantity must be > 0, totalAmount must be > 0, productName cannot be empty";
     }
 
     // Validate phone number format

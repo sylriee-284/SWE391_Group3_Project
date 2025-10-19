@@ -10,6 +10,7 @@ import vn.group3.marketplace.domain.entity.Category;
 import vn.group3.marketplace.security.CustomUserDetails;
 import vn.group3.marketplace.service.CategoryService;
 import vn.group3.marketplace.service.ProductService;
+import vn.group3.marketplace.service.ProductStorageService;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,10 +22,13 @@ public class CategoryController {
 
     private final CategoryService categoryService;
     private final ProductService productService;
+    private final ProductStorageService productStorageService;
 
-    public CategoryController(CategoryService categoryService, ProductService productService) {
+    public CategoryController(CategoryService categoryService, ProductService productService,
+            ProductStorageService productStorageService) {
         this.categoryService = categoryService;
         this.productService = productService;
+        this.productStorageService = productStorageService;
     }
 
     /**

@@ -1,11 +1,15 @@
 package vn.group3.marketplace.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import vn.group3.marketplace.domain.entity.Product;
 import vn.group3.marketplace.domain.enums.ProductStatus;
@@ -55,7 +59,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         "LEFT JOIN FETCH p.sellerStore s " +
                         "LEFT JOIN FETCH s.owner " +
                         "WHERE p.id = :productId AND p.isDeleted = false")
-        java.util.Optional<Product> findByIdWithDetails(@Param("productId") Long productId);
+        Optional<Product> findByIdWithDetails(@Param("productId") Long productId);
 
         @Query("SELECT p FROM Product p " +
                         "LEFT JOIN FETCH p.category c " +
@@ -63,6 +67,26 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         "LEFT JOIN FETCH p.sellerStore s " +
                         "LEFT JOIN FETCH s.owner " +
                         "WHERE p.slug = :slug AND p.isDeleted = false")
-        java.util.Optional<Product> findBySlugWithDetails(@Param("slug") String slug);
+        Optional<Product> findBySlugWithDetails(@Param("slug") String slug);
+
+        // Atomic decrement stock with condition
+        @Modifying
+        @Transactional
+        @Query(value = "UPDATE products SET stock = stock - :quantity WHERE id = :productId AND stock >= :quantity AND status = 'ACTIVE'", nativeQuery = true)
+        int decrementStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
+
+        // Atomic increment stock
+        @Modifying
+        @Transactional
+        @Query(value = "UPDATE products SET stock = stock + :quantity WHERE id = :productId", nativeQuery = true)
+        int incrementStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
+
+        // Check available stock (legacy - from products table)
+        @Query("SELECT p.stock FROM Product p WHERE p.id = :productId AND p.status = 'ACTIVE'")
+        Optional<Integer> getAvailableStock(@Param("productId") Long productId);
+
+        // Get dynamic stock from ProductStorage table
+        @Query("SELECT COUNT(ps) FROM ProductStorage ps WHERE ps.product.id = :productId AND ps.status = 'AVAILABLE' AND ps.order IS NULL")
+        long getDynamicStock(@Param("productId") Long productId);
 
 }
