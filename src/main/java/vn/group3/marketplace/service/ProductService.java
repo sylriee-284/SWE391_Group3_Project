@@ -280,7 +280,6 @@ public class ProductService {
         return productRepository.findByStatusAndKeyword(ProductStatus.ACTIVE, keyword.trim(), pageable);
     }
 
-    // Update sold quantity of product
     public void updateSoldQuantity(Long productId, Integer quantity) {
         Product product = getProductById(productId);
         if (product != null) {

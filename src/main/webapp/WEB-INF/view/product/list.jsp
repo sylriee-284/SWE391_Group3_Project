@@ -34,7 +34,19 @@
                     <div class="content" id="content">
                         <!-- Page Content will be inserted here -->
                         <div class="container-fluid">
-                            <h2 class="mb-4">Tất cả sản phẩm</h2> <!-- Filter Section -->
+                            <!-- Breadcrumb -->
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a href="<c:url value='/'/>" class="text-decoration-none">Trang chủ</a>
+                                    </li>
+                                    <li class="breadcrumb-item active" aria-current="page">
+                                        sản phẩm
+                                    </li>
+                                </ol>
+                            </nav>
+
+                            <!-- Filter Section -->
                             <div class="filter-section">
                                 <form method="get" action="<c:url value='/products'/>" id="filterForm">
                                     <!-- Main Filters -->
@@ -46,7 +58,8 @@
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="radio" name="sort"
                                                         id="sortSoldQuantity" value="soldQuantity" <c:if
-                                                        test="${sortBy == 'soldQuantity'}">checked</c:if>
+                                                        test="${sortBy == 'soldQuantity' || empty sortBy}">checked
+                                                    </c:if>
                                                     onchange="this.form.submit()">
                                                     <label class="form-check-label" for="sortSoldQuantity">
                                                         Sản phẩm nổi bật
@@ -55,7 +68,7 @@
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="radio" name="sort"
                                                         id="sortNew" value="createdAt" <c:if
-                                                        test="${sortBy == 'createdAt' || empty sortBy}">checked</c:if>
+                                                        test="${sortBy == 'createdAt'}">checked</c:if>
                                                     onchange="this.form.submit()">
                                                     <label class="form-check-label" for="sortNew">
                                                         Sản phẩm mới
@@ -87,15 +100,23 @@
                                     <div class="row mt-2">
                                         <div class="col-md-12 d-flex justify-content-between">
                                             <div>
-                                                <c:if test="${sortBy != 'createdAt' && not empty sortBy}">
+                                                <c:if test="${sortBy != 'soldQuantity' && not empty sortBy}">
                                                     <span class="badge bg-secondary me-2">
-                                                        <i class="fas fa-filter"></i> ĐANG LỌC
+                                                        <i class="fas fa-filter"></i>
+                                                        <c:choose>
+                                                            <c:when test="${sortBy == 'rating'}">ĐÁNH GIÁ CAO</c:when>
+                                                            <c:when test="${sortBy == 'price'}">GIÁ THẤP</c:when>
+                                                            <c:when test="${sortBy == 'createdAt'}">SẢN PHẨM MỚI
+                                                            </c:when>
+                                                            <c:otherwise>ĐANG LỌC</c:otherwise>
+                                                        </c:choose>
                                                     </span>
                                                 </c:if>
                                             </div>
                                             <div>
-                                                <c:if test="${sortBy != 'createdAt' && not empty sortBy}">
-                                                    <a href="<c:url value='/products'/>" class="btn btn-collapse me-2">
+                                                <c:if test="${sortBy != 'soldQuantity' && not empty sortBy}">
+                                                    <a href="<c:url value='/products?sort=soldQuantity'/>"
+                                                        class="btn btn-collapse me-2">
                                                         <i class="fas fa-times-circle"></i> BỎ LỌC
                                                     </a>
                                                 </c:if>
@@ -180,6 +201,10 @@
                                                                     <span class="text-muted"> (${product.ratingCount}
                                                                         đánh giá)</span>
                                                                 </small>
+                                                                <span class="ms-1 text-muted">
+                                                                    Đã bán: ${product.soldQuantity != null ?
+                                                                    product.soldQuantity : 0}
+                                                                </span>
                                                             </div>
                                                         </div>
                                                         <div class="mt-3">

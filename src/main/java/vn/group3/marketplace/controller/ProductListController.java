@@ -32,7 +32,7 @@ public class ProductListController {
      */
     @GetMapping
     public String getAllProducts(
-            @RequestParam(value = "sort", defaultValue = "createdAt") String sort,
+            @RequestParam(value = "sort", defaultValue = "soldQuantity") String sort,
             @PageableDefault(size = 12) Pageable pageable,
             Model model) {
 
