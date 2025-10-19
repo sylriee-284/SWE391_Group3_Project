@@ -16,8 +16,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Component
 public class OrderProcess {
 
-    private final EscrowTransactionService escrowTransactionService;
-
     private final ProductService productService;
 
     // Dependencies
@@ -37,8 +35,7 @@ public class OrderProcess {
     public OrderProcess(OrderQueue orderQueue, OrderService orderService,
             WalletTransactionQueueService walletTransactionQueueService, UserRepository userRepository,
             EmailService emailService, AuthenticationRefreshService authenticationRefreshService,
-            NotificationService notificationService, ProductService productService,
-            EscrowTransactionService escrowTransactionService) {
+            NotificationService notificationService, ProductService productService) {
         this.orderQueue = orderQueue;
         this.orderService = orderService;
         this.walletTransactionQueueService = walletTransactionQueueService;
@@ -47,7 +44,6 @@ public class OrderProcess {
         this.authenticationRefreshService = authenticationRefreshService;
         this.notificationService = notificationService;
         this.productService = productService;
-        this.escrowTransactionService = escrowTransactionService;
     }
 
     @PostConstruct
@@ -131,12 +127,6 @@ public class OrderProcess {
 
                             // 7. Send confirmation email
                             emailService.sendOrderConfirmationEmail(order);
-
-                            // 8. Create escrow transaction
-                            escrowTransactionService.createEscrowTransaction(order);
-
-                            // 9. Schedule escrow transaction release
-                            escrowTransactionService.scheduleEscrowTransactionRelease(order);
 
                         } else {
                             // 5.2. Case payment failed:

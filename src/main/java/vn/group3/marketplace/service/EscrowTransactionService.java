@@ -32,44 +32,46 @@ public class EscrowTransactionService {
 
     private final TaskScheduler taskScheduler;
 
-    private final OrderService orderService;
-
-    private final WalletTransactionService walletTransactionService;
-
     public EscrowTransactionService(EscrowTransactionRepository escrowTransactionRepository,
-            SystemSettingService systemSettingService, TaskScheduler taskScheduler, OrderService orderService,
-            WalletTransactionService walletTransactionService,
+            SystemSettingService systemSettingService, TaskScheduler taskScheduler,
             WalletTransactionRepository walletTransactionRepository,
             UserRepository userRepository) {
         this.escrowTransactionRepository = escrowTransactionRepository;
         this.systemSettingService = systemSettingService;
         this.taskScheduler = taskScheduler;
-        this.orderService = orderService;
-        this.walletTransactionService = walletTransactionService;
         this.walletTransactionRepository = walletTransactionRepository;
         this.userRepository = userRepository;
     }
 
     @Transactional
     public void createEscrowTransaction(Order order) {
-        EscrowTransaction escrowTransaction = EscrowTransaction.builder()
-                .order(order)
-                .amount(order.getTotalAmount())
-                .status(EscrowStatus.HELD)
-                .holdUntil(LocalDateTime.now().plusMinutes(
-                        Integer.parseInt(systemSettingService.getSettingValue("escrow.default_hold_minutes", "1"))))
-                .build();
-        escrowTransactionRepository.save(escrowTransaction);
+        try {
+            String holdMinutesStr = systemSettingService.getSettingValue("escrow.default_hold_minutes", "1");
+            int holdMinutes = Integer.parseInt(holdMinutesStr);
+
+            EscrowTransaction escrowTransaction = EscrowTransaction.builder()
+                    .order(order)
+                    .amount(order.getTotalAmount())
+                    .status(EscrowStatus.HELD)
+                    .holdUntil(LocalDateTime.now().plusMinutes(holdMinutes))
+                    .build();
+
+            escrowTransactionRepository.save(escrowTransaction);
+        } catch (Exception e) {
+            // Don't throw to avoid breaking order process - just log the error
+        }
     }
 
     public void scheduleEscrowTransactionRelease(Order order) {
-        Instant releaseTime = Instant.now().plusSeconds(
-                (long) Integer.parseInt(systemSettingService.getSettingValue("escrow.default_hold_minutes", "1")) * 60);
+        try {
+            String holdMinutesStr = systemSettingService.getSettingValue("escrow.default_hold_minutes", "1");
+            int holdMinutes = Integer.parseInt(holdMinutesStr);
 
-        taskScheduler.schedule(() -> {
-            // Tạo proxy để gọi method transactional
-            EscrowTransactionService.this.releasePaymentToSeller(order);
-        }, releaseTime);
+            Instant releaseTime = Instant.now().plusSeconds((long) holdMinutes * 60);
+            taskScheduler.schedule(() -> EscrowTransactionService.this.releasePaymentToSeller(order), releaseTime);
+        } catch (Exception e) {
+            // Don't throw to avoid breaking order process
+        }
     }
 
     @Transactional
