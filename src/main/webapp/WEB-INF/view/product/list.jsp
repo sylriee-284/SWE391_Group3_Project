@@ -45,6 +45,15 @@
                                             <div class="d-flex flex-wrap gap-4">
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="radio" name="sort"
+                                                        id="sortSoldQuantity" value="soldQuantity" <c:if
+                                                        test="${sortBy == 'soldQuantity'}">checked</c:if>
+                                                    onchange="this.form.submit()">
+                                                    <label class="form-check-label" for="sortSoldQuantity">
+                                                        Sản phẩm nổi bật
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="sort"
                                                         id="sortNew" value="createdAt" <c:if
                                                         test="${sortBy == 'createdAt' || empty sortBy}">checked</c:if>
                                                     onchange="this.form.submit()">
