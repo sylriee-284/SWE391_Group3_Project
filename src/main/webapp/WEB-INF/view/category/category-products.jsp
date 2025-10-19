@@ -563,7 +563,7 @@
                             });
                         });
                     </script>
-                    >>>>>>> main
+
                 </body>
 
                 </html>
