@@ -5,11 +5,14 @@
             <!-- Sidebar Component -->
             <div class="sidebar" id="sidebar">
                 <ul class="menu">
-                    <li><a href="/homepage">Trang chủ</a></li>
+                    <li><a href="/homepage">🏠 Trang chủ</a></li>
+
                     <c:if test="${pageContext.request.userPrincipal == null}">
-                        <li><a href="/register">Đăng ký ngay</a></li>
+                        <li><a href="/register">📝 Đăng ký ngay</a></li>
                     </c:if>
+
                     <ul class="list-unstyled">
+
                         <!-- Quản lý thanh toán -->
                         <li>
                             <a class="d-flex justify-content-between align-items-center text-decoration-none text-white"
@@ -24,11 +27,13 @@
                                 <li><a href="/wallet/transactions" class="text-white text-decoration-none">📜 Lịch sử
                                         giao
                                         dịch</a></li>
+
+                                <!-- Chỉ hiển thị nếu user có role SELLER -->
+                                <sec:authorize access="hasRole('SELLER')">
+                                    <li><a href="/wallet/withdraw" class="text-white text-decoration-none">📤 Rút
+                                            tiền</a></li>
+                                </sec:authorize>
                             </ul>
-                            <!-- Chỉ hiển thị nếu user có role SELLER -->
-                            <sec:authorize access="hasRole('SELLER')">
-                        <li><a href="/wallet/withdraw" class="text-white text-decoration-none">📤 Rút tiền</a></li>
-                        </sec:authorize>
                         </li>
 
                         <!-- Mua hàng -->
@@ -49,7 +54,7 @@
                     <!-- <li><a href="#">Feedback</a></li> -->
                     <sec:authorize
                         access="isAuthenticated() and hasRole('USER') and !hasRole('SELLER') and !hasRole('ADMIN')">
-                        <li><a href="#">Đăng ký bán hàng</a></li>
+                        <li><a href="#">🛍️ Đăng ký bán hàng</a></li>
                     </sec:authorize>
 
                     <sec:authorize access="isAuthenticated() and hasRole('SELLER')">
@@ -74,6 +79,7 @@
                         </li>
                     </sec:authorize>
 
+                    <!-- Quản lý Admin -->
                     <sec:authorize access="hasRole('ADMIN')">
                         <!-- Quản lý Admin -->
                         <li class="mt-2">

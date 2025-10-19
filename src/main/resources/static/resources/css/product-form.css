@@ -1,0 +1,225 @@
+/* product-form.css - Modern Product Form Styling */
+
+:root {
+    --primary-color: #4361ee;
+    --primary-light: #4895ef;
+    --danger-color: #e63946;
+    --light-color: #f8f9fa;
+    --dark-color: #212529;
+    --gray-light: #e9ecef;
+    --gray-medium: #adb5bd;
+    --gray-dark: #495057;
+    --border-radius: 8px;
+    --border-radius-sm: 6px;
+    --transition: all 0.2s ease;
+}
+
+/* Base Styles */
+.product-form-container {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: 1rem 0;
+}
+
+/* Container */
+.product-form-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+/* Header Section */
+.product-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.product-form-title {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.product-form-back-btn {
+    background-color: white;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    border-radius: var(--border-radius);
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+.product-form-back-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Form Card */
+.product-form-card {
+    background-color: white;
+    border-radius: var(--border-radius);
+    border: 1px solid #dee2e6;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.product-form-body {
+    padding: 1.5rem;
+}
+
+/* Form Grid Layout */
+.product-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+/* Form Elements */
+.product-form-group {
+    margin-bottom: 1rem;
+}
+
+.product-form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--gray-dark);
+    display: block;
+    font-size: 0.9rem;
+}
+
+.product-form-control,
+.product-form-select {
+    border-radius: var(--border-radius-sm);
+    padding: 0.75rem;
+    border: 1px solid var(--gray-light);
+    transition: var(--transition);
+    font-size: 0.9rem;
+    width: 100%;
+    background-color: white;
+    color: var(--dark-color);
+}
+
+.product-form-control:focus,
+.product-form-select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+/* Form Help Text */
+.product-form-text {
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    color: var(--gray-medium);
+}
+
+.product-form-text.text-danger {
+    color: var(--danger-color);
+}
+
+/* Error Messages */
+.product-form-error {
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: block;
+    color: var(--danger-color);
+}
+
+/* Full Width Elements */
+.product-form-full-width {
+    grid-column: 1 / -1;
+}
+
+/* Product Image Styling */
+.product-image-container {
+    margin-top: 0.5rem;
+}
+
+.product-image-preview {
+    max-height: 140px;
+    border: 1px solid #dee2e6;
+    border-radius: var(--border-radius-sm);
+    padding: 4px;
+    background: #fff;
+}
+
+/* File Input Styling */
+.product-form-control[type="file"] {
+    padding: 0.5rem;
+    background-color: var(--light-color);
+}
+
+/* Submit Button */
+.product-form-submit-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 1rem;
+    grid-column: 1 / -1;
+    padding-top: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.product-form-submit-btn {
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 0.75rem 2rem;
+    font-weight: 500;
+    transition: var(--transition);
+    color: white;
+    font-size: 0.95rem;
+}
+
+.product-form-submit-btn:hover {
+    background-color: var(--primary-light);
+}
+
+/* Plain Text Display (for stock) */
+.product-form-plaintext {
+    padding: 0.75rem 0;
+    font-weight: 500;
+    color: var(--dark-color);
+}
+
+/* Disabled State */
+.product-form-control:disabled,
+.product-form-select:disabled {
+    background-color: var(--light-color);
+    color: var(--gray-medium);
+    cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .product-form-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .product-form-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .product-form-body {
+        padding: 1rem;
+    }
+
+    .product-form-title {
+        font-size: 1.25rem;
+    }
+}
