@@ -5,8 +5,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import jakarta.persistence.EntityNotFoundException;
 import vn.group3.marketplace.domain.entity.*;
@@ -26,7 +24,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 @Service
 public class OrderService {
 
-    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
     private static final String ORDER_NOT_FOUND_MESSAGE = "Order not found";
 
     public Page<Order> searchByCurrentBuyerAndProductName(OrderStatus status, String key, Pageable pageable) {
@@ -60,6 +57,7 @@ public class OrderService {
     private final ProductStorageService productStorageService;
     private final ObjectMapper objectMapper;
     private final NotificationService notificationService;
+    private final EscrowTransactionService escrowTransactionService;
 
     public OrderService(OrderRepository orderRepository,
             ProductRepository productRepository,
@@ -70,7 +68,8 @@ public class OrderService {
             SellerStoreRepository sellerStoreRepository,
             ProductStorageService productStorageService,
             ObjectMapper objectMapper,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            EscrowTransactionService escrowTransactionService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.productStorageRepository = productStorageRepository;
@@ -81,6 +80,7 @@ public class OrderService {
         this.productStorageService = productStorageService;
         this.objectMapper = objectMapper;
         this.notificationService = notificationService;
+        this.escrowTransactionService = escrowTransactionService;
     }
 
     // Helper method để lấy thông tin user hiện tại từ SecurityContext
@@ -302,7 +302,6 @@ public class OrderService {
     // Update order based on payment status
     @Transactional
     public void updateOrderBasedOnPaymentStatus(Order order, WalletTransactionStatus paymentStatus) {
-        logger.info("Updating order {} status from {} to {}", order.getId(), order.getStatus(), paymentStatus);
         switch (paymentStatus) {
             case PAID:
                 // 1. Update order status to PAID
@@ -333,7 +332,6 @@ public class OrderService {
                     String productDataJson = objectMapper.writeValueAsString(productStorageData);
                     order.setProductData(productDataJson);
                 } catch (JsonProcessingException e) {
-                    logger.error("Failed to convert product storages to JSON: {}", e.getMessage(), e);
                     throw new RuntimeException("Failed to convert product storages to JSON", e);
                 }
 
@@ -345,28 +343,21 @@ public class OrderService {
                 }
                 // Save updated product storages
                 productStorageService.saveAll(productStoragesToDeliver);
-                logger.info("Updated {} product storages to DELIVERED status", productStoragesToDeliver.size());
 
-                // 6. Stock is automatically managed by ProductStorage status changes
-                // No need to manually update product.stock since it's calculated dynamically
-                Product product = order.getProduct();
-                long currentDynamicStock = productStorageService.getAvailableStock(product.getId());
-                logger.info("Product {} dynamic stock after order completion: {} (was decremented by {})",
-                        product.getId(), currentDynamicStock, order.getQuantity());
+                // 7. Process escrow transaction asynchronously
+                escrowTransactionService.processEscrowTransactionAsync(order);
 
-                // 7. Update order status to COMPLETED
+                // 8. Update order status to COMPLETED
                 order.setStatus(OrderStatus.COMPLETED);
 
-                // 8. Save order
+                // 9. Save order
                 orderRepository.save(order);
-                logger.info("Order {} status updated to COMPLETED", order.getId());
 
                 break;
             case FAILED:
                 // 1. Update order status to PAYMENT_FAILED
                 order.setStatus(OrderStatus.PAYMENT_FAILED);
                 orderRepository.save(order);
-                logger.info("Order {} status updated to PAYMENT_FAILED", order.getId());
 
                 break;
         }

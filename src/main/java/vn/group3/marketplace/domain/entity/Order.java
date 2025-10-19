@@ -48,12 +48,13 @@ public class Order extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     @Builder.Default
-    private OrderStatus status = OrderStatus.PENDING_PAYMENT;
+    private OrderStatus status = OrderStatus.PENDING;
 
     @Column(name = "total_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal totalAmount;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "order")
+    @Builder.Default
     private List<ProductStorage> productStorages = new ArrayList<>();
 
 }

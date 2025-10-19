@@ -1,23 +1,36 @@
 package vn.group3.marketplace.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
 import vn.group3.marketplace.domain.entity.ProductStorage;
 import vn.group3.marketplace.domain.enums.ProductStorageStatus;
+
+import org.springframework.data.jpa.repository.Modifying;
+
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
 public interface ProductStorageRepository extends JpaRepository<ProductStorage, Long> {
 
+    @Query("""
+                SELECT COUNT(ps) FROM ProductStorage ps
+                WHERE ps.product.id = :productId
+                  AND ps.status = :status
+                  AND ps.isDeleted = false
+            """)
+    long countAvailable(@Param("productId") Long productId,
+            @Param("status") ProductStorageStatus status);
+
+    List<ProductStorage> findByProductIdAndStatusOrderByCreatedAtAsc(Long productId, ProductStorageStatus status);
+
     List<ProductStorage> findByProductIdAndStatusAndOrderIsNull(Long productId, ProductStorageStatus status);
 
     @Query("SELECT COUNT(ps) FROM ProductStorage ps WHERE ps.product.id = :productId AND ps.status = :status AND ps.order IS NULL")
-    long countAvailableStockByProductId(@Param("productId") Long productId, @Param("status") ProductStorageStatus status);
+    long countAvailableStockByProductId(@Param("productId") Long productId,
+            @Param("status") ProductStorageStatus status);
 
     @Modifying
     @Query("UPDATE ProductStorage ps SET ps.status = :status WHERE ps.product.id = :productId AND ps.status = :currentStatus")

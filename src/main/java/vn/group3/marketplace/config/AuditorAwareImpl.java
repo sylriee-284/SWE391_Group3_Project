@@ -23,6 +23,7 @@ public class AuditorAwareImpl implements AuditorAware<Long> {
         if (authentication.getPrincipal() instanceof vn.group3.marketplace.security.CustomUserDetails userDetails) {
             return Optional.ofNullable(userDetails.getId());
         }
+
         return Optional.empty();
     }
 }
