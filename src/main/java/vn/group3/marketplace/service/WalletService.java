@@ -12,6 +12,7 @@ import vn.group3.marketplace.domain.enums.WalletTransactionType;
 import vn.group3.marketplace.domain.enums.WalletTransactionStatus;
 import vn.group3.marketplace.repository.UserRepository;
 import vn.group3.marketplace.repository.WalletTransactionRepository;
+import vn.group3.marketplace.service.WalletService;
 
 import java.util.Optional;
 
@@ -102,7 +103,6 @@ public class WalletService {
     /**
      * Trả về userId liên kết với paymentRef nếu có.
      */
-
     public java.util.Optional<Long> findUserIdByPaymentRef(String paymentRef) {
         try {
             java.util.Optional<WalletTransaction> txOpt = walletTransactionRepository.findByPaymentRef(paymentRef);
@@ -118,4 +118,93 @@ public class WalletService {
             return java.util.Optional.empty();
         }
     }
+
+    /**
+     * Xử lý trừ tiền khi mua hàng
+     */
+    @Transactional
+    public boolean processPurchasePayment(Long userId, java.math.BigDecimal amount, String orderId) {
+        logger.info("=== Processing Purchase Payment ===");
+        logger.info("User ID: {}, Amount: {}, Order ID: {}", userId, amount, orderId);
+
+        // Lấy user từ database
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        // Tạo transaction trước với trạng thái PENDING
+        WalletTransaction transaction = WalletTransaction.builder()
+                .user(user)
+                .type(WalletTransactionType.PAYMENT)
+                .amount(amount)
+                .paymentRef(orderId)
+                .paymentStatus(WalletTransactionStatus.PENDING)
+                .paymentMethod("INTERNAL")
+                .note("Thanh toán đơn hàng #" + orderId)
+                .build();
+
+        transaction = walletTransactionRepository.save(transaction);
+
+        try {
+            // Cập nhật số dư bằng UPDATE nguyên tử
+            // Method decrementBalance chỉ trừ khi balance >= amount
+            int rows = userRepository.decrementBalance(userId, amount);
+
+            if (rows != 1) {
+                logger.error("❌ Payment failed for userId={}. Required: {}", userId, amount);
+                logger.error("❌ decrementBalance returned {} rows (expected 1)", rows);
+
+                transaction.setPaymentStatus(WalletTransactionStatus.FAILED);
+                walletTransactionRepository.save(transaction);
+                logger.info("❌ Payment failed due to insufficient balance for userId={}", userId);
+                return false; // Payment failed - KHÔNG throw exception
+            }
+
+            // Kiểm tra số dư sau khi trừ tiền
+            User updatedUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+            logger.info("Balance updated successfully - User {} balance: {}",
+                    userId, updatedUser.getBalance());
+
+            // Cập nhật trạng thái transaction thành công
+            transaction.setPaymentStatus(WalletTransactionStatus.SUCCESS);
+            walletTransactionRepository.save(transaction);
+
+            logger.info("Payment processed successfully for userId={}", userId);
+            return true; // Payment successful
+
+        } catch (Exception e) {
+            // Nếu có lỗi SAU KHI đã trừ tiền thành công, cần rollback
+            logger.error("Payment processing failed for userId={}: {}", userId, e.getMessage());
+
+            // Rollback: hoàn lại tiền vì đã trừ thành công nhưng có lỗi sau đó
+            try {
+                int rollbackRows = userRepository.incrementBalance(userId, amount);
+                if (rollbackRows == 1) {
+                    logger.info("Rollback successful: returned {} to user {}", amount, userId);
+                } else {
+                    logger.warn("Rollback failed: incrementBalance returned {} rows for user {}", rollbackRows, userId);
+                }
+            } catch (Exception rollbackException) {
+                logger.error("Rollback failed for userId={}: {}", userId, rollbackException.getMessage());
+            }
+
+            // Cập nhật transaction thành FAILED
+            transaction.setPaymentStatus(WalletTransactionStatus.FAILED);
+            walletTransactionRepository.save(transaction);
+            return false; // Payment failed
+        }
+
+    }
+
+    /**
+     * Lấy trạng thái transaction theo order ID
+     */
+    public WalletTransactionStatus getTransactionStatusByOrderId(String orderId) {
+        Optional<WalletTransaction> transactionOpt = walletTransactionRepository.findByPaymentRef(orderId);
+        if (transactionOpt.isPresent()) {
+            return transactionOpt.get().getPaymentStatus();
+        }
+        return WalletTransactionStatus.FAILED; // Default to FAILED if not found
+    }
+
 }

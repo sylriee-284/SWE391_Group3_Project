@@ -1,85 +1,76 @@
 package vn.group3.marketplace.service;
 
 import vn.group3.marketplace.dto.OrderTask;
-import vn.group3.marketplace.domain.entity.Order;
-import vn.group3.marketplace.domain.entity.User;
-import vn.group3.marketplace.domain.entity.WalletTransaction;
-import vn.group3.marketplace.domain.entity.Product;
-import vn.group3.marketplace.domain.entity.ProductStorage;
-import vn.group3.marketplace.domain.entity.SellerStore;
-import vn.group3.marketplace.domain.enums.OrderStatus;
-import vn.group3.marketplace.domain.enums.ProductStorageStatus;
-import vn.group3.marketplace.domain.enums.WalletTransactionType;
+import vn.group3.marketplace.domain.entity.*;
+import vn.group3.marketplace.domain.enums.*;
 import vn.group3.marketplace.repository.*;
-import vn.group3.marketplace.util.ValidationUtils;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import jakarta.mail.MessagingException;
 
-import java.math.BigDecimal;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
 public class OrderProcess {
 
-    private final WalletTransactionRepository walletTransactionRepository;
+    private static final Logger logger = LoggerFactory.getLogger(OrderProcess.class);
 
-    @Autowired
-    private OrderQueue orderQueue;
+    // Dependencies
+    private final OrderQueue orderQueue;
+    private final OrderService orderService;
+    private final WalletTransactionQueueService walletTransactionQueueService;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
+    private final AuthenticationRefreshService authenticationRefreshService;
+    private final NotificationService notificationService;
 
-    @Autowired
-    private OrderRepository orderRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private SellerStoreRepository sellerStoreRepository;
-
-    @Autowired
-    private ProductStorageRepository productStorageRepository;
-
-    @Autowired
-    private EmailService emailService;
-
+    // Thread management
     private Thread orderProcessingThread;
     private final AtomicBoolean isRunning = new AtomicBoolean(true);
 
-    OrderProcess(WalletTransactionRepository walletTransactionRepository) {
-        this.walletTransactionRepository = walletTransactionRepository;
+    // Constructor injection
+    public OrderProcess(OrderQueue orderQueue, OrderService orderService,
+            WalletTransactionQueueService walletTransactionQueueService, UserRepository userRepository,
+            EmailService emailService, AuthenticationRefreshService authenticationRefreshService,
+            NotificationService notificationService) {
+        this.orderQueue = orderQueue;
+        this.orderService = orderService;
+        this.walletTransactionQueueService = walletTransactionQueueService;
+        this.userRepository = userRepository;
+        this.emailService = emailService;
+        this.authenticationRefreshService = authenticationRefreshService;
+        this.notificationService = notificationService;
     }
 
     @PostConstruct
     public void startOrderProcessing() {
         orderProcessingThread = new Thread(() -> {
-            System.out.println("Order processing thread started");
+            logger.info("Order processing thread started");
 
             while (isRunning.get()) {
                 try {
-                    // take order from queue (blocking)
+                    // Take order from queue (blocking)
                     OrderTask orderTask = orderQueue.takeOrder();
 
-                    // process order
+                    // Process order
                     processOrder(orderTask);
+
                 } catch (InterruptedException e) {
-                    System.out.println("Order processing thread interrupted");
+                    logger.info("Order processing thread interrupted");
                     Thread.currentThread().interrupt();
                     break;
                 } catch (Exception e) {
-                    System.out.println("Error processing order: " + e.getMessage());
+                    logger.error("Error processing order: {}", e.getMessage(), e);
                 }
             }
-            System.out.println("Order processing thread stopped");
+            logger.info("Order processing thread stopped");
         });
+
         orderProcessingThread.setName("OrderProcessingThread");
         orderProcessingThread.setDaemon(false);
         orderProcessingThread.start();
@@ -96,92 +87,154 @@ public class OrderProcess {
     @Transactional
     public void processOrder(OrderTask orderTask) {
         try {
-            System.out.println("Processing order: " + orderTask.getUserId());
+            // 1. Create order from order task
+            Order order = orderService.createOrderFromTask(orderTask);
+            // 2. Check stock availability
+            boolean isStockAvailable = orderService.checkStockAvailability(order);
+            switch (isStockAvailable ? 1 : 0) {
+                // 2.2. Case stock is available, continue processing
+                case 1:
+                    // 3. Process payment
+                    var future = walletTransactionQueueService.enqueuePurchasePayment(orderTask.getUserId(),
+                            order.getTotalAmount(), order.getId().toString());
 
-            // 1. Validate data
-            ValidationUtils.validateOrderData(orderTask);
+                    try {
+                        // Wait for payment completion (blocking call) - Tăng timeout lên 30 giây
+                        logger.info("Waiting for payment completion for order {}...", order.getId());
+                        Boolean paymentResult = future.get(30, java.util.concurrent.TimeUnit.SECONDS);
 
-            // 2. Create order entity
-            Order order = createOrderEntity(orderTask);
+                        // Immediately refresh authentication context to update user balance in session
+                        authenticationRefreshService.refreshAuthenticationContextForUser(orderTask.getUserId());
 
-            // 3. Process payment
-            processPayment(order);
+                        logger.info("Payment result for order {}: {}", order.getId(), paymentResult);
 
-            // 4. Update product storage
-            updateProductStorage(order);
+                        if (paymentResult != null && paymentResult) {
+                            // 5.1. Case payment successful:
+                            logger.info("Updating order {} status to PAID", order.getId());
+                            orderService.updateOrderBasedOnPaymentStatus(order, WalletTransactionStatus.PAID);
 
-            // 5. Send email
-            sendOrderConfirmationEmail(order);
+                            // Create notifications for successful process (all 3 stages)
+                            User buyer = userRepository.findById(orderTask.getUserId()).orElse(null);
+                            if (buyer != null) {
+                                // 1. Payment success notification
+                                notificationService.createNotification(
+                                        buyer,
+                                        NotificationType.PAYMENT_SUCCESS,
+                                        "Thanh toán thành công",
+                                        "Đơn hàng #" + order.getId() + " đã thanh toán thành công!");
 
-            System.out.println("Order processed successfully: " + order.getId());
+                                // 2. Purchase success notification
+                                notificationService.createNotification(
+                                        buyer,
+                                        NotificationType.PURCHASE_SUCCESS,
+                                        "Mua hàng thành công",
+                                        "Đơn hàng #" + order.getId() + " đã được xử lý hoàn tất!");
+                            }
 
+                            // 6. Send confirmation email
+                            try {
+                                emailService.sendOrderConfirmationEmail(order);
+                            } catch (Exception e) {
+                                logger.error("Failed to send confirmation email for order: {}, error: {}",
+                                        order.getId(), e.getMessage(), e);
+                            }
+
+                            logger.info("Order processed successfully: {}", order.getId());
+                        } else {
+                            // 5.2. Case payment failed:
+                            orderService.updateOrderBasedOnPaymentStatus(order, WalletTransactionStatus.FAILED);
+                            logger.warn("Order payment failed: {}", order.getId());
+
+                            // Create notification for failed payment
+                            User buyer = userRepository.findById(orderTask.getUserId()).orElse(null);
+                            if (buyer != null) {
+                                notificationService.createNotification(
+                                        buyer,
+                                        NotificationType.PAYMENT_FAILED,
+                                        "Thanh toán thất bại",
+                                        "Đơn hàng #" + order.getId() + " thanh toán thất bại. Vui lòng thử lại!");
+
+                                // Create notification for failed purchase
+                                notificationService.createNotification(
+                                        buyer,
+                                        NotificationType.PURCHASE_FAILED,
+                                        "Mua hàng thất bại",
+                                        "Đơn hàng #" + order.getId() + " không thể hoàn tất do thanh toán thất bại!");
+                            }
+                        }
+
+                    } catch (java.util.concurrent.TimeoutException e) {
+                        // Payment timeout - Log chi tiết
+                        logger.error("Order payment timeout after 30 seconds for order: {}", order.getId());
+                        logger.error("Timeout details: {}", e.getMessage());
+                        orderService.updateOrderBasedOnPaymentStatus(order, WalletTransactionStatus.FAILED);
+                        logger.warn("Order payment timeout: {}", order.getId());
+
+                        // Create notification for timeout
+                        User buyer = userRepository.findById(orderTask.getUserId()).orElse(null);
+                        if (buyer != null) {
+                            notificationService.createNotification(
+                                    buyer,
+                                    NotificationType.PAYMENT_FAILED,
+                                    "Thanh toán timeout",
+                                    "Đơn hàng #" + order.getId() + " thanh toán bị timeout. Vui lòng thử lại!");
+
+                            notificationService.createNotification(
+                                    buyer,
+                                    NotificationType.PURCHASE_FAILED,
+                                    "Mua hàng thất bại",
+                                    "Đơn hàng #" + order.getId() + " không thể hoàn tất do thanh toán timeout!");
+                        }
+                    } catch (Exception e) {
+                        // Payment error
+                        orderService.updateOrderBasedOnPaymentStatus(order, WalletTransactionStatus.FAILED);
+                        logger.error("Order payment error: {}, error: {}", order.getId(), e.getMessage(), e);
+
+                        // Create notification for error
+                        User buyer = userRepository.findById(orderTask.getUserId()).orElse(null);
+                        if (buyer != null) {
+                            notificationService.createNotification(
+                                    buyer,
+                                    NotificationType.PAYMENT_FAILED,
+                                    "Lỗi thanh toán",
+                                    "Đơn hàng #" + order.getId() + " gặp lỗi trong quá trình thanh toán!");
+
+                            notificationService.createNotification(
+                                    buyer,
+                                    NotificationType.PURCHASE_FAILED,
+                                    "Mua hàng thất bại",
+                                    "Đơn hàng #" + order.getId() + " không thể hoàn tất do lỗi thanh toán!");
+                        }
+                    }
+
+                    break;
+                // 2.1. Case stock is not available, update order status to OUT_OF_STOCK, end
+                // processing
+                case 0:
+                    // 2.1. Case stock is not available, update order status to OUT_OF_STOCK, end
+                    orderService.updateOrderStatus(order, OrderStatus.OUT_OF_STOCK);
+
+                    // Create notification for out of stock
+                    User buyer = userRepository.findById(orderTask.getUserId()).orElse(null);
+                    if (buyer != null) {
+                        notificationService.createNotification(
+                                buyer,
+                                NotificationType.ORDER_FAILED,
+                                "Đặt hàng thất bại",
+                                "Sản phẩm trong đơn hàng #" + order.getId() + " đã hết hàng!");
+
+                        notificationService.createNotification(
+                                buyer,
+                                NotificationType.PURCHASE_FAILED,
+                                "Mua hàng thất bại",
+                                "Đơn hàng #" + order.getId() + " không thể hoàn tất do hết hàng!");
+                    }
+                    break;
+            }
         } catch (Exception e) {
-            System.err.println("Failed to process order: " + e.getMessage());
+            // 6. end processing
+            throw new RuntimeException("Failed to process order", e);
         }
     }
 
-    private Order createOrderEntity(OrderTask orderTask) {
-        // Take data from database
-        User buyer = userRepository.findById(orderTask.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Product product = productRepository.findById(orderTask.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-
-        SellerStore sellerStore = sellerStoreRepository.findById(orderTask.getSellerStoreId())
-                .orElseThrow(() -> new RuntimeException("Seller store not found"));
-
-        // Create order entity
-        Order order = Order.builder()
-                .buyer(buyer)
-                .sellerStore(sellerStore)
-                .product(product)
-                .productName(orderTask.getProductName())
-                .productPrice(orderTask.getTotalAmount().divide(BigDecimal.valueOf(orderTask.getQuantity())))
-                .quantity(orderTask.getQuantity())
-                .productData(orderTask.getProductData())
-                .totalAmount(orderTask.getTotalAmount())
-                .status(OrderStatus.PENDING)
-                .build();
-
-        return orderRepository.save(order);
-    }
-
-    private void processPayment(Order order) {
-        // Check balance
-        User buyer = order.getBuyer();
-        if (buyer.getBalance().compareTo(order.getTotalAmount()) < 0) {
-            throw new RuntimeException("Insufficient balance");
-        }
-
-        // Subtract balance
-        buyer.setBalance(buyer.getBalance().subtract(order.getTotalAmount()));
-        userRepository.save(buyer);
-
-        // Create wallet transaction
-        WalletTransaction walletTransaction = WalletTransaction.builder()
-                .user(buyer)
-                .type(WalletTransactionType.PAYMENT)
-                .amount(order.getTotalAmount())
-                .refOrder(order)
-                .build();
-        walletTransactionRepository.save(walletTransaction);
-
-        // Update order status
-        order.setStatus(OrderStatus.PAID);
-        orderRepository.save(order);
-    }
-
-    private void updateProductStorage(Order order) {
-        // Find product storage available
-        ProductStorageService productStorageService = new ProductStorageService();
-        List<ProductStorage> productStorages = productStorageService.findByProductIdWithQuantityAvailable(
-                order.getProduct().getId(), order.getQuantity(), ProductStorageStatus.AVAILABLE);
-        order.setProductStorages(productStorages);
-        productStorageRepository.saveAll(productStorages);
-    }
-
-    private void sendOrderConfirmationEmail(Order order) throws MessagingException {
-        emailService.sendOrderConfirmationEmail(order);
-    }
 }

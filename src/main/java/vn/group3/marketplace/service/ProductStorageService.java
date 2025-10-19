@@ -2,7 +2,6 @@ package vn.group3.marketplace.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,11 +12,10 @@ import vn.group3.marketplace.repository.ProductStorageRepository;
 @Service
 public class ProductStorageService {
 
-    @Autowired
-    private ProductStorageRepository productStorageRepository;
+    private final ProductStorageRepository productStorageRepository;
 
-    public List<ProductStorage> findAllAvailable(Long productId, ProductStorageStatus status) {
-        return productStorageRepository.findByProductIdAndStatus(productId, status);
+    public ProductStorageService(ProductStorageRepository productStorageRepository) {
+        this.productStorageRepository = productStorageRepository;
     }
 
     @Transactional
@@ -26,21 +24,27 @@ public class ProductStorageService {
             Integer quantity,
             ProductStorageStatus status) {
         List<ProductStorage> allAvailable = productStorageRepository
-                .findByProductIdAndStatusOrderByCreatedAtAsc(productId, status);
+                .findByProductIdAndStatusAndOrderIsNull(productId, status);
 
-        if (allAvailable.size() < quantity) {
-            throw new RuntimeException("Not enough inventory, only " + allAvailable.size() + " available");
-        }
-
-        // Lấy chỉ số lượng cần thiết
+        // Lấy chỉ số lượng cần thiết (đã valid từ trước)
         List<ProductStorage> productStorages = allAvailable.subList(0, quantity);
 
+        // Update status to DELIVERED
         for (ProductStorage ps : productStorages) {
             ps.setStatus(ProductStorageStatus.DELIVERED);
         }
 
         productStorageRepository.saveAll(productStorages);
         return productStorages;
+    }
+
+    @Transactional
+    public List<ProductStorage> saveAll(List<ProductStorage> productStorages) {
+        return productStorageRepository.saveAll(productStorages);
+    }
+
+    public long getAvailableStock(Long productId) {
+        return productStorageRepository.countAvailableStockByProductId(productId, ProductStorageStatus.AVAILABLE);
     }
 
 }

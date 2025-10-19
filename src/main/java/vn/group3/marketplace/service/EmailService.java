@@ -98,21 +98,41 @@ public class EmailService {
         sendEmail(to, subject, body);
     }
 
+    // Send email to user with order confirmation
     public void sendOrderConfirmationEmail(Order order) throws MessagingException {
         String subject = "Order Confirmation - MMO Market System";
-        String to = order.getBuyer().getEmail();
-        String body = "<html><body>" +
-                "<h2>Thank you</h2>" +
-                "<p>You have purchased from MMO Market System.</p>" +
-                "<br>" +
-                "<p><strong>Order Number:</strong> " + order.getId() + "</p>" +
-                "<p><strong>Order Date:</strong> " + order.getCreatedAt() + "</p>" +
-                "<p><strong>Product:</strong> " + order.getProductName() + "</p>" +
-                "<p><strong>Quantity:</strong> " + order.getQuantity() + "</p>" +
-                "<p><strong>Total:</strong> " + order.getTotalAmount() + " ₫</p>" +
-                "<br>" +
-                "<p>Best regards,<br>MMO Market System Team</p>" +
+
+        // Format date
+        String orderDate = order.getCreatedAt() != null
+                ? order.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                : java.time.LocalDateTime.now()
+                        .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+
+        String body = "<html><body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>" +
+                "<div style='background-color: #f8f9fa; padding: 20px; border-radius: 8px;'>" +
+                "<h2 style='color: #333; margin-bottom: 20px;'>Cảm ơn bạn đã mua hàng từ MMO Market System.</h2>" +
+
+                "<div style='background-color: white; padding: 20px; border-radius: 5px; margin: 10px 0;'>" +
+                "<p style='margin: 10px 0;'><strong>Số đơn hàng:</strong> #" + order.getId() + "</p>" +
+                "<p style='margin: 10px 0;'><strong>Ngày đặt hàng:</strong> " + orderDate + "</p>" +
+                "<p style='margin: 10px 0;'><strong>Mặt hàng:</strong> " + order.getProductName() + "</p>" +
+                "<p style='margin: 10px 0;'><strong>Giá:</strong> " + order.getProductPrice() + " ₫</p>" +
+                "<p style='margin: 10px 0;'><strong>Số lượng:</strong> " + order.getQuantity() + "</p>" +
+                "<p style='margin: 10px 0;'><strong>Thuế:</strong> 0 ₫</p>" +
+                "<hr style='border: 1px solid #eee; margin: 15px 0;'>" +
+                "<p style='margin: 10px 0; font-size: 18px; font-weight: bold; color: #28a745;'>" +
+                "<strong>Tổng cộng:</strong> " + order.getTotalAmount() + " ₫</p>" +
+                "</div>" +
+
+                "<div style='background-color: #e9ecef; padding: 15px; border-radius: 5px; margin: 10px 0;'>" +
+                "<p style='margin: 5px 0;'><strong>Phương thức thanh toán:</strong> Wallet</p>" +
+                "</div>" +
+
+                "<p style='color: #6c757d; font-size: 14px; margin-top: 20px;'>" +
+                "Bạn có thắc mắc? Liên hệ MMO Market System</p>" +
+                "</div>" +
                 "</body></html>";
-        sendEmail(to, subject, body);
+
+        sendEmail(order.getBuyer().getEmail(), subject, body);
     }
 }

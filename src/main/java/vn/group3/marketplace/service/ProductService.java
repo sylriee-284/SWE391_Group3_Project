@@ -75,15 +75,29 @@ public class ProductService {
         return productRepository.countByParentCategoryId(parentCategory.getId(), ProductStatus.ACTIVE);
     }
 
-    /* --- Generic retrievals --- */
-    public Product getProductById(Long productId) {
-        return productRepository.findByIdWithDetails(productId).orElse(null);
-    }
-
+    /**
+     * Get product by slug
+     * 
+     * @param slug Product slug
+     * @return Product or null if not found
+     */
     public Product getProductBySlug(String slug) {
         return productRepository.findBySlugWithDetails(slug).orElse(null);
     }
 
+    /**
+     * Get product by ID
+     * 
+     * @param productId Product ID
+     * @return Product or null if not found
+     * 
+     * 
+     *         /**
+     *         Get active product by ID
+     * 
+     * @param productId Product ID
+     * @return Active product or null if not found or inactive
+     */
     public Product getActiveProductById(Long productId) {
         Product product = getProductById(productId);
         if (product != null && product.getStatus() == ProductStatus.ACTIVE
@@ -216,5 +230,17 @@ public class ProductService {
                 ? productRepository.existsBySellerStore_IdAndSlugIgnoreCaseAndIsDeletedFalse(storeId, slug)
                 : productRepository.existsBySellerStore_IdAndSlugIgnoreCaseAndIdNotAndIsDeletedFalse(
                         storeId, slug, excludeId);
+    }
+
+}
+
+    /**
+     * Get dynamic stock count from ProductStorage table
+     * 
+     * @param productId Product ID
+     * @return Number of available ProductStorage items
+     */
+    public long getDynamicStock(Long productId) {
+        return productRepository.getDynamicStock(productId);
     }
 }
