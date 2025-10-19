@@ -209,7 +209,7 @@
                                                         </div>
                                                         <div class="mt-3">
                                                             <a href="<c:url value='/product/${product.slug}'/>"
-                                                                class="btn btn-primary btn-sm w-100">
+                                                                class="btn btn-success btn-sm w-100">
                                                                 <i class="fas fa-eye"></i> Xem chi tiết
                                                             </a>
                                                         </div>

@@ -50,3 +50,4 @@
 
     <!-- Custom Styles CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/styles.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/productlist.css">
