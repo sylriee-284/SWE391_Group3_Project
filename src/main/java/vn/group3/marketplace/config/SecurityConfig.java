@@ -27,6 +27,7 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers("/chat/**").authenticated()
                                                 .requestMatchers("/admin/**").hasRole("ADMIN")
+                                                .requestMatchers("/seller/register").authenticated()
                                                 .requestMatchers("/seller/**").hasRole("SELLER")
                                                 .requestMatchers("/orders/**").hasAnyRole("USER", "SELLER")
                                                 .anyRequest().permitAll())
