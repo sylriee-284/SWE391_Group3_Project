@@ -95,9 +95,10 @@ public class WalletController {
 
     // User tự nạp tiền cho chính mình
     @PostMapping("/deposit")
-    public String deposit(@RequestParam java.math.BigDecimal amount,
+    public String deposit(@RequestParam(required = false) String amount,
             @AuthenticationPrincipal CustomUserDetails currentUser,
-            HttpServletRequest request) {
+            HttpServletRequest request,
+            Model model) {
         logger.debug("=== Wallet Controller Debug ===");
         logger.debug("User: {}", (currentUser != null ? currentUser.getUsername() : "NULL"));
         logger.debug("User ID: {}", (currentUser != null ? currentUser.getId() : "NULL"));
@@ -110,15 +111,33 @@ public class WalletController {
             return REDIRECT_NOT_AUTHENTICATED;
         }
 
+        // Validation: kiểm tra amount không rỗng
+        if (amount == null || amount.trim().isEmpty()) {
+            logger.warn("Amount is null or empty");
+            model.addAttribute("error", "Vui lòng nhập số tiền");
+            return "wallet/deposit";
+        }
+
+        // Convert amount từ String sang BigDecimal với validation
+        java.math.BigDecimal amountBD;
+        try {
+            amountBD = new java.math.BigDecimal(amount.trim());
+        } catch (NumberFormatException e) {
+            logger.warn("Invalid amount format: {}", amount);
+            model.addAttribute("error", "Số tiền không hợp lệ. Vui lòng nhập số nguyên (VD: 100000 )");
+            return "wallet/deposit";
+        }
+
+        // Validation số tiền phải >= 10000
+        if (amountBD.compareTo(new java.math.BigDecimal(10000)) < 0) {
+            logger.warn("Invalid amount: {} - must be >= 10000", amountBD);
+            model.addAttribute("error", "Số tiền nạp tối thiểu là 10.000 VNĐ");
+            return "wallet/deposit";
+        }
+
         // Lấy User entity từ CustomUserDetails
         User user = currentUser.getUser();
         logger.debug("User from CustomUserDetails: {}", (user != null ? user.getUsername() : "NULL"));
-
-        // Validation số tiền
-        if (amount == null || amount.compareTo(new java.math.BigDecimal(10000)) < 0) {
-            logger.warn("Invalid amount: {}", amount);
-            return "redirect:/wallet/deposit?error=invalid_amount";
-        }
 
         String paymentRef = java.util.UUID.randomUUID().toString();
         String ip = vnpayService.getIpAddress(request);
@@ -128,32 +147,37 @@ public class WalletController {
 
         // Tạo pending transaction cho user hiện tại
         try {
-            walletService.createPendingDeposit(user, amount, paymentRef);
+            walletService.createPendingDeposit(user, amountBD, paymentRef);
             if (user != null) {
-                logger.info("Created pending deposit for userId={} amount={} ref={}", user.getId(), amount, paymentRef);
+                logger.info("Created pending deposit for userId={} amount={} ref={}", user.getId(), amountBD,
+                        paymentRef);
             } else {
-                logger.info("Created pending deposit for unknown user amount={} ref={}", amount, paymentRef);
+                logger.info("Created pending deposit for unknown user amount={} ref={}", amountBD, paymentRef);
             }
         } catch (Exception e) {
             logger.error("Error creating pending deposit: {}", e.getMessage(), e);
-            return "redirect:/wallet/deposit?error=database";
+            model.addAttribute("error", "Lỗi hệ thống khi tạo yêu cầu nạp tiền");
+            return "wallet/deposit";
         }
 
         try {
-            String paymentUrl = vnpayService.generateVNPayURL(amount.doubleValue(), paymentRef, ip);
+            String paymentUrl = vnpayService.generateVNPayURL(amountBD.doubleValue(), paymentRef, ip);
             logger.debug("Generated VNPay URL: {}", paymentUrl);
             logger.debug("Redirecting to VNPay...");
             logger.debug("=== End Wallet Controller Debug ===");
             return "redirect:" + paymentUrl;
         } catch (UnsupportedEncodingException e) {
             logger.error("Encoding error: {}", e.getMessage(), e);
-            return "redirect:/wallet/deposit?error=encoding";
+            model.addAttribute("error", "Lỗi encoding URL thanh toán");
+            return "wallet/deposit";
         } catch (IllegalArgumentException e) {
             logger.error("Invalid VNPay configuration: {}", e.getMessage(), e);
-            return "redirect:/wallet/deposit?error=config";
+            model.addAttribute("error", "Lỗi cấu hình VNPay");
+            return "wallet/deposit";
         } catch (Exception e) {
             logger.error("Unexpected error while generating VNPay URL: {}", e.getMessage(), e);
-            return "redirect:/wallet/deposit?error=vnpay";
+            model.addAttribute("error", "Lỗi hệ thống khi tạo URL thanh toán");
+            return "wallet/deposit";
         }
     }
 

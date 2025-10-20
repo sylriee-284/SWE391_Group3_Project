@@ -83,6 +83,9 @@ public class SellerStoreService {
 		SellerStore saved = sellerStoreRepository.save(store);
 
 		// Enqueue deposit payment using paymentRef createdShop{storeId}
+		// This format is important: WalletTransactionQueueService checks for
+		// "createdShop" prefix
+		// to decide whether to activate the store after successful payment
 		String paymentRef = "createdShop" + saved.getId();
 		walletTransactionQueueService.enqueuePurchasePayment(owner.getId(), depositAmount, paymentRef);
 

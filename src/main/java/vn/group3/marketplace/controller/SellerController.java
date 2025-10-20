@@ -12,6 +12,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.group3.marketplace.domain.entity.SellerStore;
 import vn.group3.marketplace.domain.entity.User;
 import vn.group3.marketplace.domain.enums.StoreStatus;
+import vn.group3.marketplace.domain.enums.SellerStoresType;
 import vn.group3.marketplace.service.SellerStoreService;
 import vn.group3.marketplace.service.UserService;
 
@@ -62,6 +63,7 @@ public class SellerController {
             @RequestParam(required = false) String storeDescription,
             @RequestParam String ownerName,
             @RequestParam String depositAmount,
+            @RequestParam(required = false, defaultValue = "PERCENTAGE") String feeModel,
             Model model,
             RedirectAttributes redirectAttributes) {
 
@@ -70,13 +72,81 @@ public class SellerController {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             User currentUser = userService.getFreshUserByUsername(auth.getName());
 
+            // Always add user data and settings to model for error cases
+            model.addAttribute("user", currentUser);
+            model.addAttribute("userBalance", currentUser.getBalance());
+            model.addAttribute("minDepositAmount", sellerStoreService.getMinDepositAmount());
+            model.addAttribute("maxListingPriceRate", sellerStoreService.getMaxListingPriceRate());
+            model.addAttribute("platformFeeRate", sellerStoreService.getPlatformFeeRate());
+
             // Parse and validate deposit amount
             BigDecimal deposit;
             try {
                 // Remove commas and convert to BigDecimal
-                deposit = new BigDecimal(depositAmount.replace(",", ""));
+                String cleanAmount = depositAmount.trim().replace(",", "");
+                deposit = new BigDecimal(cleanAmount);
+
+                // Validate positive amount
+                if (deposit.compareTo(BigDecimal.ZERO) <= 0) {
+                    model.addAttribute("error", "Số tiền ký quỹ phải lớn hơn 0");
+                    model.addAttribute("storeName", storeName);
+                    model.addAttribute("storeDescription", storeDescription);
+                    model.addAttribute("feeModel", feeModel);
+                    return "seller/seller-register";
+                }
             } catch (NumberFormatException e) {
-                model.addAttribute("error", "Số tiền ký quỹ không hợp lệ");
+                model.addAttribute("error", "Số tiền ký quỹ không hợp lệ. Vui lòng nhập chỉ các chữ số (VD: 1000000)");
+                model.addAttribute("storeName", storeName);
+                model.addAttribute("storeDescription", storeDescription);
+                model.addAttribute("feeModel", feeModel);
+                return "seller/seller-register";
+            }
+
+            // Check minimum deposit amount
+            BigDecimal minDeposit = sellerStoreService.getMinDepositAmount();
+            if (deposit.compareTo(minDeposit) < 0) {
+                model.addAttribute("error", "Số tiền ký quỹ phải từ " + String.format("%,.0f", minDeposit) + " VNĐ trở lên");
+                model.addAttribute("storeName", storeName);
+                model.addAttribute("storeDescription", storeDescription);
+                model.addAttribute("feeModel", feeModel);
+                return "seller/seller-register";
+            }
+
+            // Check if deposit amount is divisible by 100,000
+            if (deposit.remainder(new BigDecimal(100000)).compareTo(BigDecimal.ZERO) != 0) {
+                model.addAttribute("error", "Số tiền ký quỹ phải chia hết cho 100.000 VNĐ");
+                model.addAttribute("storeName", storeName);
+                model.addAttribute("storeDescription", storeDescription);
+                model.addAttribute("feeModel", feeModel);
+                return "seller/seller-register";
+            }
+
+            // CHECK BALANCE BEFORE CREATING STORE - CRITICAL!
+            if (currentUser.getBalance().compareTo(deposit) < 0) {
+                model.addAttribute("error", "Số dư không đủ để ký quỹ. Bạn cần " + String.format("%,.0f", deposit) + " VNĐ nhưng chỉ có " + String.format("%,.0f", currentUser.getBalance()) + " VNĐ");
+                model.addAttribute("storeName", storeName);
+                model.addAttribute("storeDescription", storeDescription);
+                model.addAttribute("feeModel", feeModel);
+                return "seller/seller-register";
+            }
+
+            // Parse feeModel enum
+            SellerStoresType feeModelEnum;
+            try {
+                feeModelEnum = SellerStoresType.valueOf(feeModel);
+            } catch (IllegalArgumentException e) {
+                model.addAttribute("error", "Mô hình phí không hợp lệ");
+                model.addAttribute("storeName", storeName);
+                model.addAttribute("storeDescription", storeDescription);
+                return "seller/seller-register";
+            }
+
+            // CHECK IF STORE NAME ALREADY EXISTS
+            if (sellerStoreService.isStoreNameExists(storeName)) {
+                model.addAttribute("error", "Tên cửa hàng đã tồn tại. Vui lòng chọn tên khác.");
+                model.addAttribute("storeName", storeName);
+                model.addAttribute("storeDescription", storeDescription);
+                model.addAttribute("feeModel", feeModel);
                 return "seller/seller-register";
             }
 
@@ -86,6 +156,7 @@ public class SellerController {
                     .storeName(storeName)
                     .description(storeDescription)
                     .depositAmount(deposit)
+                    .feeModel(feeModelEnum)
                     .status(StoreStatus.INACTIVE)
                     .build();
 
