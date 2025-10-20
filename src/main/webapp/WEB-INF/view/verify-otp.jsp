@@ -103,11 +103,13 @@
                                 <form action="/verify-otp" method="post">
                                     <!-- OTP input -->
                                     <div class="form-outline mb-4">
-                                        <label class="form-label" for="otp">Enter Verification Code</label>
+                                        <label class="form-label" for="otp">Enter 4-digit Verification Code</label>
                                         <input type="text" id="otp" name="otp"
                                             class="form-control form-control-lg otp-input" placeholder="Enter OTP"
                                             maxlength="4" pattern="[0-9]{4}"
                                             title="Please enter a 4-digit verification code" required />
+                                        <label class="form-label" for="otp">You have ${registration_time} times to enter
+                                            the verification code</label>
                                         <div class="invalid-feedback" id="otpError">
                                             Please enter a valid 4-digit verification code
                                         </div>

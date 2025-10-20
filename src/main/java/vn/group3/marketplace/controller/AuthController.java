@@ -140,6 +140,7 @@ public class AuthController {
             session.setAttribute("registration_username", username);
             session.setAttribute("registration_email", email);
             session.setAttribute("registration_password", password);
+            session.setAttribute("registration_time", 5);
 
             // Send OTP email
             emailService.sendEmailWithRegistrationOTPAsync(email, otp);
@@ -286,6 +287,26 @@ public class AuthController {
         // Get OTP and time from session
         String sessionOtp = (String) session.getAttribute("registration_otp");
         Long otpTime = (Long) session.getAttribute("registration_otp_time");
+
+        // Get registration time from session
+        Integer registrationTime = (Integer) session.getAttribute("registration_time");
+        // check if otp is invalid, decrement registration time
+        if (!sessionOtp.equals(otp)) {
+            registrationTime--;
+            session.setAttribute("registration_time", registrationTime);
+        }
+        // check if registration time is 0, kill otp session
+        if (registrationTime == 0) {
+            session.removeAttribute("registration_otp");
+            session.removeAttribute("registration_otp_time");
+            session.removeAttribute("registration_username");
+            session.removeAttribute("registration_email");
+            session.removeAttribute("registration_password");
+            session.removeAttribute("registration_time");
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "You have reached the maximum number of attempts. Please register again.");
+            return "redirect:/register";
+        }
 
         // Check if OTP is valid and not expired (10 minutes)
         if (sessionOtp != null && sessionOtp.equals(otp) && (System.currentTimeMillis() - otpTime < 600000)) {
