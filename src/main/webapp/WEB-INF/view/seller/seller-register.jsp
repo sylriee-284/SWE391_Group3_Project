@@ -112,6 +112,7 @@
                                                                     class="fas fa-store"></i></span>
                                                             <input type="text" class="form-control" id="storeName"
                                                                 name="storeName" required minlength="3" maxlength="100"
+                                                                value="${storeName}"
                                                                 data-store-check-url="${pageContext.request.contextPath}/seller/check-store-name">
                                                         </div>
                                                         <small class="text-muted">Tên cửa hàng phải là duy nhất</small>
@@ -127,7 +128,7 @@
                                                                     class="fas fa-info-circle"></i></span>
                                                             <textarea class="form-control" id="storeDescription"
                                                                 name="storeDescription" rows="3"
-                                                                maxlength="500"></textarea>
+                                                                maxlength="500">${storeDescription}</textarea>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -138,7 +139,7 @@
                                                 <h4><i class="fas fa-money-check-alt text-success"></i> Thông tin ký quỹ
                                                 </h4>
                                                 <div class="row">
-                                                    <div class="col-md-12 mb-3">
+                                                    <div class="col-md-6 mb-3">
                                                         <label class="form-label" for="depositAmount">Số tiền ký quỹ
                                                             (VNĐ) <span class="text-danger">*</span></label>
                                                         <div class="input-group">
@@ -150,10 +151,8 @@
                                                         </div>
                                                         <div id="depositAmountHelp" class="form-text">
                                                             <i class="fas fa-info-circle"></i>
-                                                            Số tiền ký quỹ tối thiểu là
-                                                            <fmt:formatNumber value="${minDepositAmount}" type="number"
-                                                                pattern="#,###" /> VNĐ, tăng theo bước
-                                                            100.000 VNĐ
+                                                            Tối thiểu: <fmt:formatNumber value="${minDepositAmount}" type="number"
+                                                                pattern="#,###" /> VNĐ, bước nhảy: 100.000 VNĐ
                                                         </div>
                                                         <div id="depositAmountError" class="invalid-feedback">
                                                             Số tiền không hợp lệ
@@ -161,11 +160,10 @@
                                                     </div>
 
                                                     <!-- Display Max Listing Price as Input Field -->
-                                                    <div class="col-md-12 mb-3" id="maxListingPriceContainer"
+                                                    <div class="col-md-6 mb-3" id="maxListingPriceContainer"
                                                         style="display: none;">
                                                         <label class="form-label" for="maxListingPrice">
                                                             <i class="fas fa-tag text-success"></i> Giá niêm yết tối đa
-                                                            cho mỗi sản phẩm
                                                         </label>
                                                         <div class="input-group">
                                                             <span class="input-group-text bg-success text-white">
@@ -177,7 +175,38 @@
                                                             <span
                                                                 class="input-group-text bg-success text-white">VNĐ</span>
                                                         </div>
+                                                    </div>
+                                                </div>
+                                            </div>
 
+                                            <!-- Fee Model Selection Section -->
+                                            <div class="form-section mt-4">
+                                                <h4><i class="fas fa-percent text-primary"></i> Mô hình phí</h4>
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="feeModel"
+                                                                id="feeModelPercentage" value="PERCENTAGE" <c:if
+                                                                test="${empty feeModel || feeModel == 'PERCENTAGE'}">checked
+                                                            </c:if>>
+                                                            <label class="form-check-label" for="feeModelPercentage">
+                                                                <strong>Phí theo phần trăm (Khuyến nghị)</strong>
+                                                                <div class="ms-4 text-muted small mt-1">
+                                                                    <i class="fas fa-check-circle text-success"></i> Khi xoá cửa hàng, bạn sẽ được <strong class="text-success">hoàn lại tiền ký quỹ</strong>
+                                                                </div>
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check mt-3">
+                                                            <input class="form-check-input" type="radio" name="feeModel"
+                                                                id="feeModelNoFee" value="NO_FEE" <c:if
+                                                                test="${feeModel == 'NO_FEE'}">checked</c:if>>
+                                                            <label class="form-check-label" for="feeModelNoFee">
+                                                                <strong>Không tính phí</strong>
+                                                                <div class="ms-4 text-muted small mt-1">
+                                                                    <i class="fas fa-times-circle text-danger"></i> Khi xoá cửa hàng, tiền ký quỹ <strong class="text-danger">KHÔNG được hoàn lại</strong>
+                                                                </div>
+                                                            </label>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -385,33 +414,14 @@
                                 console.log('Blur - Parsed value:', value);
 
                                 if (value > 0) {
-                                    // Kiểm tra giá trị tối thiểu từ database
-                                    if (value < minDepositAmount) {
-                                        value = minDepositAmount;
-                                        iziToast.info({
-                                            title: 'Thông báo',
-                                            message: 'Số tiền đã được điều chỉnh lên mức tối thiểu ' + formatCurrency(minDepositAmount) + ' VNĐ',
-                                            position: 'topRight'
-                                        });
-                                    }
-                                    // Làm tròn đến 100.000 VNĐ
-                                    const roundedValue = Math.round(value / 100000) * 100000;
-                                    if (roundedValue !== value) {
-                                        value = roundedValue;
-                                        iziToast.info({
-                                            title: 'Thông báo',
-                                            message: 'Số tiền đã được làm tròn đến 100.000 VNĐ gần nhất',
-                                            position: 'topRight'
-                                        });
-                                    }
                                     // Cập nhật giá trị và hiển thị
                                     $(this).val(formatCurrency(value));
-                                    $(this).removeClass('is-invalid').addClass('is-valid');
+                                    $(this).removeClass('is-invalid');
                                     // Update max listing price
                                     updateMaxListingPrice(value);
+                                    $('#depositAmountError').text('');
                                 } else {
-                                    $(this).addClass('is-invalid');
-                                    $('#depositAmountError').text('Vui lòng nhập số tiền từ ' + formatCurrency(minDepositAmount) + ' VNĐ');
+                                    // Chỉ ẩn display, không hiển thị error
                                     $('#maxListingPriceContainer').hide();
                                     $('#maxListingPrice').val('');
                                 }
@@ -424,48 +434,10 @@
                                 const $form = $(this);
                                 const depositAmount = parseCurrency($depositAmount.val());
 
-                                // Kiểm tra số tiền ký quỹ phải >= minDepositAmount và chia hết cho 100,000
-                                if (isNaN(depositAmount) || depositAmount < minDepositAmount || depositAmount % 100000 !== 0) {
-                                    e.preventDefault();
-                                    $depositAmount.addClass('is-invalid');
-                                    $('#depositAmountError').text('Số tiền phải từ ' + formatCurrency(minDepositAmount) + ' VNĐ và chia hết cho 100.000 VNĐ');
-                                    iziToast.error({
-                                        title: 'Lỗi',
-                                        message: 'Vui lòng kiểm tra lại số tiền ký quỹ!',
-                                        position: 'topRight'
-                                    });
-                                    return false;
-                                }
-
-                                // Kiểm tra số dư
-                                if (depositAmount > userBalance) {
-                                    e.preventDefault();
-                                    $depositAmount.addClass('is-invalid');
-                                    $('#depositAmountError').text('Số dư không đủ để ký quỹ. Số dư hiện tại: ' + formatCurrency(userBalance) + ' VNĐ');
-
-                                    // Hiển thị modal hoặc toast với nút nạp tiền
-                                    iziToast.warning({
-                                        title: 'Số dư không đủ',
-                                        message: 'Bạn cần nạp thêm ' + formatCurrency(depositAmount - userBalance) + ' VNĐ',
-                                        position: 'topRight',
-                                        timeout: 10000,
-                                        buttons: [
-                                            ['<button><b>Nạp tiền ngay</b></button>', function (instance, toast) {
-                                                window.location.href = '${pageContext.request.contextPath}/wallet/deposit';
-                                            }, true]
-                                        ]
-                                    });
-                                    return false;
-                                }
-
                                 // Kiểm tra tên cửa hàng hợp lệ
                                 if ($storeName.hasClass('is-invalid')) {
                                     e.preventDefault();
-                                    iziToast.error({
-                                        title: 'Lỗi',
-                                        message: 'Vui lòng chọn tên cửa hàng khác!',
-                                        position: 'topRight'
-                                    });
+                                    $('#storeNameFeedback').text('Vui lòng chọn tên cửa hàng khác!');
                                     return false;
                                 }
 

@@ -33,7 +33,16 @@
                                         <h4><i class="fas fa-plus-circle"></i> Add Money to Wallet</h4>
                                     </div>
                                     <div class="card-body">
-                                        <!-- Error messages -->
+                                        <!-- Error messages from Model -->
+                                        <c:if test="${not empty error}">
+                                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                                <i class="fas fa-exclamation-circle"></i> ${error}
+                                                <button type="button" class="btn-close"
+                                                    data-bs-dismiss="alert"></button>
+                                            </div>
+                                        </c:if>
+
+                                        <!-- Legacy error messages from URL parameters -->
                                         <c:if test="${param.error eq 'invalid_amount'}">
                                             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                                                 <i class="fas fa-exclamation-circle"></i> Minimum amount is 10,000 VND
@@ -56,10 +65,13 @@
                                                 <label for="amount" class="form-label">
                                                     <i class="fas fa-money-bill-wave"></i> Amount (VND)
                                                 </label>
-                                                <input type="number" class="form-control" id="amount" name="amount"
-                                                    placeholder="Enter amount to deposit" min="10000" step="1000"
-                                                    required>
+                                                <input type="text" class="form-control" id="amount" name="amount"
+                                                    placeholder="Enter amount to deposit (e.g., 100000)" required>
                                                 <div class="form-text">Minimum amount: 10,000 VND</div>
+                                                <small class="text-muted">Please enter numbers only. Commas will be removed automatically.</small>
+                                                <div id="amountError" class="invalid-feedback" style="display: none;">
+                                                    Please enter a valid number.
+                                                </div>
                                             </div>
 
                                             <div class="alert alert-info">
@@ -168,19 +180,54 @@
                     });
 
 
-                    // Form validation
+                    // Form validation with input sanitization
                     document.getElementById('depositForm').addEventListener('submit', function (e) {
-                        const amount = document.getElementById('amount').value;
-                        if (!amount || amount < 10000) {
+                        const amountInput = document.getElementById('amount');
+                        const amountError = document.getElementById('amountError');
+                        let amount = amountInput.value.trim();
+
+                        // Remove commas if user added them
+                        amount = amount.replace(/,/g, '');
+
+                        // Validate: not empty
+                        if (!amount) {
                             e.preventDefault();
-                            alert('Please enter minimum amount of 10,000 VND');
+                            amountError.style.display = 'block';
+                            amountError.textContent = 'Vui lòng nhập số tiền';
+                            amountInput.classList.add('is-invalid');
                             return false;
                         }
+
+                        // Validate: only numbers
+                        if (!/^\d+(\.\d{1,2})?$/.test(amount)) {
+                            e.preventDefault();
+                            amountError.style.display = 'block';
+                            amountError.textContent = 'Số tiền không hợp lệ. Vui lòng nhập chỉ các chữ số';
+                            amountInput.classList.add('is-invalid');
+                            return false;
+                        }
+
+                        // Validate: minimum amount
+                        const amountNum = parseFloat(amount);
+                        if (amountNum < 10000) {
+                            e.preventDefault();
+                            amountError.style.display = 'block';
+                            amountError.textContent = 'Số tiền nạp tối thiểu là 10.000 VNĐ';
+                            amountInput.classList.add('is-invalid');
+                            return false;
+                        }
+
+                        // Hide error if validation passes
+                        amountError.style.display = 'none';
+                        amountInput.classList.remove('is-invalid');
+
+                        // Update hidden input with cleaned amount
+                        amountInput.value = amount;
 
                         // Show loading state
                         const submitBtn = document.querySelector('button[type="submit"]');
                         const originalText = submitBtn.innerHTML;
-                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
                         submitBtn.disabled = true;
 
                         // Re-enable button after 3 seconds as fallback
@@ -190,12 +237,36 @@
                         }, 3000);
                     });
 
-                    // Format amount while typing
+                    // Real-time input validation and formatting
                     document.getElementById('amount').addEventListener('input', function (e) {
+                        const amountError = document.getElementById('amountError');
                         let value = e.target.value;
-                        if (value && !isNaN(value)) {
-                            e.target.value = parseInt(value);
+
+                        // Allow only digits and comma
+                        value = value.replace(/[^\d,]/g, '');
+
+                        // Remove all commas for processing
+                        let cleanValue = value.replace(/,/g, '');
+
+                        // Add commas back for display (optional - for readability)
+                        if (cleanValue) {
+                            value = cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
                         }
+
+                        e.target.value = value;
+
+                        // Clear error when user starts typing valid number
+                        if (cleanValue && /^\d+$/.test(cleanValue)) {
+                            amountError.style.display = 'none';
+                            this.classList.remove('is-invalid');
+                        }
+                    });
+
+                    // Clear error message when input gets focus
+                    document.getElementById('amount').addEventListener('focus', function () {
+                        const amountError = document.getElementById('amountError');
+                        amountError.style.display = 'none';
+                        this.classList.remove('is-invalid');
                     });
 
                 </script>
