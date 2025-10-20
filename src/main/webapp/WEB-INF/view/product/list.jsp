@@ -98,34 +98,12 @@
 
                                     <!-- Action Buttons Row -->
                                     <div class="row mt-2">
-                                        <div class="col-md-12 d-flex justify-content-between">
-                                            <div>
-                                                <c:if test="${sortBy != 'soldQuantity' && not empty sortBy}">
-                                                    <span class="badge bg-secondary me-2">
-                                                        <i class="fas fa-filter"></i>
-                                                        <c:choose>
-                                                            <c:when test="${sortBy == 'rating'}">ĐÁNH GIÁ CAO</c:when>
-                                                            <c:when test="${sortBy == 'price'}">GIÁ THẤP</c:when>
-                                                            <c:when test="${sortBy == 'createdAt'}">SẢN PHẨM MỚI
-                                                            </c:when>
-                                                            <c:otherwise>ĐANG LỌC</c:otherwise>
-                                                        </c:choose>
-                                                    </span>
-                                                </c:if>
-                                            </div>
-                                            <div>
-                                                <c:if test="${sortBy != 'soldQuantity' && not empty sortBy}">
-                                                    <a href="<c:url value='/products?sort=soldQuantity'/>"
-                                                        class="btn btn-collapse me-2">
-                                                        <i class="fas fa-times-circle"></i> BỎ LỌC
-                                                    </a>
-                                                </c:if>
-                                                <button type="button" class="btn btn-outline-secondary"
-                                                    onclick="toggleFilterSection()">
-                                                    <span id="filterToggleText">THU GỌN</span>
-                                                    <i class="fas fa-chevron-up" id="filterToggleIcon"></i>
-                                                </button>
-                                            </div>
+                                        <div class="col-md-12 d-flex justify-content-end">
+                                            <button type="button" class="btn btn-outline-secondary"
+                                                onclick="toggleFilterSection()">
+                                                <span id="filterToggleText">THU GỌN</span>
+                                                <i class="fas fa-chevron-up" id="filterToggleIcon"></i>
+                                            </button>
                                         </div>
                                     </div>
                                 </form>

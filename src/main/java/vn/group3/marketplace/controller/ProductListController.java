@@ -22,14 +22,6 @@ public class ProductListController {
 
     private final ProductService productService;
 
-    /**
-     * Display all products with sorting
-     * 
-     * @param sort     Sort option (createdAt, price, rating)
-     * @param pageable Pagination information
-     * @param model    Model to pass data to view
-     * @return All products view
-     */
     @GetMapping
     public String getAllProducts(
             @RequestParam(value = "sort", defaultValue = "soldQuantity") String sort,
@@ -41,7 +33,7 @@ public class ProductListController {
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
                 sort,
-                "desc");
+                "asc");
 
         // Add attributes to model
         model.addAttribute("products", products);

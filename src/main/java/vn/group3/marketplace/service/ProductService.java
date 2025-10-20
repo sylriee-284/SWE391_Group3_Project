@@ -86,14 +86,7 @@ public class ProductService {
     }
 
     /**
-     * Get product by ID
-     * 
-     * @param productId Product ID
-     * @return Product or null if not found
-     * 
-     * 
-     *         /**
-     *         Get active product by ID
+     * Get active product by ID
      * 
      * @param productId Product ID
      * @return Active product or null if not found or inactive
