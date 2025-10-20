@@ -76,6 +76,54 @@ public class WalletTransactionQueueService {
         }
     }
 
+    // Luồng trừ tiền thanh toán shop
+    public Future<Boolean> enqueuePurchasePayment(Long userId, java.math.BigDecimal amount, String paymentRef) {
+        try {
+            logger.info("Enqueueing purchase payment for user: {}, amount: {}, paymentRef: {}", userId, amount,
+                    paymentRef);
+            return perUserSerialExecutor.submit(userId, () -> {
+                logger.info("Processing purchase payment for user: {}, amount: {}, paymentRef: {}", userId, amount,
+                        paymentRef);
+                WalletService walletService = ctx.getBean(WalletService.class);
+                boolean result = walletService.processPurchasePayment(userId, amount, paymentRef);
+
+                // If this is a store deposit payment for created shop and it's successful,
+                // activate the store
+                logger.info("Payment result: {}, paymentRef: {}", result, paymentRef);
+                if (result && paymentRef != null && paymentRef.startsWith("createdShop")) {
+                    try {
+                        Long storeId = Long.parseLong(paymentRef.substring("createdShop".length()));
+                        logger.info("🔄 Attempting to activate store: {}", storeId);
+                        SellerStoreService sellerStoreService = ctx.getBean(SellerStoreService.class);
+                        sellerStoreService.activateStore(storeId);
+                        logger.info("✅ Store {} activated after successful deposit", storeId);
+                    } catch (NumberFormatException e) {
+                        logger.error("❌ Failed to parse storeId from paymentRef: {}. Error: {}", paymentRef,
+                                e.getMessage(), e);
+                    } catch (Exception e) {
+                        logger.error("❌ Failed to activate store after successful deposit. paymentRef: {}. Error: {}",
+                                paymentRef, e.getMessage(), e);
+                    }
+                } else {
+                    logger.warn("⚠️ Store activation skipped. Result: {}, paymentRef check: {}", result,
+                            paymentRef != null ? (paymentRef.startsWith("createdShop") ? "PASS" : "Not a createdShop")
+                                    : "NULL");
+                }
+
+                logger.info("Purchase payment completed for user: {}, paymentRef: {}, result: {}", userId, paymentRef,
+                        result);
+                return result;
+            });
+        } catch (Exception ex) {
+            logger.error("Failed to enqueue purchase payment for user: {}, paymentRef: {}, error: {}", userId,
+                    paymentRef,
+                    ex.getMessage(), ex);
+            CompletableFuture<Boolean> f = new CompletableFuture<>();
+            f.completeExceptionally(ex);
+            return f;
+        }
+    }
+
     public void shutdown() {
         perUserSerialExecutor.shutdown();
     }
