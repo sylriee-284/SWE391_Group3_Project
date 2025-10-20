@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import vn.group3.marketplace.domain.entity.Order;
 import vn.group3.marketplace.domain.entity.User;
 // Wallet entity removed - balance stored on User directly
 import vn.group3.marketplace.domain.entity.WalletTransaction;
@@ -13,6 +14,7 @@ import vn.group3.marketplace.domain.enums.WalletTransactionStatus;
 import vn.group3.marketplace.repository.UserRepository;
 import vn.group3.marketplace.repository.WalletTransactionRepository;
 import vn.group3.marketplace.service.WalletService;
+import vn.group3.marketplace.util.SecurityContextUtils;
 
 import java.util.Optional;
 
@@ -48,6 +50,16 @@ public class WalletService {
                 .paymentMethod("VNPAY")
                 .note("Nạp tiền qua VNPay")
                 .build();
+
+        // Set createdBy manually since AuditorAware không tham chiếu được trong luồng
+        // này
+        Long currentUserId = SecurityContextUtils.getCurrentUserId();
+        if (currentUserId != null) {
+            transaction.setCreatedBy(currentUserId);
+        } else {
+            // Fallback: sử dụng user.getId() từ parameter nếu SecurityContext không có
+            transaction.setCreatedBy(user.getId());
+        }
 
         return walletTransactionRepository.save(transaction);
     }
@@ -152,9 +164,9 @@ public class WalletService {
      * Xử lý trừ tiền khi mua hàng
      */
     @Transactional
-    public boolean processPurchasePayment(Long userId, java.math.BigDecimal amount, String orderId) {
+    public boolean processPurchasePayment(Long userId, java.math.BigDecimal amount, Order order) {
         logger.info("=== Processing Purchase Payment ===");
-        logger.info("User ID: {}, Amount: {}, Order ID: {}", userId, amount, orderId);
+        logger.info("User ID: {}, Amount: {}, Order ID: {}", userId, amount, order.getId());
 
         // Lấy user từ database
         User user = userRepository.findById(userId)
@@ -165,11 +177,22 @@ public class WalletService {
                 .user(user)
                 .type(WalletTransactionType.PAYMENT)
                 .amount(amount)
-                .paymentRef(orderId)
+                .refOrder(order)
+                .paymentRef(order.getId().toString())
                 .paymentStatus(WalletTransactionStatus.PENDING)
                 .paymentMethod("INTERNAL")
-                .note("Thanh toán đơn hàng #" + orderId)
+                .note("Thanh toán đơn hàng #" + order.getId().toString())
                 .build();
+
+        // Set createdBy manually since AuditorAware không tham chiếu được trong luồng
+        // này
+        Long currentUserId = SecurityContextUtils.getCurrentUserId();
+        if (currentUserId != null) {
+            transaction.setCreatedBy(currentUserId);
+        } else {
+            // Fallback: sử dụng userId từ parameter nếu SecurityContext không có
+            transaction.setCreatedBy(userId);
+        }
 
         transaction = walletTransactionRepository.save(transaction);
 

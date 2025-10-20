@@ -41,4 +41,6 @@ src/main/resources/application-dev.properties
 # Ignore environment-specific configuration
 src/main/resources/application-*.properties
 !src/main/resources/application.properties
-src/test/java/vn/group3/marketplace/MarketplaceApplicationTests.java
+
+#pom.xml
+pom.xml

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import vn.group3.marketplace.domain.entity.Order;
 import vn.group3.marketplace.util.PerUserSerialExecutor;
 
 import java.util.concurrent.CompletableFuture;
@@ -52,37 +53,22 @@ public class WalletTransactionQueueService {
     /**
      * Đưa task trừ tiền mua hàng vào queue xử lý
      */
-    public Future<Boolean> enqueuePurchasePayment(Long userId, java.math.BigDecimal amount, String paymentRef) {
+    public Future<Boolean> enqueuePurchasePayment(Long userId, java.math.BigDecimal amount, Order order) {
         try {
-            logger.info("Enqueueing purchase payment for user: {}, amount: {}, paymentRef: {}", userId, amount,
-                    paymentRef);
+            logger.info("Enqueueing purchase payment for user: {}, amount: {}, orderId: {}", userId, amount,
+                    order.getId());
             return perUserSerialExecutor.submit(userId, () -> {
-                logger.info("Processing purchase payment for user: {}, amount: {}, paymentRef: {}", userId, amount,
-                        paymentRef);
+                logger.info("Processing purchase payment for user: {}, amount: {}, orderId: {}", userId, amount,
+                        order.getId());
                 WalletService walletService = ctx.getBean(WalletService.class);
-                boolean result = walletService.processPurchasePayment(userId, amount, paymentRef);
-
-                // If this is a store deposit payment for created shop and it's successful,
-                // activate the store
-                if (result && paymentRef != null && paymentRef.startsWith("createdShop")) {
-                    try {
-                        Long storeId = Long.parseLong(paymentRef.substring("createdShop".length()));
-                        SellerStoreService sellerStoreService = ctx.getBean(SellerStoreService.class);
-                        sellerStoreService.activateStore(storeId);
-                        logger.info("Store {} activated after successful deposit", storeId);
-                    } catch (Exception e) {
-                        logger.error("Failed to activate store after successful deposit. paymentRef: {}", paymentRef,
-                                e);
-                    }
-                }
-
-                logger.info("Purchase payment completed for user: {}, paymentRef: {}, result: {}", userId, paymentRef,
+                boolean result = walletService.processPurchasePayment(userId, amount, order);
+                logger.info("Purchase payment completed for user: {}, orderId: {}, result: {}", userId, order.getId(),
                         result);
                 return result;
             });
         } catch (Exception ex) {
-            logger.error("Failed to enqueue purchase payment for user: {}, paymentRef: {}, error: {}", userId,
-                    paymentRef,
+            logger.error("Failed to enqueue purchase payment for user: {}, orderId: {}, error: {}", userId,
+                    order.getId(),
                     ex.getMessage(), ex);
             CompletableFuture<Boolean> f = new CompletableFuture<>();
             f.completeExceptionally(ex);
