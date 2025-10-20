@@ -16,6 +16,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Component
 public class OrderProcess {
 
+    private final WalletTransactionRepository walletTransactionRepository;
+
     private final ProductService productService;
 
     // Dependencies
@@ -35,7 +37,8 @@ public class OrderProcess {
     public OrderProcess(OrderQueue orderQueue, OrderService orderService,
             WalletTransactionQueueService walletTransactionQueueService, UserRepository userRepository,
             EmailService emailService, AuthenticationRefreshService authenticationRefreshService,
-            NotificationService notificationService, ProductService productService) {
+            NotificationService notificationService, ProductService productService,
+            WalletTransactionRepository walletTransactionRepository) {
         this.orderQueue = orderQueue;
         this.orderService = orderService;
         this.walletTransactionQueueService = walletTransactionQueueService;
@@ -44,6 +47,7 @@ public class OrderProcess {
         this.authenticationRefreshService = authenticationRefreshService;
         this.notificationService = notificationService;
         this.productService = productService;
+        this.walletTransactionRepository = walletTransactionRepository;
     }
 
     @PostConstruct
@@ -91,7 +95,7 @@ public class OrderProcess {
                 case 1:
                     // 3. Process payment
                     var future = walletTransactionQueueService.enqueuePurchasePayment(orderTask.getUserId(),
-                            order.getTotalAmount(), order.getId().toString());
+                            order.getTotalAmount(), order);
 
                     try {
                         // Wait for payment completion (blocking call) - Tăng timeout lên 30 giây
@@ -128,6 +132,17 @@ public class OrderProcess {
                             // 7. Send confirmation email asynchronously
                             emailService.sendOrderConfirmationEmailAsync(order);
 
+                            // // 8. Create wallet transaction for user
+                            // WalletTransaction userWalletTransaction = WalletTransaction.builder()
+                            // .user(buyer)
+                            // .amount(order.getTotalAmount())
+                            // .type(WalletTransactionType.PAYMENT)
+                            // .refOrder(order)
+                            // .paymentStatus(WalletTransactionStatus.SUCCESS)
+                            // .note("Thanh toán thành công cho đơn hàng #" + order.getId())
+                            // .build();
+                            // walletTransactionRepository.save(userWalletTransaction);
+
                         } else {
                             // 5.2. Case payment failed:
                             orderService.updateOrderBasedOnPaymentStatus(order, WalletTransactionStatus.FAILED);
@@ -148,6 +163,17 @@ public class OrderProcess {
                                         "Mua hàng thất bại",
                                         "Đơn hàng #" + order.getId() + " không thể hoàn tất do thanh toán thất bại!");
                             }
+
+                            // // Create wallet transaction for failed payment
+                            // WalletTransaction userWalletTransaction = WalletTransaction.builder()
+                            // .user(buyer)
+                            // .amount(order.getTotalAmount())
+                            // .type(WalletTransactionType.PAYMENT)
+                            // .refOrder(order)
+                            // .paymentStatus(WalletTransactionStatus.FAILED)
+                            // .note("Thanh toán thất bại cho đơn hàng #" + order.getId())
+                            // .build();
+                            // walletTransactionRepository.save(userWalletTransaction);
                         }
 
                     } catch (java.util.concurrent.TimeoutException e) {
