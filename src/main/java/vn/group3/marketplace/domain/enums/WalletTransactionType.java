@@ -5,5 +5,6 @@ public enum WalletTransactionType {
     WITHDRAWAL,
     PAYMENT,
     REFUND,
-    ORDER_PAYMENT
+    ORDER_PAYMENT,
+    ADMIN_COMMISSION_FEE
 }

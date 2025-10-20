@@ -1,6 +1,7 @@
 package vn.group3.marketplace.service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -18,9 +19,9 @@ public class SystemSettingService {
 
     private final SystemSettingRepository systemSettingRepository;
 
-    // Lấy giá trị setting theo key
+    // Lấy giá trị setting theo key (chỉ lấy những cái chưa bị xóa)
     public String getSettingValue(String key) {
-        return systemSettingRepository.findBySettingKey(key)
+        return systemSettingRepository.findBySettingKeyAndIsDeletedFalse(key)
                 .map(SystemSetting::getSettingValue)
                 .orElse(null);
     }
@@ -77,9 +78,14 @@ public class SystemSettingService {
         return result;
     }
 
+    // Lấy tất cả settings (chỉ lấy những cái chưa bị xóa)
+    public List<SystemSetting> getAllSettings() {
+        return systemSettingRepository.findByIsDeletedFalse();
+    }
+
     // Cập nhật hoặc tạo mới setting
     public void updateSetting(String key, String value) {
-        Optional<SystemSetting> existingSetting = systemSettingRepository.findBySettingKey(key);
+        Optional<SystemSetting> existingSetting = systemSettingRepository.findBySettingKeyAndIsDeletedFalse(key);
 
         if (existingSetting.isPresent()) {
             SystemSetting setting = existingSetting.get();
@@ -95,4 +101,31 @@ public class SystemSettingService {
             log.info("Created new system setting: {} = {}", key, value);
         }
     }
+
+    // Soft delete setting theo ID
+    public void deleteSetting(Long id) {
+        Optional<SystemSetting> setting = systemSettingRepository.findById(id);
+        if (setting.isPresent()) {
+            SystemSetting systemSetting = setting.get();
+            systemSetting.setIsDeleted(true);
+            systemSettingRepository.save(systemSetting);
+            log.info("Soft deleted system setting with ID: {}", id);
+        } else {
+            log.warn("System setting with ID {} not found for deletion", id);
+        }
+    }
+
+    // Soft delete setting theo key
+    public void deleteSettingByKey(String key) {
+        Optional<SystemSetting> setting = systemSettingRepository.findBySettingKeyAndIsDeletedFalse(key);
+        if (setting.isPresent()) {
+            SystemSetting systemSetting = setting.get();
+            systemSetting.setIsDeleted(true);
+            systemSettingRepository.save(systemSetting);
+            log.info("Soft deleted system setting: {}", key);
+        } else {
+            log.warn("System setting with key {} not found for deletion", key);
+        }
+    }
+
 }

@@ -2,7 +2,6 @@ package vn.group3.marketplace.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,8 +11,8 @@ import vn.group3.marketplace.domain.entity.*;
 import vn.group3.marketplace.domain.enums.*;
 import vn.group3.marketplace.dto.OrderTask;
 import vn.group3.marketplace.repository.*;
-import vn.group3.marketplace.security.CustomUserDetails;
 import vn.group3.marketplace.util.ValidationUtils;
+import vn.group3.marketplace.util.SecurityContextUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -85,9 +84,7 @@ public class OrderService {
 
     // Helper method để lấy thông tin user hiện tại từ SecurityContext
     private User getCurrentUser() {
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
-        return userDetails.getUser();
+        return SecurityContextUtils.getCurrentUserDetails().getUser();
     }
 
     // Tìm đơn hàng theo ID

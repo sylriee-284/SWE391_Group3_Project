@@ -13,15 +13,15 @@
                 </title>
 
                 <!-- Include common head with all CSS and JS -->
-                <jsp:include page="common/head.jsp" />
+                <jsp:include page="../common/head.jsp" />
             </head>
 
             <body>
                 <!-- Include Navbar -->
-                <jsp:include page="common/navbar.jsp" />
+                <jsp:include page="../common/navbar.jsp" />
 
                 <!-- Include Sidebar -->
-                <jsp:include page="common/sidebar.jsp" />
+                <jsp:include page="../common/sidebar.jsp" />
 
                 <!-- Sidebar Overlay for Mobile -->
                 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
@@ -33,99 +33,41 @@
                         <h1>Welcome to MMO Market System</h1>
                         <p>Your trusted marketplace for digital goods and services.</p>
                     </div>
+
                     <div class="filter-section">
                         <!-- Row 1: Basic Filters -->
                         <div class="row filter-row">
                             <div class="col-md-2">
-                                <div class="filter-label">Mã trung gian</div>
-                                <input type="text" class="form-control" placeholder="Mã trung gian">
+                                <div class="filter-label">ID</div>
+                                <input type="text" class="form-control" placeholder="ID">
                             </div>
                             <div class="col-md-2">
-                                <div class="filter-label">Chủ đề trung gian</div>
-                                <input type="text" class="form-control" placeholder="Chủ đề">
+                                <div class="filter-label">Setting Key</div>
+                                <input type="text" class="form-control" placeholder="Setting Key">
                             </div>
                             <div class="col-md-2">
-                                <div class="filter-label">Phương thức...</div>
-                                <input type="text" class="form-control" placeholder="Phương thức">
+                                <div class="filter-label">Setting Value</div>
+                                <input type="text" class="form-control" placeholder="Setting Value">
                             </div>
                             <div class="col-md-3">
-                                <div class="filter-label">Giá tiền</div>
-                                <div class="row g-2">
-                                    <div class="col">
-                                        <input type="text" class="form-control" placeholder="Từ">
-                                    </div>
-                                    <div class="col">
-                                        <input type="text" class="form-control" placeholder="Đến">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="filter-label">Bên chịu phí...</div>
-                                <select class="form-select">
-                                    <option>All</option>
-                                    <option>Bên bán</option>
-                                    <option>Bên mua</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Row 2: Advanced Filters -->
-                        <div class="row filter-row">
-                            <div class="col-md-2">
-                                <div class="filter-label">Phí trung gian</div>
-                                <input type="text" class="form-control" placeholder="Phí">
-                            </div>
-                            <div class="col-md-2">
-                                <div class="filter-label">Tổng phí cần...</div>
-                                <input type="text" class="form-control" placeholder="Tổng phí">
-                            </div>
-                            <div class="col-md-2">
-                                <div class="filter-label">Người bán</div>
-                                <input type="text" class="form-control" placeholder="Người bán">
-                            </div>
-                            <div class="col-md-3">
-                                <div class="filter-label">Thời gian tạo</div>
+                                <div class="filter-label">Created At</div>
                                 <div class="row g-2">
                                     <div class="col">
                                         <input type="date" class="form-control">
                                     </div>
-                                    <div class="col">
-                                        <input type="date" class="form-control">
-                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="filter-label">Cập nhật cuối</div>
-                                <div class="row g-2">
-                                    <div class="col">
-                                        <input type="date" class="form-control">
-                                    </div>
-                                    <div class="col">
-                                        <input type="date" class="form-control">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Row 3: Action Buttons -->
-                        <div class="row mt-3">
-                            <div class="col-md-12 d-flex justify-content-between">
-                                <div>
-                                    <button class="btn btn-add me-2">+</button>
-                                    <button class="btn btn-light me-2">Từ</button>
-                                    <button class="btn btn-light me-2">Đến</button>
-                                    <button class="btn btn-light me-2">Từ</button>
-                                    <button class="btn btn-light">Đến</button>
-                                </div>
-                                <div>
-                                    <button class="btn btn-collapse me-2">
-                                        <i class="bi bi-x-circle"></i> BỎ LỌC
+                                <div class="d-flex justify-content-top align-items-center" style="margin-top: 30px;">
+                                    <!--filter button-->
+                                    <button class="btn btn-primary me-2">
+                                        <i class="bi bi-filter"></i> Filter
                                     </button>
-                                    <button class="btn btn-outline-secondary">THU GỌN ></button>
                                 </div>
                             </div>
                         </div>
                     </div>
+
 
                     <div class="table-container">
                         <table class="resizable-table" id="resizableTable">
@@ -133,132 +75,67 @@
                                 <tr>
                                     <!-- Column 0: Mã trung gian (text) -->
                                     <th class="sortable" style="width: 120px;" data-column="0" data-type="text">
-                                        Mã trung gian
+                                        ID
                                         <div class="resizer"></div>
                                     </th>
 
-                                    <!-- Column 1: Chủ đề (text) -->
-                                    <th class="sortable" style="width: 150px;" data-column="1" data-type="text">
-                                        Chủ đề trung...
-                                        <div class="resizer"></div>
-                                    </th>
-
-                                    <!-- Column 2: Phương thức (text) -->
+                                    <!-- Column 2: Setting Key (text) -->
                                     <th class="sortable" style="width: 120px;" data-column="2" data-type="text">
-                                        Phương thức...
+                                        Setting Key
                                         <div class="resizer"></div>
                                     </th>
 
-                                    <!-- Column 3: Giá tiền (number) -->
+                                    <!-- Column 3: Setting Value (text) -->
                                     <th class="sortable" style="width: 100px;" data-column="3" data-type="number">
-                                        Giá tiền
+                                        Setting Value
                                         <div class="resizer"></div>
                                     </th>
 
-                                    <!-- Column 4: Bên chịu phí (text) -->
+                                    <!-- Column 4: Created At (date) -->
                                     <th class="sortable" style="width: 100px;" data-column="4" data-type="text">
-                                        Bên chịu phí...
+                                        Created At
                                         <div class="resizer"></div>
                                     </th>
 
-                                    <!-- Column 5: Phí trung gian (number) -->
+                                    <!-- Column 5: Updated At (date) -->
                                     <th class="sortable" style="width: 120px;" data-column="5" data-type="number">
-                                        Phí trung gian
+                                        Updated At
                                         <div class="resizer"></div>
                                     </th>
 
-                                    <!-- Column 6: Tổng phí (number) -->
-                                    <th class="sortable" style="width: 120px;" data-column="6" data-type="number">
-                                        Tổng phí cần...
-                                        <div class="resizer"></div>
-                                    </th>
-
-                                    <!-- Column 7: Người bán (text) -->
-                                    <th class="sortable" style="width: 120px;" data-column="7" data-type="text">
-                                        Người bán
-                                        <div class="resizer"></div>
-                                    </th>
-
-                                    <!-- Column 8: Thời gian tạo (date) -->
-                                    <th class="sortable" style="width: 140px;" data-column="8" data-type="date">
-                                        Thời gian tạo
-                                        <div class="resizer"></div>
-                                    </th>
-
-                                    <!-- Column 9: Cập nhật cuối (date) -->
-                                    <th class="sortable" style="width: 140px;" data-column="9" data-type="date">
-                                        Cập nhật cuối
-                                        <div class="resizer"></div>
-                                    </th>
-
-                                    <!-- Column 10: Hành động (no sort) -->
+                                    <!-- Column 6: Action (no sort) -->
                                     <th style="width: 120px;">
-                                        Hành động
+                                        Action
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- Sample Row 1 -->
-                                <tr>
-                                    <td>1feb71d0-82...</td>
-                                    <td>Tài khoản vô...</td>
-                                    <td>123</td>
-                                    <td>20,000,000</td>
-                                    <td>Bên bán</td>
-                                    <td>1,000,000</td>
-                                    <td>20,000,000</td>
-                                    <td>Thaloke</td>
-                                    <td>26/08/2025 0...</td>
-                                    <td>26/08/2025 0...</td>
-                                    <td>
-                                        <!-- View Details Button -->
-                                        <button class="btn btn-sm btn-info me-1" title="Xem chi tiết"
-                                            onclick="showDetail('1feb71d0-82...', 'Tài khoản vô...', '123', '20,000,000', 'Bên bán', '1,000,000', '20,000,000', 'Thaloke', '26/08/2025 0...', '26/08/2025 0...')">
-                                            <i class="fas fa-info-circle"></i>
-                                        </button>
-                                        <!-- Edit Button -->
-                                        <button class="btn btn-sm btn-warning me-1" title="Chỉnh sửa"
-                                            onclick="showEditModal('1feb71d0-82...', 'Tài khoản vô...', '123', '20,000,000', 'Bên bán', '1,000,000', '20,000,000', 'Thaloke')">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <!-- Delete Button -->
-                                        <button class="btn btn-sm btn-danger" title="Xóa"
-                                            onclick="showDeleteModal('1feb71d0-82...', 'Tài khoản vô...')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-
-                                <!-- Sample Row 2 -->
-                                <tr>
-                                    <td>9ccdb5f0-d4...</td>
-                                    <td>account fifa</td>
-                                    <td>Facebook</td>
-                                    <td>100,000</td>
-                                    <td>Bên mua</td>
-                                    <td>5,000</td>
-                                    <td>105,000</td>
-                                    <td>hoan456</td>
-                                    <td>27/02/2024 0...</td>
-                                    <td>27/02/2024 0...</td>
-                                    <td>
-                                        <!-- View Details Button -->
-                                        <button class="btn btn-sm btn-info me-1" title="Xem chi tiết"
-                                            onclick="showDetail('9ccdb5f0-d4...', 'account fifa', 'Facebook', '100,000', 'Bên mua', '5,000', '105,000', 'hoan456', '27/02/2024 0...', '27/02/2024 0...')">
-                                            <i class="fas fa-info-circle"></i>
-                                        </button>
-                                        <!-- Edit Button -->
-                                        <button class="btn btn-sm btn-warning me-1" title="Chỉnh sửa"
-                                            onclick="showEditModal('9ccdb5f0-d4...', 'account fifa', 'Facebook', '100,000', 'Bên mua', '5,000', '105,000', 'hoan456')">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <!-- Delete Button -->
-                                        <button class="btn btn-sm btn-danger" title="Xóa"
-                                            onclick="showDeleteModal('9ccdb5f0-d4...', 'account fifa')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
+                                <c:forEach items="${systemSettings}" var="systemSetting">
+                                    <tr>
+                                        <td>${systemSetting.id}</td>
+                                        <td>${systemSetting.settingKey}</td>
+                                        <td>${systemSetting.settingValue}</td>
+                                        <td>${systemSetting.createdAt}</td>
+                                        <td>${systemSetting.updatedAt}</td>
+                                        <td>
+                                            <!-- View Details Button -->
+                                            <button class="btn btn-sm btn-info me-1" title="Xem chi tiết"
+                                                onclick="showDetail('1feb71d0-82...', 'Tài khoản vô...', '123', '20,000,000', 'Bên bán', '1,000,000', '20,000,000', 'Thaloke', '26/08/2025 0...', '26/08/2025 0...')">
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                            <!-- Edit Button -->
+                                            <button class="btn btn-sm btn-warning me-1" title="Chỉnh sửa"
+                                                onclick="showEditModal('1feb71d0-82...', 'Tài khoản vô...', '123', '20,000,000', 'Bên bán', '1,000,000', '20,000,000', 'Thaloke')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <!-- Delete Button -->
+                                            <button class="btn btn-sm btn-danger" title="Xóa"
+                                                onclick="showDeleteModal('1feb71d0-82...', 'Tài khoản vô...')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
                             </tbody>
                         </table>
                     </div>
@@ -280,23 +157,6 @@
                                 <li class="page-item active">
                                     <a class="page-link" href="#">1</a>
                                 </li>
-                                <li class="page-item">
-                                    <a class="page-link" href="#">2</a>
-                                </li>
-                                <li class="page-item">
-                                    <a class="page-link" href="#">3</a>
-                                </li>
-                                <li class="page-item">
-                                    <a class="page-link" href="#">4</a>
-                                </li>
-                                <li class="page-item">
-                                    <a class="page-link" href="#">5</a>
-                                </li>
-                                <li class="page-item disabled">
-                                    <span class="page-link">...</span>
-                                </li>
-                                <li class="page-item">
-                                    <a class="page-link" href="#">73</a>
                                 </li>
                                 <li class="page-item">
                                     <a class="page-link" href="#" aria-label="Next">
@@ -567,7 +427,8 @@
                                     <p class="mb-0">Bạn có chắc chắn muốn xóa đơn trung gian:</p>
                                     <h5 class="text-danger mt-2" id="delete-name"></h5>
                                     <input type="hidden" id="delete-ma">
-                                    <p class="text-muted mt-3 mb-0"><small>Hành động này không thể hoàn tác!</small></p>
+                                    <p class="text-muted mt-3 mb-0"><small>Hành động này không thể hoàn tác!</small>
+                                    </p>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -585,7 +446,7 @@
                 </div>
 
                 <!-- Include Footer s-->
-                <jsp:include page="common/footer.jsp" />
+                <jsp:include page="../common/footer.jsp" />
 
                 <!-- Script to display notifications using iziToast -->
                 <c:if test="${not empty successMessage}">
