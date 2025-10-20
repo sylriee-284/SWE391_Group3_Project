@@ -174,7 +174,20 @@
                         if (!amount || amount < 10000) {
                             e.preventDefault();
                             alert('Please enter minimum amount of 10,000 VND');
+                            return false;
                         }
+
+                        // Show loading state
+                        const submitBtn = document.querySelector('button[type="submit"]');
+                        const originalText = submitBtn.innerHTML;
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                        submitBtn.disabled = true;
+
+                        // Re-enable button after 3 seconds as fallback
+                        setTimeout(() => {
+                            submitBtn.innerHTML = originalText;
+                            submitBtn.disabled = false;
+                        }, 3000);
                     });
 
                     // Format amount while typing

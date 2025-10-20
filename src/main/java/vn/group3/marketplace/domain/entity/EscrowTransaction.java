@@ -33,7 +33,7 @@ public class EscrowTransaction extends BaseEntity {
     @Builder.Default
     private EscrowStatus status = EscrowStatus.HELD;
 
-    @Column(name = "hold_until", insertable = false, updatable = false)
+    @Column(name = "hold_until")
     private LocalDateTime holdUntil;
 
     @Column(name = "released_at")

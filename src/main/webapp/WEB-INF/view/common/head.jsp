@@ -37,6 +37,10 @@
 
     <!-- iziToast JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/products.css">
+
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/product-form.css">
     <!-- Custom Transaction CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/transaction.css">
     <!-- Custom Profile CSS -->

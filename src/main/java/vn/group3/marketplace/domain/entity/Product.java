@@ -46,6 +46,10 @@ public class Product extends BaseEntity {
     @Builder.Default
     private Integer stock = 0;
 
+    @Column(nullable = false, name = "sold_quantity")
+    @Builder.Default
+    private Integer soldQuantity = 0;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     @Builder.Default
