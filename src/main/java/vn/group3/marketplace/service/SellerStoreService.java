@@ -26,13 +26,35 @@ public class SellerStoreService {
 	private final SystemSettingService systemSettingService;
 
 	/**
-	 * Check if user already has a store
+	 * Check if user has an active store
+	 */
+	public boolean hasActiveStore(User owner) {
+		if (owner == null || owner.getSellerStore() == null)
+			return false;
+		return sellerStoreRepository.findById(owner.getSellerStore().getId())
+				.map(store -> store.getStatus() == StoreStatus.ACTIVE)
+				.orElse(false);
+	}
+
+	/**
+	 * Check if user has any store (active or inactive)
 	 */
 	public boolean hasExistingStore(User owner) {
 		if (owner == null)
 			return false;
 		return sellerStoreRepository.findById(owner.getSellerStore() != null ? owner.getSellerStore().getId() : -1L)
 				.isPresent();
+	}
+
+	/**
+	 * Find inactive store owned by user
+	 */
+	public SellerStore findInactiveStoreByOwner(User owner) {
+		if (owner == null || owner.getSellerStore() == null)
+			return null;
+		return sellerStoreRepository.findById(owner.getSellerStore().getId())
+				.filter(store -> store.getStatus() == StoreStatus.INACTIVE)
+				.orElse(null);
 	}
 
 	public boolean isStoreNameExists(String storeName) {
@@ -67,13 +89,6 @@ public class SellerStoreService {
 			throw new IllegalArgumentException("Số dư không đủ để ký quỹ");
 		}
 
-		// Add SELLER role if present
-		Role sellerRole = roleRepository.findByCode("SELLER").orElse(null);
-		if (sellerRole != null) {
-			owner.getRoles().add(sellerRole);
-			userRepository.save(owner);
-		}
-
 		// Get max listing price rate from system settings
 		Double maxListingPriceRate = systemSettingService.getDoubleValue("listing.max_listing_price_rate", 0.1);
 
@@ -94,10 +109,33 @@ public class SellerStoreService {
 
 	@Transactional
 	public void activateStore(Long storeId) {
+		// Find store and validate
 		SellerStore store = sellerStoreRepository.findById(storeId)
 				.orElseThrow(() -> new RuntimeException("Store not found with id: " + storeId));
+
+		// Activate store
 		store.setStatus(StoreStatus.ACTIVE);
 		sellerStoreRepository.save(store);
+
+		// Get store owner
+		User owner = store.getOwner();
+		if (owner == null) {
+			throw new RuntimeException("Store owner not found for store id: " + storeId);
+		}
+
+		try {
+			// Add SELLER role to owner
+			Role sellerRole = roleRepository.findByCode("SELLER")
+					.orElseThrow(() -> new RuntimeException("SELLER role not found"));
+
+			if (owner.getRoles().stream().noneMatch(r -> "SELLER".equals(r.getCode()))) {
+				owner.getRoles().add(sellerRole);
+				userRepository.save(owner);
+			}
+		} catch (Exception e) {
+			// Log error but don't prevent store activation
+			throw new RuntimeException("Failed to add SELLER role to user: " + owner.getUsername(), e);
+		}
 	}
 
 	public Optional<SellerStore> findById(Long id) {

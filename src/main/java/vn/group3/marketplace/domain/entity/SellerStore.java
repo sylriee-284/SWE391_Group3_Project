@@ -56,4 +56,5 @@ public class SellerStore extends BaseEntity {
     @Column(nullable = false, precision = 3, scale = 2)
     @Builder.Default
     private BigDecimal rating = BigDecimal.ZERO;
+    
 }

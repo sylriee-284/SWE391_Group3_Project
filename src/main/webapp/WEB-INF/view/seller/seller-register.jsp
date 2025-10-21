@@ -25,28 +25,82 @@
                     <!-- Sidebar Overlay for Mobile -->
                     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-                    <!-- Sidebar Overlay for Mobile -->
-                    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
                     <!-- Main Content Area -->
                     <div class="content" id="content">
                         <div class="container-fluid">
                             <div class="row justify-content-center">
                                 <div class="col-lg-8">
-                                    <!-- Seller Registration Card -->
-                                    <div class="profile-card">
-                                        <div class="profile-header">
-                                            <div class="profile-avatar">
-                                                <i class="fas fa-store"></i>
+                                    <!-- Existing Inactive Store Section -->
+                                    <c:if test="${not empty inactiveStore}">
+                                        <div class="profile-card mb-4">
+                                            <div class="card">
+                                                <div class="card-header bg-warning">
+                                                    <h4 class="mb-0 text-white"><i class="fas fa-exclamation-circle"></i> Cửa hàng chờ kích hoạt</h4>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="info-row">
+                                                        <span class="info-label">Mã cửa hàng:</span>
+                                                        <span class="info-value">#${inactiveStore.id}</span>
+                                                    </div>
+                                                    <div class="info-row">
+                                                        <span class="info-label">Tên cửa hàng:</span>
+                                                        <span class="info-value">${inactiveStore.storeName}</span>
+                                                    </div>
+                                                    <div class="info-row">
+                                                        <span class="info-label">Số tiền ký quỹ cần thanh toán:</span>
+                                                        <span class="info-value text-danger fw-bold">
+                                                            <fmt:formatNumber value="${inactiveStore.depositAmount}" type="number" pattern="#,###" /> VNĐ
+                                                        </span>
+                                                    </div>
+                                                    <div class="info-row">
+                                                        <span class="info-label">Số dư hiện tại:</span>
+                                                        <span class="info-value ${userBalance.compareTo(inactiveStore.depositAmount) >= 0 ? 'text-success' : 'text-danger'} fw-bold">
+                                                            <fmt:formatNumber value="${userBalance}" type="number" pattern="#,###" /> VNĐ
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div class="mt-3">
+                                                        <c:choose>
+                                                            <c:when test="${userBalance.compareTo(inactiveStore.depositAmount) >= 0}">
+                                                                <!-- Show retry payment button if balance is sufficient -->
+                                                                <form action="${pageContext.request.contextPath}/seller/retry-deposit/${inactiveStore.id}" method="POST" class="d-inline">
+                                                                    <button type="submit" class="btn btn-success">
+                                                                        <i class="fas fa-sync-alt"></i> Kích hoạt cửa hàng ngay
+                                                                    </button>
+                                                                </form>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <!-- Show deposit button if balance is insufficient -->
+                                                                <div class="alert alert-warning mb-3">
+                                                                    <i class="fas fa-exclamation-triangle"></i> 
+                                                                    Bạn cần nạp thêm <strong><fmt:formatNumber value="${inactiveStore.depositAmount.subtract(userBalance)}" type="number" pattern="#,###" /> VNĐ</strong> để kích hoạt cửa hàng
+                                                                </div>
+                                                                <a href="${pageContext.request.contextPath}/wallet/deposit" class="btn btn-primary">
+                                                                    <i class="fas fa-wallet"></i> Nạp tiền qua VNPay
+                                                                </a>
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <h2>Đăng ký Cửa hàng</h2>
                                         </div>
+                                    </c:if>
 
-                                        <!-- Deposit Information Alert -->
-                                        <div class="alert alert-info mb-4">
-                                            <h5><i class="fas fa-info-circle"></i> Thông tin quan trọng:</h5>
-                                            <ul class="mb-0">
-                                                <li>Số tiền ký quỹ tối thiểu: <strong>
+                            <!-- Seller Registration Card -->
+                            <c:if test="${empty inactiveStore}">
+                                <div class="profile-card">
+                                    <div class="profile-header">
+                                        <div class="profile-avatar">
+                                            <i class="fas fa-store"></i>
+                                        </div>
+                                        <h2>Đăng ký Cửa hàng</h2>
+                                    </div>
+
+                                    <!-- Deposit Information Alert -->
+                                    <div class="alert alert-info mb-4">
+                                        <h5><i class="fas fa-info-circle"></i> Thông tin quan trọng:</h5>
+                                        <ul class="mb-0">
+                                            <li>Số tiền ký quỹ tối thiểu: <strong>
                                                         <fmt:formatNumber value="${minDepositAmount}" type="number"
                                                             pattern="#,###" /> VNĐ
                                                     </strong></li>
@@ -78,20 +132,20 @@
                                                 <h4><i class="fas fa-user text-primary"></i> Thông tin chủ cửa hàng</h4>
                                                 <div class="row">
                                                     <div class="col-md-6 mb-3">
-                                                        <label class="form-label">ID người dùng</label>
+                                                        <label class="form-label" for="userId">ID người dùng</label>
                                                         <div class="input-group">
                                                             <span class="input-group-text"><i
                                                                     class="fas fa-id-card"></i></span>
-                                                            <input type="text" class="form-control" value="#${user.id}"
+                                                            <input type="text" class="form-control" id="userId" value="#${user.id}"
                                                                 readonly>
                                                         </div>
                                                     </div>
                                                     <div class="col-md-6 mb-3">
-                                                        <label class="form-label">Tên đăng nhập</label>
+                                                        <label class="form-label" for="username">Tên đăng nhập</label>
                                                         <div class="input-group">
                                                             <span class="input-group-text"><i
                                                                     class="fas fa-user"></i></span>
-                                                            <input type="text" class="form-control"
+                                                            <input type="text" class="form-control" id="username"
                                                                 value="${user.username}" readonly>
                                                             <input type="hidden" name="ownerName"
                                                                 value="${user.username}">
@@ -235,12 +289,12 @@
                                                     <i class="fas fa-check-circle me-2"></i> Đăng ký Cửa hàng
                                                 </button>
                                             </div>
-                                    </div>
+                                        </form>
                                 </div>
-                            </div>
+                            </c:if>
                         </div>
                     </div>
-                    </div>
+                </div>
 
                     <!-- Include Footer -->
                     <jsp:include page="../common/footer.jsp" />

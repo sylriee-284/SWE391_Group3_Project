@@ -8,6 +8,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import lombok.RequiredArgsConstructor;
+import vn.group3.marketplace.service.WalletTransactionQueueService;
+import vn.group3.marketplace.domain.entity.User;
+import vn.group3.marketplace.domain.entity.SellerStore;
+import vn.group3.marketplace.domain.enums.StoreStatus;
 
 import vn.group3.marketplace.domain.entity.SellerStore;
 import vn.group3.marketplace.domain.entity.User;
@@ -18,15 +23,12 @@ import vn.group3.marketplace.service.UserService;
 
 @Controller
 @RequestMapping("/seller")
+@RequiredArgsConstructor
 public class SellerController {
 
     private final UserService userService;
     private final SellerStoreService sellerStoreService;
-
-    public SellerController(UserService userService, SellerStoreService sellerStoreService) {
-        this.userService = userService;
-        this.sellerStoreService = sellerStoreService;
-    }
+    private final WalletTransactionQueueService walletTransactionQueueService;
 
     /**
      * Display seller registration form
@@ -37,9 +39,17 @@ public class SellerController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = userService.getFreshUserByUsername(auth.getName());
 
-        // Check if user already has a store
-        if (sellerStoreService.hasExistingStore(currentUser)) {
+        // Find any existing inactive store
+        SellerStore inactiveStore = sellerStoreService.findInactiveStoreByOwner(currentUser);
+        
+        // If user has an active store, redirect to dashboard
+        if (sellerStoreService.hasActiveStore(currentUser)) {
             return "redirect:/seller/dashboard";
+        }
+
+        // Add inactive store if exists
+        if (inactiveStore != null) {
+            model.addAttribute("inactiveStore", inactiveStore);
         }
 
         // Add current user and balance information to model
@@ -105,7 +115,8 @@ public class SellerController {
             // Check minimum deposit amount
             BigDecimal minDeposit = sellerStoreService.getMinDepositAmount();
             if (deposit.compareTo(minDeposit) < 0) {
-                model.addAttribute("error", "Số tiền ký quỹ phải từ " + String.format("%,.0f", minDeposit) + " VNĐ trở lên");
+                model.addAttribute("error",
+                        "Số tiền ký quỹ phải từ " + String.format("%,.0f", minDeposit) + " VNĐ trở lên");
                 model.addAttribute("storeName", storeName);
                 model.addAttribute("storeDescription", storeDescription);
                 model.addAttribute("feeModel", feeModel);
@@ -123,7 +134,8 @@ public class SellerController {
 
             // CHECK BALANCE BEFORE CREATING STORE - CRITICAL!
             if (currentUser.getBalance().compareTo(deposit) < 0) {
-                model.addAttribute("error", "Số dư không đủ để ký quỹ. Bạn cần " + String.format("%,.0f", deposit) + " VNĐ nhưng chỉ có " + String.format("%,.0f", currentUser.getBalance()) + " VNĐ");
+                model.addAttribute("error", "Số dư không đủ để ký quỹ. Bạn cần " + String.format("%,.0f", deposit)
+                        + " VNĐ nhưng chỉ có " + String.format("%,.0f", currentUser.getBalance()) + " VNĐ");
                 model.addAttribute("storeName", storeName);
                 model.addAttribute("storeDescription", storeDescription);
                 model.addAttribute("feeModel", feeModel);
@@ -177,26 +189,9 @@ public class SellerController {
     }
 
     /**
-     * Show pending registration page while store deposit is being processed
-     */
-    @GetMapping("/pending-registration")
-    public String showPendingRegistration(@RequestParam Long storeId, Model model) {
-        SellerStore store = sellerStoreService.findById(storeId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy cửa hàng"));
-
-        // If store is already active, redirect to dashboard
-        if (store.getStatus() == StoreStatus.ACTIVE) {
-            return "redirect:/seller/dashboard";
-        }
-
-        model.addAttribute("store", store);
-        return "seller/pending-registration";
-    }
-
-    /**
      * Show registration success page with store details
      */
-    @GetMapping("/register-success")
+    @GetMapping("/register-success") 
     public String showRegistrationSuccess(@RequestParam Long storeId, Model model) {
         // Get current authenticated user
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -206,11 +201,73 @@ public class SellerController {
         SellerStore store = sellerStoreService.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy cửa hàng"));
 
+        // Nếu store inactive và chưa có lỗi trong model, kiểm tra xem có đủ số dư không
+        if (store.getStatus() == StoreStatus.INACTIVE && !model.containsAttribute("paymentError")) {
+            if (currentUser.getBalance().compareTo(store.getDepositAmount()) < 0) {
+                model.addAttribute("paymentError", 
+                    "Thanh toán thất bại: Số dư không đủ. Bạn cần nạp thêm " + 
+                    String.format("%,.0f", store.getDepositAmount().subtract(currentUser.getBalance())) + " VNĐ");
+            }
+        }
+
         // Add data to model
         model.addAttribute("user", currentUser);
         model.addAttribute("store", store);
 
         return "seller/register-success";
+    }
+
+    /**
+     * Retry store deposit payment
+     */
+    @PostMapping("/retry-deposit/{storeId}")
+    public String retryStoreDeposit(@PathVariable Long storeId, RedirectAttributes redirectAttributes) {
+        try {
+            // Get current authenticated user
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            User currentUser = userService.getFreshUserByUsername(auth.getName());
+
+            // Get store information
+            SellerStore store = sellerStoreService.findById(storeId)
+                    .orElseThrow(() -> new IllegalStateException("Shop không tồn tại"));
+
+            // Verify ownership
+            if (!store.getOwner().getId().equals(currentUser.getId())) {
+                redirectAttributes.addFlashAttribute("error", "Bạn không có quyền truy cập shop này");
+                return "redirect:/seller/register-success?storeId=" + storeId;
+            }
+
+            // Verify store status
+            if (store.getStatus() == StoreStatus.ACTIVE) {
+                redirectAttributes.addFlashAttribute("info", "Shop đã được kích hoạt thành công");
+                return "redirect:/seller/register-success?storeId=" + storeId;
+            }
+
+            // Check balance and show insufficient balance message
+            if (currentUser.getBalance().compareTo(store.getDepositAmount()) < 0) {
+                BigDecimal needed = store.getDepositAmount().subtract(currentUser.getBalance());
+                redirectAttributes.addFlashAttribute("paymentError", 
+                    "Thanh toán thất bại: Số dư không đủ. Bạn cần nạp thêm " + 
+                    String.format("%,.0f", needed) + " VNĐ");
+                return "redirect:/seller/register-success?storeId=" + storeId;
+            }
+
+            // Enqueue new payment with same ref
+            String paymentRef = "createdShop" + storeId;
+            walletTransactionQueueService.enqueuePurchasePayment(
+                currentUser.getId(), 
+                store.getDepositAmount(),
+                paymentRef
+            );
+
+            redirectAttributes.addFlashAttribute("success", 
+                "Yêu cầu thanh toán đã được gửi. Vui lòng chờ trong khi chúng tôi xử lý khoản tiền ký quỹ.");
+            return "redirect:/seller/register-success?storeId=" + storeId;
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/seller/register-success?storeId=" + storeId;
+        }
     }
 
     /**

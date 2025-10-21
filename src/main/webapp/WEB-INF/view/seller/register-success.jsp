@@ -82,6 +82,24 @@
                                 </div>
                             </c:if>
 
+                            <!-- Alert Error -->
+                            <c:if test="${not empty error}">
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-exclamation-circle"></i> ${error}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                        aria-label="Close"></button>
+                                </div>
+                            </c:if>
+
+                            <!-- Alert Info -->
+                            <c:if test="${not empty info}">
+                                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-info-circle"></i> ${info}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                        aria-label="Close"></button>
+                                </div>
+                            </c:if>
+
                             <!-- Thông tin tài khoản -->
                             <div class="card mb-4">
                                 <div class="card-header bg-primary text-white">
@@ -152,6 +170,23 @@
                                             </span>
                                         </span>
                                     </div>
+
+                                    <!-- Error message will only show when payment fails -->
+                                    <c:if test="${not empty paymentError}">
+                                        <div class="alert alert-danger mt-3">
+                                            <i class="fas fa-exclamation-circle"></i> ${paymentError}
+                                            <div class="mt-3">
+                                                <a href="${pageContext.request.contextPath}/wallet/deposit" class="btn btn-primary">
+                                                    <i class="fas fa-wallet"></i> Nạp tiền qua VNPay
+                                                </a>
+                                            </div>
+                                            <div class="mt-2 text-muted">
+                                                <small><i class="fas fa-info-circle"></i> Sau khi nạp tiền thành công, vui lòng vào trang "Đăng ký cửa hàng" để tiếp tục kích hoạt cửa hàng của bạn.</small>
+                                            </div>
+                                        </div>
+                                    </c:if>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -213,15 +248,6 @@
                             toggleSidebar();
                         }
                     });
-
-                    // Auto dismiss alerts
-                    setTimeout(function () {
-                        var alerts = document.querySelectorAll('.alert');
-                        alerts.forEach(function (alert) {
-                            var bsAlert = new bootstrap.Alert(alert);
-                            bsAlert.close();
-                        });
-                    }, 5000);
 
                     // Auto reload page after 10 seconds
                     setTimeout(function () {
