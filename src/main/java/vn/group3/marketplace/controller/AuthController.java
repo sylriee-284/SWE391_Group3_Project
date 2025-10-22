@@ -226,22 +226,29 @@ public class AuthController {
             session.setAttribute("otp", otp);
             session.setAttribute("otp_time", System.currentTimeMillis());
             session.setAttribute("reset_email", email);
+            session.setAttribute("reset_time", 5); // Initialize with 5 attempts
 
             // Send reset password OTP email
             emailService.sendEmailWithResetPasswordOTPAsync(email, otp);
             redirectAttributes.addFlashAttribute("successMessage",
-                    "An email with the OTP has been sent. Please check your inbox.");
-            session.removeAttribute("successMessage");
-            return "redirect:/";
+                    "Một email chứa mã OTP đã được gửi. Vui lòng kiểm tra hộp thư của bạn.");
+            return "redirect:/reset-password";
 
         } catch (Exception e) {
-            session.setAttribute("errorMessage", "An unexpected error occurred. Please try again.");
+            model.addAttribute("errorMessage", "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.");
             return "forgot-password";
         }
     }
 
     @GetMapping("/reset-password")
-    public String showResetPasswordPage() {
+    public String showResetPasswordPage(HttpSession session, Model model) {
+        // Initialize reset_time if not exists (first time visit)
+        if (session.getAttribute("reset_time") == null) {
+            session.setAttribute("reset_time", 5);
+        }
+
+        // Pass reset_time to view
+        model.addAttribute("reset_time", session.getAttribute("reset_time"));
         return "reset-password";
     }
 
@@ -252,31 +259,92 @@ public class AuthController {
         // Validate password
         if (!ValidationUtils.isValidPassword(newPassword)) {
             model.addAttribute("errorMessage", ValidationUtils.getPasswordErrorMessage());
+            model.addAttribute("reset_time", session.getAttribute("reset_time"));
             return "reset-password";
         }
 
         // Get OTP and time from session
         String sessionOtp = (String) session.getAttribute("otp");
         Long otpTime = (Long) session.getAttribute("otp_time");
+        Integer resetTime = (Integer) session.getAttribute("reset_time");
+
+        // Check if reset_time exists
+        if (resetTime == null) {
+            resetTime = 5;
+            session.setAttribute("reset_time", resetTime);
+        }
+
+        // Check if reset time is 0 or less
+        if (resetTime <= 0) {
+            session.removeAttribute("otp");
+            session.removeAttribute("otp_time");
+            session.removeAttribute("reset_email");
+            session.removeAttribute("reset_time");
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Bạn đã hết lượt thử. Vui lòng yêu cầu đặt lại mật khẩu lại.");
+            return "redirect:/forgot-password";
+        }
+
+        // Check if OTP session exists
+        if (sessionOtp == null || otpTime == null) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Không tìm thấy OTP. Vui lòng yêu cầu đặt lại mật khẩu lại.");
+            return "redirect:/forgot-password";
+        }
 
         // Check if OTP is valid and not expired (10 minutes)
-        if (sessionOtp != null && sessionOtp.equals(otp) && (System.currentTimeMillis() - otpTime < 600000)) {
+        if (sessionOtp.equals(otp) && (System.currentTimeMillis() - otpTime < 600000)) {
             // If OTP is valid, update user's password
             userService.resetPassword(newPassword, email);
-            session.removeAttribute("otp"); // Remove OTP after use
+
+            // Clear all session data after successful reset
+            session.removeAttribute("otp");
+            session.removeAttribute("otp_time");
+            session.removeAttribute("reset_email");
+            session.removeAttribute("reset_time");
 
             // Set success message and redirect to login page
-            redirectAttributes.addFlashAttribute("successMessage", "Password reset successful. You can now log in.");
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay bây giờ.");
             return "redirect:/login";
         } else {
-            // If OTP is invalid or expired
-            redirectAttributes.addFlashAttribute("errorMessage", "Invalid or expired OTP. Please try again.");
-            return "redirect:/forgot-password";
+            // If OTP is invalid or expired, decrement reset_time
+            resetTime--;
+            session.setAttribute("reset_time", resetTime);
+
+            // Check if this was the last attempt
+            if (resetTime <= 0) {
+                session.removeAttribute("otp");
+                session.removeAttribute("otp_time");
+                session.removeAttribute("reset_email");
+                session.removeAttribute("reset_time");
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "Bạn đã hết lượt thử. Vui lòng yêu cầu đặt lại mật khẩu lại.");
+                return "redirect:/forgot-password";
+            }
+
+            // Check if OTP expired
+            if (System.currentTimeMillis() - otpTime >= 600000) {
+                model.addAttribute("errorMessage", "OTP đã hết hạn. Vui lòng yêu cầu đặt lại mật khẩu lại.");
+            } else {
+                model.addAttribute("errorMessage",
+                        "OTP không hợp lệ. Bạn còn " + resetTime + " lần thử.");
+            }
+
+            model.addAttribute("reset_time", resetTime);
+            return "reset-password";
         }
     }
 
     @GetMapping("/verify-otp")
-    public String verifyOtpPage(Model model) {
+    public String verifyOtpPage(HttpSession session, Model model) {
+        // Initialize registration_time if not exists (first time visit)
+        if (session.getAttribute("registration_time") == null) {
+            session.setAttribute("registration_time", 5);
+        }
+
+        // Pass registration_time to view
+        model.addAttribute("registration_time", session.getAttribute("registration_time"));
         return "verify-otp";
     }
 
@@ -287,16 +355,16 @@ public class AuthController {
         // Get OTP and time from session
         String sessionOtp = (String) session.getAttribute("registration_otp");
         Long otpTime = (Long) session.getAttribute("registration_otp_time");
-
-        // Get registration time from session
         Integer registrationTime = (Integer) session.getAttribute("registration_time");
-        // check if otp is invalid, decrement registration time
-        if (!sessionOtp.equals(otp)) {
-            registrationTime--;
+
+        // Check if registration_time exists
+        if (registrationTime == null) {
+            registrationTime = 5;
             session.setAttribute("registration_time", registrationTime);
         }
-        // check if registration time is 0, kill otp session
-        if (registrationTime == 0) {
+
+        // Check if registration time is 0 or less
+        if (registrationTime <= 0) {
             session.removeAttribute("registration_otp");
             session.removeAttribute("registration_otp_time");
             session.removeAttribute("registration_username");
@@ -304,12 +372,19 @@ public class AuthController {
             session.removeAttribute("registration_password");
             session.removeAttribute("registration_time");
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "You have reached the maximum number of attempts. Please register again.");
+                    "Bạn đã hết lượt thử. Vui lòng đăng ký lại.");
+            return "redirect:/register";
+        }
+
+        // Check if OTP session exists
+        if (sessionOtp == null || otpTime == null) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Không tìm thấy OTP. Vui lòng đăng ký lại.");
             return "redirect:/register";
         }
 
         // Check if OTP is valid and not expired (10 minutes)
-        if (sessionOtp != null && sessionOtp.equals(otp) && (System.currentTimeMillis() - otpTime < 600000)) {
+        if (sessionOtp.equals(otp) && (System.currentTimeMillis() - otpTime < 600000)) {
             try {
                 // Get registration data from session
                 String username = (String) session.getAttribute("registration_username");
@@ -325,28 +400,46 @@ public class AuthController {
                 session.removeAttribute("registration_username");
                 session.removeAttribute("registration_email");
                 session.removeAttribute("registration_password");
+                session.removeAttribute("registration_time");
 
                 // Success message
                 redirectAttributes.addFlashAttribute("successMessage",
-                        "Registration successful! Please log in.");
+                        "Đăng ký thành công! Vui lòng đăng nhập.");
                 return "redirect:/login";
 
             } catch (Exception ex) {
-                model.addAttribute("errorMessage", "Registration failed. Please try again.");
+                model.addAttribute("errorMessage", "Đăng ký thất bại. Vui lòng thử lại.");
+                model.addAttribute("registration_time", registrationTime);
                 return "verify-otp";
             }
         } else {
-            // If OTP is invalid or expired, stay on the same page and show error
-            if (sessionOtp == null || otpTime == null) {
-                model.addAttribute("errorMessage", "No OTP found. Please register again.");
-                return "verify-otp";
-            } else if (System.currentTimeMillis() - otpTime >= 600000) {
-                model.addAttribute("errorMessage", "OTP has expired. Please register again.");
-                return "verify-otp";
-            } else {
-                model.addAttribute("errorMessage", "Invalid OTP. Please try again.");
-                return "verify-otp";
+            // If OTP is invalid or expired, decrement registration_time
+            registrationTime--;
+            session.setAttribute("registration_time", registrationTime);
+
+            // Check if this was the last attempt
+            if (registrationTime <= 0) {
+                session.removeAttribute("registration_otp");
+                session.removeAttribute("registration_otp_time");
+                session.removeAttribute("registration_username");
+                session.removeAttribute("registration_email");
+                session.removeAttribute("registration_password");
+                session.removeAttribute("registration_time");
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "Bạn đã hết lượt thử. Vui lòng đăng ký lại.");
+                return "redirect:/register";
             }
+
+            // Check if OTP expired
+            if (System.currentTimeMillis() - otpTime >= 600000) {
+                model.addAttribute("errorMessage", "OTP đã hết hạn. Vui lòng đăng ký lại.");
+            } else {
+                model.addAttribute("errorMessage",
+                        "OTP không hợp lệ. Bạn còn " + registrationTime + " lần thử.");
+            }
+
+            model.addAttribute("registration_time", registrationTime);
+            return "verify-otp";
         }
     }
 
@@ -357,7 +450,8 @@ public class AuthController {
             String email = (String) session.getAttribute("registration_email");
 
             if (email == null) {
-                model.addAttribute("errorMessage", "No registration session found. Please register again.");
+                model.addAttribute("errorMessage", "Không tìm thấy phiên đăng ký. Vui lòng đăng ký lại.");
+                model.addAttribute("registration_time", session.getAttribute("registration_time"));
                 return "verify-otp";
             }
 
@@ -369,11 +463,13 @@ public class AuthController {
             // Send new OTP email
             emailService.sendEmailWithRegistrationOTPAsync(email, otp);
 
-            model.addAttribute("successMessage", "A new OTP has been sent to your email.");
+            model.addAttribute("successMessage", "Một mã OTP mới đã được gửi đến email của bạn.");
+            model.addAttribute("registration_time", session.getAttribute("registration_time"));
             return "verify-otp";
 
         } catch (Exception ex) {
-            model.addAttribute("errorMessage", "Failed to resend OTP. Please try again.");
+            model.addAttribute("errorMessage", "Gửi lại OTP thất bại. Vui lòng thử lại.");
+            model.addAttribute("registration_time", session.getAttribute("registration_time"));
             return "verify-otp";
         }
     }

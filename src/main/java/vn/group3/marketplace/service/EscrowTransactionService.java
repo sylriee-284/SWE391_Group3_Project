@@ -65,7 +65,13 @@ public class EscrowTransactionService {
             SellerStore sellerStore = order.getSellerStore();
             if (sellerStore.getFeeModel().equals(SellerStoresType.PERCENTAGE)) {
                 // Calculate fee based on order total
+                BigDecimal minOrderWithFreeFee = new BigDecimal(
+                        systemSettingService.getSettingValue("fee.min_order_with_free_fee", "30000"));
                 BigDecimal feeAmount = calculateFee(order.getTotalAmount());
+                // If order total is less than min order with free fee, set fee amount to 0
+                if (order.getTotalAmount().compareTo(minOrderWithFreeFee) <= 0) {
+                    feeAmount = BigDecimal.ZERO;
+                }
                 BigDecimal sellerAmount = order.getTotalAmount().subtract(feeAmount);
 
                 // Create single escrow transaction with both seller and admin amounts
