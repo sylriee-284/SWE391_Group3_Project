@@ -3,7 +3,7 @@
         <html>
 
         <head>
-            <title>Verify OTP - Registration</title>
+            <title>Xác thực OTP - Đăng ký</title>
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
                 rel="stylesheet">
 
@@ -96,39 +96,43 @@
                         <div class="col-md-8 col-lg-6 col-xl-4">
                             <div class="otp-container">
                                 <div class="text-center mb-4">
-                                    <h2 class="fw-bold mb-2">Verify Your Email</h2>
-                                    <p class="text-muted">We've sent a verification code to your email address</p>
+                                    <h2 class="fw-bold mb-2">Xác thực Email của bạn</h2>
+                                    <p class="text-muted">Chúng tôi đã gửi mã xác thực đến địa chỉ email của bạn</p>
                                 </div>
 
                                 <form action="/verify-otp" method="post">
                                     <!-- OTP input -->
                                     <div class="form-outline mb-4">
-                                        <label class="form-label" for="otp">Enter Verification Code</label>
+                                        <label class="form-label" for="otp">Nhập mã xác thực 4 chữ số</label>
                                         <input type="text" id="otp" name="otp"
-                                            class="form-control form-control-lg otp-input" placeholder="Enter OTP"
-                                            maxlength="4" pattern="[0-9]{4}"
-                                            title="Please enter a 4-digit verification code" required />
+                                            class="form-control form-control-lg otp-input" placeholder="Nhập mã OTP"
+                                            maxlength="4" pattern="[0-9]{4}" title="Vui lòng nhập mã xác thực 4 chữ số"
+                                            required />
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Bạn còn <strong>${registration_time}</strong> lần thử để nhập mã xác thực
+                                        </small>
                                         <div class="invalid-feedback" id="otpError">
-                                            Please enter a valid 4-digit verification code
+                                            Vui lòng nhập mã xác thực 4 chữ số hợp lệ
                                         </div>
                                     </div>
 
                                     <div class="text-center mb-3">
                                         <button type="submit" class="btn btn-primary btn-lg w-100 btn-verify">
-                                            Verify Email
+                                            Xác thực Email
                                         </button>
                                     </div>
 
                                     <div class="text-center">
                                         <p class="resend-timer mb-2">
-                                            Didn't receive the code?
+                                            Không nhận được mã?
                                             <a href="#" onclick="resendOTP()" class="text-decoration-none"
                                                 style="color: #007bff; cursor: pointer;">
-                                                Resend OTP
+                                                Gửi lại OTP
                                             </a>
                                         </p>
                                         <p class="small text-muted">
-                                            The 4-digit verification code will expire in 10 minutes
+                                            Mã xác thực 4 chữ số sẽ hết hạn sau 10 phút
                                         </p>
                                     </div>
                                 </form>
@@ -140,7 +144,7 @@
                                 <div class="text-center mt-3">
                                     <a href="/register" class="back-link">
                                         <i class="fas fa-arrow-left me-1"></i>
-                                        Back to Registration
+                                        Quay lại đăng ký
                                     </a>
                                 </div>
                                 </form>
@@ -192,7 +196,7 @@
                     var isValid = validateOTP(otp);
 
                     if (otp.length > 0 && !isValid) {
-                        this.setCustomValidity('Please enter a valid 4-digit verification code');
+                        this.setCustomValidity('Vui lòng nhập mã xác thực 4 chữ số hợp lệ');
                         this.classList.add('is-invalid');
                     } else {
                         this.setCustomValidity('');
@@ -207,8 +211,8 @@
                     if (!validateOTP(otp)) {
                         e.preventDefault();
                         iziToast.error({
-                            title: 'Error!',
-                            message: 'Please enter a valid 4-digit verification code',
+                            title: 'Lỗi!',
+                            message: 'Vui lòng nhập mã xác thực 4 chữ số hợp lệ',
                             position: 'topRight',
                             timeout: 5000
                         });
@@ -238,7 +242,7 @@
             <c:if test="${not empty successMessage}">
                 <script>
                     iziToast.success({
-                        title: 'Success!',
+                        title: 'Thành công!',
                         message: '${successMessage}',
                         position: 'topRight',
                         timeout: 5000
@@ -249,7 +253,7 @@
             <c:if test="${not empty errorMessage}">
                 <script>
                     iziToast.error({
-                        title: 'Error!',
+                        title: 'Lỗi!',
                         message: '${errorMessage}',
                         position: 'topRight',
                         timeout: 5000
