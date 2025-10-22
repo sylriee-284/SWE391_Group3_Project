@@ -149,12 +149,7 @@
                                         </div>
                                     </div>
 
-                                    <c:if test="${not empty success}">
-                                        <div class="alert alert-success mb-3">${success}</div>
-                                    </c:if>
-                                    <c:if test="${not empty error}">
-                                        <div class="alert alert-danger mb-3">${error}</div>
-                                    </c:if>
+
 
                                     <div class="table-container">
                                         <table id="usersTable" class="table table-hover align-middle data-table">
@@ -510,6 +505,44 @@
                             }
                         }
                     </script>
+
+                    <c:if test="${not empty success || not empty successMessage}">
+                        <script>
+                            (function () {
+                                var msg = '${fn:escapeXml(success != null ? success : successMessage)}';
+                                if (window.iziToast) {
+                                    iziToast.success({
+                                        title: 'Success!',
+                                        message: msg,
+                                        position: 'topRight',
+                                        timeout: 5000
+                                    });
+                                } else {
+                                    // fallback nếu vì lý do gì đó chưa load iziToast
+                                    console.log('Success:', msg);
+                                }
+                            })();
+                        </script>
+                    </c:if>
+
+                    <c:if test="${not empty error || not empty errorMessage}">
+                        <script>
+                            (function () {
+                                var msg = '${fn:escapeXml(error != null ? error : errorMessage)}';
+                                if (window.iziToast) {
+                                    iziToast.error({
+                                        title: 'Error!',
+                                        message: msg,
+                                        position: 'topRight',
+                                        timeout: 5000
+                                    });
+                                } else {
+                                    console.error('Error:', msg);
+                                }
+                            })();
+                        </script>
+                    </c:if>
+
                 </body>
 
                 </html>
