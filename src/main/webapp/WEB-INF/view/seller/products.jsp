@@ -31,16 +31,12 @@
                     <div class="container mt-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h4>Danh sách sản phẩm</h4>
-                            <c:url var="newUrl" value="/seller/products/new">
-                                <c:param name="storeId" value="${storeId}" />
-                            </c:url>
-                            <a class="btn btn-primary" href="${newUrl}">Thêm sản phẩm</a>
+                            <a class="btn btn-primary" href="<c:url value='/seller/products/new'/>">Thêm sản phẩm</a>
                         </div>
 
                         <!-- Filter form -->
                         <form id="filterForm" method="get" action="<c:url value='/seller/products'/>"
                             class="row g-2 mb-3">
-                            <input type="hidden" name="storeId" value="${storeId}" />
 
                             <div class="col-md-3">
                                 <input class="form-control" name="q" value="${fn:escapeXml(q)}"
@@ -177,8 +173,17 @@
                                 <tbody>
                                     <c:if test="${empty page.content}">
                                         <tr>
-                                            <td colspan="7" class="text-center text-muted py-4">Không có sản phẩm nào
-                                                khớp bộ lọc.</td>
+                                            <td colspan="7" class="text-center text-muted py-4">
+                                                <c:choose>
+                                                    <c:when test="${noStoreSelected}">
+                                                        <i class="fas fa-store"></i> Vui lòng chọn cửa hàng hoặc áp dụng
+                                                        bộ lọc để xem sản phẩm.
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        Không có sản phẩm nào khớp bộ lọc.
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </td>
                                         </tr>
                                     </c:if>
 
@@ -661,7 +666,7 @@
                                 if (tokenMeta && headerMeta) headers[headerMeta.content] = tokenMeta.content;
 
                                 try {
-                                    const res = await fetch(window.location.origin + '/seller/products/' + id + '/ajax-update?storeId=' + encodeURIComponent('${storeId}'), {
+                                    const res = await fetch(window.location.origin + '/seller/products/' + id + '/ajax-update', {
                                         method: 'POST', headers: headers, body: JSON.stringify(payload)
                                     });
                                     const data = await res.json();

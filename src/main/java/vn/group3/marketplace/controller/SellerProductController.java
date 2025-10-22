@@ -4,10 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import vn.group3.marketplace.security.CustomUserDetails;
 
 import vn.group3.marketplace.domain.entity.Category;
 import vn.group3.marketplace.domain.entity.Product;
@@ -43,8 +45,6 @@ public class SellerProductController {
     private final ProductStorageRepository storageRepo;
     private final SellerStoreRepository storeRepo;
 
-    private static final Long DEFAULT_STORE_ID = 1L;
-
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
@@ -54,8 +54,13 @@ public class SellerProductController {
         binder.registerCustomEditor(String.class, new StringTrimmerEditor(true));
     }
 
-    private Long resolveStoreId(Long storeId) {
-        return Optional.ofNullable(storeId).orElse(DEFAULT_STORE_ID);
+    // Get current seller's store ID from authenticated user
+    private Long getCurrentSellerStoreId(CustomUserDetails currentUser) {
+        if (currentUser == null || currentUser.getUser() == null) {
+            return null;
+        }
+        SellerStore sellerStore = currentUser.getUser().getSellerStore();
+        return sellerStore != null ? sellerStore.getId() : null;
     }
 
     // Lấy tối đa 4 danh mục cha để hiển thị nhanh
@@ -101,7 +106,7 @@ public class SellerProductController {
 
     // ============ LIST ============
     @GetMapping
-    public String list(@RequestParam(value = "storeId", required = false) Long storeId,
+    public String list(@AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) ProductStatus status,
             @RequestParam(required = false) Long parentCategoryId,
@@ -116,7 +121,18 @@ public class SellerProductController {
             @RequestParam(defaultValue = "10") int size,
             Model model) {
 
-        Long sid = resolveStoreId(storeId);
+        // Get current seller's store ID
+        if (currentUser == null || currentUser.getUser() == null) {
+            return "redirect:/login?error=not_authenticated";
+        }
+
+        SellerStore sellerStore = currentUser.getUser().getSellerStore();
+        if (sellerStore == null) {
+            model.addAttribute("errorMessage", "Bạn chưa có cửa hàng. Vui lòng liên hệ admin để tạo cửa hàng.");
+            return "error";
+        }
+
+        Long sid = sellerStore.getId();
 
         LocalDateTime createdFrom = null;
         LocalDateTime createdToExclusive = null;
@@ -187,8 +203,11 @@ public class SellerProductController {
 
     // ============ NEW FORM ============
     @GetMapping("/new")
-    public String createForm(@RequestParam(value = "storeId", required = false) Long storeId, Model model) {
-        Long sid = resolveStoreId(storeId);
+    public String createForm(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
+        Long sid = getCurrentSellerStoreId(currentUser);
+        if (sid == null) {
+            return "redirect:/login?error=not_authenticated";
+        }
 
         Product form = new Product();
         SellerStore store = new SellerStore();
@@ -213,14 +232,17 @@ public class SellerProductController {
 
     // ============ CREATE ============
     @PostMapping
-    public String create(@Valid @ModelAttribute("form") Product form,
+    public String create(@AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @ModelAttribute("form") Product form,
             BindingResult binding,
-            @RequestParam(value = "storeId", required = false) Long storeId,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
             Model model,
             RedirectAttributes ra) {
 
-        Long sid = resolveStoreId(storeId);
+        Long sid = getCurrentSellerStoreId(currentUser);
+        if (sid == null) {
+            return "redirect:/login?error=not_authenticated";
+        }
         SellerStore store = new SellerStore();
         store.setId(sid);
         form.setSellerStore(store);
@@ -268,15 +290,18 @@ public class SellerProductController {
 
         productService.create(form);
         ra.addFlashAttribute("successMessage", "Thêm sản phẩm mới thành công!");
-        return "redirect:/seller/products?storeId=" + sid;
+        return "redirect:/seller/products";
     }
 
     // ============ EDIT FORM ============
     @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id,
-            @RequestParam(value = "storeId", required = false) Long storeId,
+    public String editForm(@AuthenticationPrincipal CustomUserDetails currentUser,
+            @PathVariable Long id,
             Model model) {
-        Long sid = resolveStoreId(storeId);
+        Long sid = getCurrentSellerStoreId(currentUser);
+        if (sid == null) {
+            return "redirect:/login?error=not_authenticated";
+        }
         Product form = productService.getOwned(id, sid);
 
         model.addAttribute("form", form);
@@ -311,15 +336,18 @@ public class SellerProductController {
 
     // ============ UPDATE ============
     @PostMapping("/{id}")
-    public String update(@PathVariable Long id,
+    public String update(@AuthenticationPrincipal CustomUserDetails currentUser,
+            @PathVariable Long id,
             @Valid @ModelAttribute("form") Product form,
             BindingResult binding,
-            @RequestParam(value = "storeId", required = false) Long storeId,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
             Model model,
             RedirectAttributes ra) {
 
-        Long sid = resolveStoreId(storeId);
+        Long sid = getCurrentSellerStoreId(currentUser);
+        if (sid == null) {
+            return "redirect:/login?error=not_authenticated";
+        }
         form.setId(id);
 
         Product existed = productService.getOwned(id, sid);
@@ -377,7 +405,7 @@ public class SellerProductController {
         try {
             productService.update(form, sid);
             ra.addFlashAttribute("successMessage", "Sửa sản phẩm thành công!");
-            return "redirect:/seller/products?storeId=" + sid;
+            return "redirect:/seller/products";
         } catch (IllegalArgumentException ex) {
             // Bind error to status field so it shows on the form
             binding.rejectValue("status", "status.invalid", ex.getMessage());
@@ -411,18 +439,21 @@ public class SellerProductController {
 
     // ============ TOGGLE STATUS ============
     @PostMapping("/{id}/toggle")
-    public String toggle(@PathVariable Long id,
+    public String toggle(@AuthenticationPrincipal CustomUserDetails currentUser,
+            @PathVariable Long id,
             @RequestParam ProductStatus to,
-            @RequestParam(value = "storeId", required = false) Long storeId,
             RedirectAttributes ra) {
-        Long sid = resolveStoreId(storeId);
+        Long sid = getCurrentSellerStoreId(currentUser);
+        if (sid == null) {
+            return "redirect:/login?error=not_authenticated";
+        }
         try {
             productService.toggle(id, sid, to);
             ra.addFlashAttribute("successMessage", "Đã chuyển trạng thái sản phẩm #" + id + " sang " + to);
         } catch (IllegalArgumentException ex) {
             ra.addFlashAttribute("errorMessage", ex.getMessage());
         }
-        return "redirect:/seller/products?storeId=" + sid;
+        return "redirect:/seller/products";
     }
 
     // ============ API: trả danh mục con (JSON) ============
@@ -439,10 +470,13 @@ public class SellerProductController {
 
     // ============ DETAIL (view-only) ============
     @GetMapping("/{id}")
-    public String detail(@PathVariable Long id,
-            @RequestParam(value = "storeId", required = false) Long storeId,
+    public String detail(@AuthenticationPrincipal CustomUserDetails currentUser,
+            @PathVariable Long id,
             Model model) {
-        Long sid = resolveStoreId(storeId);
+        Long sid = getCurrentSellerStoreId(currentUser);
+        if (sid == null) {
+            return "redirect:/login?error=not_authenticated";
+        }
 
         // Use getOwned to ensure seller can only view their product in seller context
         Product product = productService.getOwned(id, sid);
@@ -456,11 +490,16 @@ public class SellerProductController {
     // ============ AJAX: cập nhật nhanh (dùng cho modal) ============
     @PostMapping(value = "/{id}/ajax-update", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public Map<String, Object> ajaxUpdate(@PathVariable Long id,
-            @RequestBody Map<String, Object> payload,
-            @RequestParam(value = "storeId", required = false) Long storeId) {
-        Long sid = resolveStoreId(storeId);
+    public Map<String, Object> ajaxUpdate(@AuthenticationPrincipal CustomUserDetails currentUser,
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> payload) {
+        Long sid = getCurrentSellerStoreId(currentUser);
         Map<String, Object> out = new HashMap<>();
+        if (sid == null) {
+            out.put("ok", false);
+            out.put("message", "Not authenticated");
+            return out;
+        }
         try {
             Product existing = productService.getOwned(id, sid);
 

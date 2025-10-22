@@ -3,6 +3,7 @@ package vn.group3.marketplace.service;
 import java.math.BigDecimal;
 import java.util.Optional;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,10 +43,10 @@ public class UserService {
                 .build();
 
         // Assign default role
-    Role role = roleRepository.findByCode("USER")
-        .orElseThrow(() -> new RuntimeException("Role USER does not exist"));
-    // Project uses ManyToMany `roles` on User entity. Add role to user's roles set.
-    user.getRoles().add(role);
+        Role role = roleRepository.findByCode("USER")
+                .orElseThrow(() -> new RuntimeException("Role USER does not exist"));
+        // Project uses ManyToMany `roles` on User entity. Add role to user's roles set.
+        user.getRoles().add(role);
 
         // Save user (cascade sẽ tự động lưu userRole)
         userRepository.save(user);
@@ -79,37 +80,25 @@ public class UserService {
         userRepository.updatePassword(encodedPassword, email);
     }
 
+    @PreAuthorize("isAuthenticated()")
     public void updatePassword(String newPassword, String email) {
         String encodedPassword = passwordEncoder.encode(newPassword);
         userRepository.updatePassword(encodedPassword, email);
     }
 
-    /**
-     * Get user by username
-     * 
-     * @param username Username
-     * @return User or null if not found
-     */
+    // Get user by username
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username).orElse(null);
     }
 
-    /**
-     * Get user by ID
-     * 
-     * @param id User ID
-     * @return User or null if not found
-     */
+    // Get user by ID
+    @PreAuthorize("hasRole('ADMIN') or (isAuthenticated() and #id == authentication.principal.id)")
     public User getUserById(Long id) {
         return userRepository.findById(id).orElse(null);
     }
 
-    /**
-     * Update user information
-     * 
-     * @param user User to update
-     * @return Updated user
-     */
+    // Update user information
+    @PreAuthorize("hasRole('ADMIN') or (isAuthenticated() and #user.id == authentication.principal.id)")
     @Transactional
     public User updateUser(User user) {
         System.out.println("💾 UserService.updateUser() called for user ID: " + user.getId());
@@ -119,12 +108,7 @@ public class UserService {
         return savedUser;
     }
 
-    /**
-     * Get fresh user data from database (bypass cache)
-     * 
-     * @param username Username
-     * @return Fresh user data
-     */
+    // Get fresh user data from database (bypass cache)
     @Transactional(readOnly = true)
     public User getFreshUserByUsername(String username) {
         System.out.println("🔍 UserService.getFreshUserByUsername() called for: " + username);
@@ -134,9 +118,7 @@ public class UserService {
         return user;
     }
 
-    /**
-     * Force flush and clear entity manager to ensure immediate persistence
-     */
+    // Force flush and clear entity manager to ensure immediate persistence
     @Transactional
     public void flushAndClear() {
         userRepository.flush();

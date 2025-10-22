@@ -1,5 +1,6 @@
 package vn.group3.marketplace.service;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
@@ -36,6 +37,7 @@ public class WalletService {
     /**
      * Tạo pending deposit transaction cho user (chờ thanh toán VNPay)
      */
+    @PreAuthorize("isAuthenticated() and #user.id == authentication.principal.id")
     public WalletTransaction createPendingDeposit(User user, java.math.BigDecimal amount, String paymentRef) {
         // Lấy managed User từ DB và dùng balance trên user
         User managed = userRepository.findById(user.getId())
@@ -105,9 +107,8 @@ public class WalletService {
         logger.info("=== Deposit Processing Complete ===");
     }
 
-    /**
-     * Tìm ví theo user ID
-     */
+    // Tìm ví theo user ID
+    @PreAuthorize("hasRole('ADMIN') or (isAuthenticated() and #userId == authentication.principal.id)")
     public java.util.Optional<java.math.BigDecimal> findBalanceByUserId(Long userId) {
         return userRepository.findById(userId).map(User::getBalance);
     }
@@ -160,9 +161,7 @@ public class WalletService {
         }
     }
 
-    /**
-     * Xử lý trừ tiền khi mua hàng
-     */
+    // Xử lý trừ tiền khi mua hàng
     @Transactional
     public boolean processPurchasePayment(Long userId, java.math.BigDecimal amount, Order order) {
         logger.info("=== Processing Purchase Payment ===");
@@ -327,6 +326,7 @@ public class WalletService {
     /**
      * Lấy trạng thái transaction theo order ID
      */
+       @PreAuthorize("hasRole('ADMIN')")
     public WalletTransactionStatus getTransactionStatusByOrderId(String orderId) {
         Optional<WalletTransaction> transactionOpt = walletTransactionRepository.findByPaymentRef(orderId);
         if (transactionOpt.isPresent()) {

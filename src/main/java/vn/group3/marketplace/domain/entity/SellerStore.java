@@ -38,6 +38,9 @@ public class SellerStore extends BaseEntity {
     @Column(name = "fee_model", length = 20)
     private SellerStoresType feeModel;
 
+    @Column(name = "fee_percentage_rate", precision = 5, scale = 2)
+    private BigDecimal feePercentageRate;
+
     @Column(name = "escrow_amount", nullable = false, precision = 18, scale = 2)
     @Builder.Default
     private BigDecimal escrowAmount = BigDecimal.ZERO;
