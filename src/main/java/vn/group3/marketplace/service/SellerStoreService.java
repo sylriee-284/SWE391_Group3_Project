@@ -85,10 +85,6 @@ public class SellerStoreService {
 					"Số tiền ký quỹ phải từ " + String.format("%,.0f", minDepositAmount) + " VNĐ trở lên");
 		}
 
-		if (owner.getBalance().compareTo(depositAmount) < 0) {
-			throw new IllegalArgumentException("Số dư không đủ để ký quỹ");
-		}
-
 		// Get max listing price rate from system settings
 		Double maxListingPriceRate = systemSettingService.getDoubleValue("listing.max_listing_price_rate", 0.1);
 

@@ -132,16 +132,6 @@ public class SellerController {
                 return "seller/seller-register";
             }
 
-            // CHECK BALANCE BEFORE CREATING STORE - CRITICAL!
-            if (currentUser.getBalance().compareTo(deposit) < 0) {
-                model.addAttribute("error", "Số dư không đủ để ký quỹ. Bạn cần " + String.format("%,.0f", deposit)
-                        + " VNĐ nhưng chỉ có " + String.format("%,.0f", currentUser.getBalance()) + " VNĐ");
-                model.addAttribute("storeName", storeName);
-                model.addAttribute("storeDescription", storeDescription);
-                model.addAttribute("feeModel", feeModel);
-                return "seller/seller-register";
-            }
-
             // Parse feeModel enum
             SellerStoresType feeModelEnum;
             try {
@@ -200,8 +190,8 @@ public class SellerController {
         // Get store details
         SellerStore store = sellerStoreService.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy cửa hàng"));
-
-        // Nếu store inactive và chưa có lỗi trong model, kiểm tra xem có đủ số dư không
+                
+        // Kiểm tra số dư khi store inactive
         if (store.getStatus() == StoreStatus.INACTIVE && !model.containsAttribute("paymentError")) {
             if (currentUser.getBalance().compareTo(store.getDepositAmount()) < 0) {
                 model.addAttribute("paymentError", 

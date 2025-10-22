@@ -171,7 +171,7 @@
                                         </span>
                                     </div>
 
-                                    <!-- Error message will only show when payment fails -->
+                                    <!-- Payment error message and activation button -->
                                     <c:if test="${not empty paymentError}">
                                         <div class="alert alert-danger mt-3">
                                             <i class="fas fa-exclamation-circle"></i> ${paymentError}
@@ -180,9 +180,17 @@
                                                     <i class="fas fa-wallet"></i> Nạp tiền qua VNPay
                                                 </a>
                                             </div>
-                                            <div class="mt-2 text-muted">
-                                                <small><i class="fas fa-info-circle"></i> Sau khi nạp tiền thành công, vui lòng vào trang "Đăng ký cửa hàng" để tiếp tục kích hoạt cửa hàng của bạn.</small>
-                                            </div>
+                                        </div>
+                                    </c:if>
+                                    
+                                    <!-- Only show activation button if there was a previous payment error -->
+                                    <c:if test="${store.status == 'INACTIVE' && not empty paymentError}">
+                                        <div class="mt-3">
+                                            <form action="${pageContext.request.contextPath}/seller/retry-deposit/${store.id}" method="post" style="display: inline;">
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="fas fa-check-circle"></i> Kích hoạt cửa hàng
+                                                </button>
+                                            </form>
                                         </div>
                                     </c:if>
                                         </span>
