@@ -449,7 +449,7 @@
                                 // Read last state (for instant UX) but don't persist across navigation:
                                 const v = localStorage.getItem('sb-open');
                                 syncState(v === '1');
-                                try { localStorage.setItem('sb-open', '0'); } catch (e) { }
+
                             } catch (e) { }
 
                             if (btn) {

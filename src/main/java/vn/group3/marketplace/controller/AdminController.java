@@ -13,10 +13,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PostMapping;
-
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import vn.group3.marketplace.domain.entity.SystemSetting;
@@ -24,17 +20,18 @@ import vn.group3.marketplace.service.SystemSettingService;
 
 @Controller
 @RequestMapping("/admin")
-@RequiredArgsConstructor
+// @RequiredArgsConstructor
 @Slf4j
 public class AdminController {
 
     private final UserService userService;
-
-    public AdminController(UserService userService) {
-        this.userService = userService;
-    }
-
     private final SystemSettingService systemSettingService;
+
+    public AdminController(UserService userService,
+            SystemSettingService systemSettingService) { // <- thêm tham số này
+        this.userService = userService;
+        this.systemSettingService = systemSettingService; // <- gán vào field
+    }
 
     private static final String SUCCESS_MESSAGE = "successMessage";
     private static final String ERROR_MESSAGE = "errorMessage";
@@ -161,6 +158,7 @@ public class AdminController {
         ra.addFlashAttribute("success",
                 user.getId() == null ? "Tạo người dùng thành công" : "Cập nhật người dùng thành công");
         return "redirect:/admin/users";
+    }
 
     @GetMapping("/system-config")
     public String systemConfig(@RequestParam(defaultValue = "0") int page,
