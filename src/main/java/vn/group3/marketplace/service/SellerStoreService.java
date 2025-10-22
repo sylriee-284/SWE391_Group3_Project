@@ -57,6 +57,28 @@ public class SellerStoreService {
 				.orElse(null);
 	}
 
+	/**
+	 * Find pending store owned by user (waiting for activation/payment)
+	 */
+	public SellerStore findPendingStoreByOwner(User owner) {
+		if (owner == null || owner.getSellerStore() == null)
+			return null;
+		return sellerStoreRepository.findById(owner.getSellerStore().getId())
+				.filter(store -> store.getStatus() == StoreStatus.PENDING)
+				.orElse(null);
+	}
+
+	/**
+	 * Find any non-active store (PENDING or INACTIVE) owned by user
+	 */
+	public SellerStore findNonActiveStoreByOwner(User owner) {
+		if (owner == null || owner.getSellerStore() == null)
+			return null;
+		return sellerStoreRepository.findById(owner.getSellerStore().getId())
+				.filter(store -> store.getStatus() == StoreStatus.PENDING || store.getStatus() == StoreStatus.INACTIVE)
+				.orElse(null);
+	}
+
 	public boolean isStoreNameExists(String storeName) {
 		return sellerStoreRepository.findAll().stream()
 				.anyMatch(s -> s.getStoreName().equalsIgnoreCase(storeName));
@@ -88,17 +110,13 @@ public class SellerStoreService {
 		// Get max listing price rate from system settings
 		Double maxListingPriceRate = systemSettingService.getDoubleValue("listing.max_listing_price_rate", 0.1);
 
-		store.setStatus(StoreStatus.INACTIVE);
+		store.setStatus(StoreStatus.PENDING);
 		store.setMaxListingPrice(depositAmount.multiply(BigDecimal.valueOf(maxListingPriceRate)));
 
 		SellerStore saved = sellerStoreRepository.save(store);
 
-		// Enqueue deposit payment using paymentRef createdShop{storeId}
-		// This format is important: WalletTransactionQueueService checks for
-		// "createdShop" prefix
-		// to decide whether to activate the store after successful payment
-		String paymentRef = "createdShop" + saved.getId();
-		walletTransactionQueueService.enqueuePurchasePayment(owner.getId(), depositAmount, paymentRef);
+		// DO NOT enqueue payment immediately - user will manually activate later
+		// Payment will be enqueued when user clicks activate button
 
 		return saved;
 	}
@@ -157,6 +175,6 @@ public class SellerStoreService {
 	 * Get platform fee rate from system settings
 	 */
 	public Double getPlatformFeeRate() {
-		return systemSettingService.getDoubleValue("fee.platform_rate", 0.1);
+		return systemSettingService.getDoubleValue("fee.fee.percentage_fee", 3.0);
 	}
 }

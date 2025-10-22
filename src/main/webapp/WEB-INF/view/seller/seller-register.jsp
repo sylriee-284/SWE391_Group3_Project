@@ -1,7 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
     <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-        <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
-            <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+            <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+                <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+                <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
                 <!DOCTYPE html>
                 <html lang="en">
@@ -13,6 +14,20 @@
 
                     <!-- Include common head with all CSS and JS -->
                     <jsp:include page="../common/head.jsp" />
+                    
+                    <style>
+                        .hover-shadow {
+                            transition: all 0.3s ease;
+                        }
+                        .hover-shadow:hover {
+                            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+                            transform: translateY(-2px);
+                            border-color: #0d6efd !important;
+                        }
+                        .form-check-input:checked + .form-check-label {
+                            color: inherit;
+                        }
+                    </style>
                 </head>
 
                 <body>
@@ -27,58 +42,247 @@
 
                     <!-- Main Content Area -->
                     <div class="content" id="content">
-                        <div class="container-fluid">
+                        <div class="container-fluid px-5">
                             <div class="row justify-content-center">
-                                <div class="col-lg-8">
+                                <div class="col-lg-10">
                                     <!-- Existing Inactive Store Section -->
                                     <c:if test="${not empty inactiveStore}">
-                                        <div class="profile-card mb-4">
-                                            <div class="card">
-                                                <div class="card-header bg-warning">
-                                                    <h4 class="mb-0 text-white"><i class="fas fa-exclamation-circle"></i> Cửa hàng chờ kích hoạt</h4>
+                                        <div class="mb-4">
+                                            <!-- Hero Section -->
+                                            <div class="d-flex align-items-center gap-3 mb-4">
+                                                <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center" style="width:64px;height:64px;">
+                                                    <i class="fas fa-store fa-lg"></i>
                                                 </div>
-                                                <div class="card-body">
-                                                    <div class="info-row">
-                                                        <span class="info-label">Mã cửa hàng:</span>
-                                                        <span class="info-value">#${inactiveStore.id}</span>
+                                                <div>
+                                                    <h2 class="h4 mb-1">Cửa hàng của bạn</h2>
+                                                    <p class="mb-0 text-muted">Hoàn tất thanh toán ký quỹ để kích hoạt cửa hàng</p>
+                                                </div>
+                                            </div>
+
+                                            <div class="card shadow-sm border-0">
+                                                <div class="card-body p-4">
+                                                    <!-- Store Status Badge -->
+                                                    <div class="mb-3">
+                                                        <c:choose>
+                                                            <c:when test="${inactiveStore.status == 'PENDING'}">
+                                                                <span class="badge bg-info fs-6"><i class="fas fa-clock"></i> Chờ kích hoạt</span>
+                                                            </c:when>
+                                                            <c:when test="${inactiveStore.status == 'INACTIVE'}">
+                                                                <span class="badge bg-warning fs-6"><i class="fas fa-exclamation-triangle"></i> Đang xử lý thanh toán</span>
+                                                            </c:when>
+                                                        </c:choose>
                                                     </div>
-                                                    <div class="info-row">
-                                                        <span class="info-label">Tên cửa hàng:</span>
-                                                        <span class="info-value">${inactiveStore.storeName}</span>
+
+                                                    <!-- Store Information Grid -->
+                                                    <div class="row g-4 mb-4">
+                                                        <div class="col-md-6">
+                                                            <div class="p-3 bg-light rounded">
+                                                                <h6 class="text-muted mb-3"><i class="fas fa-info-circle me-2"></i>Thông tin cửa hàng</h6>
+                                                                <div class="mb-2">
+                                                                    <small class="text-muted d-block">Mã cửa hàng</small>
+                                                                    <strong>#${inactiveStore.id}</strong>
+                                                                </div>
+                                                                <div class="mb-2">
+                                                                    <small class="text-muted d-block">Tên cửa hàng</small>
+                                                                    <strong>${inactiveStore.storeName}</strong>
+                                                                </div>
+                                                                <c:if test="${not empty inactiveStore.description}">
+                                                                    <div class="mb-2">
+                                                                        <small class="text-muted d-block">Mô tả</small>
+                                                                        <span class="text-muted">${inactiveStore.description}</span>
+                                                                    </div>
+                                                                </c:if>
+                                                                <div>
+                                                                    <small class="text-muted d-block">Chủ cửa hàng</small>
+                                                                    <strong><i class="fas fa-user me-1"></i>${inactiveStore.owner.username}</strong>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-md-6">
+                                                            <div class="p-3 bg-light rounded">
+                                                                <h6 class="text-muted mb-3"><i class="fas fa-money-check-alt me-2"></i>Thông tin tài chính</h6>
+                                                                <div class="mb-2">
+                                                                    <small class="text-muted d-block">Số tiền ký quỹ</small>
+                                                                    <strong class="text-danger fs-5">
+                                                                        <fmt:formatNumber value="${inactiveStore.depositAmount}" type="number" pattern="#,###" /> VNĐ
+                                                                    </strong>
+                                                                </div>
+                                                                <div class="mb-2">
+                                                                    <small class="text-muted d-block">Giá niêm yết tối đa</small>
+                                                                    <strong class="text-success">
+                                                                        <fmt:formatNumber value="${inactiveStore.maxListingPrice}" type="number" pattern="#,###" /> VNĐ
+                                                                    </strong>
+                                                                </div>
+                                                                <div>
+                                                                    <small class="text-muted d-block">Mô hình phí</small>
+                                                                    <span class="badge bg-primary text-capitalize">${inactiveStore.feeModel}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div class="info-row">
-                                                        <span class="info-label">Số tiền ký quỹ cần thanh toán:</span>
-                                                        <span class="info-value text-danger fw-bold">
-                                                            <fmt:formatNumber value="${inactiveStore.depositAmount}" type="number" pattern="#,###" /> VNĐ
-                                                        </span>
-                                                    </div>
-                                                    <div class="info-row">
-                                                        <span class="info-label">Số dư hiện tại:</span>
-                                                        <span class="info-value ${userBalance.compareTo(inactiveStore.depositAmount) >= 0 ? 'text-success' : 'text-danger'} fw-bold">
-                                                            <fmt:formatNumber value="${userBalance}" type="number" pattern="#,###" /> VNĐ
-                                                        </span>
+
+                                                    <!-- Contract Information -->
+                                                    <div class="mb-4">
+                                                        <div class="card border-0 shadow-sm">
+                                                            <div class="card-header bg-primary bg-gradient text-white">
+                                                                <h6 class="mb-0"><i class="fas fa-file-contract me-2"></i>Điều khoản hợp đồng - Mô hình phí đã chọn</h6>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <c:choose>
+                                                                    <c:when test="${inactiveStore.feeModel == 'PERCENTAGE'}">
+                                                                        <!-- Percentage Fee Model Contract -->
+                                                                        <div class="mb-3">
+                                                                            <h6 class="text-primary">
+                                                                                <i class="fas fa-percent me-2"></i>Tùy chọn 1: Phí theo phần trăm
+                                                                                <span class="badge bg-info ms-2">Khuyến nghị</span>
+                                                                            </h6>
+                                                                        </div>
+                                                                        
+                                                                        <div class="mb-3">
+                                                                            <p class="mb-2"><strong>Hệ thống sẽ áp dụng mức phí giao dịch dựa trên giá trị đơn hàng như sau:</strong></p>
+                                                                            <ul class="list-unstyled ms-3">
+                                                                                <li class="mb-2">
+                                                                                    <i class="fas fa-arrow-right text-success me-2"></i>
+                                                                                    Đơn hàng dưới <strong>100.000 VNĐ</strong> → Phí cố định: <strong class="text-danger"><fmt:formatNumber value="${fixedFee}" type="number" pattern="#,###" /> VNĐ</strong>
+                                                                                </li>
+                                                                                <li class="mb-2">
+                                                                                    <i class="fas fa-arrow-right text-primary me-2"></i>
+                                                                                    Đơn hàng từ <strong>100.000 VNĐ</strong> trở lên → Phí theo tỷ lệ: <strong class="text-danger"><fmt:formatNumber value="${percentageFee}" type="number" maxFractionDigits="2" />%</strong> trên tổng giá trị đơn hàng
+                                                                                </li>
+                                                                            </ul>
+                                                                        </div>
+
+                                                                        <div class="alert alert-success border-0 mb-0">
+                                                                            <h6 class="alert-heading mb-2"><i class="fas fa-money-bill-wave me-2"></i>Chính sách hoàn phí ký quỹ:</h6>
+                                                                            <ul class="mb-2 small">
+                                                                                <li>Nếu cửa hàng đóng <strong>sau 01 năm</strong> kể từ ngày kích hoạt → hoàn <strong class="text-success">100% phí ký quỹ</strong>.</li>
+                                                                                <li>Nếu cửa hàng đóng <strong>trước 01 năm</strong> → hoàn <strong class="text-warning">70% phí ký quỹ</strong>.</li>
+                                                                                <li>Phí hoàn sẽ được chuyển vào ví hệ thống trong vòng <strong>07 ngày làm việc</strong> sau khi xác nhận đóng cửa hàng.</li>
+                                                                            </ul>
+                                                                            <p class="mb-0 small fst-italic">
+                                                                                <i class="fas fa-lightbulb text-warning me-1"></i>
+                                                                                Chính sách này đảm bảo tính công bằng, khuyến khích hoạt động lâu dài và bảo vệ quyền lợi của cả người mua và người bán.
+                                                                            </p>
+                                                                        </div>
+                                                                    </c:when>
+                                                                    <c:otherwise>
+                                                                        <!-- No Fee Model Contract -->
+                                                                        <div class="mb-3">
+                                                                            <h6 class="text-muted">
+                                                                                <i class="fas fa-circle me-2"></i>Tùy chọn 2: Không tính phí
+                                                                            </h6>
+                                                                        </div>
+                                                                        
+                                                                        <div class="mb-3">
+                                                                            <ul class="list-unstyled ms-3">
+                                                                                <li class="mb-2">
+                                                                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                                                                    Người bán <strong>không phải trả bất kỳ khoản phí giao dịch nào</strong> cho các đơn hàng.
+                                                                                </li>
+                                                                                <li class="mb-2">
+                                                                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                                                                    Toàn bộ doanh thu sẽ được chuyển <strong>100%</strong> vào ví hệ thống của người bán.
+                                                                                </li>
+                                                                            </ul>
+                                                                        </div>
+
+                                                                        <div class="alert alert-warning border-0 mb-0">
+                                                                            <h6 class="alert-heading mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Chính sách hoàn phí ký quỹ:</h6>
+                                                                            <ul class="mb-2 small">
+                                                                                <li><strong>Không áp dụng hoàn phí ký quỹ</strong> trong mọi trường hợp.</li>
+                                                                                <li>Khi cửa hàng ngừng hoạt động, phí ký quỹ sẽ <strong>không được hoàn lại</strong>, kể cả khi thời gian hoạt động đã vượt quá 01 năm.</li>
+                                                                            </ul>
+                                                                            <p class="mb-0 small fst-italic">
+                                                                                <i class="fas fa-lightbulb text-warning me-1"></i>
+                                                                                Phù hợp với các cửa hàng nhỏ, thử nghiệm hoặc hoạt động ngắn hạn, ưu tiên đơn giản và không phát sinh phí giao dịch.
+                                                                            </p>
+                                                                        </div>
+                                                                    </c:otherwise>
+                                                                </c:choose>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                     
-                                                    <div class="mt-3">
+                                                    <!-- Action Section -->
+                                                    <div class="border-top pt-4">
                                                         <c:choose>
-                                                            <c:when test="${userBalance.compareTo(inactiveStore.depositAmount) >= 0}">
-                                                                <!-- Show retry payment button if balance is sufficient -->
-                                                                <form action="${pageContext.request.contextPath}/seller/retry-deposit/${inactiveStore.id}" method="POST" class="d-inline">
-                                                                    <button type="submit" class="btn btn-success">
-                                                                        <i class="fas fa-sync-alt"></i> Kích hoạt cửa hàng ngay
-                                                                    </button>
-                                                                </form>
-                                                            </c:when>
-                                                            <c:otherwise>
-                                                                <!-- Show deposit button if balance is insufficient -->
-                                                                <div class="alert alert-warning mb-3">
-                                                                    <i class="fas fa-exclamation-triangle"></i> 
-                                                                    Bạn cần nạp thêm <strong><fmt:formatNumber value="${inactiveStore.depositAmount.subtract(userBalance)}" type="number" pattern="#,###" /> VNĐ</strong> để kích hoạt cửa hàng
+                                                            <c:when test="${inactiveStore.status == 'PENDING'}">
+                                                                <!-- PENDING store: show activate button -->
+                                                                <div class="alert alert-info border-0 d-flex align-items-center mb-3">
+                                                                    <i class="fas fa-info-circle fa-2x me-3"></i>
+                                                                    <div>
+                                                                        <strong>Cửa hàng đang chờ kích hoạt</strong><br>
+                                                                        <small>Vui lòng thanh toán ký quỹ để bắt đầu bán hàng trên nền tảng.</small>
+                                                                    </div>
                                                                 </div>
-                                                                <a href="${pageContext.request.contextPath}/wallet/deposit" class="btn btn-primary">
-                                                                    <i class="fas fa-wallet"></i> Nạp tiền qua VNPay
-                                                                </a>
-                                                            </c:otherwise>
+                                                                <c:choose>
+                                                                    <c:when test="${userBalance.compareTo(inactiveStore.depositAmount) >= 0}">
+                                                                        <div class="d-grid gap-2 d-md-flex">
+                                                                            <form action="${pageContext.request.contextPath}/seller/retry-deposit/${inactiveStore.id}" method="POST" class="flex-grow-1">
+                                                                                <button type="submit" class="btn btn-success btn-lg w-100">
+                                                                                    <i class="fas fa-check-circle me-2"></i> Kích hoạt cửa hàng (Thanh toán ký quỹ)
+                                                                                </button>
+                                                                            </form>
+                                                                        </div>
+                                                                        <div class="mt-2 text-center">
+                                                                            <small class="text-muted">
+                                                                                <i class="fas fa-wallet me-1"></i>
+                                                                                Số dư hiện tại: <strong class="text-success"><fmt:formatNumber value="${userBalance}" type="number" pattern="#,###" /> VNĐ</strong>
+                                                                            </small>
+                                                                        </div>
+                                                                    </c:when>
+                                                                    <c:otherwise>
+                                                                        <div class="alert alert-warning border-0 d-flex align-items-center mb-3">
+                                                                            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                                                                            <div>
+                                                                                <strong>Số dư không đủ</strong><br>
+                                                                                <small>Bạn cần nạp thêm <strong><fmt:formatNumber value="${inactiveStore.depositAmount.subtract(userBalance)}" type="number" pattern="#,###" /> VNĐ</strong> để kích hoạt cửa hàng</small>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="d-grid">
+                                                                            <a href="${pageContext.request.contextPath}/wallet/deposit" class="btn btn-primary btn-lg">
+                                                                                <i class="fas fa-wallet me-2"></i> Nạp tiền qua VNPay
+                                                                            </a>
+                                                                        </div>
+                                                                    </c:otherwise>
+                                                                </c:choose>
+                                                            </c:when>
+                                                            <c:when test="${inactiveStore.status == 'INACTIVE'}">
+                                                                <!-- INACTIVE store: payment attempted but failed -->
+                                                                <div class="alert alert-warning border-0 d-flex align-items-center mb-3">
+                                                                    <i class="fas fa-sync-alt fa-2x me-3"></i>
+                                                                    <div>
+                                                                        <strong>Thanh toán đang được xử lý</strong><br>
+                                                                        <small>Có thể thử lại nếu thanh toán trước đó thất bại.</small>
+                                                                    </div>
+                                                                </div>
+                                                                <c:choose>
+                                                                    <c:when test="${userBalance.compareTo(inactiveStore.depositAmount) >= 0}">
+                                                                        <div class="d-grid">
+                                                                            <form action="${pageContext.request.contextPath}/seller/retry-deposit/${inactiveStore.id}" method="POST">
+                                                                                <button type="submit" class="btn btn-success btn-lg w-100">
+                                                                                    <i class="fas fa-sync-alt me-2"></i> Thử lại thanh toán
+                                                                                </button>
+                                                                            </form>
+                                                                        </div>
+                                                                    </c:when>
+                                                                    <c:otherwise>
+                                                                        <div class="alert alert-warning border-0 d-flex align-items-center mb-3">
+                                                                            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                                                                            <div>
+                                                                                <strong>Số dư không đủ</strong><br>
+                                                                                <small>Bạn cần nạp thêm <strong><fmt:formatNumber value="${inactiveStore.depositAmount.subtract(userBalance)}" type="number" pattern="#,###" /> VNĐ</strong></small>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="d-grid">
+                                                                            <a href="${pageContext.request.contextPath}/wallet/deposit" class="btn btn-primary btn-lg">
+                                                                                <i class="fas fa-wallet me-2"></i> Nạp tiền qua VNPay
+                                                                            </a>
+                                                                        </div>
+                                                                    </c:otherwise>
+                                                                </c:choose>
+                                                            </c:when>
                                                         </c:choose>
                                                     </div>
                                                 </div>
@@ -88,125 +292,105 @@
 
                             <!-- Seller Registration Card -->
                             <c:if test="${empty inactiveStore}">
-                                <div class="profile-card">
-                                    <div class="profile-header">
-                                        <div class="profile-avatar">
-                                            <i class="fas fa-store"></i>
-                                        </div>
-                                        <h2>Đăng ký Cửa hàng</h2>
+                                <!-- Hero Section -->
+                                <div class="d-flex align-items-center gap-3 mb-4">
+                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:64px;height:64px;">
+                                        <i class="fas fa-store fa-lg"></i>
                                     </div>
+                                    <div>
+                                        <h2 class="h4 mb-1">Đăng ký bán hàng</h2>
+                                        <p class="mb-0 text-muted">Tạo cửa hàng của bạn và bắt đầu kinh doanh trên nền tảng</p>
+                                    </div>
+                                </div>
 
-                                    <!-- Deposit Information Alert -->
-                                    <div class="alert alert-info mb-4">
-                                        <h5><i class="fas fa-info-circle"></i> Thông tin quan trọng:</h5>
-                                        <ul class="mb-0">
-                                            <li>Số tiền ký quỹ tối thiểu: <strong>
-                                                        <fmt:formatNumber value="${minDepositAmount}" type="number"
-                                                            pattern="#,###" /> VNĐ
-                                                    </strong></li>
-                                                <li>Giá niêm yết sản phẩm: <strong>
-                                                        <fmt:formatNumber value="${maxListingPriceRate * 100}"
-                                                            type="number" maxFractionDigits="0" />%
-                                                    </strong> số tiền ký quỹ</li>
-                                                <li>Phí nền tảng: <strong>
-                                                        <fmt:formatNumber value="${platformFeeRate * 100}" type="number"
-                                                            maxFractionDigits="0" />%
-                                                    </strong> trên mỗi giao dịch</li>
-                                            </ul>
-                                        </div>
-
-                                        <!-- Current Balance Information -->
-                                        <div class="alert alert-secondary mb-4">
-                                            <i class="fas fa-wallet me-2"></i>
-                                            Số dư hiện tại: <strong>
-                                                <fmt:formatNumber value="${userBalance}" type="currency"
-                                                    currencyCode="VND" />
-                                            </strong>
-                                        </div>
+                                <div class="card shadow-sm border-0">
+                                    <div class="card-body p-4">
+                                        <!-- Server error stored for client-side toast (iziToast) -->
+                                        <c:if test="${not empty error}">
+                                            <div id="serverError" data-error="${fn:escapeXml(error)}"></div>
+                                        </c:if>
 
                                         <!-- Registration Form -->
                                         <form action="${pageContext.request.contextPath}/seller/register" method="POST"
-                                            id="sellerRegistrationForm" class="mt-4">
+                                            id="sellerRegistrationForm">
                                             <!-- Owner Information Section -->
-                                            <div class="form-section">
-                                                <h4><i class="fas fa-user text-primary"></i> Thông tin chủ cửa hàng</h4>
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label class="form-label" for="userId">ID người dùng</label>
+                                            <div class="mb-4">
+                                                <h5 class="border-bottom pb-2 mb-3">
+                                                    <i class="fas fa-user text-primary me-2"></i> Thông tin chủ cửa hàng
+                                                </h5>
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold" for="userId">ID người dùng</label>
                                                         <div class="input-group">
-                                                            <span class="input-group-text"><i
-                                                                    class="fas fa-id-card"></i></span>
-                                                            <input type="text" class="form-control" id="userId" value="#${user.id}"
-                                                                readonly>
+                                                            <span class="input-group-text bg-light"><i class="fas fa-id-card"></i></span>
+                                                            <input type="text" class="form-control" id="userId" value="#${user.id}" readonly>
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <label class="form-label" for="username">Tên đăng nhập</label>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold" for="username">Tên đăng nhập</label>
                                                         <div class="input-group">
-                                                            <span class="input-group-text"><i
-                                                                    class="fas fa-user"></i></span>
-                                                            <input type="text" class="form-control" id="username"
-                                                                value="${user.username}" readonly>
-                                                            <input type="hidden" name="ownerName"
-                                                                value="${user.username}">
+                                                            <span class="input-group-text bg-light"><i class="fas fa-user"></i></span>
+                                                            <input type="text" class="form-control" id="username" value="${user.username}" readonly>
+                                                            <input type="hidden" name="ownerName" value="${user.username}">
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <!-- Store Information Section -->
-                                            <div class="form-section mt-4">
-                                                <h4><i class="fas fa-store text-primary"></i> Thông tin cửa hàng</h4>
-                                                <div class="row">
-                                                    <div class="col-md-12 mb-3">
-                                                        <label class="form-label" for="storeName">Tên cửa hàng <span
-                                                                class="text-danger">*</span></label>
-                                                        <div class="input-group">
-                                                            <span class="input-group-text"><i
-                                                                    class="fas fa-store"></i></span>
-                                                            <input type="text" class="form-control" id="storeName"
-                                                                name="storeName" required minlength="3" maxlength="100"
-                                                                value="${storeName}"
-                                                                data-store-check-url="${pageContext.request.contextPath}/seller/check-store-name">
-                                                        </div>
-                                                        <small class="text-muted">Tên cửa hàng phải là duy nhất</small>
-                                                        <div id="storeNameFeedback" class="invalid-feedback"></div>
+                                            <div class="mb-4">
+                                                <h5 class="border-bottom pb-2 mb-3">
+                                                    <i class="fas fa-store text-primary me-2"></i> Thông tin cửa hàng
+                                                </h5>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold" for="storeName">
+                                                        Tên cửa hàng <span class="text-danger">*</span>
+                                                    </label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text bg-light"><i class="fas fa-store"></i></span>
+                                                        <input type="text" class="form-control" id="storeName"
+                                                            name="storeName" required minlength="3" maxlength="100"
+                                                            value="${storeName}"
+                                                            data-store-check-url="${pageContext.request.contextPath}/seller/check-store-name"
+                                                            placeholder="Nhập tên cửa hàng của bạn">
                                                     </div>
+                                                    <small class="text-muted d-block mt-1"><i class="fas fa-info-circle me-1"></i>Tên cửa hàng phải là duy nhất</small>
+                                                    <div id="storeNameFeedback" class="invalid-feedback"></div>
                                                 </div>
-                                                <div class="row">
-                                                    <div class="col-md-12 mb-3">
-                                                        <label class="form-label" for="storeDescription">Mô tả cửa
-                                                            hàng</label>
-                                                        <div class="input-group">
-                                                            <span class="input-group-text"><i
-                                                                    class="fas fa-info-circle"></i></span>
-                                                            <textarea class="form-control" id="storeDescription"
-                                                                name="storeDescription" rows="3"
-                                                                maxlength="500">${storeDescription}</textarea>
-                                                        </div>
-                                                    </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold" for="storeDescription">Mô tả cửa hàng</label>
+                                                    <textarea class="form-control" id="storeDescription"
+                                                        name="storeDescription" rows="4"
+                                                        maxlength="500"
+                                                        placeholder="Giới thiệu ngắn gọn về cửa hàng của bạn...">${storeDescription}</textarea>
+                                                    <small class="text-muted d-block mt-1"><i class="fas fa-info-circle me-1"></i>Tối đa 500 ký tự</small>
                                                 </div>
                                             </div>
 
                                             <!-- Deposit Information Section -->
-                                            <div class="form-section mt-4">
-                                                <h4><i class="fas fa-money-check-alt text-success"></i> Thông tin ký quỹ
-                                                </h4>
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label class="form-label" for="depositAmount">Số tiền ký quỹ
-                                                            (VNĐ) <span class="text-danger">*</span></label>
-                                                        <div class="input-group">
-                                                            <span class="input-group-text"><i
-                                                                    class="fas fa-money-bill-wave"></i></span>
+                                            <div class="mb-4">
+                                                <h5 class="border-bottom pb-2 mb-3">
+                                                    <i class="fas fa-money-check-alt text-success me-2"></i> Thông tin ký quỹ
+                                                </h5>
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold" for="depositAmount">
+                                                            Số tiền ký quỹ <span class="text-danger">*</span>
+                                                        </label>
+                                                        <div class="input-group input-group-lg">
+                                                            <span class="input-group-text bg-light"><i class="fas fa-money-bill-wave"></i></span>
                                                             <input type="text" class="form-control text-end"
-                                                                id="depositAmount" name="depositAmount" required>
-                                                            <span class="input-group-text">VNĐ</span>
+                                                                id="depositAmount" name="depositAmount" required
+                                                                placeholder="0">
+                                                            <span class="input-group-text bg-light">VNĐ</span>
                                                         </div>
                                                         <div id="depositAmountHelp" class="form-text">
-                                                            <i class="fas fa-info-circle"></i>
-                                                            Tối thiểu: <fmt:formatNumber value="${minDepositAmount}" type="number"
-                                                                pattern="#,###" /> VNĐ, bước nhảy: 100.000 VNĐ
+                                                            <i class="fas fa-info-circle text-primary me-1"></i>
+                                                            Tối thiểu: <strong><fmt:formatNumber value="${minDepositAmount}" type="number" pattern="#,###" /> VNĐ</strong>, bước nhảy: 100.000 VNĐ
+                                                        </div>
+                                                        <div class="alert alert-info border-0 mt-2 py-2 px-3 small">
+                                                            <i class="fas fa-lightbulb me-1"></i>
+                                                            Giá niêm yết tối đa = <strong><fmt:formatNumber value="${maxListingPriceRate * 100}" type="number" maxFractionDigits="0" />%</strong> số tiền ký quỹ
                                                         </div>
                                                         <div id="depositAmountError" class="invalid-feedback">
                                                             Số tiền không hợp lệ
@@ -214,50 +398,125 @@
                                                     </div>
 
                                                     <!-- Display Max Listing Price as Input Field -->
-                                                    <div class="col-md-6 mb-3" id="maxListingPriceContainer"
-                                                        style="display: none;">
-                                                        <label class="form-label" for="maxListingPrice">
-                                                            <i class="fas fa-tag text-success"></i> Giá niêm yết tối đa
+                                                    <div class="col-md-6" id="maxListingPriceContainer">
+                                                        <label class="form-label fw-semibold" for="maxListingPrice">
+                                                            <i class="fas fa-tag text-success me-1"></i> Giá niêm yết tối đa
                                                         </label>
-                                                        <div class="input-group">
+                                                        <div class="input-group input-group-lg">
                                                             <span class="input-group-text bg-success text-white">
                                                                 <i class="fas fa-money-bill-wave"></i>
                                                             </span>
-                                                            <input type="text" class="form-control text-end fw-bold"
+                                                            <input type="text" class="form-control text-end fw-bold text-success"
                                                                 id="maxListingPrice" readonly
-                                                                style="background-color: #d1e7dd; cursor: not-allowed;">
-                                                            <span
-                                                                class="input-group-text bg-success text-white">VNĐ</span>
+                                                                style="background-color: #d1e7dd; cursor: not-allowed;"
+                                                                placeholder="0">
+                                                            <span class="input-group-text bg-success text-white">VNĐ</span>
                                                         </div>
+                                                        <small class="text-muted d-block mt-2">
+                                                            <i class="fas fa-info-circle me-1"></i>
+                                                            Giá trị này được tính tự động dựa trên số tiền ký quỹ
+                                                        </small>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <!-- Fee Model Selection Section -->
-                                            <div class="form-section mt-4">
-                                                <h4><i class="fas fa-percent text-primary"></i> Mô hình phí</h4>
-                                                <div class="row">
-                                                    <div class="col-md-12">
+                                            <div class="mb-4">
+                                                <h5 class="border-bottom pb-2 mb-3">
+                                                    <i class="fas fa-hand-pointer text-primary me-2"></i> Chọn mô hình phí
+                                                </h5>
+                                                
+                                                <!-- Option 1: Percentage Fee -->
+                                                <div class="card mb-3 border-2 hover-shadow" style="cursor: pointer; transition: all 0.3s;" onclick="document.getElementById('feeModelPercentage').click();">
+                                                    <div class="card-body p-4">
                                                         <div class="form-check">
                                                             <input class="form-check-input" type="radio" name="feeModel"
                                                                 id="feeModelPercentage" value="PERCENTAGE" <c:if
-                                                                test="${empty feeModel || feeModel == 'PERCENTAGE'}">checked
-                                                            </c:if>>
-                                                            <label class="form-check-label" for="feeModelPercentage">
-                                                                <strong>Phí theo phần trăm (Khuyến nghị)</strong>
-                                                                <div class="ms-4 text-muted small mt-1">
-                                                                    <i class="fas fa-check-circle text-success"></i> Khi xoá cửa hàng, bạn sẽ được <strong class="text-success">hoàn lại tiền ký quỹ</strong>
+                                                                test="${empty feeModel || feeModel == 'PERCENTAGE'}">checked</c:if>>
+                                                            <label class="form-check-label w-100" for="feeModelPercentage" style="cursor: pointer;">
+                                                                <div class="d-flex align-items-start mb-3">
+                                                                    <div class="me-3">
+                                                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                                                            <i class="fas fa-percent fa-lg"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex-grow-1">
+                                                                        <h5 class="mb-1">
+                                                                             Tùy chọn 1: Phí theo phần trăm
+                                                                            <span class="badge bg-info ms-2">Khuyến nghị</span>
+                                                                        </h5>
+                                                                        <p class="text-muted mb-0 small">Hệ thống sẽ áp dụng mức phí giao dịch dựa trên giá trị đơn hàng như sau:</p>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <ul class="list-unstyled mb-3 ms-2">
+                                                                    <li class="mb-2">
+                                                                        <i class="fas fa-arrow-right text-success me-2"></i>
+                                                                        Đơn hàng dưới <strong>100.000 VNĐ</strong> → Phí cố định: <strong class="text-danger"><fmt:formatNumber value="${fixedFee}" type="number" pattern="#,###" /> VNĐ</strong>
+                                                                    </li>
+                                                                    <li class="mb-2">
+                                                                        <i class="fas fa-arrow-right text-primary me-2"></i>
+                                                                        Đơn hàng từ <strong>100.000 VNĐ</strong> trở lên → Phí theo tỷ lệ: <strong class="text-danger"><fmt:formatNumber value="${percentageFee}" type="number" maxFractionDigits="2" />%</strong> trên tổng giá trị đơn hàng
+                                                                    </li>
+                                                                </ul>
+
+                                                                <div class="alert alert-success border-0 mb-0">
+                                                                    <p class="mb-2 fw-semibold"><i class="fas fa-money-bill-wave me-2"></i>Chính sách hoàn phí ký quỹ:</p>
+                                                                    <ul class="mb-2 small">
+                                                                        <li>Nếu cửa hàng đóng <strong>sau 01 năm</strong> kể từ ngày kích hoạt → hoàn <strong class="text-success">100% phí ký quỹ</strong>.</li>
+                                                                        <li>Nếu cửa hàng đóng <strong>trước 01 năm</strong> → hoàn <strong class="text-warning">70% phí ký quỹ</strong>.</li>
+                                                                        <li>Phí hoàn sẽ được chuyển vào ví hệ thống trong vòng <strong>07 ngày làm việc</strong> sau khi xác nhận.</li>
+                                                                    </ul>
+                                                                    <p class="mb-0 small fst-italic">
+                                                                        <i class="fas fa-lightbulb text-warning me-1"></i>
+                                                                        💡 Chính sách này đảm bảo tính công bằng, khuyến khích hoạt động lâu dài và bảo vệ quyền lợi của cả người mua và người bán.
+                                                                    </p>
                                                                 </div>
                                                             </label>
                                                         </div>
-                                                        <div class="form-check mt-3">
+                                                    </div>
+                                                </div>
+
+                                                <!-- Option 2: No Fee -->
+                                                <div class="card border-2 hover-shadow" style="cursor: pointer; transition: all 0.3s;" onclick="document.getElementById('feeModelNoFee').click();">
+                                                    <div class="card-body p-4">
+                                                        <div class="form-check">
                                                             <input class="form-check-input" type="radio" name="feeModel"
                                                                 id="feeModelNoFee" value="NO_FEE" <c:if
                                                                 test="${feeModel == 'NO_FEE'}">checked</c:if>>
-                                                            <label class="form-check-label" for="feeModelNoFee">
-                                                                <strong>Không tính phí</strong>
-                                                                <div class="ms-4 text-muted small mt-1">
-                                                                    <i class="fas fa-times-circle text-danger"></i> Khi xoá cửa hàng, tiền ký quỹ <strong class="text-danger">KHÔNG được hoàn lại</strong>
+                                                            <label class="form-check-label w-100" for="feeModelNoFee" style="cursor: pointer;">
+                                                                <div class="d-flex align-items-start mb-3">
+                                                                    <div class="me-3">
+                                                                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                                                            <i class="fas fa-circle fa-lg"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex-grow-1">
+                                                                        <h5 class="mb-1"> Tùy chọn 2: Không tính phí</h5>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <ul class="list-unstyled mb-3 ms-2">
+                                                                    <li class="mb-2">
+                                                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                                                        Người bán <strong>không phải trả bất kỳ khoản phí giao dịch nào</strong> cho các đơn hàng.
+                                                                    </li>
+                                                                    <li class="mb-2">
+                                                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                                                        Toàn bộ doanh thu sẽ được chuyển <strong>100%</strong> vào ví hệ thống của người bán.
+                                                                    </li>
+                                                                </ul>
+
+                                                                <div class="alert alert-warning border-0 mb-0">
+                                                                    <p class="mb-2 fw-semibold"><i class="fas fa-exclamation-triangle me-2"></i>Chính sách hoàn phí ký quỹ:</p>
+                                                                    <ul class="mb-2 small">
+                                                                        <li><strong>Không áp dụng hoàn phí ký quỹ</strong> trong mọi trường hợp.</li>
+                                                                        <li>Khi cửa hàng ngừng hoạt động, phí ký quỹ sẽ <strong>không được hoàn lại</strong>, kể cả khi thời gian hoạt động đã vượt quá 01 năm.</li>
+                                                                    </ul>
+                                                                    <p class="mb-0 small fst-italic">
+                                                                        <i class="fas fa-lightbulb text-warning me-1"></i>
+                                                                        💡 Phù hợp với các cửa hàng nhỏ, thử nghiệm hoặc hoạt động ngắn hạn, ưu tiên đơn giản và không phát sinh phí giao dịch.
+                                                                    </p>
                                                                 </div>
                                                             </label>
                                                         </div>
@@ -265,31 +524,20 @@
                                                 </div>
                                             </div>
 
-                                            <!-- Error Message Display -->
-                                            <c:if test="${not empty error}">
-                                                <div
-                                                    class="alert alert-danger mt-3 d-flex justify-content-between align-items-center">
-                                                    <div>
-                                                        <i class="fas fa-exclamation-circle"></i> ${error}
-                                                    </div>
-                                                    <c:if
-                                                        test="${error.contains('Số dư không đủ') || error.contains('số dư không đủ')}">
-                                                        <a href="${pageContext.request.contextPath}/wallet/deposit"
-                                                            class="btn btn-warning btn-sm ms-3">
-                                                            <i class="fas fa-wallet me-1"></i> Nạp tiền ngay
-                                                        </a>
-                                                    </c:if>
-                                                </div>
-                                            </c:if>
-
                                             <!-- Submit Button -->
-                                            <div class="form-section mt-4">
-                                                <button type="submit" class="btn btn-primary btn-lg w-100"
-                                                    id="submitBtn">
-                                                    <i class="fas fa-check-circle me-2"></i> Đăng ký Cửa hàng
-                                                </button>
+                                            <div class="border-top pt-4 mt-4">
+                                                <div class="d-grid">
+                                                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                                        <i class="fas fa-check-circle me-2"></i> Đăng ký Cửa hàng
+                                                    </button>
+                                                </div>
+                                                <p class="text-center text-muted mt-3 mb-0 small">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Bằng cách đăng ký, bạn đồng ý với điều khoản và chính sách của chúng tôi
+                                                </p>
                                             </div>
                                         </form>
+                                    </div>
                                 </div>
                             </c:if>
                         </div>
@@ -331,9 +579,10 @@
                             }
                         });
 
-                        // Auto-hide alerts after 5 seconds
+                        // Auto-hide alerts after 5 seconds (except policy alerts in contract and fee model sections)
                         document.addEventListener('DOMContentLoaded', function () {
-                            var alerts = document.querySelectorAll('.alert:not(.alert-info):not(.alert-secondary)');
+                            // Only hide error/danger alerts, not policy information alerts
+                            var alerts = document.querySelectorAll('.alert-danger');
                             alerts.forEach(function (alert) {
                                 setTimeout(function () {
                                     alert.style.opacity = '0';
@@ -419,25 +668,19 @@
                                 console.log('Deposit Amount:', depositAmount);
                                 console.log('Max Listing Price Rate:', maxListingPriceRate);
 
-                                if (depositAmount > 0 && depositAmount >= minDepositAmount) {
-                                    const maxListingPrice = depositAmount * maxListingPriceRate;
-                                    console.log('Calculated Max listing price:', maxListingPrice);
+                                // Ensure numeric
+                                const amt = Number(depositAmount) || 0;
+                                const maxListingPrice = amt * maxListingPriceRate;
+                                console.log('Calculated Max listing price:', maxListingPrice);
 
-                                    const formattedPrice = formatCurrency(maxListingPrice);
-                                    console.log('Formatted price:', formattedPrice);
+                                const formattedPrice = formatCurrency(maxListingPrice);
+                                console.log('Formatted price:', formattedPrice);
 
-                                    // Update input field value
-                                    $('#maxListingPrice').val(formattedPrice);
-                                    // Show container
-                                    $('#maxListingPriceContainer').show();
-                                    console.log('Display should be visible now');
-                                } else {
-                                    console.log('Hiding display - amount too low or zero');
-                                    $('#maxListingPriceContainer').hide();
-                                    $('#maxListingPrice').val('');
-                                }
+                                // Update input field value
+                                $('#maxListingPrice').val(formattedPrice);
+                                // Always show container
+                                $('#maxListingPriceContainer').show();
                             }
-
                             // Validate và hiển thị max listing price khi nhập
                             let isUpdating = false;
 
@@ -501,6 +744,51 @@
                             });
                         });
                     </script>
+
+                        <!-- iziToast (for server-side error notifications) -->
+                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/izitoast@1.4.0/dist/css/iziToast.min.css">
+                        <script src="https://cdn.jsdelivr.net/npm/izitoast@1.4.0/dist/js/iziToast.min.js"></script>
+
+                        <script>
+                            // Show server-side error as iziToast when present
+                            (function () {
+                                try {
+                                    const serverErrorEl = document.getElementById('serverError');
+                                    if (serverErrorEl) {
+                                        const message = serverErrorEl.getAttribute('data-error');
+                                        if (message && message.trim().length > 0) {
+                                            const lower = message.toLowerCase();
+                                            // If insufficient balance, show action to deposit
+                                            if (lower.includes('số dư không đủ') || lower.includes('số dư')) {
+                                                iziToast.error({
+                                                    title: 'Lỗi',
+                                                    message: message,
+                                                    position: 'topRight',
+                                                    timeout: 10000,
+                                                    buttons: [
+                                                        ['<button>Nạp tiền</button>', function (instance, toast) {
+                                                            window.location.href = '${pageContext.request.contextPath}/wallet/deposit';
+                                                        }],
+                                                        ['<button>Đóng</button>', function (instance, toast) {
+                                                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                                                        }]
+                                                    ]
+                                                });
+                                            } else {
+                                                iziToast.error({
+                                                    title: 'Lỗi',
+                                                    message: message,
+                                                    position: 'topRight',
+                                                    timeout: 8000
+                                                });
+                                            }
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.error('iziToast error show failed', e);
+                                }
+                            })();
+                        </script>
                 </body>
 
                 </html>

@@ -43,6 +43,8 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/product-form.css">
     <!-- Custom Transaction CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/transaction.css">
+    <!-- register-success.css -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/register-success.css">
     <!-- Custom Profile CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/profile.css">
     <!-- transaction-detail CSS -->

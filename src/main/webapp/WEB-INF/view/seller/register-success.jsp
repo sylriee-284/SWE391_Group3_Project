@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
     <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
         <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+        <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
             <!DOCTYPE html>
             <html lang="vi">
@@ -9,46 +10,9 @@
                 <meta charset="UTF-8">
                 <title>Đăng ký thành công - Cửa hàng</title>
                 <jsp:include page="../common/head.jsp" />
-                <style>
-                    .success-container {
-                        max-width: 800px;
-                        margin: 3rem auto;
-                        padding: 2rem;
-                    }
+                <!-- External stylesheet for register-success page -->
+                <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/register-success.css" />
 
-                    .success-icon {
-                        font-size: 4rem;
-                        color: #28a745;
-                        margin-bottom: 1rem;
-                    }
-
-                    .info-card {
-                        background: #f8f9fa;
-                        border-left: 4px solid #28a745;
-                        padding: 1.5rem;
-                        margin-bottom: 1.5rem;
-                    }
-
-                    .info-row {
-                        display: flex;
-                        justify-content: space-between;
-                        padding: 0.5rem 0;
-                        border-bottom: 1px solid #dee2e6;
-                    }
-
-                    .info-row:last-child {
-                        border-bottom: none;
-                    }
-
-                    .info-label {
-                        font-weight: 600;
-                        color: #495057;
-                    }
-
-                    .info-value {
-                        color: #212529;
-                    }
-                </style>
             </head>
 
             <body>
@@ -63,155 +27,225 @@
 
                 <!-- Main Content Area -->
                 <div class="content" id="content">
-                    <div class="container">
+                    <div class="container-fluid px-5">
                         <div class="success-container">
-                            <div class="text-center">
-                                <i class="fas fa-check-circle success-icon"></i>
-                                <h2 class="mb-3">Đăng ký cửa hàng thành công!</h2>
-                                <p class="text-muted mb-4">Chúc mừng bạn đã trở thành người bán hàng trên nền tảng của
-                                    chúng
-                                    tôi</p>
-                            </div>
-
-                            <!-- Alert Success -->
-                            <c:if test="${not empty success}">
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    <i class="fas fa-check-circle"></i> ${success}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
-                                        aria-label="Close"></button>
-                                </div>
-                            </c:if>
-
-                            <!-- Alert Error -->
-                            <c:if test="${not empty error}">
-                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                    <i class="fas fa-exclamation-circle"></i> ${error}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
-                                        aria-label="Close"></button>
-                                </div>
-                            </c:if>
-
-                            <!-- Alert Info -->
-                            <c:if test="${not empty info}">
-                                <div class="alert alert-info alert-dismissible fade show" role="alert">
-                                    <i class="fas fa-info-circle"></i> ${info}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
-                                        aria-label="Close"></button>
-                                </div>
-                            </c:if>
-
-                            <!-- Thông tin tài khoản -->
-                            <div class="card mb-4">
-                                <div class="card-header bg-primary text-white">
-                                    <h5 class="mb-0"><i class="fas fa-user"></i> Thông tin tài khoản</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="info-row">
-                                        <span class="info-label">ID tài khoản:</span>
-                                        <span class="info-value">#${user.id}</span>
+                            <!-- Alternate Design: Hero + Progress + Collapsible Contract + Compact Info -->
+                            <div class="d-flex align-items-center justify-content-between mb-3 gap-3 flex-column flex-md-row success-hero">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:72px;height:72px;">
+                                        <i class="fas fa-store fa-lg"></i>
                                     </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Username:</span>
-                                        <span class="info-value">${user.username}</span>
+                                    <div>
+                                        <h2 class="h5 mb-1">Đăng ký cửa hàng đã ghi nhận</h2>
+                                        <p class="mb-0 text-muted small">Chúng tôi đã nhận yêu cầu của bạn. Trạng thái thanh toán bên dưới.</p>
                                     </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Email:</span>
-                                        <span class="info-value">${user.email}</span>
+                                </div>
+                                <div class="w-100">
+                                    <div class="rounded-progress progress" style="height:12px;">
+                                        <c:choose>
+                                            <c:when test="${store.status == 'ACTIVE'}">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width:100%"></div>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <div class="progress-bar bg-info" role="progressbar" style="width:55%"></div>
+                                            </c:otherwise>
+                                        </c:choose>
                                     </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Số dư hiện tại:</span>
-                                        <span class="info-value">
-                                            <fmt:formatNumber value="${user.balance}" type="number" pattern="#,###" />
-                                            VNĐ
-                                        </span>
+                                    <div class="d-flex justify-content-between small text-muted mt-1">
+                                        <span>Đã gửi yêu cầu</span>
+                                        <span>${store.status == 'ACTIVE' ? 'Hoàn tất' : 'Đang xử lý'}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Thông tin cửa hàng -->
-                            <div class="card mb-4">
-                                <div class="card-header bg-success text-white">
-                                    <h5 class="mb-0"><i class="fas fa-store"></i> Thông tin cửa hàng</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="info-row">
-                                        <span class="info-label">Mã cửa hàng:</span>
-                                        <span class="info-value">#${store.id}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Tên cửa hàng:</span>
-                                        <span class="info-value">${store.storeName}</span>
-                                    </div>
-                                    <c:if test="${not empty store.description}">
-                                        <div class="info-row">
-                                            <span class="info-label">Mô tả:</span>
-                                            <span class="info-value">${store.description}</span>
-                                        </div>
-                                    </c:if>
-                                    <div class="info-row">
-                                        <span class="info-label">Số tiền ký quỹ:</span>
-                                        <span class="info-value text-success fw-bold">
-                                            <fmt:formatNumber value="${store.depositAmount}" type="number"
-                                                pattern="#,###" /> VNĐ
-                                        </span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Giá tối đa có thể niêm yết:</span>
-                                        <span class="info-value">
-                                            <fmt:formatNumber value="${store.maxListingPrice}" type="number"
-                                                pattern="#,###" /> VNĐ
-                                        </span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Trạng thái:</span>
-                                        <span class="info-value">
-                                            <span class="badge bg-${store.status == 'ACTIVE' ? 'success' : 'warning'}">
-                                                ${store.status == 'ACTIVE' ? 'Đã kích hoạt' : 'Chờ xử lý'}
-                                            </span>
-                                        </span>
-                                    </div>
+                            <!-- Server messages for toasts (keep hidden elements) -->
+                            <c:if test="${not empty success}"><div id="serverSuccess" data-success="${fn:escapeXml(success)}"></div></c:if>
+                            <c:if test="${not empty error}"><div id="serverError" data-error="${fn:escapeXml(error)}"></div></c:if>
+                            <c:if test="${not empty info}"><div id="serverInfo" data-info="${fn:escapeXml(info)}"></div></c:if>
 
-                                    <!-- Payment error message and activation button -->
-                                    <c:if test="${not empty paymentError}">
-                                        <div class="alert alert-danger mt-3">
-                                            <i class="fas fa-exclamation-circle"></i> ${paymentError}
-                                            <div class="mt-3">
-                                                <a href="${pageContext.request.contextPath}/wallet/deposit" class="btn btn-primary">
-                                                    <i class="fas fa-wallet"></i> Nạp tiền qua VNPay
-                                                </a>
+                            <div class="row">
+                                <div class="col-lg-9">
+                                    <div class="card mb-3 shadow-sm highlight-card">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <h5 class="mb-0">Chi tiết thanh toán ký quỹ</h5>
                                             </div>
+                                            <div class="mt-3">
+                                                <p class="mb-1">Số tiền ký quỹ: <strong class="text-success"><fmt:formatNumber value="${store.depositAmount}" type="number" pattern="#,###" /> VNĐ</strong></p>
+                                                <p class="mb-0">Giá niêm yết tối đa: <strong><fmt:formatNumber value="${store.maxListingPrice}" type="number" pattern="#,###" /> VNĐ</strong></p>
+                                            </div>
+
+                                            <!-- Contract Information - Always Visible -->
+                                            <div class="mt-3">
+                                                <div class="card border-0 shadow-sm">
+                                                    <div class="card-header bg-primary bg-gradient text-white">
+                                                        <h6 class="mb-0"><i class="fas fa-file-contract me-2"></i>Điều khoản hợp đồng</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <c:choose>
+                                                            <c:when test="${store.feeModel == 'PERCENTAGE'}">
+                                                                <!-- Percentage Fee Model Contract -->
+                                                                <div class="mb-3">
+                                                                    <h6 class="text-primary">
+                                                                        <i class="fas fa-percent me-2"></i>Phí theo phần trăm
+                                                                        <span class="badge bg-info ms-2">Khuyến nghị</span>
+                                                                    </h6>
+                                                                </div>
+                                                                
+                                                                <div class="mb-3">
+                                                                    <p class="mb-2"><strong>Hệ thống sẽ áp dụng mức phí giao dịch dựa trên giá trị đơn hàng như sau:</strong></p>
+                                                                    <ul class="list-unstyled ms-3">
+                                                                        <li class="mb-2">
+                                                                            <i class="fas fa-arrow-right text-success me-2"></i>
+                                                                            Đơn hàng dưới <strong>100.000 VNĐ</strong> → Phí cố định: <strong class="text-danger"><fmt:formatNumber value="${fixedFee}" type="number" pattern="#,###" /> VNĐ</strong>
+                                                                        </li>
+                                                                        <li class="mb-2">
+                                                                            <i class="fas fa-arrow-right text-primary me-2"></i>
+                                                                            Đơn hàng từ <strong>100.000 VNĐ</strong> trở lên → Phí theo tỷ lệ: <strong class="text-danger"><fmt:formatNumber value="${percentageFee}" type="number" maxFractionDigits="2" />%</strong> trên tổng giá trị đơn hàng
+                                                                        </li>
+                                                                    </ul>
+                                                                </div>
+
+                                                                <div class="alert alert-success border-0 mb-0">
+                                                                    <h6 class="alert-heading mb-2"><i class="fas fa-money-bill-wave me-2"></i>Chính sách hoàn phí ký quỹ:</h6>
+                                                                    <ul class="mb-2 small">
+                                                                        <li>Nếu cửa hàng đóng <strong>sau 01 năm</strong> kể từ ngày kích hoạt → hoàn <strong class="text-success">100% phí ký quỹ</strong>.</li>
+                                                                        <li>Nếu cửa hàng đóng <strong>trước 01 năm</strong> → hoàn <strong class="text-warning">70% phí ký quỹ</strong>.</li>
+                                                                        <li>Phí hoàn sẽ được chuyển vào ví hệ thống trong vòng <strong>07 ngày làm việc</strong> sau khi xác nhận đóng cửa hàng.</li>
+                                                                    </ul>
+                                                                    <p class="mb-0 small fst-italic">
+                                                                        <i class="fas fa-lightbulb text-warning me-1"></i>
+                                                                        💡 Chính sách này đảm bảo tính công bằng, khuyến khích hoạt động lâu dài và bảo vệ quyền lợi của cả người mua và người bán.
+                                                                    </p>
+                                                                </div>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <!-- No Fee Model Contract -->
+                                                                <div class="mb-3">
+                                                                    <h6 class="text-muted">
+                                                                        <i class="fas fa-circle me-2"></i> Không tính phí
+                                                                    </h6>
+                                                                </div>
+                                                                
+                                                                <div class="mb-3">
+                                                                    <ul class="list-unstyled ms-3">
+                                                                        <li class="mb-2">
+                                                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                                                            Người bán <strong>không phải trả bất kỳ khoản phí giao dịch nào</strong> cho các đơn hàng.
+                                                                        </li>
+                                                                        <li class="mb-2">
+                                                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                                                            Toàn bộ doanh thu sẽ được chuyển <strong>100%</strong> vào ví hệ thống của người bán.
+                                                                        </li>
+                                                                    </ul>
+                                                                </div>
+
+                                                                <div class="alert alert-warning border-0 mb-0">
+                                                                    <h6 class="alert-heading mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Chính sách hoàn phí ký quỹ:</h6>
+                                                                    <ul class="mb-2 small">
+                                                                        <li><strong>Không áp dụng hoàn phí ký quỹ</strong> trong mọi trường hợp.</li>
+                                                                        <li>Khi cửa hàng ngừng hoạt động, phí ký quỹ sẽ <strong>không được hoàn lại</strong>, kể cả khi thời gian hoạt động đã vượt quá 01 năm.</li>
+                                                                    </ul>
+                                                                    <p class="mb-0 small fst-italic">
+                                                                        <i class="fas fa-lightbulb text-warning me-1"></i>
+                                                                        💡 Phù hợp với các cửa hàng nhỏ, thử nghiệm hoặc hoạt động ngắn hạn, ưu tiên đơn giản và không phát sinh phí giao dịch.
+                                                                    </p>
+                                                                </div>
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Show activation prompt for PENDING stores -->
+                                            <c:if test="${store.status == 'PENDING'}">
+                                                <div class="alert alert-info mt-3" id="pendingAlert">
+                                                    <i class="fas fa-info-circle"></i>
+                                                    <strong>Cửa hàng đang chờ kích hoạt.</strong> Vui lòng bấm nút bên dưới để thanh toán ký quỹ và kích hoạt cửa hàng.
+                                                </div>
+                                                <div class="mt-3 d-grid gap-2" id="pendingActionButtons">
+                                                    <form action="${pageContext.request.contextPath}/seller/retry-deposit/${store.id}" method="post">
+                                                        <button type="submit" class="btn btn-success btn-lg w-100">
+                                                            <i class="fas fa-check-circle"></i> Kích hoạt cửa hàng (Thanh toán ký quỹ)
+                                                        </button>
+                                                    </form>
+                                                    <a href="${pageContext.request.contextPath}/wallet/deposit" class="btn btn-outline-primary">
+                                                        <i class="fas fa-wallet"></i> Nạp tiền trước
+                                                    </a>
+                                                </div>
+                                            </c:if>
+
+                                            <c:if test="${not empty paymentError}">
+                                                <div class="error-box mt-3">
+                                                    <div class="d-flex align-items-start">
+                                                        <i class="fas fa-exclamation-circle text-danger fa-lg"></i>
+                                                        <div class="ms-3">
+                                                            <div class="fw-bold">Thanh toán thất bại</div>
+                                                            <div class="mt-1">${paymentError}</div>
+                                                            <div class="mt-3">
+                                                                <a href="${pageContext.request.contextPath}/wallet/deposit" class="btn btn-sm btn-primary">
+                                                                    <i class="fas fa-wallet"></i> Nạp tiền qua VNPay
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </c:if>
                                         </div>
-                                    </c:if>
-                                    
-                                    <!-- Only show activation button if there was a previous payment error -->
-                                    <c:if test="${store.status == 'INACTIVE' && not empty paymentError}">
-                                        <div class="mt-3">
-                                            <form action="${pageContext.request.contextPath}/seller/retry-deposit/${store.id}" method="post" style="display: inline;">
-                                                <button type="submit" class="btn btn-success">
-                                                    <i class="fas fa-check-circle"></i> Kích hoạt cửa hàng
-                                                </button>
-                                            </form>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="card shadow-sm mb-3 highlight-card">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Thông tin cửa hàng</h6>
+                                            <ul class="list-unstyled small mb-0">
+                                                <li><strong>#${store.id}</strong> — ${store.storeName}</li>
+                                                <c:if test="${not empty store.description}"><li>${store.description}</li></c:if>
+                                                <li class="mt-2">Trạng thái: 
+                                                    <c:choose>
+                                                        <c:when test="${store.status == 'ACTIVE'}">
+                                                            <span class="badge bg-success">Đã kích hoạt</span>
+                                                        </c:when>
+                                                        <c:when test="${store.status == 'PENDING'}">
+                                                            <span class="badge bg-info">Chờ kích hoạt</span>
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <span class="badge bg-warning">Đang xử lý</span>
+                                                        </c:otherwise>
+                                                    </c:choose>
+                                                </li>
+                                            </ul>
+
+                                            <!-- Show retry button for INACTIVE stores with payment error -->
+                                            <c:if test="${store.status == 'INACTIVE' && not empty paymentError}">
+                                                <div class="mt-3 d-grid" id="retryButtonContainer">
+                                                    <form action="${pageContext.request.contextPath}/seller/retry-deposit/${store.id}" method="post">
+                                                        <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-sync-alt"></i> Thử lại</button>
+                                                    </form>
+                                                </div>
+                                            </c:if>
+                                            
+                                            <!-- Show activate button for PENDING stores -->
+                                            <c:if test="${store.status == 'PENDING'}">
+                                                <div class="mt-3 d-grid" id="activateButtonContainer">
+                                                    <form action="${pageContext.request.contextPath}/seller/retry-deposit/${store.id}" method="post">
+                                                        <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-check-circle"></i> Kích hoạt</button>
+                                                    </form>
+                                                </div>
+                                            </c:if>
                                         </div>
-                                    </c:if>
-                                        </span>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Status notification -->
-                            <c:if test="${store.status != 'ACTIVE'}">
-                                <div class="alert alert-info mt-4" role="alert">
-                                    <i class="fas fa-info-circle"></i>
-                                    <strong>Đang xử lý thanh toán...</strong>
-                                    <p class="mb-0">Cửa hàng của bạn đang được kích hoạt. Trang sẽ tự động cập nhật sau
-                                        vài giây.</p>
-                                </div>
-                            </c:if>
+                            <!-- Status notification removed per design request -->
 
                             <!-- Action buttons - Only show when ACTIVE -->
                             <c:if test="${store.status == 'ACTIVE'}">
-                                <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
-                                    <a href="/seller/dashboard" class="btn btn-primary btn-lg">
+                                <div class="text-center mt-4">
+                                    <a href="/seller/dashboard" class="btn btn-primary btn-lg me-2">
                                         <i class="fas fa-tachometer-alt"></i> Đi tới trang quản lý
                                     </a>
                                     <a href="/wallet/transactions" class="btn btn-outline-secondary btn-lg">
@@ -219,12 +253,18 @@
                                     </a>
                                 </div>
                             </c:if>
+
+                           
                         </div>
                     </div>
                 </div>
                 <!-- End Content -->
 
                 <jsp:include page="../common/footer.jsp" />
+
+                <!-- iziToast -->
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/izitoast@1.4.0/dist/css/iziToast.min.css">
+                <script src="https://cdn.jsdelivr.net/npm/izitoast@1.4.0/dist/js/iziToast.min.js"></script>
 
                 <script>
                     // Toggle sidebar function
@@ -257,10 +297,122 @@
                         }
                     });
 
-                    // Auto reload page after 10 seconds
-                    setTimeout(function () {
-                        location.reload();
-                    }, 10000);
+                    // Auto-reload removed: polling handles status updates now
+
+                    // Show server-side toasts (success/info/error)
+                    (function () {
+                        try {
+                            const s = document.getElementById('serverSuccess');
+                            const e = document.getElementById('serverError');
+                            const i = document.getElementById('serverInfo');
+                            if (s) {
+                                const msg = s.getAttribute('data-success');
+                                if (msg) {
+                                    iziToast.success({ title: 'Thành công', message: msg, position: 'topRight', timeout: 8000 });
+                                }
+                            }
+                            if (i) {
+                                const msg = i.getAttribute('data-info');
+                                if (msg) {
+                                    iziToast.info({ title: 'Thông tin', message: msg, position: 'topRight', timeout: 8000 });
+                                }
+                            }
+                            if (e) {
+                                const msg = e.getAttribute('data-error');
+                                if (msg) {
+                                    iziToast.error({ title: 'Lỗi', message: msg, position: 'topRight', timeout: 10000 });
+                                }
+                            }
+                        } catch (err) {
+                            console.error('iziToast show failed', err);
+                        }
+                    })();
+
+                    // Polling to pick up store status changes without reload
+                    (function () {
+                        try {
+                            const storeId = '${store.id}';
+                            const initialStatus = '${store.status}';
+                            
+                            // Only run polling if store is not already ACTIVE
+                            if (!storeId || initialStatus === 'ACTIVE') {
+                                console.log('Polling skipped: storeId=' + storeId + ', status=' + initialStatus);
+                                return;
+                            }
+
+                            const progressBar = document.querySelector('.rounded-progress .progress-bar');
+                            const statusSpan = document.querySelector('.d-flex.justify-content-between.small span:last-child');
+                            const badge = document.querySelector('.col-lg-3 .badge');
+                            const activateButtonContainer = document.getElementById('activateButtonContainer');
+                            const retryButtonContainer = document.getElementById('retryButtonContainer');
+                            const pendingAlert = document.getElementById('pendingAlert');
+                            const pendingActionButtons = document.getElementById('pendingActionButtons');
+
+                            let stopped = false;
+                            let reloadScheduled = false; // Prevent multiple reload schedules
+
+                            async function poll() {
+                                if (stopped || reloadScheduled) return;
+                                try {
+                                    const ctx = '${pageContext.request.contextPath}';
+                                    const res = await fetch(ctx + '/seller/status/' + storeId, { credentials: 'same-origin' });
+                                    if (!res.ok) return;
+                                    const json = await res.json();
+                                    if (!json) return;
+
+                                    const status = json.status;
+                                    const paymentError = json.paymentError;
+
+                                    if (status === 'ACTIVE') {
+                                        // Prevent multiple executions
+                                        if (reloadScheduled) return;
+                                        reloadScheduled = true;
+                                        stopped = true;
+                                        
+                                        // Update UI
+                                        if (progressBar) { progressBar.style.width = '100%'; progressBar.classList.remove('bg-info'); progressBar.classList.add('bg-success'); }
+                                        if (statusSpan) statusSpan.textContent = 'Hoàn tất';
+                                        if (badge) { badge.classList.remove('bg-warning', 'bg-info'); badge.classList.add('bg-success'); badge.textContent = 'Đã kích hoạt'; }
+                                        
+                                        // Hide all activation-related elements
+                                        if (activateButtonContainer) activateButtonContainer.style.display = 'none';
+                                        if (retryButtonContainer) retryButtonContainer.style.display = 'none';
+                                        if (pendingAlert) pendingAlert.style.display = 'none';
+                                        if (pendingActionButtons) pendingActionButtons.style.display = 'none';
+                                        
+                                        // Show success toast
+                                        iziToast.success({ 
+                                            title: 'Cửa hàng đã kích hoạt', 
+                                            message: 'Cửa hàng của bạn đã được kích hoạt. Trang sẽ tự động tải lại sau 3 giây...', 
+                                            position: 'topRight', 
+                                            timeout: 3000
+                                        });
+                                        
+                                        // Reload page ONCE after 3 seconds to update sidebar (SELLER role)
+                                        setTimeout(function() { 
+                                            window.location.reload(); 
+                                        }, 3200);
+                                        return;
+                                    }
+
+                                    if (paymentError) {
+                                        iziToast.error({ title: 'Thanh toán thất bại', message: paymentError, position: 'topRight', timeout: 10000 });
+                                        stopped = true;
+                                        return;
+                                    }
+
+                                } catch (err) {
+                                    console.error('Polling error', err);
+                                }
+                                if (!stopped && !reloadScheduled) setTimeout(poll, 3000);
+                            }
+
+                            // start after a short delay so page finishes rendering
+                            setTimeout(poll, 1000);
+                        } catch (err) {
+                            console.error('Setup polling failed', err);
+                        }
+                    })();
                 </script>
             </body>
 

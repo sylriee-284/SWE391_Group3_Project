@@ -20,6 +20,7 @@ import vn.group3.marketplace.domain.enums.StoreStatus;
 import vn.group3.marketplace.domain.enums.SellerStoresType;
 import vn.group3.marketplace.service.SellerStoreService;
 import vn.group3.marketplace.service.UserService;
+import vn.group3.marketplace.service.SystemSettingService;
 
 @Controller
 @RequestMapping("/seller")
@@ -29,6 +30,8 @@ public class SellerController {
     private final UserService userService;
     private final SellerStoreService sellerStoreService;
     private final WalletTransactionQueueService walletTransactionQueueService;
+    private final vn.group3.marketplace.service.WalletService walletService;
+    private final SystemSettingService systemSettingService;
 
     /**
      * Display seller registration form
@@ -39,27 +42,32 @@ public class SellerController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = userService.getFreshUserByUsername(auth.getName());
 
-        // Find any existing inactive store
-        SellerStore inactiveStore = sellerStoreService.findInactiveStoreByOwner(currentUser);
-        
         // If user has an active store, redirect to dashboard
         if (sellerStoreService.hasActiveStore(currentUser)) {
             return "redirect:/seller/dashboard";
         }
 
-        // Add inactive store if exists
-        if (inactiveStore != null) {
-            model.addAttribute("inactiveStore", inactiveStore);
+        // Find any existing non-active store (PENDING or INACTIVE)
+        SellerStore nonActiveStore = sellerStoreService.findNonActiveStoreByOwner(currentUser);
+        
+        // Add non-active store if exists (could be PENDING or INACTIVE)
+        if (nonActiveStore != null) {
+            model.addAttribute("inactiveStore", nonActiveStore);
         }
 
         // Add current user and balance information to model
         model.addAttribute("user", currentUser);
         model.addAttribute("userBalance", currentUser.getBalance());
 
-        // Add system settings to model
-        model.addAttribute("minDepositAmount", sellerStoreService.getMinDepositAmount());
-        model.addAttribute("maxListingPriceRate", sellerStoreService.getMaxListingPriceRate());
-        model.addAttribute("platformFeeRate", sellerStoreService.getPlatformFeeRate());
+    // Add system settings to model
+    model.addAttribute("minDepositAmount", sellerStoreService.getMinDepositAmount());
+    model.addAttribute("maxListingPriceRate", sellerStoreService.getMaxListingPriceRate());
+
+    // Add fee settings from SystemSetting (percentage fee and fixed fee for small orders)
+    Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
+    Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
+    model.addAttribute("percentageFee", percentageFee);
+    model.addAttribute("fixedFee", fixedFee);
 
         return "seller/seller-register";
     }
@@ -87,7 +95,11 @@ public class SellerController {
             model.addAttribute("userBalance", currentUser.getBalance());
             model.addAttribute("minDepositAmount", sellerStoreService.getMinDepositAmount());
             model.addAttribute("maxListingPriceRate", sellerStoreService.getMaxListingPriceRate());
-            model.addAttribute("platformFeeRate", sellerStoreService.getPlatformFeeRate());
+            // add fee settings so view can show them on validation errors
+            Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
+            Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
+            model.addAttribute("percentageFee", percentageFee);
+            model.addAttribute("fixedFee", fixedFee);
 
             // Parse and validate deposit amount
             BigDecimal deposit;
@@ -152,21 +164,21 @@ public class SellerController {
                 return "seller/seller-register";
             }
 
-            // Create new store in INACTIVE status
+            // Create new store in PENDING status (no immediate payment)
             SellerStore store = SellerStore.builder()
                     .owner(currentUser)
                     .storeName(storeName)
                     .description(storeDescription)
                     .depositAmount(deposit)
                     .feeModel(feeModelEnum)
-                    .status(StoreStatus.INACTIVE)
+                    .status(StoreStatus.PENDING)
                     .build();
 
-            // Process deposit and create store
+            // Create store without payment - user will activate manually
             SellerStore createdStore = sellerStoreService.createStore(store);
 
             redirectAttributes.addFlashAttribute("success",
-                    "Đăng ký cửa hàng thành công! Vui lòng chờ trong khi chúng tôi xử lý khoản tiền ký quỹ.");
+                    "Đăng ký cửa hàng thành công! Vui lòng bấm nút 'Kích hoạt cửa hàng' để thanh toán ký quỹ.");
             return "redirect:/seller/register-success?storeId=" + createdStore.getId();
 
         } catch (IllegalArgumentException e) {
@@ -191,18 +203,40 @@ public class SellerController {
         SellerStore store = sellerStoreService.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy cửa hàng"));
                 
-        // Kiểm tra số dư khi store inactive
+        // Check transaction status for INACTIVE stores (stores that have attempted payment)
         if (store.getStatus() == StoreStatus.INACTIVE && !model.containsAttribute("paymentError")) {
-            if (currentUser.getBalance().compareTo(store.getDepositAmount()) < 0) {
-                model.addAttribute("paymentError", 
-                    "Thanh toán thất bại: Số dư không đủ. Bạn cần nạp thêm " + 
-                    String.format("%,.0f", store.getDepositAmount().subtract(currentUser.getBalance())) + " VNĐ");
+            try {
+                String paymentRef = "createdShop" + storeId;
+                vn.group3.marketplace.domain.enums.WalletTransactionStatus txStatus = walletService.getTransactionStatusByOrderId(paymentRef);
+                if (txStatus == vn.group3.marketplace.domain.enums.WalletTransactionStatus.FAILED) {
+                    // Likely failed due to insufficient balance
+                    if (currentUser.getBalance().compareTo(store.getDepositAmount()) < 0) {
+                        java.math.BigDecimal needed = store.getDepositAmount().subtract(currentUser.getBalance());
+                        model.addAttribute("paymentError",
+                                "Thanh toán thất bại: Số dư không đủ. Bạn cần nạp thêm " + String.format("%,.0f", needed) + " VNĐ");
+                    } else {
+                        model.addAttribute("paymentError", "Thanh toán thất bại. Vui lòng thử lại hoặc liên hệ hỗ trợ.");
+                    }
+                }
+            } catch (Exception ex) {
+                // If checking transaction status fails, don't show insufficient-balance prematurely.
+                // Log/debug can be added if needed.
             }
+        }
+        
+        // For PENDING stores, show activation prompt
+        if (store.getStatus() == StoreStatus.PENDING) {
+            model.addAttribute("pendingActivation", true);
         }
 
         // Add data to model
         model.addAttribute("user", currentUser);
         model.addAttribute("store", store);
+    // Add fee settings so the success page can show contract values
+    Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
+    Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
+    model.addAttribute("percentageFee", percentageFee);
+    model.addAttribute("fixedFee", fixedFee);
 
         return "seller/register-success";
     }
@@ -233,16 +267,22 @@ public class SellerController {
                 return "redirect:/seller/register-success?storeId=" + storeId;
             }
 
-            // Check balance and show insufficient balance message
+            // Check balance before attempting payment
             if (currentUser.getBalance().compareTo(store.getDepositAmount()) < 0) {
                 BigDecimal needed = store.getDepositAmount().subtract(currentUser.getBalance());
                 redirectAttributes.addFlashAttribute("paymentError", 
-                    "Thanh toán thất bại: Số dư không đủ. Bạn cần nạp thêm " + 
+                    "Số dư không đủ để kích hoạt cửa hàng. Bạn cần nạp thêm " + 
                     String.format("%,.0f", needed) + " VNĐ");
                 return "redirect:/seller/register-success?storeId=" + storeId;
             }
 
-            // Enqueue new payment with same ref
+            // Change store status from PENDING to INACTIVE before payment
+            if (store.getStatus() == StoreStatus.PENDING) {
+                store.setStatus(StoreStatus.INACTIVE);
+                sellerStoreService.findById(storeId); // refresh
+            }
+
+            // Enqueue payment with same ref
             String paymentRef = "createdShop" + storeId;
             walletTransactionQueueService.enqueuePurchasePayment(
                 currentUser.getId(), 
@@ -281,5 +321,39 @@ public class SellerController {
 
         response.put("message", "Tên cửa hàng khả dụng.");
         return org.springframework.http.ResponseEntity.ok(response);
+    }
+
+    /**
+     * JSON endpoint for polling store status without reloading the page.
+     */
+    @GetMapping("/status/{storeId}")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> getStoreStatus(@PathVariable Long storeId) {
+        java.util.Map<String, Object> resp = new java.util.HashMap<>();
+        try {
+            SellerStore store = sellerStoreService.findById(storeId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy cửa hàng"));
+
+            resp.put("status", store.getStatus().name());
+
+            // If still inactive, check if there's a processed failed transaction to show paymentError
+            if (store.getStatus() == StoreStatus.INACTIVE) {
+                try {
+                    String paymentRef = "createdShop" + storeId;
+                    vn.group3.marketplace.domain.enums.WalletTransactionStatus txStatus = walletService.getTransactionStatusByOrderId(paymentRef);
+                    if (txStatus == vn.group3.marketplace.domain.enums.WalletTransactionStatus.FAILED) {
+                        // Provide a friendly message, caller can show it
+                        resp.put("paymentError", "Thanh toán thất bại: vui lòng nạp tiền hoặc thử lại");
+                    }
+                } catch (Exception ex) {
+                    // ignore: we don't want to surface internal errors to the poller
+                }
+            }
+
+            return org.springframework.http.ResponseEntity.ok(resp);
+        } catch (Exception e) {
+            resp.put("error", e.getMessage());
+            return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(resp);
+        }
     }
 }
