@@ -52,9 +52,13 @@
                     </ul>
 
                     <!-- <li><a href="#">Feedback</a></li> -->
-                    <sec:authorize
-                        access="isAuthenticated() and hasRole('USER') and !hasRole('SELLER') and !hasRole('ADMIN')">
-                        <li><a href="#">🛍️ Đăng ký bán hàng</a></li>
+                    <sec:authorize access="isAuthenticated() and hasRole('USER') and !hasRole('SELLER')">
+                        <c:if test="${!havingPendingStore}">
+                            <li><a href="#">🛍️ Đăng ký cửa hàng</a></li>
+                        </c:if>
+                        <c:if test="${havingPendingStore}">
+                            <li><a href="#">🛍️ Kích hoạt cửa hàng</a></li>
+                        </c:if>
                     </sec:authorize>
 
                     <sec:authorize access="isAuthenticated() and hasRole('SELLER')">
@@ -96,7 +100,8 @@
                                 <li><a href="#" class="text-white text-decoration-none">🏪 Quản lý cửa hàng</a></li>
                                 <li><a href="#" class="text-white text-decoration-none">📦 Quản lý mặt hàng</a></li>
                                 <li><a href="#" class="text-white text-decoration-none">💳 Đơn rút tiền</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">⚙️ Cài đặt platform</a></li>
+                                <li><a href="admin/system-config" class="text-white text-decoration-none">⚙️ Cài đặt
+                                        platform</a></li>
                                 <li><a href="#" class="text-white text-decoration-none">📈 Báo cáo & thống kê</a></li>
                             </ul>
                         </li>

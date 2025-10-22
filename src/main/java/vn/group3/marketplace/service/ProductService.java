@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.group3.marketplace.domain.entity.Category;
@@ -118,6 +119,7 @@ public class ProductService {
                 minPrice, maxPrice, idFrom, idTo, pageable);
     }
 
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     public Product getOwned(Long id, Long storeId) {
         return productRepository.findById(id)
                 .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
@@ -126,6 +128,7 @@ public class ProductService {
                         "Không tìm thấy sản phẩm hoặc không thuộc cửa hàng của bạn."));
     }
 
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     @Transactional
     public Product create(Product p) {
         SellerStore store = storeRepository.findById(p.getSellerStore().getId())
@@ -149,6 +152,7 @@ public class ProductService {
         return productRepository.save(p);
     }
 
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     @Transactional
     public Product update(Product p, Long storeId) {
         Product db = getOwned(p.getId(), storeId);
@@ -195,6 +199,7 @@ public class ProductService {
         return productRepository.save(db);
     }
 
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     @Transactional
     public void toggle(Long id, Long storeId, ProductStatus toStatus) {
         Product db = getOwned(id, storeId);
@@ -209,6 +214,7 @@ public class ProductService {
         productRepository.save(db);
     }
 
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     @Transactional
     public void softDelete(Long id, Long storeId, Long userId) {
         Product db = getOwned(id, storeId);

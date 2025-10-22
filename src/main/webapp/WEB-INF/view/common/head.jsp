@@ -51,3 +51,6 @@
     <!-- Custom Styles CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/styles.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/productlist.css">
+
+    <!-- Custom System Config CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/system-config.css">
