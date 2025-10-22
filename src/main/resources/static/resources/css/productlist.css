@@ -67,6 +67,32 @@
     margin-bottom: 0.5rem;
 }
 
+/* Button styling */
+.btn-primary {
+    background-color: #198754 !important;
+    border-color: #198754 !important;
+    color: white !important;
+}
+
+.btn-primary:hover {
+    background-color: #146c43 !important;
+    border-color: #135e38 !important;
+    color: white !important;
+}
+
+.btn-primary:focus {
+    background-color: #146c43 !important;
+    border-color: #135e38 !important;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25) !important;
+    color: white !important;
+}
+
+.btn-primary:active {
+    background-color: #146c43 !important;
+    border-color: #135e38 !important;
+    color: white !important;
+}
+
 .btn-collapse {
     background-color: #dc3545;
     color: white;
