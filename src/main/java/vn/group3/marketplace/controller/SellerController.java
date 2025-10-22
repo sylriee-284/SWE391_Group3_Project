@@ -66,8 +66,10 @@ public class SellerController {
     // Add fee settings from SystemSetting (percentage fee and fixed fee for small orders)
     Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
     Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
+    Integer minOrderWithFreeFee = systemSettingService.getIntValue("fee.min_order_with_free_fee", 100000);
     model.addAttribute("percentageFee", percentageFee);
     model.addAttribute("fixedFee", fixedFee);
+    model.addAttribute("minOrderWithFreeFee", minOrderWithFreeFee);
 
         return "seller/seller-register";
     }
@@ -98,8 +100,10 @@ public class SellerController {
             // add fee settings so view can show them on validation errors
             Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
             Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
+            Integer minOrderWithFreeFee = systemSettingService.getIntValue("fee.min_order_with_free_fee", 100000);
             model.addAttribute("percentageFee", percentageFee);
             model.addAttribute("fixedFee", fixedFee);
+            model.addAttribute("minOrderWithFreeFee", minOrderWithFreeFee);
 
             // Parse and validate deposit amount
             BigDecimal deposit;
@@ -235,8 +239,10 @@ public class SellerController {
     // Add fee settings so the success page can show contract values
     Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
     Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
+    Integer minOrderWithFreeFee = systemSettingService.getIntValue("fee.min_order_with_free_fee", 100000);
     model.addAttribute("percentageFee", percentageFee);
     model.addAttribute("fixedFee", fixedFee);
+    model.addAttribute("minOrderWithFreeFee", minOrderWithFreeFee);
 
         return "seller/register-success";
     }
