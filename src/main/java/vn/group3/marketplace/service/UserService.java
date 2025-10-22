@@ -3,6 +3,10 @@ package vn.group3.marketplace.service;
 import java.math.BigDecimal;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +24,37 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private static final String DEFAULT_PLAIN_PASSWORD = "123456789";
+
+    public java.util.List<Role> getAllRoles() {
+        return roleRepository.findAll();
+    }
+
+    public Long getDefaultUserRoleId() {
+        return roleRepository.findByCode("USER")
+                .orElseThrow(() -> new RuntimeException("Role USER does not exist"))
+                .getId();
+    }
+
+    private java.util.Set<Role> mapRoleIds(java.util.List<Long> roleIds) {
+        java.util.Set<Role> out = new java.util.HashSet<>();
+        if (roleIds == null || roleIds.isEmpty()) {
+            // mặc định: USER
+            Role userRole = roleRepository.findByCode("USER")
+                    .orElseThrow(() -> new RuntimeException("Role USER does not exist"));
+            out.add(userRole);
+            return out;
+        }
+        for (Long id : roleIds) {
+            roleRepository.findById(id).ifPresent(out::add);
+        }
+        if (out.isEmpty()) {
+            Role userRole = roleRepository.findByCode("USER")
+                    .orElseThrow(() -> new RuntimeException("Role USER does not exist"));
+            out.add(userRole);
+        }
+        return out;
+    }
 
     @Transactional
     public void registerUser(String username, String email, String rawPassword) {
@@ -97,6 +132,28 @@ public class UserService {
         return userRepository.findById(id).orElse(null);
     }
 
+    /**
+     * Find all users with simple pagination. Returns Page<User>.
+     */
+    public Page<User> findAllUsers(int page, int size) {
+        Pageable p = PageRequest.of(Math.max(0, page), Math.max(1, size));
+        return userRepository.findAll(p);
+    }
+
+    /**
+     * Delete user by id (permanent delete). Use with caution.
+     */
+    @Transactional
+    public void deleteUserById(Long id) {
+        userRepository.deleteById(id);
+    }
+
+    /**
+     * Update user information
+     * 
+     * @param user User to update
+     * @return Updated user
+     */
     // Update user information
     @PreAuthorize("hasRole('ADMIN') or (isAuthenticated() and #user.id == authentication.principal.id)")
     @Transactional
@@ -122,6 +179,72 @@ public class UserService {
     @Transactional
     public void flushAndClear() {
         userRepository.flush();
+    }
+
+    @Transactional
+    public User saveFromAdmin(vn.group3.marketplace.domain.entity.User incoming) {
+        if (incoming.getId() == null) {
+            // CREATE: nếu chưa có hash thì set mật khẩu mặc định
+            if (incoming.getPasswordHash() == null || incoming.getPasswordHash().isBlank()) {
+                incoming.setPasswordHash(passwordEncoder.encode(DEFAULT_PLAIN_PASSWORD));
+            }
+            // mặc định không xoá
+            if (incoming.getIsDeleted() == null) {
+                incoming.setIsDeleted(false);
+            }
+            return userRepository.save(incoming);
+        } else {
+            // UPDATE: không đổi password
+            User db = userRepository.findById(incoming.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("User không tồn tại: id=" + incoming.getId()));
+
+            // copy các field cho phép
+            db.setUsername(incoming.getUsername());
+            db.setEmail(incoming.getEmail());
+            db.setFullName(incoming.getFullName());
+            db.setPhone(incoming.getPhone());
+            db.setStatus(incoming.getStatus());
+            // ... các field khác nếu team bạn cho phép
+
+            return userRepository.save(db);
+        }
+    }
+
+    public Page<User> findUsers(int page, int size, vn.group3.marketplace.domain.enums.UserStatus status) {
+        Pageable pr = PageRequest.of(Math.max(0, page), Math.max(1, size));
+        if (status == null) {
+            return userRepository.findAll(pr);
+        }
+        return userRepository.findByStatus(status, pr);
+    }
+
+    @Transactional
+    public User saveFromAdminWithRoles(User incoming, java.util.List<Long> roleIds) {
+        if (incoming.getId() == null) {
+            // CREATE
+            if (incoming.getPasswordHash() == null || incoming.getPasswordHash().isBlank()) {
+                incoming.setPasswordHash(passwordEncoder.encode(DEFAULT_PLAIN_PASSWORD));
+            }
+            if (incoming.getIsDeleted() == null)
+                incoming.setIsDeleted(false);
+
+            incoming.setRoles(mapRoleIds(roleIds)); // NEW
+            return userRepository.save(incoming);
+
+        } else {
+            // UPDATE
+            User db = userRepository.findById(incoming.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("User không tồn tại: id=" + incoming.getId()));
+
+            db.setUsername(incoming.getUsername());
+            db.setEmail(incoming.getEmail());
+            db.setFullName(incoming.getFullName());
+            db.setPhone(incoming.getPhone());
+            db.setStatus(incoming.getStatus());
+
+            db.setRoles(mapRoleIds(roleIds)); // NEW: thay roles theo form
+            return userRepository.save(db);
+        }
     }
 
 }
