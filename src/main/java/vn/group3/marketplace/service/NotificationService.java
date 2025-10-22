@@ -1,5 +1,6 @@
 package vn.group3.marketplace.service;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import vn.group3.marketplace.domain.entity.Notification;
@@ -21,6 +22,7 @@ public class NotificationService {
     }
 
     // Create notification
+    // No RBAC - Internal method called by system/OrderProcess
     public void createNotification(User user, NotificationType type, String title, String content) {
         Notification notification = Notification.builder()
                 .user(user)
@@ -36,16 +38,19 @@ public class NotificationService {
     }
 
     // Get notifications by id
+    @PreAuthorize("isAuthenticated()")
     public Notification getNotificationsById(Long id) {
         return notificationRepository.findById(id).orElseThrow(() -> new RuntimeException("Notification not found"));
     }
 
     // Get latest notification by user
+    @PreAuthorize("isAuthenticated() and #user.id == authentication.principal.id")
     public Notification getLatestNotificationByUser(User user) {
         return notificationRepository.findTopByUserOrderByCreatedAtDesc(user).orElse(null);
     }
 
     // Get recent notifications by user (last 10 notifications)
+    @PreAuthorize("isAuthenticated() and #user.id == authentication.principal.id")
     public List<Notification> getRecentNotificationsByUser(User user) {
         return notificationRepository.findByUserOrderByCreatedAtDesc(user)
                 .stream()
@@ -54,11 +59,13 @@ public class NotificationService {
     }
 
     // Get latest unread notification by user
+    @PreAuthorize("isAuthenticated() and #user.id == authentication.principal.id")
     public Notification getLatestUnreadNotificationByUser(User user) {
         return notificationRepository.findTopByUserAndReadAtIsNullOrderByCreatedAtDesc(user).orElse(null);
     }
 
     // Get latest unread notification DTO by user
+    @PreAuthorize("isAuthenticated() and #user.id == authentication.principal.id")
     public NotificationDTO getLatestUnreadNotificationDTOByUser(User user) {
         return notificationRepository.findTopByUserAndReadAtIsNullOrderByCreatedAtDesc(user)
                 .map(this::convertToDTO).orElse(null);
@@ -77,11 +84,13 @@ public class NotificationService {
     }
 
     // Get all unread notifications by user
+    @PreAuthorize("isAuthenticated() and #user.id == authentication.principal.id")
     public List<Notification> getUnreadNotificationsByUser(User user) {
         return notificationRepository.findByUserAndReadAtIsNullOrderByCreatedAtDesc(user);
     }
 
     // Mark notification as read
+    @PreAuthorize("isAuthenticated()")
     public void markNotificationAsRead(Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
@@ -90,6 +99,7 @@ public class NotificationService {
     }
 
     // Mark notification as read by notification object
+    @PreAuthorize("isAuthenticated()")
     public void markNotificationAsRead(Notification notification) {
         notification.setReadAt(LocalDateTime.now());
         notificationRepository.save(notification);

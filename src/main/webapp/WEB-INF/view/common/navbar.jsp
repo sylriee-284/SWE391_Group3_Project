@@ -52,6 +52,7 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                     <li><a class="dropdown-item" href="/user/profile">👤 Hồ sơ</a></li>
+                                    <li><a class="dropdown-item" href="/user/change-password">🔒 Đổi mật khẩu</a></li>
                                     <li>
                                         <hr class="dropdown-divider">
                                     </li>
