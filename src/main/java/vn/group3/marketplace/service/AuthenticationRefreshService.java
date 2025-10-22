@@ -11,10 +11,7 @@ import vn.group3.marketplace.domain.entity.User;
 import vn.group3.marketplace.repository.UserRepository;
 import vn.group3.marketplace.security.CustomUserDetails;
 
-/**
- * Service để refresh authentication context khi user data thay đổi
- * (ví dụ: balance được cập nhật sau khi mua hàng)
- */
+// Service để refresh authentication context khi user data thay đổi
 @Service
 public class AuthenticationRefreshService {
 
@@ -25,9 +22,7 @@ public class AuthenticationRefreshService {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Refresh authentication context với thông tin user mới nhất từ database
-     */
+    // Method internally checks if authentication exists before refreshing
     public void refreshAuthenticationContext() {
         try {
             Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
@@ -66,11 +61,7 @@ public class AuthenticationRefreshService {
         }
     }
 
-    /**
-     * Refresh authentication context cho một user cụ thể
-     * 
-     * @param userId User ID cần refresh
-     */
+    // Refresh authentication context cho một user cụ thể
     public void refreshAuthenticationContextForUser(Long userId) {
         try {
             Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
@@ -90,12 +81,7 @@ public class AuthenticationRefreshService {
         }
     }
 
-    /**
-     * Kiểm tra và refresh authentication context nếu cần thiết
-     * 
-     * @param userId          User ID cần kiểm tra
-     * @param expectedBalance Số dư mong đợi
-     */
+    // Kiểm tra và refresh authentication context nếu cần thiết
     public void refreshIfBalanceChanged(Long userId, java.math.BigDecimal expectedBalance) {
         try {
             Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
