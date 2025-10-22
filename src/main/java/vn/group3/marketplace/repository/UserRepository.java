@@ -3,6 +3,10 @@ package vn.group3.marketplace.repository;
 import java.util.Optional;
 
 import vn.group3.marketplace.domain.entity.User;
+import vn.group3.marketplace.domain.enums.UserStatus;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -17,6 +21,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
         Optional<User> findByUsername(String username);
 
         Optional<User> findByEmail(String email);
+
+        Page<User> findByStatus(UserStatus status, Pageable pageable);
 
         // Optimized: Check both username and email in a single query to reduce DB calls
         @Query("SELECT u FROM User u WHERE u.username = :username OR u.email = :email")
