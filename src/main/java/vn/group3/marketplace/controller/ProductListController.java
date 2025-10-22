@@ -28,12 +28,28 @@ public class ProductListController {
             @PageableDefault(size = 12) Pageable pageable,
             Model model) {
 
+        // Determine sort direction based on field
+        String sortDirection;
+        switch (sort) {
+            case "price":
+                sortDirection = "asc"; // Giá từ thấp đến cao
+                break;
+            case "soldQuantity":
+                sortDirection = "desc"; // Sản phẩm nổi bật từ cao đến thấp
+                break;
+            case "createdAt":
+                sortDirection = "desc"; // Mới nhất trước
+                break;
+            default:
+                sortDirection = "desc"; // Mặc định từ cao đến thấp
+        }
+
         // Get all products with sorting
         Page<Product> products = productService.getAllProducts(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
                 sort,
-                "asc");
+                sortDirection);
 
         // Add attributes to model
         model.addAttribute("products", products);
