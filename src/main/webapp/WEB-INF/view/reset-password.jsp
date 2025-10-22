@@ -201,6 +201,10 @@
                                         <div class="invalid-feedback" id="otpError">
                                             Vui lòng nhập mã OTP
                                         </div>
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Bạn còn <strong>${reset_time}</strong> lần thử để nhập mã xác thực
+                                        </small>
                                     </div>
 
                                     <!-- New Password input -->
@@ -247,9 +251,6 @@
                                         <input type="password" id="confirmPassword" name="confirmPassword"
                                             class="form-control form-control-lg" placeholder="Nhập lại mật khẩu mới"
                                             maxlength="128" autocomplete="off" required />
-                                        <div class="invalid-feedback" id="confirmPasswordError">
-                                            Mật khẩu không khớp
-                                        </div>
 
                                         <!-- Password Match Indicator -->
                                         <div class="password-match" id="passwordMatch" style="display: none;">
@@ -376,7 +377,7 @@
                     if (!validatePassword(password1)) {
                         e.preventDefault();
                         iziToast.error({
-                            title: 'Error!',
+                            title: 'Lỗi!',
                             message: 'Password: ít nhất 12 ký tự, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số',
                             position: 'topRight',
                             timeout: 5000
@@ -387,7 +388,7 @@
                     if (password1 !== password2) {
                         e.preventDefault();
                         iziToast.error({
-                            title: 'Error!',
+                            title: 'Lỗi!',
                             message: 'Mật khẩu không khớp!',
                             position: 'topRight',
                             timeout: 3000
@@ -398,7 +399,7 @@
                     if (password1.trim().length === 0) {
                         e.preventDefault();
                         iziToast.error({
-                            title: 'Error!',
+                            title: 'Lỗi!',
                             message: 'Mật khẩu không được để trống!',
                             position: 'topRight',
                             timeout: 3000
@@ -409,7 +410,7 @@
                     if (otp.length === 0) {
                         e.preventDefault();
                         iziToast.error({
-                            title: 'Error!',
+                            title: 'Lỗi!',
                             message: 'Vui lòng nhập mã OTP!',
                             position: 'topRight',
                             timeout: 3000
@@ -420,7 +421,7 @@
                     if (email.length === 0) {
                         e.preventDefault();
                         iziToast.error({
-                            title: 'Error!',
+                            title: 'Lỗi!',
                             message: 'Vui lòng nhập email!',
                             position: 'topRight',
                             timeout: 3000
@@ -441,7 +442,7 @@
             <c:if test="${not empty successMessage}">
                 <script>
                     iziToast.success({
-                        title: 'Success!',
+                        title: 'Thành công!',
                         message: '${successMessage}',
                         position: 'topRight',
                         timeout: 5000
@@ -452,7 +453,7 @@
             <c:if test="${not empty errorMessage}">
                 <script>
                     iziToast.error({
-                        title: 'Error!',
+                        title: 'Lỗi!',
                         message: '${errorMessage}',
                         position: 'topRight',
                         timeout: 5000

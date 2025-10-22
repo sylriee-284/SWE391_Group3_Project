@@ -56,3 +56,50 @@ body {
 .content {
     flex: 1;
 }
+
+/* Scrolling Banner Styles */
+.scrolling-banner {
+    padding: 12px 0;
+    overflow: hidden;
+    position: relative;
+    margin-top: 0;
+}
+
+.scrolling-banner-content {
+    display: flex;
+    white-space: nowrap;
+    animation: scroll-left 15s linear infinite;
+}
+
+.scrolling-banner-text {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 50px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+}
+
+.scrolling-banner-text i {
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+.banner-separator {
+    margin: 0 20px;
+    color: #999;
+}
+
+@keyframes scroll-left {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.scrolling-banner:hover .scrolling-banner-content {
+    animation-play-state: paused;
+}
