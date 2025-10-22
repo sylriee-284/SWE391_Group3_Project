@@ -87,14 +87,7 @@ public class ProductService {
     }
 
     /**
-     * Get product by ID
-     * 
-     * @param productId Product ID
-     * @return Product or null if not found
-     * 
-     * 
-     *         /**
-     *         Get active product by ID
+     * Get active product by ID
      * 
      * @param productId Product ID
      * @return Active product or null if not found or inactive
@@ -248,7 +241,44 @@ public class ProductService {
         return productRepository.getDynamicStock(productId);
     }
 
-    // Update sold quantity of product
+    /**
+     * Get all active products with pagination
+     * 
+     * @param page          Page number (0-based)
+     * @param size          Page size
+     * @param sortBy        Sort field
+     * @param sortDirection Sort direction (asc/desc)
+     * @return Page of all active products
+     */
+    public Page<Product> getAllProducts(int page, int size, String sortBy, String sortDirection) {
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return productRepository.findByStatus(ProductStatus.ACTIVE, pageable);
+    }
+
+    /**
+     * Search all products by keyword
+     * 
+     * @param keyword       Search keyword
+     * @param page          Page number (0-based)
+     * @param size          Page size
+     * @param sortBy        Sort field
+     * @param sortDirection Sort direction (asc/desc)
+     * @return Page of products matching keyword
+     */
+    public Page<Product> searchAllProducts(String keyword, int page, int size,
+            String sortBy, String sortDirection) {
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getAllProducts(page, size, sortBy, sortDirection);
+        }
+
+        return productRepository.findByStatusAndKeyword(ProductStatus.ACTIVE, keyword.trim(), pageable);
+    }
+
     public void updateSoldQuantity(Long productId, Integer quantity) {
         Product product = getProductById(productId);
         if (product != null) {
