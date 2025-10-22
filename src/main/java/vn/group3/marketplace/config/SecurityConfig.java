@@ -18,8 +18,9 @@ public class SecurityConfig {
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/", "/homepage", "/products/**", "/login", "/logout",
-                                                                "/register",
+                                                                "/register", "/verify-otp",
                                                                 "/login/captcha", "/forgot-password", "/reset-password",
+                                                                "/wallet/vnpay-callback",
                                                                 "/debug/**",
                                                                 "/css/**", "/js/**", "/images/**", "/resources/**",
                                                                 "/webjars/**",
