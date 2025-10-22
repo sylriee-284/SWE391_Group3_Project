@@ -176,8 +176,8 @@
                                                                 </c:forEach>
                                                                 <small class="ms-1 text-muted">
                                                                     ${product.rating}/5
-                                                                    <span class="text-muted"> (${product.ratingCount}
-                                                                        đánh giá)</span>
+                                                                    <span class="text-muted"> Total review:
+                                                                        ${product.ratingCount}</span>
                                                                 </small>
                                                                 <span class="ms-1 text-muted">
                                                                     Đã bán: ${product.soldQuantity != null ?
