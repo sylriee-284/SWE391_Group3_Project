@@ -224,6 +224,13 @@ public class OrderService {
         // 5. Calculate total amount
         BigDecimal totalAmount = product.getPrice().multiply(BigDecimal.valueOf(quantity));
 
+        // 2. Validate user balance
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        if (user.getBalance().compareTo(totalAmount) < 0) {
+            throw new IllegalArgumentException("User balance is not enough");
+        }
+
         // 6. Create OrderTask
         OrderTask orderTask = new OrderTask(
                 userId,
