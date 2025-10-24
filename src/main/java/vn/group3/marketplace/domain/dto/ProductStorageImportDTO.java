@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,7 +15,9 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductStorageImportDTO {
+public class ProductStorageImportDTO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private Integer rowNumber;
 

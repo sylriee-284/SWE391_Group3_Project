@@ -22,169 +22,154 @@ import java.util.List;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/seller/product")
+@RequestMapping("/seller/import")
 public class ProductImportController {
 
     private final ProductStorageImportService productStorageImportService;
     private final ProductService productService;
 
+    // Constants
+    private static final String ERROR_MESSAGE = "errorMessage";
+    private static final String SUCCESS_MESSAGE = "successMessage";
+    private static final String WARNING_MESSAGE = "warningMessage";
+    private static final String REDIRECT_IMPORT = "redirect:/seller/import/";
+    private static final String PRODUCT_NOT_FOUND = "Không tìm thấy sản phẩm";
+
     // 1. Show import page
-    @GetMapping("/{productId}/import")
+    @GetMapping("/{productId}")
     public String showImportPage(@PathVariable Long productId, Model model) {
         try {
             Product product = productService.getProductById(productId);
 
             if (product == null) {
-                model.addAttribute("errorMessage", "Không tìm thấy sản phẩm");
+                model.addAttribute(ERROR_MESSAGE, PRODUCT_NOT_FOUND);
                 return "redirect:/seller/products";
             }
 
             model.addAttribute("product", product);
             model.addAttribute("productId", productId);
 
-            return "seller/product-import"; // JSP view path
+            return "seller/import-product"; // JSP view path
 
         } catch (Exception e) {
             log.error("Error showing import page for product {}: {}", productId, e.getMessage(), e);
-            model.addAttribute("errorMessage", "Lỗi tải trang import");
+            model.addAttribute(ERROR_MESSAGE, "Lỗi tải trang import");
             return "redirect:/seller/products";
         }
     }
 
     // 2. Download import template
-    @GetMapping("/{productId}/import/template")
-    @ResponseBody // Required for binary response
-    public ResponseEntity<byte[]> downloadTemplate(@PathVariable Long productId) {
+    @GetMapping("/{productId}/template")
+    @ResponseBody
+    public ResponseEntity<byte[]> downloadTemplate(@PathVariable Long productId, Model model) {
         try {
+            log.info("Generating template for product {}", productId);
             byte[] template = productStorageImportService.generateExcelTemplate(productId);
+
+            if (template == null || template.length == 0) {
+                log.error("Template generation returned empty data for product {}", productId);
+                model.addAttribute(ERROR_MESSAGE, "Template không tồn tại");
+                return ResponseEntity.badRequest().build();
+            }
+
+            Product product = productService.getProductById(productId);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
             headers.setContentDispositionFormData("attachment",
-                    "import_template_product_" + productId + ".xlsx");
+                    "import_template_product_" + product.getCategory().getName() + ".xlsx");
 
+            log.info("Successfully generated template for product {}. Size: {} bytes", productId, template.length);
             return ResponseEntity.ok()
                     .headers(headers)
                     .body(template);
 
         } catch (Exception e) {
             log.error("Error generating template for product {}: {}", productId, e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
+            model.addAttribute(ERROR_MESSAGE, "Lỗi tải template");
+            return ResponseEntity.badRequest().build();
         }
     }
 
-    // 3. Upload and preview import file
-    @PostMapping("/{productId}/import/upload")
-    public String importStorage(
-            @PathVariable Long productId,
-            @RequestParam("file") MultipartFile file,
-            RedirectAttributes redirectAttributes) {
-
-        try {
-            // Validate file
-            if (file.isEmpty()) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng chọn file để import");
-                return "redirect:/seller/product/" + productId + "/import";
-            }
-
-            // Validate file extension
-            String fileName = file.getOriginalFilename();
-            if (fileName == null || !fileName.endsWith(".xlsx")) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Chỉ chấp nhận file Excel (.xlsx)");
-                return "redirect:/seller/product/" + productId + "/import";
-            }
-
-            // Validate file size (Max 10MB)
-            if (file.getSize() > 10 * 1024 * 1024) {
-                redirectAttributes.addFlashAttribute("errorMessage", "File không được vượt quá 10MB");
-                return "redirect:/seller/product/" + productId + "/import";
-            }
-
-            // Parse file
-            List<ProductStorageImportDTO> dtoList = productStorageImportService.parseExcelFile(file, productId);
-
-            if (dtoList.isEmpty()) {
-                redirectAttributes.addFlashAttribute("errorMessage", "File không có dữ liệu");
-                return "redirect:/seller/product/" + productId + "/import";
-            }
-
-            // Validate data
-            Product product = productService.getProductById(productId);
-            if (product == null) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy sản phẩm");
-                return "redirect:/seller/product/" + productId + "/import";
-            }
-
-            Long categoryId = product.getCategory().getId();
-            productStorageImportService.validateImportData(dtoList, categoryId);
-
-            // Count valid and invalid rows
-            long validCount = dtoList.stream().filter(dto -> !dto.hasErrors()).count();
-            long errorCount = dtoList.stream().filter(dto -> dto.hasErrors()).count();
-
-            // Add preview data to flash attributes
-            redirectAttributes.addFlashAttribute("previewMode", true);
-            redirectAttributes.addFlashAttribute("records", dtoList);
-            redirectAttributes.addFlashAttribute("validCount", validCount);
-            redirectAttributes.addFlashAttribute("errorCount", errorCount);
-            redirectAttributes.addFlashAttribute("totalCount", dtoList.size());
-            redirectAttributes.addFlashAttribute("fileName", fileName);
-
-            return "redirect:/seller/product/" + productId + "/import";
-
-        } catch (Exception e) {
-            log.error("Error previewing import for product {}: {}", productId, e.getMessage(), e);
-            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi xử lý file: " + e.getMessage());
-            return "redirect:/seller/product/" + productId + "/import";
-        }
-    }
-
-    // 4. Execute import
-    @PostMapping("/{productId}/import/execute")
+    // 3. Execute import (direct from file upload)
+    @PostMapping("/{productId}/execute")
     public String executeImport(
             @PathVariable Long productId,
             @RequestParam("file") MultipartFile file,
             RedirectAttributes redirectAttributes) {
 
-        try {
-            // Parse file and validate data
-            List<ProductStorageImportDTO> dtoList = productStorageImportService.parseExcelFile(file, productId);
+        log.info("Starting import for product: {}, file: {}", productId, file.getOriginalFilename());
 
-            Product product = productService.getProductById(productId);
-            if (product == null) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy sản phẩm");
-                return "redirect:/seller/product/" + productId + "/import";
+        try {
+            // Validate file
+            if (file.isEmpty()) {
+                redirectAttributes.addFlashAttribute(ERROR_MESSAGE, "Vui lòng chọn file để import");
+                return REDIRECT_IMPORT + productId;
             }
 
+            // Validate file extension
+            String fileName = file.getOriginalFilename();
+            if (fileName == null || !fileName.toLowerCase().endsWith(".xlsx")) {
+                redirectAttributes.addFlashAttribute(ERROR_MESSAGE,
+                        "Chỉ chấp nhận file Excel (.xlsx).");
+                return REDIRECT_IMPORT + productId;
+            }
+
+            // Validate file size (Max 10MB)
+            if (file.getSize() > 10 * 1024 * 1024) {
+                redirectAttributes.addFlashAttribute(ERROR_MESSAGE, "File không được vượt quá 10MB");
+                return REDIRECT_IMPORT + productId;
+            }
+
+            // Validate product
+            Product product = productService.getProductById(productId);
+            if (product == null) {
+                redirectAttributes.addFlashAttribute(ERROR_MESSAGE, PRODUCT_NOT_FOUND);
+                return REDIRECT_IMPORT + productId;
+            }
+
+            // Parse Excel file
+            List<ProductStorageImportDTO> dtoList = productStorageImportService.parseExcelFile(file, productId);
+
+            if (dtoList.isEmpty()) {
+                redirectAttributes.addFlashAttribute(ERROR_MESSAGE,
+                        "File không có dữ liệu hợp lệ. Vui lòng kiểm tra lại file Excel.");
+                return REDIRECT_IMPORT + productId;
+            }
+
+            // Validate business rules
             Long categoryId = product.getCategory().getId();
             productStorageImportService.validateImportData(dtoList, categoryId);
+
+            log.info("Executing import for product {}: file={}, records={}", productId, fileName, dtoList.size());
 
             // Execute import
             ImportResult result = productStorageImportService.importStorage(productId, dtoList);
 
             // Prepare result for display
             if (result.isFullSuccess()) {
-                redirectAttributes.addFlashAttribute("successMessage",
+                redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE,
                         String.format("Import thành công %d sản phẩm!", result.getSuccessCount()));
             } else if (result.hasAnySuccess()) {
-                redirectAttributes.addFlashAttribute("warningMessage",
+                redirectAttributes.addFlashAttribute(WARNING_MESSAGE,
                         String.format("Import thành công %d/%d sản phẩm. %d sản phẩm bị lỗi.",
                                 result.getSuccessCount(),
                                 result.getTotalCount(),
                                 result.getErrorCount()));
-                redirectAttributes.addFlashAttribute("importResult", result);
             } else {
-                redirectAttributes.addFlashAttribute("errorMessage",
-                        "Import thất bại! Tất cả sản phẩm đều có lỗi.");
-                redirectAttributes.addFlashAttribute("importResult", result);
+                redirectAttributes.addFlashAttribute(ERROR_MESSAGE,
+                        String.format("Import thất bại! Tất cả %d sản phẩm đều có lỗi.", result.getErrorCount()));
             }
 
-            return "redirect:/seller/product/" + productId + "/import";
+            // Always add importResult for detailed view
+            redirectAttributes.addFlashAttribute("importResult", result);
+
+            return REDIRECT_IMPORT + productId;
 
         } catch (Exception e) {
             log.error("Error executing import for product {}: {}", productId, e.getMessage(), e);
-            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi import: " + e.getMessage());
-            return "redirect:/seller/product/" + productId + "/import";
+            redirectAttributes.addFlashAttribute(ERROR_MESSAGE, "Lỗi import: " + e.getMessage());
+            return REDIRECT_IMPORT + productId;
         }
     }
 }
