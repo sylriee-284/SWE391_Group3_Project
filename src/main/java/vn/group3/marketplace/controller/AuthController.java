@@ -2,6 +2,7 @@ package vn.group3.marketplace.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -471,6 +472,77 @@ public class AuthController {
             model.addAttribute("errorMessage", "Gửi lại OTP thất bại. Vui lòng thử lại.");
             model.addAttribute("registration_time", session.getAttribute("registration_time"));
             return "verify-otp";
+        }
+    }
+
+    @GetMapping("/user/change-password")
+    public String changePasswordPage() {
+        return "user/change-password";
+    }
+
+    @PostMapping("/user/change-password")
+    public String handleChangePassword(
+            @RequestParam String oldPassword,
+            @RequestParam String newPassword,
+            @RequestParam String confirmPassword,
+            RedirectAttributes redirectAttributes,
+            Model model) {
+
+        try {
+            // Get current authenticated user from SecurityContext
+            Authentication authentication = SecurityContextHolder.getContext()
+                    .getAuthentication();
+
+            if (authentication == null || !authentication.isAuthenticated()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Bạn cần đăng nhập để đổi mật khẩu.");
+                return "redirect:/login";
+            }
+
+            String username = authentication.getName();
+
+            // Get user information from database
+            var userOptional = userService.findByUsername(username);
+            if (userOptional.isEmpty()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy thông tin người dùng.");
+                return "redirect:/login";
+            }
+
+            var user = userOptional.get();
+
+            // IMPORTANT: Check if old password is correct FIRST (fail fast)
+            if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
+                model.addAttribute("errorMessage", "Mật khẩu cũ không chính xác.");
+                return "user/change-password";
+            }
+
+            // Check if old password and new password are the same
+            if (oldPassword.equals(newPassword)) {
+                model.addAttribute("errorMessage", "Mật khẩu mới phải khác mật khẩu cũ.");
+                return "user/change-password";
+            }
+
+            // Validate new password
+            if (!ValidationUtils.isValidPassword(newPassword)) {
+                model.addAttribute("errorMessage", ValidationUtils.getPasswordErrorMessage());
+                return "user/change-password";
+            }
+
+            // Check if new password and confirm password match
+            if (!newPassword.equals(confirmPassword)) {
+                model.addAttribute("errorMessage", "Mật khẩu mới và xác nhận mật khẩu không khớp.");
+                return "user/change-password";
+            }
+
+            // Update new password
+            userService.changePassword(username, newPassword);
+
+            // Success message
+            redirectAttributes.addFlashAttribute("successMessage", "Đổi mật khẩu thành công!");
+            return "redirect:/homepage";
+
+        } catch (Exception ex) {
+            model.addAttribute("errorMessage", "Đã xảy ra lỗi khi đổi mật khẩu. Vui lòng thử lại.");
+            return "user/change-password";
         }
     }
 }

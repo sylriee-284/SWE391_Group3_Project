@@ -112,7 +112,7 @@
                                 <script>
                                     function refreshCaptcha() {
                                         var img = document.getElementById('captchaImage');
-                                        img.src = '/login/captcha?' + new Date().getTime();
+                                        img.src = '/login/captcha';
                                         document.getElementById('captchaInput').value = '';
                                     }
 

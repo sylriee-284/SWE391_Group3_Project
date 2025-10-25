@@ -121,6 +121,18 @@ public class UserService {
         userRepository.updatePassword(encodedPassword, email);
     }
 
+    // Change password for authenticated user
+    @Transactional
+    @PreAuthorize("isAuthenticated()")
+    public void changePassword(String username, String newPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+
+        String encodedPassword = passwordEncoder.encode(newPassword);
+        user.setPasswordHash(encodedPassword);
+        userRepository.save(user);
+    }
+
     // Get user by username
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username).orElse(null);

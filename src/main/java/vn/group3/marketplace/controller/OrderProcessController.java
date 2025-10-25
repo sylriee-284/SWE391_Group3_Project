@@ -2,6 +2,7 @@ package vn.group3.marketplace.controller;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -37,7 +38,8 @@ public class OrderProcessController {
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam Long productId,
             @RequestParam Integer quantity,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes,
+            Model model) {
 
         try {
             // Create order task (validation sẽ được thực hiện trong service)
@@ -48,32 +50,19 @@ public class OrderProcessController {
 
             if (addedToQueue) {
                 // Create notification for successful order creation
-                notificationService.createNotification(
-                        currentUser.getUser(),
-                        NotificationType.ORDER_SUCCESS,
-                        "Đặt hàng thành công",
-                        "Đơn hàng đã được tạo thành công! Đang xử lý thanh toán...");
+                model.addAttribute("successMessage", "Đơn hàng đã được tạo thành công! Đang xử lý thanh toán...");
             } else {
                 // Create error notification
-                notificationService.createNotification(
-                        currentUser.getUser(),
-                        NotificationType.ORDER_FAILED,
-                        "Đặt hàng thất bại",
-                        "Không thể thêm đơn hàng vào hàng đợi. Vui lòng thử lại.");
+                model.addAttribute("errorMessage", "Không thể thêm đơn hàng vào hàng đợi. Vui lòng thử lại.");
             }
 
             return "redirect:/homepage?showOrderModal=true";
 
         } catch (Exception e) {
             // Create error notification
-            notificationService.createNotification(
-                    currentUser.getUser(),
-                    NotificationType.ORDER_FAILED,
-                    "Đặt hàng thất bại",
-                    "Có lỗi xảy ra khi tạo đơn hàng: " + e.getMessage());
+            model.addAttribute("errorMessage", "Có lỗi xảy ra khi tạo đơn hàng: " + e.getMessage());
 
-            return "redirect:/homepage?errorMessage="
-                    + URLEncoder.encode("Có lỗi xảy ra khi tạo đơn hàng: " + e.getMessage(), StandardCharsets.UTF_8);
+            return "redirect:/homepage";
         }
     }
 }

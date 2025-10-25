@@ -37,8 +37,8 @@ public class HomeController {
 
         // Set attribute min order with free fee
         model.addAttribute("minOrderWithFreeFee", systemSettingService.getSettingValue("fee.min_order_with_free_fee"));
-        model.addAttribute("escrowDefaultHoldMinutes",
-                systemSettingService.getSettingValue("escrow.default_hold_minutes"));
+        model.addAttribute("escrowDefaultHoldHours",
+                systemSettingService.getSettingValue("escrow.default_hold_hours"));
 
         return "homepage";
     }

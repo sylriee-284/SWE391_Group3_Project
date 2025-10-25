@@ -30,7 +30,7 @@
                                     <i class="fas fa-check-circle"></i>
                                     Chào mừng bạn đến với MMO Market System - Mọi giao dịch trên trang đều hoàn toàn tự
                                     động
-                                    và được giữ tiền ${escrowDefaultHoldMinutes} phút, thay thế cho hình thức trung
+                                    và được giữ tiền ${escrowDefaultHoldHours} giờ, thay thế cho hình thức trung
                                     gian,
                                     các bạn yên tâm giao dịch
                                     nhé.
@@ -49,7 +49,7 @@
                                     <i class="fas fa-check-circle"></i>
                                     Chào mừng bạn đến với MMO Market System - Mọi giao dịch trên trang đều hoàn toàn tự
                                     động
-                                    và được giữ tiền ${escrowDefaultHoldMinutes} phút, thay thế cho hình thức trung
+                                    và được giữ tiền ${escrowDefaultHoldHours} giờ, thay thế cho hình thức trung
                                     gian, các bạn yên tâm giao
                                     dịch
                                     nhé.
