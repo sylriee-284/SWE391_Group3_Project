@@ -132,17 +132,6 @@ public class OrderProcess {
                             // 7. Send confirmation email asynchronously
                             emailService.sendOrderConfirmationEmailAsync(order);
 
-                            // // 8. Create wallet transaction for user
-                            // WalletTransaction userWalletTransaction = WalletTransaction.builder()
-                            // .user(buyer)
-                            // .amount(order.getTotalAmount())
-                            // .type(WalletTransactionType.PAYMENT)
-                            // .refOrder(order)
-                            // .paymentStatus(WalletTransactionStatus.SUCCESS)
-                            // .note("Thanh toán thành công cho đơn hàng #" + order.getId())
-                            // .build();
-                            // walletTransactionRepository.save(userWalletTransaction);
-
                         } else {
                             // 5.2. Case payment failed:
                             orderService.updateOrderBasedOnPaymentStatus(order, WalletTransactionStatus.FAILED);
@@ -163,17 +152,6 @@ public class OrderProcess {
                                         "Mua hàng thất bại",
                                         "Đơn hàng #" + order.getId() + " không thể hoàn tất do thanh toán thất bại!");
                             }
-
-                            // // Create wallet transaction for failed payment
-                            // WalletTransaction userWalletTransaction = WalletTransaction.builder()
-                            // .user(buyer)
-                            // .amount(order.getTotalAmount())
-                            // .type(WalletTransactionType.PAYMENT)
-                            // .refOrder(order)
-                            // .paymentStatus(WalletTransactionStatus.FAILED)
-                            // .note("Thanh toán thất bại cho đơn hàng #" + order.getId())
-                            // .build();
-                            // walletTransactionRepository.save(userWalletTransaction);
                         }
 
                     } catch (java.util.concurrent.TimeoutException e) {

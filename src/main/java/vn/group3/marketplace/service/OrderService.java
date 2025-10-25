@@ -370,7 +370,8 @@ public class OrderService {
                     productStorage.setDeliveredAt(java.time.LocalDateTime.now());
                     productStorage.setOrder(order);
                 }
-                // Save updated product storages
+
+                // 6. Save updated product storages
                 productStorageService.saveAll(productStoragesToDeliver);
 
                 // 7. Process escrow transaction asynchronously
