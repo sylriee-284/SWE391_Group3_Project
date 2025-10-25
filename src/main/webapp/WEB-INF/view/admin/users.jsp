@@ -125,31 +125,60 @@
                                         <h4 class="m-0">Quản lý người dùng</h4>
 
                                         <div class="d-flex flex-wrap gap-2 align-items-center">
-                                            <form method="get" action="<c:url value='/admin/users'/>"
-                                                class="d-flex gap-2 align-items-center">
+                                            <form id="clientFilter" class="row g-2">
+                                                <!-- Hàng 1: các ô nhập -->
+                                                <div class="col-md-2">
+                                                    <input name="id" class="form-control form-control-sm"
+                                                        value="${fn:escapeXml(param.id)}" placeholder="ID (vd: 16)" />
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <input name="username" class="form-control form-control-sm"
+                                                        value="${fn:escapeXml(param.username)}"
+                                                        placeholder="Username" />
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <input name="email" class="form-control form-control-sm"
+                                                        value="${fn:escapeXml(param.email)}" placeholder="Email" />
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <input name="phone" class="form-control form-control-sm"
+                                                        value="${fn:escapeXml(param.phone)}" placeholder="Phone" />
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <select name="status" class="form-select form-select-sm">
+                                                        <option value="">-- Tất cả trạng thái --</option>
+                                                        <option value="ACTIVE" ${param.status=='ACTIVE' ? 'selected'
+                                                            : '' }>ACTIVE</option>
+                                                        <option value="INACTIVE" ${param.status=='INACTIVE' ? 'selected'
+                                                            : '' }>INACTIVE</option>
+                                                    </select>
+                                                </div>
+
+                                                <!-- sang hàng 2 -->
+                                                <div class="w-100"></div>
+
+                                                <!-- Khi lọc, luôn quay về trang 1 -->
                                                 <input type="hidden" name="page" value="1" />
                                                 <input type="hidden" name="size"
                                                     value="${pageSize != null ? pageSize : 10}" />
-                                                <select name="status" class="form-select form-select-sm">
-                                                    <option value="">-- Tất cả trạng thái --</option>
-                                                    <option value="ACTIVE" <c:if test="${status=='ACTIVE'}">selected
-                                                        </c:if>
-                                                        >ACTIVE</option>
-                                                    <option value="INACTIVE" <c:if test="${status=='INACTIVE'}">selected
-                                                        </c:if>>INACTIVE</option>
-                                                </select>
-                                                <button type="submit" class="btn btn-sm btn-primary">Lọc</button>
-                                                <a class="btn btn-sm btn-outline-secondary"
-                                                    href="<c:url value='/admin/users'/>">Bỏ lọc</a>
+
+                                                <div class="col-12 col-md-6 d-flex gap-2">
+                                                    <button type="submit" class="btn btn-sm btn-primary">Lọc</button>
+                                                    <a class="btn btn-sm btn-outline-secondary"
+                                                        href="<c:url value='/admin/users'/>">Bỏ lọc</a>
+                                                </div>
+                                                <div class="col-12 col-md-6 text-md-end">
+                                                    <a class="btn btn-primary btn-sm"
+                                                        href="<c:url value='/admin/users/add'/>">+ Tạo người dùng</a>
+                                                </div>
                                             </form>
 
-                                            <a class="btn btn-primary" href="<c:url value='/admin/users/add'/>">+ Tạo
-                                                người
-                                                dùng</a>
+
+                                            <!-- Với màn nhỏ, giữ nút tạo ở chỗ cũ -->
+                                            <a class="btn btn-primary mt-2 d-md-none"
+                                                href="<c:url value='/admin/users/add'/>">+ Tạo người dùng</a>
                                         </div>
                                     </div>
-
-
 
                                     <div class="table-container">
                                         <table id="usersTable" class="table table-hover align-middle data-table">
@@ -542,6 +571,73 @@
                             })();
                         </script>
                     </c:if>
+
+                    <script>
+                        (function () {
+                            const form = document.getElementById('clientFilter');
+                            if (!form) return;
+
+                            const tableBody = document.querySelector('#usersTable tbody');
+                            if (!tableBody) return;
+
+                            const allRows = Array.from(tableBody.querySelectorAll('tr'));
+
+                            function cellData(tr, sel, attr) {
+                                const td = tr.querySelector(sel);
+                                if (!td) return '';
+                                if (attr) {
+                                    const v = td.getAttribute(attr);
+                                    return (v || '').trim();
+                                }
+                                return (td.textContent || '').trim();
+                            }
+
+                            function applyFilter() {
+                                const id = (form.fid.value || '').trim();
+                                const username = (form.fusername.value || '').trim().toLowerCase();
+                                const email = (form.femail.value || '').trim().toLowerCase();
+                                const phone = (form.fphone.value || '').trim();
+                                const status = (form.fstatus.value || '').trim();
+
+                                let visible = 0;
+
+                                allRows.forEach(tr => {
+                                    const hasData = !!tr.querySelector('td[data-id]');
+                                    if (!hasData) { tr.style.display = ''; return; }
+
+                                    const rid = cellData(tr, 'td[data-id]', 'data-id');                  // số thô
+                                    const ruser = cellData(tr, 'td[data-username]', 'data-username').toLowerCase();
+                                    const remail = cellData(tr, 'td[data-email]', 'data-email').toLowerCase();
+                                    const rphone = cellData(tr, 'td[data-phone]', 'data-phone');
+                                    const rstatus = cellData(tr, 'td[data-status]', 'data-status');      // ACTIVE/INACTIVE
+
+                                    const ok =
+                                        (!id || (String(rid).includes(id))) &&
+                                        (!username || ruser.includes(username)) &&
+                                        (!email || remail.includes(email)) &&
+                                        (!phone || rphone.includes(phone)) &&
+                                        (!status || rstatus === status);
+
+                                    tr.style.display = ok ? '' : 'none';
+                                    if (ok) visible++;
+                                });
+
+                                // Ẩn/hiện hàng “Không có người dùng hiển thị.” nếu bạn có hàng đó
+                                const emptyRow = tableBody.querySelector('tr[data-empty-row]');
+                                if (emptyRow) emptyRow.style.display = visible ? 'none' : '';
+                            }
+
+                            form.addEventListener('submit', function (e) {
+                                // để mặc định submit về server
+                            });
+
+                            document.getElementById('btnClearFilter')?.addEventListener('click', function () {
+                                form.reset();
+                                applyFilter();
+                            });
+                        })();
+                    </script>
+
 
                 </body>
 
