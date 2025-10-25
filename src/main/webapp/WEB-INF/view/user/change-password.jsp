@@ -243,7 +243,7 @@
 
                     // Password validation
                     function validatePassword(password) {
-                        const minLength = 8;
+                        const minLength = 12;
                         const hasUpperCase = /[A-Z]/.test(password);
                         const hasLowerCase = /[a-z]/.test(password);
                         const hasNumbers = /\d/.test(password);
@@ -254,7 +254,7 @@
                         if (!isValid) {
                             return {
                                 valid: false,
-                                message: 'Mật khẩu phải có ít nhất 8 ký tự, 1 chữ hoa, 1 chữ thường và 1 số'
+                                message: 'Mật khẩu phải có ít nhất 12 ký tự, 1 chữ hoa, 1 chữ thường và 1 số'
                             };
                         }
 
