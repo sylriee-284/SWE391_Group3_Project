@@ -199,6 +199,7 @@ public class ProductStorageImportService {
     // Validate unique fields
     private void validateUniqueFields(List<ProductStorageImportDTO> dtoList, List<CategoryImportTemplate> templates) {
         for (CategoryImportTemplate template : templates) {
+            // Null-safe (defensive programming)
             if (!Boolean.TRUE.equals(template.getIsUnique())) {
                 continue;
             }
@@ -216,8 +217,10 @@ public class ProductStorageImportService {
                     continue;
 
                 // Check if exists in database OR in previously accepted values
-                if (isValueExistsInDatabase(fieldName, value) || acceptedValues.contains(value)) {
+                if (isValueExistsInDatabase(fieldName, value)) {
                     dto.addError(fieldLabel + " đã tồn tại trong hệ thống");
+                } else if (acceptedValues.contains(value)) {
+                    dto.addError(fieldLabel + " bị trùng lặp trong file");
                 } else {
                     // First occurrence - accept it
                     acceptedValues.add(value);
@@ -254,7 +257,7 @@ public class ProductStorageImportService {
 
         // All fields are required
         if (stringValue.isEmpty()) {
-            dto.addError(template.getFieldLabel() + " là bắt buộc");
+            dto.addError(template.getFieldLabel() + " trống!");
             return;
         }
 

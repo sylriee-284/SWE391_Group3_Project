@@ -16,74 +16,83 @@
                     <jsp:include page="../common/navbar.jsp" />
                     <jsp:include page="../common/sidebar.jsp" />
 
-                    <br /><br />
-                    <div class="container mt-4">
-                        <!-- Page Header -->
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h4>Thông tin sản phẩm</h4>
-                            <a href="<c:url value='/seller/import/${productId}/template'/>" class="btn btn-success">
-                                <i class="bi bi-download"></i> Tải Template Excel
-                            </a>
-                        </div>
+                    <!-- Main Content -->
+                    <div class="content" id="content">
+                        <div class="container mt-4">
+                            <!-- Page Header -->
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4>Thông tin sản phẩm</h4>
+                                <a href="<c:url value='/seller/import/${productId}/template'/>" class="btn btn-success">
+                                    <i class="bi bi-download"></i> Tải Template Excel
+                                </a>
+                            </div>
 
-                        <!-- Product Information Card -->
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <!-- Product Name -->
-                                    <div class="col-12">
-                                        <label class="form-label">Tên sản phẩm <span
-                                                class="text-danger">(*)</span></label>
-                                        <input type="text" class="form-control" value="${product.name}" readonly
-                                            style="background-color: #e9ecef;">
-                                    </div>
+                            <!-- Product Information Card -->
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <!-- Product Name -->
+                                        <div class="col-12">
+                                            <label class="form-label">Tên sản phẩm <span
+                                                    class="text-danger">(*)</span></label>
+                                            <input type="text" class="form-control" value="${product.name}" readonly
+                                                style="background-color: #e9ecef;">
+                                        </div>
 
-                                    <!-- Category -->
-                                    <div class="col-12">
-                                        <label class="form-label">Danh mục <span class="text-danger">(*)</span></label>
-                                        <input type="text" class="form-control" value="${product.category.name}"
-                                            readonly style="background-color: #e9ecef;">
-                                    </div>
+                                        <!-- Category -->
+                                        <div class="col-12">
+                                            <label class="form-label">Danh mục <span
+                                                    class="text-danger">(*)</span></label>
+                                            <input type="text" class="form-control" value="${product.category.name}"
+                                                readonly style="background-color: #e9ecef;">
+                                        </div>
 
-                                    <!-- Price -->
-                                    <div class="col-12">
-                                        <label class="form-label">Đơn giá sản phẩm (VND) <span
-                                                class="text-danger">(*)</span></label>
-                                        <fmt:setLocale value="de_DE" />
-                                        <input type="text" class="form-control"
-                                            value="<fmt:formatNumber value='${product.price}' groupingUsed='true' />"
-                                            readonly style="background-color: #e9ecef;">
-                                        <fmt:setLocale value="vi_VN" />
-                                    </div>
+                                        <!-- Price -->
+                                        <div class="col-12">
+                                            <label class="form-label">Đơn giá sản phẩm (VND) <span
+                                                    class="text-danger">(*)</span></label>
+                                            <fmt:setLocale value="de_DE" />
+                                            <input type="text" class="form-control"
+                                                value="<fmt:formatNumber value='${product.price}' groupingUsed='true' />"
+                                                readonly style="background-color: #e9ecef;">
+                                            <fmt:setLocale value="vi_VN" />
+                                        </div>
 
-                                    <!-- Stock -->
-                                    <div class="col-12">
-                                        <label class="form-label">Số lượng còn lại</label>
-                                        <input type="text" class="form-control" value="${product.stock}" readonly
-                                            style="background-color: #e9ecef;">
+                                        <!-- Stock -->
+                                        <div class="col-12">
+                                            <label class="form-label">Số lượng còn lại</label>
+                                            <input type="text" class="form-control" value="${product.stock}" readonly
+                                                style="background-color: #e9ecef;">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Import Form -->
-                        <div class="border rounded p-4 mb-4 bg-light">
-                            <form method="post" action="<c:url value='/seller/import/${productId}/execute'/>"
-                                enctype="multipart/form-data" class="row g-3 align-items-end">
-                                <div class="col-md-9">
-                                    <label class="form-label fw-bold">Chọn file Excel</label>
-                                    <input type="file" class="form-control" name="file" accept=".xlsx" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <button type="submit" class="btn btn-success w-100">
-                                        <i class="bi bi-upload"></i> Nhập hàng
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            <!-- Import Form -->
+                            <div class="border rounded p-4 mb-4 bg-light">
+                                <form method="post" action="<c:url value='/seller/import/${productId}/execute'/>"
+                                    enctype="multipart/form-data">
+                                    <div class="row g-3">
+                                        <div class="col-md-9">
+                                            <label class="form-label fw-bold">Chọn file Excel</label>
+                                            <input type="file" class="form-control" name="file" accept=".xlsx" required
+                                                style="height: 42px;">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-bold">&nbsp;</label>
+                                            <button type="submit" class="btn btn-success w-100 d-block"
+                                                style="height: 42px; font-size: 16px;">
+                                                <i class="bi bi-upload"></i> Nhập hàng
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
 
+                        </div>
+                        <br />
                     </div>
-                    <br />
+                    <!-- End Main Content -->
 
                     <jsp:include page="../common/footer.jsp" />
 
@@ -136,7 +145,7 @@
                                                 <table class="resizable-table">
                                                     <thead>
                                                         <tr>
-                                                            <th style="width: 100px;">STT</th>
+                                                            <th style="width: 100px;">Dòng</th>
                                                             <th>Lỗi</th>
                                                         </tr>
                                                     </thead>
@@ -144,7 +153,7 @@
                                                         <c:forEach items="${importResult.errorRecords}"
                                                             var="errorRecord">
                                                             <tr>
-                                                                <td>${errorRecord.rowNumber - 1}</td>
+                                                                <td>${errorRecord.rowNumber}</td>
                                                                 <td>
                                                                     <c:forEach items="${errorRecord.errors}"
                                                                         var="error">
@@ -223,6 +232,39 @@
                             });
                         </script>
                     </c:if>
+
+                    <!-- Sidebar Toggle Script -->
+                    <script>
+                        // Toggle sidebar khi nhấn vào nút
+                        function toggleSidebar() {
+                            var sidebar = document.getElementById('sidebar');
+                            var content = document.getElementById('content');
+                            var overlay = document.getElementById('sidebarOverlay');
+
+                            if (sidebar && content) {
+                                sidebar.classList.toggle('active');
+                                content.classList.toggle('shifted');
+
+                                // Toggle overlay for mobile
+                                if (overlay) {
+                                    overlay.classList.toggle('active');
+                                }
+                            }
+                        }
+
+                        // Close sidebar when clicking outside on mobile
+                        document.addEventListener('click', function (event) {
+                            var sidebar = document.getElementById('sidebar');
+                            var overlay = document.getElementById('sidebarOverlay');
+                            var menuToggle = document.querySelector('.menu-toggle');
+
+                            if (sidebar && sidebar.classList.contains('active') &&
+                                !sidebar.contains(event.target) &&
+                                !menuToggle.contains(event.target)) {
+                                toggleSidebar();
+                            }
+                        });
+                    </script>
 
                 </body>
 

@@ -35,6 +35,9 @@ public class ProductImportController {
     private static final String REDIRECT_IMPORT = "redirect:/seller/import/";
     private static final String PRODUCT_NOT_FOUND = "Không tìm thấy sản phẩm";
 
+    // Import limits
+    private static final long MAX_FILE_SIZE = 1L * 1024 * 1024; // 1MB
+
     // 1. Show import page
     @GetMapping("/{productId}")
     public String showImportPage(@PathVariable Long productId, Model model) {
@@ -111,13 +114,14 @@ public class ProductImportController {
             String fileName = file.getOriginalFilename();
             if (fileName == null || !fileName.toLowerCase().endsWith(".xlsx")) {
                 redirectAttributes.addFlashAttribute(ERROR_MESSAGE,
-                        "Chỉ chấp nhận file Excel (.xlsx).");
+                        "Vui lòng import file Excel (.xlsx).");
                 return REDIRECT_IMPORT + productId;
             }
 
-            // Validate file size (Max 10MB)
-            if (file.getSize() > 10 * 1024 * 1024) {
-                redirectAttributes.addFlashAttribute(ERROR_MESSAGE, "File không được vượt quá 10MB");
+            // Validate file size (Max 1MB)
+            if (file.getSize() > MAX_FILE_SIZE) {
+                redirectAttributes.addFlashAttribute(ERROR_MESSAGE,
+                        "File không được vượt quá 1MB. Vui lòng giảm số lượng records hoặc chia nhỏ file.");
                 return REDIRECT_IMPORT + productId;
             }
 
