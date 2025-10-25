@@ -438,7 +438,7 @@
                 <c:if test="${not empty successMessage}">
                     <script>
                         iziToast.success({
-                            title: 'Success!',
+                            title: 'Thành công!',
                             message: '${successMessage}',
                             position: 'topRight',
                             timeout: 5000
@@ -449,10 +449,10 @@
                 <c:if test="${not empty errorMessage}">
                     <script>
                         iziToast.error({
-                            title: 'Error!',
+                            title: 'Lỗi!',
                             message: '${errorMessage}',
                             position: 'topRight',
-                            timeout: 5000
+                            timeout: 8000
                         });
                     </script>
                 </c:if>
