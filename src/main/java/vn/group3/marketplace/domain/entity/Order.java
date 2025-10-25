@@ -53,6 +53,9 @@ public class Order extends BaseEntity {
     @Column(name = "total_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal totalAmount;
 
+    @Column(name = "rating")
+    private Integer rating;
+
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "order")
     @Builder.Default
     private List<ProductStorage> productStorages = new ArrayList<>();
