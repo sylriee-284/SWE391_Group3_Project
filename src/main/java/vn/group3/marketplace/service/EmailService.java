@@ -3,11 +3,11 @@ package vn.group3.marketplace.service;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.*;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.mail.MessagingException;
 import vn.group3.marketplace.domain.entity.Order;
 
 @Service
@@ -43,6 +43,7 @@ public class EmailService {
     }
 
     // Send email to user with reset password OTP
+    // No RBAC needed - called from public forgot-password flow
     @Async("emailTaskExecutor")
     public void sendEmailWithResetPasswordOTPAsync(String to, String otp) {
         String subject = "Reset Your Password - MMO Market System";
@@ -68,6 +69,7 @@ public class EmailService {
     }
 
     // Send email to user with registration OTP
+    // No RBAC needed - called from public registration flow
     @Async("emailTaskExecutor")
     public void sendEmailWithRegistrationOTPAsync(String to, String otp) {
         String subject = "Complete Your Registration - MMO Market System";
@@ -103,6 +105,7 @@ public class EmailService {
     }
 
     // Send email to user with order confirmation
+    // No RBAC - Called from OrderProcess background thread without SecurityContext
     @Async("emailTaskExecutor")
     public void sendOrderConfirmationEmailAsync(Order order) {
         String subject = "Order Confirmation - MMO Market System";

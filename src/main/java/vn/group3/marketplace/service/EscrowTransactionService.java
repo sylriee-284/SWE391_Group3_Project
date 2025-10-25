@@ -67,7 +67,7 @@ public class EscrowTransactionService {
                 // Calculate fee based on order total
                 BigDecimal minOrderWithFreeFee = new BigDecimal(
                         systemSettingService.getSettingValue("fee.min_order_with_free_fee", "30000"));
-                BigDecimal feeAmount = calculateFee(order.getTotalAmount());
+                BigDecimal feeAmount = calculateFee(order);
                 // If order total is less than min order with free fee, set fee amount to 0
                 if (order.getTotalAmount().compareTo(minOrderWithFreeFee) <= 0) {
                     feeAmount = BigDecimal.ZERO;
@@ -122,18 +122,19 @@ public class EscrowTransactionService {
         }
     }
 
-    private BigDecimal calculateFee(BigDecimal orderTotal) {
+    private BigDecimal calculateFee(Order order) {
         BigDecimal threshold = new BigDecimal("100000");
+        SellerStore sellerStore = order.getSellerStore();
 
-        if (orderTotal.compareTo(threshold) <= 0) {
+        if (order.getTotalAmount().compareTo(threshold) <= 0) {
             // Use fixed fee for orders <= 100000
             String fixedFeeStr = systemSettingService.getSettingValue("fee.fixed_fee", "5000");
             return new BigDecimal(fixedFeeStr);
         } else {
             // Use percentage fee for orders > 100000
-            String percentageFeeStr = systemSettingService.getSettingValue("fee.percentage_fee", "3.0");
+            String percentageFeeStr = sellerStore.getFeePercentageRate().toString();
             BigDecimal percentageFee = new BigDecimal(percentageFeeStr);
-            return orderTotal.multiply(percentageFee).divide(new BigDecimal("100"));
+            return order.getTotalAmount().multiply(percentageFee).divide(new BigDecimal("100"));
         }
     }
 
@@ -195,7 +196,7 @@ public class EscrowTransactionService {
             WalletTransaction walletTransaction = WalletTransaction.builder()
                     .user(seller)
                     .amount(sellerAmount)
-                    .type(WalletTransactionType.ORDER_PAYMENT)
+                    .type(WalletTransactionType.ORDER_RELEASE)
                     .refOrder(order)
                     .paymentStatus(WalletTransactionStatus.RELEASED)
                     .note("Payment released from escrow for order #" + order.getId() + " to seller "
@@ -246,6 +247,7 @@ public class EscrowTransactionService {
         }
     }
 
+    // OrderProcess
     @Async("escrowTaskExecutor")
     public CompletableFuture<Void> processEscrowTransactionAsync(Order order) {
         try {
