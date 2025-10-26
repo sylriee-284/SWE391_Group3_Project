@@ -2,6 +2,7 @@ package vn.group3.marketplace.controller;
 
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
@@ -174,12 +175,32 @@ public class AdminController {
     // GIỮ một endpoint lưu duy nhất cho form tạo/sửa
     @PostMapping("/users/save")
     @PreAuthorize("hasRole('ADMIN')")
-    public String saveUserFromAdmin(
-            @ModelAttribute("user") vn.group3.marketplace.domain.entity.User user,
-            @RequestParam(value = "roleIds", required = false) java.util.List<Long> roleIds,
-            RedirectAttributes ra) {
+    public String saveUserFromAdmin(@ModelAttribute("user") User user,
+            @RequestParam(value = "roleIds", required = false) List<Long> roleIds,
+            Model model, RedirectAttributes ra) {
 
-        userService.saveFromAdminWithRoles(user, roleIds); // NEW: set mật khẩu mặc định + roles
+        try {
+            userService.saveFromAdminWithRoles(user, roleIds);
+        } catch (IllegalArgumentException ex) {
+            // Chuẩn bị lại dữ liệu cho form
+            model.addAttribute("user", user);
+            model.addAttribute("formMode", user.getId() == null ? "create" : "edit");
+            model.addAttribute("pageTitle", (user.getId() == null ? "Tạo" : "Chỉnh sửa") + " người dùng");
+            model.addAttribute("allRoles", userService.getAllRoles());
+            model.addAttribute("selectedRoleIds",
+                    roleIds == null ? java.util.Set.of(userService.getDefaultUserRoleId())
+                            : new java.util.HashSet<>(roleIds));
+
+            // mapping field -> thông báo
+            switch (ex.getMessage()) {
+                case "USERNAME_DUPLICATED" -> model.addAttribute("usernameError", "Username đã tồn tại.");
+                case "EMAIL_DUPLICATED" -> model.addAttribute("emailError", "Email đã tồn tại.");
+                case "PHONE_DUPLICATED" -> model.addAttribute("phoneError", "Số điện thoại đã tồn tại.");
+                default -> throw ex;
+            }
+            return "admin/user_form"; // TRẢ LẠI FORM để hiện lỗi cạnh ô input
+        }
+
         ra.addFlashAttribute("success",
                 user.getId() == null ? "Tạo người dùng thành công" : "Cập nhật người dùng thành công");
         return "redirect:/admin/users";

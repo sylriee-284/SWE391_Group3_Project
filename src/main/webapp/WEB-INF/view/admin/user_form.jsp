@@ -47,21 +47,35 @@
 
                         <form method="post" action="<c:url value='/admin/users/save'/>" class="needs-validation"
                             novalidate>
-                            <input type="hidden" name="id" value="${user.id}" />
+                            <c:if test="${user.id != null}">
+                                <input type="hidden" name="id" value="${user.id}" />
+                            </c:if>
                             <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
 
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Username</label>
-                                    <input name="username" class="form-control" value="${user.username}" required
-                                        maxlength="50" />
+                                    <input name="username"
+                                        class="form-control ${not empty usernameError ? 'is-invalid' : ''}"
+                                        value="${user.username}" required maxlength="50" />
+                                    <div class="invalid-feedback">
+                                        <c:out
+                                            value="${empty usernameError ? 'Vui lòng nhập username' : usernameError}" />
+                                    </div>
                                 </div>
+
 
                                 <div class="col-md-6">
                                     <label class="form-label">Email</label>
-                                    <input name="email" type="email" class="form-control" value="${user.email}" required
-                                        maxlength="255" />
+                                    <input name="email" type="email"
+                                        class="form-control ${not empty emailError ? 'is-invalid' : ''}"
+                                        value="${user.email}" required maxlength="255" />
+                                    <div class="invalid-feedback">
+                                        <c:out
+                                            value="${empty emailError ? 'Vui lòng nhập email hợp lệ' : emailError}" />
+                                    </div>
                                 </div>
+
 
                                 <div class="col-md-6">
                                     <label class="form-label">Full name</label>
@@ -71,8 +85,14 @@
 
                                 <div class="col-md-6">
                                     <label class="form-label">Phone</label>
-                                    <input name="phone" class="form-control" value="${user.phone}" maxlength="20" />
+                                    <input name="phone" class="form-control ${not empty phoneError ? 'is-invalid' : ''}"
+                                        value="${user.phone}" maxlength="20" />
+                                    <div class="invalid-feedback">
+                                        <c:out
+                                            value="${empty phoneError ? 'Vui lòng nhập số điện thoại' : phoneError}" />
+                                    </div>
                                 </div>
+
 
                                 <!-- Số dư: chỉ hiển thị/đi link nạp nhanh -->
                                 <div class="col-md-6">

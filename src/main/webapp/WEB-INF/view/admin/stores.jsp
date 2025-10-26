@@ -79,8 +79,6 @@
                             min-width: 170px;
                         }
 
-                        /* đủ để hiện dd/mm/yyyy đầy đủ */
-
                         /* Bảng + sort/resize */
                         .resizer {
                             width: 6px;

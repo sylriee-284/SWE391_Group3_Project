@@ -224,13 +224,25 @@ public class CategoryController {
 
     // ===================== LƯU (THÊM / SỬA) =====================
     @PostMapping("/admin/categories/save")
-    public String save(@ModelAttribute("category") Category cat, RedirectAttributes ra) {
+    public String save(@ModelAttribute("category") Category cat, Model model, RedirectAttributes ra) {
         boolean isNew = (cat.getId() == null);
-        // Đảm bảo isDeleted được set là false khi tạo mới hoặc cập nhật
-        if (isNew) {
-            cat.setIsDeleted(false);
+        try {
+            if (isNew)
+                cat.setIsDeleted(false);
+            categoryService.save(cat);
+        } catch (IllegalArgumentException ex) {
+            if ("CATEGORY_NAME_DUPLICATED".equals(ex.getMessage())) {
+                model.addAttribute("category", cat);
+                model.addAttribute("nameError", "Tên đã tồn tại ở cùng cấp.");
+                model.addAttribute("parentCategory", cat.getParent());
+                model.addAttribute("formMode",
+                        isNew ? (cat.getParent() != null ? "create-child" : "create-parent") : "edit");
+                model.addAttribute("pageTitle",
+                        (isNew ? "Thêm " : "Sửa ") + (cat.getParent() == null ? "danh mục CHA" : "danh mục con"));
+                return "admin/category_form"; // trả lại form để hiện lỗi dưới ô input
+            }
+            throw ex;
         }
-        categoryService.save(cat);
 
         if (cat.getParent() != null && cat.getParent().getId() != null && cat.getParent().getId() != 0) {
             ra.addFlashAttribute("success", (isNew ? "Đã thêm" : "Đã cập nhật") + " danh mục con.");
@@ -267,14 +279,24 @@ public class CategoryController {
 
     // --------------------- TÁCH RIÊNG: TẠO CON ---------------------
     @PostMapping("/admin/categories/{parentId}/subcategories/create")
-    public String createChild(@PathVariable Long parentId,
-            @ModelAttribute Category category,
-            RedirectAttributes ra) {
-        // category.setParentId(parentId); // Đã set parent object ở showAddSubcategory
+    public String createChild(@PathVariable Long parentId, @ModelAttribute Category category,
+            Model model, RedirectAttributes ra) {
         Category parent = categoryService.getById(parentId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục cha ID: " + parentId));
-        category.setParent(parent); // Set parent object directly
-        categoryService.save(category);
+        category.setParent(parent);
+        try {
+            categoryService.save(category);
+        } catch (IllegalArgumentException ex) {
+            if ("CATEGORY_NAME_DUPLICATED".equals(ex.getMessage())) {
+                model.addAttribute("category", category);
+                model.addAttribute("parentCategory", parent);
+                model.addAttribute("nameError", "Tên đã tồn tại ở cùng cấp.");
+                model.addAttribute("formMode", "create-child");
+                model.addAttribute("pageTitle", "Thêm danh mục con cho: " + parent.getName());
+                return "admin/category_form";
+            }
+            throw ex;
+        }
         ra.addFlashAttribute("success", "Tạo danh mục con thành công!");
         return "redirect:/admin/categories/" + parentId + "/subcategories";
     }

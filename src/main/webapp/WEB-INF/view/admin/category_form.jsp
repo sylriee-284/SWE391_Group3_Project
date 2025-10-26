@@ -119,9 +119,14 @@
                                     <div class="col-12">
                                         <label class="form-label">Tên danh mục <span
                                                 class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" name="name" value="${category.name}"
-                                            required minlength="2" maxlength="100">
-                                        <div class="invalid-feedback">Tên danh mục là bắt buộc (2-100 ký tự).</div>
+                                        <input type="text"
+                                            class="form-control ${not empty nameError ? 'is-invalid' : ''}" name="name"
+                                            value="${fn:escapeXml(category.name)}" required minlength="2"
+                                            maxlength="100">
+                                        <div class="invalid-feedback">
+                                            <c:out
+                                                value="${empty nameError ? 'Tên danh mục là bắt buộc (2-100 ký tự).' : nameError}" />
+                                        </div>
                                     </div>
                                     <div class="col-12">
                                         <label class="form-label">Mô tả</label>

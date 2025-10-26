@@ -25,6 +25,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
         Page<User> findByStatus(UserStatus status, Pageable pageable);
 
+        Optional<User> findByPhone(String phone);
+
         // Optimized: Check both username and email in a single query to reduce DB calls
         @Query("SELECT u FROM User u WHERE u.username = :username OR u.email = :email")
         Optional<User> findByUsernameOrEmail(@Param("username") String username, @Param("email") String email);

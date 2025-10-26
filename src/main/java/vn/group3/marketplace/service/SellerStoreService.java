@@ -264,7 +264,7 @@ public class SellerStoreService {
         SellerStore s = sellerStoreRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy store #" + storeId));
 
-        // Không cần làm gì nếu trùng trạng thái hiện tại
+        // Không cần làm gì nếu trùng trạng thái
         if (s.getStatus() == target)
             return;
 
