@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -257,6 +257,40 @@ public class UserService {
             db.setRoles(mapRoleIds(roleIds)); // NEW: thay roles theo form
             return userRepository.save(db);
         }
+    }
+
+    public Page<User> searchUsers(int page, int size,
+            Long id, String username, String email, String phone,
+            UserStatus status) {
+        Pageable pr = PageRequest.of(Math.max(0, page), Math.max(1, size));
+
+        Specification<User> spec = Specification.where(null);
+
+        if (id != null) {
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("id"), id));
+        }
+        if (username != null && !username.trim().isEmpty()) {
+            String v = "%" + username.trim().toLowerCase() + "%";
+            spec = spec.and((root, q, cb) -> cb.like(cb.lower(root.get("username")), v));
+        }
+        if (email != null && !email.trim().isEmpty()) {
+            String v = "%" + email.trim().toLowerCase() + "%";
+            spec = spec.and((root, q, cb) -> cb.like(cb.lower(root.get("email")), v));
+        }
+        if (phone != null && !phone.trim().isEmpty()) {
+            String v = "%" + phone.trim() + "%";
+            spec = spec.and((root, q, cb) -> cb.like(root.get("phone"), v));
+        }
+        if (status != null) {
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("status"), status));
+        }
+
+        // (Tuỳ chọn) loại user có role ADMIN từ DB để phân trang chuẩn:
+        // Join<Object, Object> roles = root.join("roles", JoinType.LEFT);
+        // q.distinct(true);
+        // return cb.notEqual(roles.get("code"), "ADMIN");
+
+        return userRepository.findAll(spec, pr);
     }
 
 }

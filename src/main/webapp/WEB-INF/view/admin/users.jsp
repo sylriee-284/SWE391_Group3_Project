@@ -129,7 +129,7 @@
                                                 <!-- Hàng 1: các ô nhập -->
                                                 <div class="col-md-2">
                                                     <input name="id" class="form-control form-control-sm"
-                                                        value="${fn:escapeXml(param.id)}" placeholder="ID (vd: 16)" />
+                                                        value="${fn:escapeXml(param.id)}" placeholder="ID " />
                                                 </div>
                                                 <div class="col-md-2">
                                                     <input name="username" class="form-control form-control-sm"

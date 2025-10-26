@@ -70,32 +70,12 @@ public class AdminController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) Long id, // <-- thêm
-            @RequestParam(required = false) String username, // (nếu sau này dùng)
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String username,
             @RequestParam(required = false) String email,
             @RequestParam(required = false) String phone,
             Model model) {
 
-        // Nếu có id -> trả đúng 1 user, không phân trang
-        if (id != null) {
-            User u = userService.getUserById(id);
-            java.util.List<User> one = (u == null) ? java.util.List.of() : java.util.List.of(u);
-
-            model.addAttribute("users", one);
-            model.addAttribute("currentPage", 1);
-            model.addAttribute("totalPages", 1);
-            model.addAttribute("pageSize", size);
-
-            // giữ lại giá trị filter để hiển thị lại trong form
-            model.addAttribute("status", status);
-            model.addAttribute("id", id);
-            model.addAttribute("username", username);
-            model.addAttribute("email", email);
-            model.addAttribute("phone", phone);
-            model.addAttribute("pageTitle", "Quản lý người dùng");
-            return "admin/users";
-        }
-        // === logic cũ khi không có id ===
         vn.group3.marketplace.domain.enums.UserStatus st = null;
         if (status != null && !status.isBlank()) {
             try {
@@ -104,13 +84,21 @@ public class AdminController {
             }
         }
 
-        Page<User> p = userService.findUsers(page - 1, size, st);
+        Page<User> p = userService.searchUsers(page - 1, size, id, username, email, phone, st);
+
         model.addAttribute("users", p.getContent());
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", p.getTotalPages());
         model.addAttribute("pageSize", size);
+
+        // giữ lại filter để bind về form
         model.addAttribute("status", status);
+        model.addAttribute("id", id);
+        model.addAttribute("username", username);
+        model.addAttribute("email", email);
+        model.addAttribute("phone", phone);
         model.addAttribute("pageTitle", "Quản lý người dùng");
+
         return "admin/users";
     }
 
