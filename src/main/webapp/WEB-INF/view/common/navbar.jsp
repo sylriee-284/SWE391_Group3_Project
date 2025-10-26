@@ -101,37 +101,94 @@
                             });
                     }
 
-                    // Cập nhật balance mỗi 3 giây
-                    let balanceUpdateInterval;
-
-                    function startBalancePolling() {
-                        // Cập nhật ngay lập tức
-                        updateBalanceDisplay();
-
-                        // Cập nhật định kỳ mỗi 3 giây
-                        balanceUpdateInterval = setInterval(updateBalanceDisplay, 3000);
-                    }
-
-                    function stopBalancePolling() {
-                        if (balanceUpdateInterval) {
-                            clearInterval(balanceUpdateInterval);
-                            balanceUpdateInterval = null;
-                        }
-                    }
-
-                    // Bắt đầu polling khi trang load
+                    // Cập nhật balance chỉ khi trang được tải (F5 hoặc load trang mới)
                     document.addEventListener('DOMContentLoaded', function () {
-                        // Chỉ start polling nếu user đã đăng nhập
                         <sec:authorize access="isAuthenticated()">
-                            startBalancePolling();
+                            updateBalanceDisplay();
                         </sec:authorize>
-                    });
-
-                    // Dừng polling khi user rời khỏi trang
-                    window.addEventListener('beforeunload', function () {
-                        stopBalancePolling();
                     });
 
                     // Expose function để có thể gọi từ các trang khác
                     window.updateBalanceDisplay = updateBalanceDisplay;
                 </script>
+
+                <!-- Initialize WebSocket for authenticated users -->
+                <sec:authorize access="isAuthenticated()">
+                    <sec:authentication property="principal.user.id" var="currentUserId" />
+                    <script>
+                        let stompClient = null;
+                        let notificationSubscription = null;
+                        let reconnectTimer = null;
+
+                        function initNotificationWebSocket(userId) {
+                            if (!userId) return;
+                            if (stompClient && stompClient.connected) return;
+
+                            if (stompClient) {
+                                try {
+                                    stompClient.disconnect();
+                                } catch (e) { }
+                            }
+
+                            const socket = new SockJS('/ws');
+                            stompClient = Stomp.over(socket);
+                            stompClient.debug = function () { };
+
+                            stompClient.connect({},
+                                function () {
+                                    if (notificationSubscription) {
+                                        try {
+                                            notificationSubscription.unsubscribe();
+                                        } catch (e) { }
+                                    }
+
+                                    notificationSubscription = stompClient.subscribe('/user/' + userId + '/queue/notifications', function (message) {
+                                        try {
+                                            showNotification(JSON.parse(message.body));
+                                        } catch (e) { }
+                                    });
+                                },
+                                function (error) {
+                                    if (reconnectTimer) clearTimeout(reconnectTimer);
+                                    reconnectTimer = setTimeout(function () {
+                                        initNotificationWebSocket(userId);
+                                    }, 5000);
+                                }
+                            );
+                        }
+
+                        function showNotification(notification) {
+                            if (!notification) return;
+                            const isSuccess = notification.type && notification.type.includes('SUCCESS');
+                            if (isSuccess) {
+                                iziToast.success({
+                                    title: notification.title || 'Thông báo',
+                                    message: notification.content || '',
+                                    position: 'topRight',
+                                    timeout: 5000
+                                });
+                            } else {
+                                iziToast.info({
+                                    title: notification.title || 'Thông báo',
+                                    message: notification.content || '',
+                                    position: 'topRight',
+                                    timeout: 5000
+                                });
+                            }
+                        }
+
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const userId = '${currentUserId}';
+                            if (userId) initNotificationWebSocket(userId);
+                        });
+
+                        document.addEventListener('visibilitychange', function () {
+                            if (!document.hidden && '${currentUserId}') {
+                                const userId = '${currentUserId}';
+                                if (!stompClient || !stompClient.connected) {
+                                    initNotificationWebSocket(userId);
+                                }
+                            }
+                        });
+                    </script>
+                </sec:authorize>

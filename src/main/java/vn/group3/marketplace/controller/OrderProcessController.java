@@ -12,11 +12,6 @@ import vn.group3.marketplace.dto.OrderTask;
 import vn.group3.marketplace.security.CustomUserDetails;
 import vn.group3.marketplace.service.OrderService;
 import vn.group3.marketplace.service.OrderQueue;
-import vn.group3.marketplace.service.NotificationService;
-import vn.group3.marketplace.domain.enums.NotificationType;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 @Controller
 @RequestMapping("/order-process")
@@ -24,13 +19,10 @@ public class OrderProcessController {
 
     private final OrderService orderService;
     private final OrderQueue orderQueue;
-    private final NotificationService notificationService;
 
-    public OrderProcessController(OrderService orderService, OrderQueue orderQueue,
-            NotificationService notificationService) {
+    public OrderProcessController(OrderService orderService, OrderQueue orderQueue) {
         this.orderService = orderService;
         this.orderQueue = orderQueue;
-        this.notificationService = notificationService;
     }
 
     @PostMapping("/buy-now")
@@ -38,8 +30,7 @@ public class OrderProcessController {
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam Long productId,
             @RequestParam Integer quantity,
-            RedirectAttributes redirectAttributes,
-            Model model) {
+            RedirectAttributes redirectAttributes) {
 
         try {
             // Create order task (validation sẽ được thực hiện trong service)
@@ -49,19 +40,18 @@ public class OrderProcessController {
             boolean addedToQueue = orderQueue.addOrder(orderTask);
 
             if (addedToQueue) {
-                // Create notification for successful order creation
-                model.addAttribute("successMessage", "Đơn hàng đã được tạo thành công! Đang xử lý thanh toán...");
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "Đơn hàng đã được tạo thành công! Đang xử lý thanh toán...");
+                return "redirect:/homepage?showOrderModal=true";
             } else {
-                // Create error notification
-                model.addAttribute("errorMessage", "Không thể thêm đơn hàng vào hàng đợi. Vui lòng thử lại.");
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "Không thể thêm đơn hàng vào hàng đợi. Vui lòng thử lại.");
+                return "redirect:/homepage";
             }
 
-            return "redirect:/homepage?showOrderModal=true";
-
         } catch (Exception e) {
-            // Create error notification
-            model.addAttribute("errorMessage", "Có lỗi xảy ra khi tạo đơn hàng: " + e.getMessage());
-
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Có lỗi xảy ra khi tạo đơn hàng: " + e.getMessage());
             return "redirect:/homepage";
         }
     }
