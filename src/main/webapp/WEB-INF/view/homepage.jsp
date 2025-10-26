@@ -298,7 +298,7 @@
                     <c:if test="${not empty successMessage}">
                         <script>
                             iziToast.success({
-                                title: 'Success!',
+                                title: 'Thành công!',
                                 message: '${successMessage}',
                                 position: 'topRight',
                                 timeout: 5000
@@ -369,93 +369,10 @@
                         }
                     </script>
 
-                    <!-- Notification Polling Script -->
-                    <script>
-                        let lastNotificationId = null;
-                        let isPolling = false;
-
-                        // Function to show notification
-                        function showNotification(title, message) {
-                            iziToast.info({
-                                title: title,
-                                message: message,
-                                position: 'bottomLeft',
-                                timeout: 5000,
-                                backgroundColor: '#2ecc71',
-                                titleColor: '#fff',
-                                messageColor: '#fff'
-                            });
-                        }
-
-                        // Function to mark notification as read
-                        function markNotificationAsRead(notificationId) {
-                            fetch('/api/notifications/mark-read/' + notificationId, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                }
-                            })
-                                .then(response => response.text())
-                                .then(data => {
-                                    // Notification marked as read successfully
-                                })
-                                .catch(error => {
-                                    console.error('Error marking notification as read:', error);
-                                });
-                        }
-
-                        // Function to poll for new notifications
-                        function pollNotifications() {
-                            if (isPolling) return;
-                            isPolling = true;
-
-                            fetch('/api/notifications/latest')
-                                .then(response => {
-                                    if (!response.ok) {
-                                        throw new Error('HTTP ' + response.status);
-                                    }
-                                    return response.json();
-                                })
-                                .then(data => {
-                                    if (data && data.id) {
-                                        if (data.id !== lastNotificationId) {
-                                            lastNotificationId = data.id;
-                                            showNotification(data.title, data.content);
-
-                                            // Mark notification as read after displaying
-                                            markNotificationAsRead(data.id);
-                                        }
-                                    } else {
-                                        // If this is the first poll and no notification, set lastNotificationId to 0
-                                        if (lastNotificationId === null) {
-                                            lastNotificationId = 0;
-                                        }
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error polling notifications:', error);
-                                })
-                                .finally(() => {
-                                    isPolling = false;
-                                });
-                        }
-
-                        // Start polling when page loads
-                        document.addEventListener('DOMContentLoaded', function () {
-                            // Initial poll after 2 seconds
-                            setTimeout(() => {
-                                pollNotifications();
-                            }, 2000);
-
-                            // Poll every 3 seconds
-                            setInterval(pollNotifications, 3000);
-                        });
-                    </script>
-
                     <c:if test="${not empty errorMessage}">
                         <script>
                             iziToast.error({
-                                title: 'Error!',
+                                title: 'Lỗi!',
                                 message: '${errorMessage}',
                                 position: 'topRight',
                                 timeout: 5000
@@ -497,8 +414,6 @@
                                 }
                             });
                         </script>
-
-
 
                 </body>
 

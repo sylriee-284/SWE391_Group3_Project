@@ -101,37 +101,74 @@
                             });
                     }
 
-                    // Cập nhật balance mỗi 3 giây
-                    let balanceUpdateInterval;
-
-                    function startBalancePolling() {
-                        // Cập nhật ngay lập tức
-                        updateBalanceDisplay();
-
-                        // Cập nhật định kỳ mỗi 3 giây
-                        balanceUpdateInterval = setInterval(updateBalanceDisplay, 3000);
-                    }
-
-                    function stopBalancePolling() {
-                        if (balanceUpdateInterval) {
-                            clearInterval(balanceUpdateInterval);
-                            balanceUpdateInterval = null;
-                        }
-                    }
-
-                    // Bắt đầu polling khi trang load
+                    // Cập nhật balance chỉ khi trang được tải (F5 hoặc load trang mới)
                     document.addEventListener('DOMContentLoaded', function () {
-                        // Chỉ start polling nếu user đã đăng nhập
                         <sec:authorize access="isAuthenticated()">
-                            startBalancePolling();
+                            updateBalanceDisplay();
                         </sec:authorize>
-                    });
-
-                    // Dừng polling khi user rời khỏi trang
-                    window.addEventListener('beforeunload', function () {
-                        stopBalancePolling();
                     });
 
                     // Expose function để có thể gọi từ các trang khác
                     window.updateBalanceDisplay = updateBalanceDisplay;
                 </script>
+
+                <!-- Initialize WebSocket for authenticated users -->
+                <sec:authorize access="isAuthenticated()">
+                    <sec:authentication property="principal.user.id" var="currentUserId" />
+                    <script>
+                        // WebSocket Notification Client
+                        let stompClient = null;
+
+                        function initNotificationWebSocket(userId) {
+                            if (!userId) return;
+
+                            if (stompClient && stompClient.connected) return;
+
+                            const socket = new SockJS('/ws');
+                            stompClient = Stomp.over(socket);
+                            stompClient.debug = null;
+
+                            stompClient.connect({},
+                                function () {
+                                    stompClient.subscribe('/user/' + userId + '/queue/notifications', function (message) {
+                                        const notification = JSON.parse(message.body);
+                                        showNotification(notification);
+                                    });
+                                },
+                                function (error) {
+                                    setTimeout(function () {
+                                        initNotificationWebSocket(userId);
+                                    }, 3000);
+                                }
+                            );
+                        }
+
+                        function showNotification(notification) {
+                            const isSuccess = notification.type && notification.type.includes('SUCCESS');
+
+                            if (isSuccess) {
+                                iziToast.success({
+                                    title: notification.title,
+                                    message: notification.content,
+                                    position: 'topRight',
+                                    timeout: 5000
+                                });
+                            } else {
+                                iziToast.error({
+                                    title: notification.title,
+                                    message: notification.content,
+                                    position: 'topRight',
+                                    timeout: 5000
+                                });
+                            }
+                        }
+
+                        // Initialize WebSocket when page loads
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const userId = '${currentUserId}';
+                            if (userId) {
+                                initNotificationWebSocket(userId);
+                            }
+                        });
+                    </script>
+                </sec:authorize>
