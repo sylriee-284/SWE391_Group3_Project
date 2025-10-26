@@ -242,21 +242,13 @@
                         const amountError = document.getElementById('amountError');
                         let value = e.target.value;
 
-                        // Allow only digits and comma
-                        value = value.replace(/[^\d,]/g, '');
-
-                        // Remove all commas for processing
-                        let cleanValue = value.replace(/,/g, '');
-
-                        // Add commas back for display (optional - for readability)
-                        if (cleanValue) {
-                            value = cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                        }
+                        // Allow any input (removed character restriction)
+                        // User can type letters, numbers, symbols - validation happens on submit
 
                         e.target.value = value;
 
-                        // Clear error when user starts typing valid number
-                        if (cleanValue && /^\d+$/.test(cleanValue)) {
+                        // Clear error when user starts typing
+                        if (value) {
                             amountError.style.display = 'none';
                             this.classList.remove('is-invalid');
                         }

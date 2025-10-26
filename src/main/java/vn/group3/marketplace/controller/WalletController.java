@@ -8,6 +8,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 import vn.group3.marketplace.domain.entity.User;
+import vn.group3.marketplace.domain.entity.WalletTransaction;
+import vn.group3.marketplace.domain.enums.WalletTransactionStatus;
 import vn.group3.marketplace.security.CustomUserDetails;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -202,8 +204,12 @@ public class WalletController {
             logger.info("Payment successful (ref={}), enqueueing deposit processing...", paymentRef);
 
             try {
-                // Tìm userId từ paymentRef bằng API rõ ràng trên WalletService
-                Long partitionUserId = walletService.findUserIdByPaymentRef(paymentRef).orElse(0L);
+                // Tìm userId từ paymentRef từ  WalletService
+                Long partitionUserId = walletService.findUserIdByPaymentRef(paymentRef)
+                    .orElseThrow(() -> {
+                        logger.error("❌ Transaction not found for paymentRef={}", paymentRef);
+                        return new IllegalArgumentException("Transaction not found: " + paymentRef);
+                    });
 
                 var future = walletTransactionQueueService.enqueueDeposit(partitionUserId, paymentRef);
 
@@ -217,7 +223,35 @@ public class WalletController {
                             paymentRef);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    logger.warn("Deposit processing interrupted for ref={}", paymentRef);
+                    logger.error("❌ Deposit processing interrupted for ref={}", paymentRef);
+                    
+                    // ✅ Check transaction status to see if payment was actually processed
+                    try {
+                        java.util.Optional<WalletTransaction> txOpt = walletService
+                            .findTransactionByPaymentRef(paymentRef);
+                        
+                        if (txOpt.isPresent()) {
+                            WalletTransaction tx = txOpt.get();
+                            WalletTransactionStatus status = tx.getPaymentStatus();
+                            
+                            if (status == WalletTransactionStatus.SUCCESS) {
+                                logger.info("✅ Deposit already processed successfully despite interrupt");
+                                // Tiền đã cộng rồi - return success an toàn
+                                authenticationRefreshService.refreshAuthenticationContext();
+                                return "wallet/success";
+                            } else {
+                                logger.error("❌ Transaction status={} (not SUCCESS), cannot confirm deposit", status);
+                            }
+                        } else {
+                            logger.error("❌ Transaction not found for ref={}", paymentRef);
+                        }
+                    } catch (Exception checkEx) {
+                        logger.error("Error checking transaction status: {}", checkEx.getMessage(), checkEx);
+                    }
+                    
+                    // Không thể xác nhận tiền đã cộng → return failure
+                    logger.warn("⚠️ Cannot confirm deposit status after interrupt, returning failure page");
+                    return "wallet/failure";
                 }
 
                 // REFRESH AUTHENTICATION để cập nhật số dư trong session

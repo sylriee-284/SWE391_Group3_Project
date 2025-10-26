@@ -15,19 +15,7 @@
                     <!-- Include common head with all CSS and JS -->
                     <jsp:include page="../common/head.jsp" />
                     
-                    <style>
-                        .hover-shadow {
-                            transition: all 0.3s ease;
-                        }
-                        .hover-shadow:hover {
-                            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-                            transform: translateY(-2px);
-                            border-color: #0d6efd !important;
-                        }
-                        .form-check-input:checked + .form-check-label {
-                            color: inherit;
-                        }
-                    </style>
+                    
                 </head>
 
                 <body>
@@ -144,11 +132,11 @@
                                                                             <ul class="list-unstyled ms-3">
                                                                                 <li class="mb-2">
                                                                                     <i class="fas fa-arrow-right text-success me-2"></i>
-                                                                                    Đơn hàng dưới <strong><fmt:formatNumber value="${minOrderWithFreeFee}" type="number" pattern="#,###" /> VNĐ</strong> → Phí cố định: <strong class="text-danger"><fmt:formatNumber value="${fixedFee}" type="number" pattern="#,###" /> VNĐ</strong>
+                                                                                    Đơn hàng dưới <strong>100.000 VNĐ</strong> → Phí cố định: <strong class="text-danger"><fmt:formatNumber value="${fixedFee}" type="number" pattern="#,###" /> VNĐ</strong>
                                                                                 </li>
                                                                                 <li class="mb-2">
                                                                                     <i class="fas fa-arrow-right text-primary me-2"></i>
-                                                                                    Đơn hàng từ <strong><fmt:formatNumber value="${minOrderWithFreeFee}" type="number" pattern="#,###" /> VNĐ</strong> trở lên → Phí theo tỷ lệ: <strong class="text-danger"><fmt:formatNumber value="${percentageFee}" type="number" maxFractionDigits="2" />%</strong> trên tổng giá trị đơn hàng
+                                                                                    Đơn hàng từ <strong>100.000 VNĐ</strong> trở lên → Phí theo tỷ lệ: <strong class="text-danger"><fmt:formatNumber value="${percentageFee}" type="number" maxFractionDigits="2" />%</strong> trên tổng giá trị đơn hàng
                                                                                 </li>
                                                                             </ul>
                                                                         </div>
@@ -452,11 +440,11 @@
                                                                 <ul class="list-unstyled mb-3 ms-2">
                                                                     <li class="mb-2">
                                                                         <i class="fas fa-arrow-right text-success me-2"></i>
-                                                                        Đơn hàng dưới <strong><fmt:formatNumber value="${minOrderWithFreeFee}" type="number" pattern="#,###" /> VNĐ</strong> → Phí cố định: <strong class="text-danger"><fmt:formatNumber value="${fixedFee}" type="number" pattern="#,###" /> VNĐ</strong>
+                                                                        Đơn hàng dưới <strong>100.000 VNĐ</strong> → Phí cố định: <strong class="text-danger"><fmt:formatNumber value="${fixedFee}" type="number" pattern="#,###" /> VNĐ</strong>
                                                                     </li>
                                                                     <li class="mb-2">
                                                                         <i class="fas fa-arrow-right text-primary me-2"></i>
-                                                                        Đơn hàng từ <strong><fmt:formatNumber value="${minOrderWithFreeFee}" type="number" pattern="#,###" /> VNĐ</strong> trở lên → Phí theo tỷ lệ: <strong class="text-danger"><fmt:formatNumber value="${percentageFee}" type="number" maxFractionDigits="2" />%</strong> trên tổng giá trị đơn hàng
+                                                                        Đơn hàng từ <strong>100.000 VNĐ</strong> trở lên → Phí theo tỷ lệ: <strong class="text-danger"><fmt:formatNumber value="${percentageFee}" type="number" maxFractionDigits="2" />%</strong> trên tổng giá trị đơn hàng
                                                                     </li>
                                                                 </ul>
 

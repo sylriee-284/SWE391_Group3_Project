@@ -66,10 +66,8 @@ public class SellerController {
     // Add fee settings from SystemSetting (percentage fee and fixed fee for small orders)
     Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
     Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
-    Integer minOrderWithFreeFee = systemSettingService.getIntValue("fee.min_order_with_free_fee", 100000);
     model.addAttribute("percentageFee", percentageFee);
     model.addAttribute("fixedFee", fixedFee);
-    model.addAttribute("minOrderWithFreeFee", minOrderWithFreeFee);
 
         return "seller/seller-register";
     }
@@ -100,10 +98,8 @@ public class SellerController {
             // add fee settings so view can show them on validation errors
             Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
             Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
-            Integer minOrderWithFreeFee = systemSettingService.getIntValue("fee.min_order_with_free_fee", 100000);
             model.addAttribute("percentageFee", percentageFee);
             model.addAttribute("fixedFee", fixedFee);
-            model.addAttribute("minOrderWithFreeFee", minOrderWithFreeFee);
 
             // Parse and validate deposit amount
             BigDecimal deposit;
@@ -168,6 +164,13 @@ public class SellerController {
                 return "seller/seller-register";
             }
 
+            // Get fee percentage rate from system setting if fee model is PERCENTAGE
+            BigDecimal feePercentageRate = null;
+            if (feeModelEnum == SellerStoresType.PERCENTAGE) {
+                Double percentageFeeFromSettings = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
+                feePercentageRate = BigDecimal.valueOf(percentageFeeFromSettings);
+            }
+
             // Create new store in PENDING status (no immediate payment)
             SellerStore store = SellerStore.builder()
                     .owner(currentUser)
@@ -175,6 +178,7 @@ public class SellerController {
                     .description(storeDescription)
                     .depositAmount(deposit)
                     .feeModel(feeModelEnum)
+                    .feePercentageRate(feePercentageRate)
                     .status(StoreStatus.PENDING)
                     .build();
 
@@ -239,10 +243,8 @@ public class SellerController {
     // Add fee settings so the success page can show contract values
     Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
     Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
-    Integer minOrderWithFreeFee = systemSettingService.getIntValue("fee.min_order_with_free_fee", 100000);
     model.addAttribute("percentageFee", percentageFee);
     model.addAttribute("fixedFee", fixedFee);
-    model.addAttribute("minOrderWithFreeFee", minOrderWithFreeFee);
 
         return "seller/register-success";
     }
@@ -285,7 +287,6 @@ public class SellerController {
             // Change store status from PENDING to INACTIVE before payment
             if (store.getStatus() == StoreStatus.PENDING) {
                 store.setStatus(StoreStatus.INACTIVE);
-                sellerStoreService.findById(storeId); // refresh
             }
 
             // Enqueue payment with same ref

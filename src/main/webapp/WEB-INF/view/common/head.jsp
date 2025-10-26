@@ -55,3 +55,6 @@
 
     <!-- Custom System Config CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/system-config.css">
+
+    <!-- Custom Seller Register CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/seller-register.css">

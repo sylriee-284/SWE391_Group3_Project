@@ -54,10 +54,10 @@
                     <!-- <li><a href="#">Feedback</a></li> -->
                     <sec:authorize access="isAuthenticated() and hasRole('USER') and !hasRole('SELLER')">
                         <c:if test="${!havingPendingStore}">
-                            <li><a href="#">🛍️ Đăng ký cửa hàng</a></li>
+                            <li><a href="/seller/register">🛍️ Đăng ký cửa hàng</a></li>
                         </c:if>
                         <c:if test="${havingPendingStore}">
-                            <li><a href="#">🛍️ Kích hoạt cửa hàng</a></li>
+                            <li><a href="/seller/register">🛍️ Kích hoạt cửa hàng</a></li>
                         </c:if>
                     </sec:authorize>
 
