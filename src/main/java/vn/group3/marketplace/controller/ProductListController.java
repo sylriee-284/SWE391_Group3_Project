@@ -76,7 +76,7 @@ public class ProductListController {
             @RequestParam(value = "direction", defaultValue = "desc") String direction,
             @RequestParam(value = "parentCategory", required = false) Long parentCategoryId,
             @RequestParam(value = "childCategory", required = false) Long childCategoryId,
-            @PageableDefault(size = 5) Pageable pageable,
+            @PageableDefault(size = 10) Pageable pageable,
             Model model) {
 
         // Allow searching with just category filter, no keyword required
