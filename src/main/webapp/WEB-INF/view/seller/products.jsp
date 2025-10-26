@@ -283,6 +283,8 @@
                                                         data-id="${p.id}" data-name="${fn:escapeXml(p.name)}"
                                                         data-slug="${fn:escapeXml(p.slug)}"
                                                         data-category="${p.category != null ? fn:escapeXml(p.category.name) : '-'}"
+                                                        data-category-id="${p.category != null ? p.category.id : ''}"
+                                                        data-parent-category-id="${p.category != null && p.category.parent != null ? p.category.parent.id : ''}"
                                                         data-price="${p.price}" data-status="${p.status}"
                                                         data-stock="${p.stock}" data-img="${fn:escapeXml(p.productUrl)}"
                                                         data-desc="${fn:escapeXml(p.description)}">
@@ -597,10 +599,48 @@
                                 else { imgEl.style.display = 'none'; imgEl.src = ''; }
                             });
 
+                            // Function to load subcategories
+                            async function loadSubcategories(parentId, selectedCategoryId = null) {
+                                const catSelect = document.getElementById('e-categoryId');
+                                if (!catSelect) return;
+
+                                // Clear current options
+                                catSelect.innerHTML = '<option value="">-- Chọn danh mục --</option>';
+
+                                if (!parentId) return;
+
+                                try {
+                                    const res = await fetch(window.location.origin + '/seller/products/categories?parentId=' + parentId);
+                                    const data = await res.json();
+
+                                    data.forEach(cat => {
+                                        const opt = document.createElement('option');
+                                        opt.value = cat.id;
+                                        opt.textContent = cat.name;
+                                        if (selectedCategoryId && cat.id == selectedCategoryId) {
+                                            opt.selected = true;
+                                        }
+                                        catSelect.appendChild(opt);
+                                    });
+                                } catch (e) {
+                                    console.error('Error loading subcategories:', e);
+                                }
+                            }
+
                             // Edit modal
                             const editModal = document.getElementById('productEditModal');
                             let editUrl = null;
-                            editModal?.addEventListener('show.bs.modal', function (event) {
+
+                            // Add event listener for parent category change
+                            const parentSelect = document.getElementById('e-parentCategory');
+                            if (parentSelect) {
+                                parentSelect.addEventListener('change', function () {
+                                    const parentId = this.value;
+                                    loadSubcategories(parentId);
+                                });
+                            }
+
+                            editModal?.addEventListener('show.bs.modal', async function (event) {
                                 const btn = event.relatedTarget;
                                 if (!btn) return;
                                 const get = (name) => btn.getAttribute('data-' + name) || '';
@@ -621,23 +661,24 @@
 
                                 document.getElementById('e-status').value = get('status') === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE';
 
-                                const catText = get('category');
-                                const catSelect = document.getElementById('e-categoryId');
-                                if (catSelect) {
-                                    let found = false;
-                                    Array.from(catSelect.options).forEach(opt => {
-                                        if (opt.text === catText || opt.value === catText) { opt.selected = true; found = true; }
-                                    });
-                                    if (!found) catSelect.value = '';
-                                }
+                                // Get category information from data attributes
+                                const categoryId = get('category-id');
+                                const parentCategoryId = get('parent-category-id');
 
                                 const parentSelect = document.getElementById('e-parentCategory');
-                                if (parentSelect) {
-                                    let matched = false;
-                                    Array.from(parentSelect.options).forEach(opt => {
-                                        if (opt.text === catText) { parentSelect.value = opt.value; matched = true; }
-                                    });
-                                    if (!matched) parentSelect.value = '';
+
+                                // Set parent category if available
+                                if (parentSelect && parentCategoryId) {
+                                    parentSelect.value = parentCategoryId;
+                                    // Load subcategories for this parent
+                                    await loadSubcategories(parentCategoryId, categoryId);
+                                } else if (parentSelect) {
+                                    parentSelect.value = '';
+                                    // Clear subcategories
+                                    const catSelect = document.getElementById('e-categoryId');
+                                    if (catSelect) {
+                                        catSelect.innerHTML = '<option value="">-- Chọn danh mục --</option>';
+                                    }
                                 }
 
                                 const desc = get('desc');
@@ -647,8 +688,14 @@
                                 const img = get('img');
                                 const imgWrap = document.getElementById('e-currentImage');
                                 if (img && imgWrap) {
-                                    imgWrap.innerHTML = '<img src="' + img + '" alt="img" style="max-height:80px;border-radius:6px;border:1px solid #eee">';
+                                    imgWrap.innerHTML = '<img src="' + img + '" alt="img" style="max-height:80px;border-radius:6px;border:1px solid #eee" id="e-preview-img">';
                                 } else if (imgWrap) { imgWrap.innerHTML = ''; }
+
+                                // Reset file input
+                                const imageFileInput = document.getElementById('e-imageFile');
+                                if (imageFileInput) {
+                                    imageFileInput.value = '';
+                                }
 
                                 // GẮN ID cho nút "Nhập sản phẩm"
                                 const importBtn = document.getElementById('btnImportProductModal');
@@ -657,25 +704,92 @@
                                 }
                             });
 
+                            // Preview image when file is selected
+                            const imageFileInput = document.getElementById('e-imageFile');
+                            if (imageFileInput) {
+                                imageFileInput.addEventListener('change', function (e) {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        // Validate file type
+                                        if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+                                            if (window.iziToast) {
+                                                iziToast.warning({ title: 'Cảnh báo', message: 'Chỉ chấp nhận file JPG hoặc PNG', position: 'topRight' });
+                                            } else {
+                                                alert('Chỉ chấp nhận file JPG hoặc PNG');
+                                            }
+                                            e.target.value = '';
+                                            return;
+                                        }
+
+                                        if (file.size > 10 * 1024 * 1024) {
+                                            if (window.iziToast) {
+                                                iziToast.warning({ title: 'Cảnh báo', message: 'File ảnh không được vượt quá 10MB', position: 'topRight' });
+                                            } else {
+                                                alert('File ảnh không được vượt quá 10MB');
+                                            }
+                                            e.target.value = '';
+                                            return;
+                                        }
+
+                                        const reader = new FileReader();
+                                        reader.onload = function (event) {
+                                            const imgWrap = document.getElementById('e-currentImage');
+                                            if (imgWrap) {
+                                                imgWrap.innerHTML = '<div class="mb-2"><small class="text-muted">Ảnh mới (chưa lưu):</small></div>' +
+                                                    '<img src="' + event.target.result + '" alt="preview" style="max-height:80px;border-radius:6px;border:1px solid #eee" id="e-preview-img">';
+                                            }
+                                        };
+                                        reader.readAsDataURL(file);
+                                    }
+                                });
+                            }
+
                             // AJAX save in modal
                             document.getElementById('ajaxSaveBtn')?.addEventListener('click', async function () {
                                 const id = document.getElementById('e-id').value;
-                                const payload = {
-                                    id: id,
-                                    name: document.getElementById('e-name').value,
-                                    slug: document.getElementById('e-slug').value,
-                                    price: document.getElementById('e-price').value,
-                                    stock: (document.getElementById('e-stock-hidden') ? document.getElementById('e-stock-hidden').value : (document.getElementById('e-stock') ? document.getElementById('e-stock').textContent : '')),
-                                    status: document.getElementById('e-status').value,
-                                    description: document.getElementById('e-description') ? document.getElementById('e-description').value : '',
-                                    categoryId: document.getElementById('e-categoryId') ? document.getElementById('e-categoryId').value : ''
-                                };
+                                const imageFileInput = document.getElementById('e-imageFile');
+                                const hasNewImage = imageFileInput && imageFileInput.files && imageFileInput.files.length > 0;
+
                                 const tokenMeta = document.querySelector('meta[name="_csrf"]');
                                 const headerMeta = document.querySelector('meta[name="_csrf_header"]');
-                                const headers = { 'Content-Type': 'application/json' };
-                                if (tokenMeta && headerMeta) headers[headerMeta.content] = tokenMeta.content;
 
                                 try {
+                                    if (hasNewImage) {
+                                        const imageFile = imageFileInput.files[0];
+                                        const formData = new FormData();
+                                        formData.append('imageFile', imageFile);
+
+                                        const imageHeaders = {};
+                                        if (tokenMeta && headerMeta) imageHeaders[headerMeta.content] = tokenMeta.content;
+
+                                        const imageRes = await fetch(window.location.origin + '/seller/products/' + id + '/upload-image?storeId=' + encodeURIComponent('${storeId}'), {
+                                            method: 'POST',
+                                            headers: imageHeaders,
+                                            body: formData
+                                        });
+
+                                        const imageData = await imageRes.json();
+                                        if (!imageData.ok) {
+                                            if (window.iziToast) iziToast.error({ title: 'Lỗi', message: imageData.message || 'Lỗi upload ảnh', position: 'topRight' });
+                                            else alert(imageData.message || 'Lỗi upload ảnh');
+                                            return;
+                                        }
+                                    }
+
+                                    const payload = {
+                                        id: id,
+                                        name: document.getElementById('e-name').value,
+                                        slug: document.getElementById('e-slug').value,
+                                        price: document.getElementById('e-price').value,
+                                        stock: (document.getElementById('e-stock-hidden') ? document.getElementById('e-stock-hidden').value : (document.getElementById('e-stock') ? document.getElementById('e-stock').textContent : '')),
+                                        status: document.getElementById('e-status').value,
+                                        description: document.getElementById('e-description') ? document.getElementById('e-description').value : '',
+                                        categoryId: document.getElementById('e-categoryId') ? document.getElementById('e-categoryId').value : ''
+                                    };
+
+                                    const headers = { 'Content-Type': 'application/json' };
+                                    if (tokenMeta && headerMeta) headers[headerMeta.content] = tokenMeta.content;
+
                                     const res = await fetch(window.location.origin + '/seller/products/' + id + '/ajax-update?storeId=' + encodeURIComponent('${storeId}'), {
                                         method: 'POST', headers: headers, body: JSON.stringify(payload)
                                     });

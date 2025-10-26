@@ -108,11 +108,8 @@
                                                 <div class="product-form-group">
                                                     <label class="product-form-label">Danh mục</label>
                                                     <form:select path="category.id" cssClass="product-form-select"
-                                                        required="required">
+                                                        required="required" id="category.id">
                                                         <form:option value="">-- Chọn danh mục --</form:option>
-                                                        <c:forEach var="c" items="${subCategories}">
-                                                            <form:option value="${c.id}">${c.name}</form:option>
-                                                        </c:forEach>
                                                     </form:select>
                                                     <form:errors path="category" cssClass="product-form-error" />
                                                     <form:errors path="category.id" cssClass="product-form-error" />
@@ -295,11 +292,15 @@
                                 }
                             }
 
+                            if (selectedParentId && parentSelect) {
+                                parentSelect.value = selectedParentId;
+                            }
+
                             parentSelect?.addEventListener('change', function () {
                                 loadChildren(parentSelect.value, null);
                             });
 
-                            if (selectedParentId && childSelect && childSelect.options.length <= 1) {
+                            if (selectedParentId) {
                                 loadChildren(selectedParentId, currentChildId);
                             }
                         });

@@ -651,6 +651,73 @@ public class SellerProductController {
         }
     }
 
+    // ============ AJAX: Upload ảnh sản phẩm ============
+    @PostMapping(value = "/{id}/upload-image", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object> uploadImage(@PathVariable Long id,
+            @RequestParam("imageFile") MultipartFile imageFile,
+            @RequestParam(value = "storeId", required = false) Long storeId) {
+        Long sid = resolveStoreId(storeId);
+        Map<String, Object> out = new HashMap<>();
+
+        try {
+            Product existing = productService.getOwned(id, sid);
+
+            // Validate file
+            if (imageFile == null || imageFile.isEmpty()) {
+                out.put("ok", false);
+                out.put("message", "Vui lòng chọn file ảnh");
+                return out;
+            }
+
+            // Validate file type
+            String contentType = imageFile.getContentType();
+            if (contentType == null || (!contentType.equals("image/jpeg") && !contentType.equals("image/png"))) {
+                out.put("ok", false);
+                out.put("message", "Chỉ chấp nhận file JPG hoặc PNG");
+                return out;
+            }
+
+            // Validate file size (max 10MB)
+            if (imageFile.getSize() > 10 * 1024 * 1024) {
+                out.put("ok", false);
+                out.put("message", "File ảnh không được vượt quá 10MB");
+                return out;
+            }
+
+            // Delete old image first
+            if (existing.getProductUrl() != null && !existing.getProductUrl().isEmpty()) {
+                deleteOldImageFile(existing.getProductUrl());
+            }
+
+            // Save new image
+            Path staticProductsDir = Paths.get("src/main/resources/static/images/products");
+            Files.createDirectories(staticProductsDir);
+
+            String extension = contentType.equals("image/png") ? "png" : "jpg";
+            String filename = id + "." + extension;
+            String imageUrl = saveSingleImageToStatic(imageFile, staticProductsDir, filename);
+
+            // Update product
+            existing.setProductUrl(imageUrl);
+            productService.update(existing, sid);
+
+            out.put("ok", true);
+            out.put("message", "Upload ảnh thành công");
+            out.put("imageUrl", imageUrl);
+            return out;
+
+        } catch (IllegalArgumentException ex) {
+            out.put("ok", false);
+            out.put("message", ex.getMessage());
+            return out;
+        } catch (Exception ex) {
+            out.put("ok", false);
+            out.put("message", "Lỗi khi upload ảnh: " + ex.getMessage());
+            return out;
+        }
+    }
+
     // DTO đơn giản cho JSON
     public static class Option {
         private final Long id;
