@@ -64,14 +64,16 @@
                             </div>
                         </div>
 
-                        <!-- Notifications will be displayed using iziToast -->
+                        <!-- Search Bar -->
                         <div class="container my-4">
                             <div class="row justify-content-center">
-                                <div class="col-md-8">
-                                    <form action="/search" method="get" class="d-flex">
-                                        <input type="text" name="keyword" class="form-control me-2"
-                                            placeholder="Tìm sản phẩm..." required>
-                                        <button type="submit" class="btn btn-primary">🔍 Tìm kiếm</button>
+                                <div class="col-md-10">
+                                    <form action="<c:url value='/products/search'/>" method="get" class="d-flex">
+                                        <input type="text" name="keyword" class="form-control me-2 rounded-pill"
+                                            placeholder="Tìm kiếm sản phẩm..." required>
+                                        <button type="submit" class="btn btn-success rounded-pill px-4">
+                                            <i class="fas fa-search"></i> Tìm kiếm
+                                        </button>
                                     </form>
                                 </div>
                             </div>
