@@ -21,7 +21,6 @@ import vn.group3.marketplace.service.ProductService;
 public class ProductListController {
 
     private final ProductService productService;
-    private final vn.group3.marketplace.service.CategoryService categoryService;
 
     @GetMapping
     public String getAllProducts(
@@ -29,11 +28,17 @@ public class ProductListController {
             @PageableDefault(size = 12) Pageable pageable,
             Model model) {
 
+        String originalSort = sort; // Keep original sort value for UI display
+
         // Determine sort direction based on field
         String sortDirection;
         switch (sort) {
             case "price":
                 sortDirection = "asc"; // Giá từ thấp đến cao
+                break;
+            case "priceDesc":
+                sortDirection = "desc"; // Giá từ cao đến thấp
+                sort = "price"; // Use 'price' field but desc direction
                 break;
             case "soldQuantity":
                 sortDirection = "desc"; // Sản phẩm nổi bật từ cao đến thấp
@@ -43,6 +48,8 @@ public class ProductListController {
                 break;
             default:
                 sortDirection = "desc"; // Mặc định từ cao đến thấp
+                sort = "soldQuantity";
+                originalSort = "soldQuantity";
         }
 
         // Get all products with sorting
@@ -55,6 +62,8 @@ public class ProductListController {
         // Add attributes to model
         model.addAttribute("products", products);
         model.addAttribute("sortBy", sort);
+        model.addAttribute("originalSort", originalSort); // For radio button selection
+        model.addAttribute("sortDirection", sortDirection);
 
         // Pagination attributes
         model.addAttribute("currentPage", products.getNumber());
@@ -73,79 +82,47 @@ public class ProductListController {
     public String searchProducts(
             @RequestParam(value = "keyword", required = false) String keyword,
             @RequestParam(value = "sort", defaultValue = "soldQuantity") String sort,
-            @RequestParam(value = "direction", defaultValue = "desc") String direction,
-            @RequestParam(value = "parentCategory", required = false) Long parentCategoryId,
-            @RequestParam(value = "childCategory", required = false) Long childCategoryId,
-            @PageableDefault(size = 10) Pageable pageable,
+            @PageableDefault(size = 12) Pageable pageable,
             Model model) {
 
-        // Allow searching with just category filter, no keyword required
-        if (keyword == null) {
-            keyword = "";
+        String originalSort = sort; // Keep original sort value for UI display
+
+        // Determine sort direction based on field (same logic as getAllProducts)
+        String sortDirection;
+        switch (sort) {
+            case "price":
+                sortDirection = "asc"; // Giá từ thấp đến cao
+                break;
+            case "priceDesc":
+                sortDirection = "desc"; // Giá từ cao đến thấp
+                sort = "price"; // Use 'price' field but desc direction
+                break;
+            case "soldQuantity":
+                sortDirection = "desc"; // Sản phẩm nổi bật từ cao đến thấp
+                break;
+            case "createdAt":
+                sortDirection = "desc"; // Mới nhất trước
+                break;
+            default:
+                sortDirection = "desc"; // Mặc định từ cao đến thấp
+                sort = "soldQuantity";
+                originalSort = "soldQuantity";
         }
 
-        // Determine sort direction - use provided direction or default based on field
-        String sortDirection = direction;
-        if (sortDirection == null || sortDirection.trim().isEmpty()) {
-            switch (sort) {
-                case "price":
-                    sortDirection = "asc"; // Giá từ thấp đến cao
-                    break;
-                case "soldQuantity":
-                    sortDirection = "desc"; // Sản phẩm nổi bật từ cao đến thấp
-                    break;
-                case "createdAt":
-                    sortDirection = "desc"; // Mới nhất trước
-                    break;
-                default:
-                    sortDirection = "desc"; // Mặc định từ cao đến thấp
-            }
-        }
-
-        // Search products with filters - need to implement searchProductsWithFilters
-        // method
-        Page<Product> products;
-        if (parentCategoryId != null || childCategoryId != null) {
-            // Use filtered search method
-            products = productService.searchProductsWithFilters(
-                    keyword.trim(),
-                    parentCategoryId,
-                    childCategoryId,
-                    pageable.getPageNumber(),
-                    pageable.getPageSize(),
-                    sort,
-                    sortDirection);
-        } else {
-            // Use basic search method
-            products = productService.searchAllProducts(
-                    keyword.trim(),
-                    pageable.getPageNumber(),
-                    pageable.getPageSize(),
-                    sort,
-                    sortDirection);
-        }
-
-        // Load categories for dropdowns
-        try {
-            model.addAttribute("parentCategories", categoryService.getParentCategories());
-            if (parentCategoryId != null) {
-                model.addAttribute("childCategories", categoryService.getChildCategories(parentCategoryId));
-            } else {
-                model.addAttribute("childCategories", java.util.Collections.emptyList());
-            }
-        } catch (Exception e) {
-            // Fallback if category service fails
-            model.addAttribute("parentCategories", java.util.Collections.emptyList());
-            model.addAttribute("childCategories", java.util.Collections.emptyList());
-        }
+        // Use search with sorting
+        Page<Product> products = productService.searchAllProducts(
+                keyword != null ? keyword.trim() : "",
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                sort,
+                sortDirection);
 
         // Add attributes to model
         model.addAttribute("products", products);
-        model.addAttribute("sortBy", sort);
-        model.addAttribute("sortDirection", sortDirection);
         model.addAttribute("keyword", keyword);
-        model.addAttribute("selectedParentCategory", parentCategoryId);
-        model.addAttribute("selectedChildCategory", childCategoryId);
+        model.addAttribute("sortBy", sort);
+        model.addAttribute("originalSort", originalSort); // For radio button selection
+        model.addAttribute("sortDirection", sortDirection);
 
         // Pagination attributes
         model.addAttribute("currentPage", products.getNumber());

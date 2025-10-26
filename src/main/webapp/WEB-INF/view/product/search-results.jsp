@@ -126,113 +126,70 @@
                                 </c:if>
                             </div>
 
-                            <!-- Filter and Search Section -->
-                            <div class="filter-section">
-                                <form method="get" action="<c:url value='/products/search'/>" id="filterForm">
-                                    <!-- Row 1: Main Filters -->
-                                    <div class="row filter-row">
-                                        <!-- Search Box -->
-                                        <div class="col-md-3 mb-3">
-                                            <div class="filter-label">Tìm kiếm sản phẩm</div>
-                                            <input type="text" class="form-control" id="keyword" name="keyword"
-                                                value="${keyword}" placeholder="Nhập từ khóa...">
-                                        </div>
-
-                                        <!-- Parent Category Filter -->
-                                        <div class="col-md-2 mb-3">
-                                            <div class="filter-label">Danh mục chính</div>
-                                            <select class="form-select" id="parentCategory" name="parentCategory"
-                                                onchange="loadChildCategories()">
-                                                <option value="">Tất cả danh mục</option>
-                                                <c:forEach var="parentCat" items="${parentCategories}">
-                                                    <option value="${parentCat.id}" <c:if
-                                                        test="${selectedParentCategory == parentCat.id}">selected</c:if>
-                                                        >
-                                                        ${parentCat.name}
-                                                    </option>
-                                                </c:forEach>
-                                            </select>
-                                        </div>
-
-                                        <!-- Child Category Filter -->
-                                        <div class="col-md-2 mb-3">
-                                            <div class="filter-label">Danh mục con</div>
-                                            <select class="form-select" id="childCategory" name="childCategory">
-                                                <option value="">Tất cả danh mục con</option>
-                                                <c:forEach var="childCat" items="${childCategories}">
-                                                    <option value="${childCat.id}" <c:if
-                                                        test="${selectedChildCategory == childCat.id}">selected</c:if>>
-                                                        ${childCat.name}
-                                                    </option>
-                                                </c:forEach>
-                                            </select>
-                                        </div>
-
-                                        <!-- Sort Options -->
-                                        <div class="col-md-2 mb-3">
-                                            <div class="filter-label">Sắp xếp theo</div>
-                                            <select class="form-select" id="sort" name="sort">
-                                                <option value="soldQuantity" <c:if
-                                                    test="${sortBy == 'soldQuantity' || empty sortBy}">selected</c:if>
-                                                    >Sản phẩm nổi bật</option>
-                                                <option value="createdAt" <c:if test="${sortBy == 'createdAt'}">selected
-                                                    </c:if>>Sản phẩm mới</option>
-                                                <option value="rating" <c:if test="${sortBy == 'rating'}">selected
-                                                    </c:if>>Đánh giá cao</option>
-                                                <option value="price" <c:if test="${sortBy == 'price'}">selected</c:if>
-                                                    >Giá</option>
-                                            </select>
-                                        </div>
-
-                                        <!-- Sort Direction -->
-                                        <div class="col-md-2 mb-3">
-                                            <div class="filter-label">Thứ tự</div>
-                                            <select class="form-select" id="direction" name="direction">
-                                                <option value="desc" <c:if
-                                                    test="${sortDirection == 'desc' || empty sortDirection}">selected
-                                                    </c:if>>Giảm dần</option>
-                                                <option value="asc" <c:if test="${sortDirection == 'asc'}">selected
-                                                    </c:if>>Tăng dần</option>
-                                            </select>
-                                        </div>
-
-                                        <!-- Filter Button -->
-                                        <div class="col-md-1 mb-3 d-flex align-items-end">
-                                            <button type="submit" class="btn btn-success w-100" title="Tìm kiếm">
-                                                <i class="fas fa-search"></i>
+                            <!-- Search Section -->
+                            <div class="container my-4">
+                                <div class="row justify-content-center">
+                                    <div class="col-md-8">
+                                        <form method="get" action="<c:url value='/products/search'/>"
+                                            class="d-flex align-items-center">
+                                            <input type="text" class="form-control me-2 rounded-pill" id="keyword"
+                                                name="keyword" value="${keyword}" placeholder="Tìm kiếm sản phẩm..."
+                                                required style="height: 45px;">
+                                            <button type="submit" class="btn btn-success rounded-pill px-4"
+                                                style="height: 45px; white-space: nowrap;">
+                                                <i class="fas fa-search"></i> Tìm kiếm
                                             </button>
-                                        </div>
+                                        </form>
                                     </div>
+                                </div>
+                            </div>
 
-                                    <!-- Row 2: Action Buttons -->
-                                    <div class="row mt-2">
-                                        <div class="col-md-12 d-flex justify-content-between">
-                                            <div>
-                                                <c:if
-                                                    test="${not empty keyword || selectedParentCategory != null || selectedChildCategory != null || sortBy != 'soldQuantity' || sortDirection != 'desc'}">
-                                                    <span class="badge bg-secondary me-2">
-                                                        <i class="fas fa-filter"></i> Đang lọc
-                                                    </span>
-                                                </c:if>
-                                            </div>
-                                            <div>
-                                                <c:if
-                                                    test="${not empty keyword || selectedParentCategory != null || selectedChildCategory != null}">
-                                                    <a href="<c:url value='/products/search?keyword=${keyword}'/>"
-                                                        class="btn btn-collapse me-2">
-                                                        <i class="fas fa-times-circle"></i> BỎ LỌC
-                                                    </a>
-                                                </c:if>
-                                                <button type="button" class="btn btn-outline-secondary"
-                                                    onclick="toggleFilterSection()">
-                                                    <span id="filterToggleText">THU GỌN</span>
-                                                    <i class="fas fa-chevron-up" id="filterToggleIcon"></i>
-                                                </button>
-                                            </div>
-                                        </div>
+                            <!-- Sort Filter Section -->
+                            <div class="filter-section mb-4">
+                                <div class="row align-items-center">
+                                    <div class="col-md-2">
+                                        <label class="filter-label mb-0">Sắp xếp theo:</label>
                                     </div>
-                                </form>
-                            </div> <!-- Products Grid -->
+                                    <div class="col-md-10">
+                                        <form method="get" action="<c:url value='/products/search'/>" id="sortForm">
+                                            <input type="hidden" name="keyword" value="${keyword}">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="sort"
+                                                        value="soldQuantity" id="sortPopular" ${empty originalSort ||
+                                                        originalSort=='soldQuantity' ? 'checked' : '' }
+                                                        onchange="document.getElementById('sortForm').submit();">
+                                                    <label class="form-check-label" for="sortPopular">
+                                                        <i class="fas fa-fire text-danger me-1"></i>Sản phẩm nổi bật
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="sort"
+                                                        value="price" id="sortPriceAsc" ${originalSort=='price'
+                                                        ? 'checked' : '' }
+                                                        onchange="document.getElementById('sortForm').submit();">
+                                                    <label class="form-check-label" for="sortPriceAsc">
+                                                        <i class="fas fa-sort-amount-up text-success me-1"></i>Giá từ
+                                                        thấp đến cao
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="sort"
+                                                        value="priceDesc" id="sortPriceDesc" ${originalSort=='priceDesc'
+                                                        ? 'checked' : '' }
+                                                        onchange="document.getElementById('sortForm').submit();">
+                                                    <label class="form-check-label" for="sortPriceDesc">
+                                                        <i class="fas fa-sort-amount-down text-info me-1"></i>Giá từ cao
+                                                        đến thấp
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Products Grid -->
                             <div class="row">
                                 <c:choose>
                                     <c:when test="${not empty products.content}">
@@ -366,15 +323,8 @@
                                                             <c:param name="keyword" value="${keyword}" />
                                                             <c:param name="page" value="0" />
                                                             <c:param name="size" value="${size}" />
-                                                            <c:param name="sort" value="${sortBy}" />
-                                                            <c:param name="direction" value="${sortDirection}" />
-                                                            <c:if test="${selectedParentCategory != null}">
-                                                                <c:param name="parentCategory"
-                                                                    value="${selectedParentCategory}" />
-                                                            </c:if>
-                                                            <c:if test="${selectedChildCategory != null}">
-                                                                <c:param name="childCategory"
-                                                                    value="${selectedChildCategory}" />
+                                                            <c:if test="${not empty originalSort}">
+                                                                <c:param name="sort" value="${originalSort}" />
                                                             </c:if>
                                                         </c:url>
                                                         <a class="page-link" href="${firstUrl}" aria-label="First">
@@ -397,15 +347,8 @@
                                                             <c:param name="keyword" value="${keyword}" />
                                                             <c:param name="page" value="${previousPage}" />
                                                             <c:param name="size" value="${size}" />
-                                                            <c:param name="sort" value="${sortBy}" />
-                                                            <c:param name="direction" value="${sortDirection}" />
-                                                            <c:if test="${selectedParentCategory != null}">
-                                                                <c:param name="parentCategory"
-                                                                    value="${selectedParentCategory}" />
-                                                            </c:if>
-                                                            <c:if test="${selectedChildCategory != null}">
-                                                                <c:param name="childCategory"
-                                                                    value="${selectedChildCategory}" />
+                                                            <c:if test="${not empty originalSort}">
+                                                                <c:param name="sort" value="${originalSort}" />
                                                             </c:if>
                                                         </c:url>
                                                         <a class="page-link" href="${prevUrl}" aria-label="Previous">
@@ -424,15 +367,8 @@
                                                             <c:param name="keyword" value="${keyword}" />
                                                             <c:param name="page" value="${pageNum}" />
                                                             <c:param name="size" value="${size}" />
-                                                            <c:param name="sort" value="${sortBy}" />
-                                                            <c:param name="direction" value="${sortDirection}" />
-                                                            <c:if test="${selectedParentCategory != null}">
-                                                                <c:param name="parentCategory"
-                                                                    value="${selectedParentCategory}" />
-                                                            </c:if>
-                                                            <c:if test="${selectedChildCategory != null}">
-                                                                <c:param name="childCategory"
-                                                                    value="${selectedChildCategory}" />
+                                                            <c:if test="${not empty originalSort}">
+                                                                <c:param name="sort" value="${originalSort}" />
                                                             </c:if>
                                                         </c:url>
                                                         <li class="page-item ${pageNum == currentPage ? 'active' : ''}">
@@ -466,15 +402,8 @@
                                                             <c:param name="keyword" value="${keyword}" />
                                                             <c:param name="page" value="${nextPage}" />
                                                             <c:param name="size" value="${size}" />
-                                                            <c:param name="sort" value="${sortBy}" />
-                                                            <c:param name="direction" value="${sortDirection}" />
-                                                            <c:if test="${selectedParentCategory != null}">
-                                                                <c:param name="parentCategory"
-                                                                    value="${selectedParentCategory}" />
-                                                            </c:if>
-                                                            <c:if test="${selectedChildCategory != null}">
-                                                                <c:param name="childCategory"
-                                                                    value="${selectedChildCategory}" />
+                                                            <c:if test="${not empty originalSort}">
+                                                                <c:param name="sort" value="${originalSort}" />
                                                             </c:if>
                                                         </c:url>
                                                         <a class="page-link" href="${nextUrl}" aria-label="Next">
@@ -497,15 +426,8 @@
                                                             <c:param name="keyword" value="${keyword}" />
                                                             <c:param name="page" value="${totalPages - 1}" />
                                                             <c:param name="size" value="${size}" />
-                                                            <c:param name="sort" value="${sortBy}" />
-                                                            <c:param name="direction" value="${sortDirection}" />
-                                                            <c:if test="${selectedParentCategory != null}">
-                                                                <c:param name="parentCategory"
-                                                                    value="${selectedParentCategory}" />
-                                                            </c:if>
-                                                            <c:if test="${selectedChildCategory != null}">
-                                                                <c:param name="childCategory"
-                                                                    value="${selectedChildCategory}" />
+                                                            <c:if test="${not empty originalSort}">
+                                                                <c:param name="sort" value="${originalSort}" />
                                                             </c:if>
                                                         </c:url>
                                                         <a class="page-link" href="${lastUrl}" aria-label="Last">
@@ -581,57 +503,7 @@
                             }
                         });
 
-                        // Toggle filter section
-                        function toggleFilterSection() {
-                            var filterSection = document.querySelector('.filter-section .filter-row');
-                            var toggleText = document.getElementById('filterToggleText');
-                            var toggleIcon = document.getElementById('filterToggleIcon');
 
-                            if (filterSection.style.display === 'none') {
-                                filterSection.style.display = 'flex';
-                                toggleText.textContent = 'THU GỌN';
-                                toggleIcon.classList.remove('fa-chevron-down');
-                                toggleIcon.classList.add('fa-chevron-up');
-                            } else {
-                                filterSection.style.display = 'none';
-                                toggleText.textContent = 'MỞ RỘNG';
-                                toggleIcon.classList.remove('fa-chevron-up');
-                                toggleIcon.classList.add('fa-chevron-down');
-                            }
-                        }
-
-                        // Load child categories when parent category changes
-                        function loadChildCategories() {
-                            const parentCategoryId = document.getElementById('parentCategory').value;
-                            const childCategorySelect = document.getElementById('childCategory');
-
-                            // Clear current options except the first one
-                            childCategorySelect.innerHTML = '<option value="">Tất cả danh mục con</option>';
-
-                            if (parentCategoryId) {
-                                // Make AJAX call to get child categories
-                                const baseUrl = '<c:url value="/api/categories/" />';
-                                fetch(baseUrl + parentCategoryId + '/children')
-                                    .then(response => {
-                                        if (!response.ok) {
-                                            throw new Error('Network response was not ok');
-                                        }
-                                        return response.json();
-                                    })
-                                    .then(data => {
-                                        data.forEach(category => {
-                                            const option = document.createElement('option');
-                                            option.value = category.id;
-                                            option.textContent = category.name;
-                                            childCategorySelect.appendChild(option);
-                                        });
-                                    })
-                                    .catch(error => {
-                                        console.error('Error loading child categories:', error);
-                                        // Show a fallback message or keep empty
-                                    });
-                            }
-                        }
 
 
                         // Auto-hide alerts after 5 seconds

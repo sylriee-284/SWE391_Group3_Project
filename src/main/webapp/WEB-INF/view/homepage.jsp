@@ -68,10 +68,12 @@
                         <div class="container my-4">
                             <div class="row justify-content-center">
                                 <div class="col-md-10">
-                                    <form action="<c:url value='/products/search'/>" method="get" class="d-flex">
+                                    <form action="<c:url value='/products/search'/>" method="get"
+                                        class="d-flex align-items-center">
                                         <input type="text" name="keyword" class="form-control me-2 rounded-pill"
-                                            placeholder="Tìm kiếm sản phẩm..." required>
-                                        <button type="submit" class="btn btn-success rounded-pill px-4">
+                                            placeholder="Tìm kiếm sản phẩm..." required style="height: 45px;">
+                                        <button type="submit" class="btn btn-success rounded-pill px-4"
+                                            style="height: 45px; white-space: nowrap;">
                                             <i class="fas fa-search"></i> Tìm kiếm
                                         </button>
                                     </form>

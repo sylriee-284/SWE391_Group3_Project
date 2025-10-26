@@ -58,38 +58,40 @@
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="radio" name="sort"
                                                         id="sortSoldQuantity" value="soldQuantity" <c:if
-                                                        test="${sortBy == 'soldQuantity' || empty sortBy}">checked
+                                                        test="${originalSort == 'soldQuantity' || empty originalSort}">checked
                                                     </c:if>
                                                     onchange="this.form.submit()">
                                                     <label class="form-check-label" for="sortSoldQuantity">
-                                                        Sản phẩm nổi bật
+                                                        <i class="fas fa-fire text-danger me-1"></i>Sản phẩm nổi bật
                                                     </label>
                                                 </div>
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="radio" name="sort"
                                                         id="sortNew" value="createdAt" <c:if
-                                                        test="${sortBy == 'createdAt'}">checked</c:if>
+                                                        test="${originalSort == 'createdAt'}">checked</c:if>
                                                     onchange="this.form.submit()">
                                                     <label class="form-check-label" for="sortNew">
-                                                        Sản phẩm mới
-                                                    </label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="radio" name="sort"
-                                                        id="sortRating" value="rating" <c:if
-                                                        test="${sortBy == 'rating'}">checked</c:if>
-                                                    onchange="this.form.submit()">
-                                                    <label class="form-check-label" for="sortRating">
-                                                        Sản phẩm có lượt đánh giá cao
+                                                        <i class="fas fa-clock text-primary me-1"></i>Sản phẩm mới
                                                     </label>
                                                 </div>
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="radio" name="sort"
                                                         id="sortPrice" value="price" <c:if
-                                                        test="${sortBy == 'price'}">checked</c:if>
+                                                        test="${originalSort == 'price'}">checked</c:if>
                                                     onchange="this.form.submit()">
                                                     <label class="form-check-label" for="sortPrice">
-                                                        Giá từ thấp đến cao
+                                                        <i class="fas fa-sort-amount-up text-success me-1"></i>Giá từ
+                                                        thấp đến cao
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="sort"
+                                                        id="sortPriceDesc" value="priceDesc" <c:if
+                                                        test="${originalSort == 'priceDesc'}">checked</c:if>
+                                                    onchange="this.form.submit()">
+                                                    <label class="form-check-label" for="sortPriceDesc">
+                                                        <i class="fas fa-sort-amount-down text-info me-1"></i>Giá từ cao
+                                                        đến thấp
                                                     </label>
                                                 </div>
                                             </div>
@@ -228,7 +230,9 @@
                                                         <c:url var="firstUrl" value="/products">
                                                             <c:param name="page" value="0" />
                                                             <c:param name="size" value="${size}" />
-                                                            <c:param name="sort" value="${sortBy}" />
+                                                            <c:if test="${not empty originalSort}">
+                                                                <c:param name="sort" value="${originalSort}" />
+                                                            </c:if>
                                                         </c:url>
                                                         <a class="page-link" href="${firstUrl}" aria-label="First">
                                                             <span aria-hidden="true">&laquo;&laquo;</span>
@@ -249,7 +253,9 @@
                                                         <c:url var="prevUrl" value="/products">
                                                             <c:param name="page" value="${previousPage}" />
                                                             <c:param name="size" value="${size}" />
-                                                            <c:param name="sort" value="${sortBy}" />
+                                                            <c:if test="${not empty originalSort}">
+                                                                <c:param name="sort" value="${originalSort}" />
+                                                            </c:if>
                                                         </c:url>
                                                         <a class="page-link" href="${prevUrl}" aria-label="Previous">
                                                             <span aria-hidden="true">&laquo;</span>
@@ -266,7 +272,9 @@
                                                         <c:url var="pageUrl" value="/products">
                                                             <c:param name="page" value="${pageNum}" />
                                                             <c:param name="size" value="${size}" />
-                                                            <c:param name="sort" value="${sortBy}" />
+                                                            <c:if test="${not empty originalSort}">
+                                                                <c:param name="sort" value="${originalSort}" />
+                                                            </c:if>
                                                         </c:url>
                                                         <li class="page-item ${pageNum == currentPage ? 'active' : ''}">
                                                             <a class="page-link" href="${pageUrl}">${pageNum + 1}</a>
@@ -298,7 +306,9 @@
                                                         <c:url var="nextUrl" value="/products">
                                                             <c:param name="page" value="${nextPage}" />
                                                             <c:param name="size" value="${size}" />
-                                                            <c:param name="sort" value="${sortBy}" />
+                                                            <c:if test="${not empty originalSort}">
+                                                                <c:param name="sort" value="${originalSort}" />
+                                                            </c:if>
                                                         </c:url>
                                                         <a class="page-link" href="${nextUrl}" aria-label="Next">
                                                             <span aria-hidden="true">&raquo;</span>
@@ -319,7 +329,9 @@
                                                         <c:url var="lastUrl" value="/products">
                                                             <c:param name="page" value="${totalPages - 1}" />
                                                             <c:param name="size" value="${size}" />
-                                                            <c:param name="sort" value="${sortBy}" />
+                                                            <c:if test="${not empty originalSort}">
+                                                                <c:param name="sort" value="${originalSort}" />
+                                                            </c:if>
                                                         </c:url>
                                                         <a class="page-link" href="${lastUrl}" aria-label="Last">
                                                             <span aria-hidden="true">&raquo;&raquo;</span>
