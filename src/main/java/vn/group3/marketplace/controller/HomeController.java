@@ -21,24 +21,19 @@ public class HomeController {
     }
 
     @GetMapping("/homepage")
-    public String home(@RequestParam(required = false) String successMessage,
-            @RequestParam(required = false) String errorMessage,
-            @RequestParam(required = false) boolean showOrderModal,
+    public String home(@RequestParam(required = false) boolean showOrderModal,
             Model model) {
-        if (successMessage != null) {
-            model.addAttribute("successMessage", successMessage);
-        }
-        if (errorMessage != null) {
-            model.addAttribute("errorMessage", errorMessage);
-        }
+        // Flash attributes (successMessage, errorMessage) will be automatically added
+        // to model by Spring
+
         if (showOrderModal) {
             model.addAttribute("showOrderModal", true);
         }
 
         // Set attribute min order with free fee
         model.addAttribute("minOrderWithFreeFee", systemSettingService.getSettingValue("fee.min_order_with_free_fee"));
-        model.addAttribute("escrowDefaultHoldMinutes",
-                systemSettingService.getSettingValue("escrow.default_hold_minutes"));
+        model.addAttribute("escrowDefaultHoldHours",
+                systemSettingService.getSettingValue("escrow.default_hold_hours"));
 
         return "homepage";
     }

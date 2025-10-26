@@ -31,11 +31,9 @@ public class CategoryImportTemplate extends BaseEntity {
         @Column(name = "field_label", nullable = false, length = 255)
         private String fieldLabel;
 
-        // REMOVED: field_type (mặc định tất cả là TEXT)
-
-        @Column(name = "is_required", nullable = false)
+        @Column(name = "is_unique", nullable = false)
         @Builder.Default
-        private Boolean isRequired = false;
+        private Boolean isUnique = true;
 
         @Column(name = "validation_rule", length = 500)
         private String validationRule;

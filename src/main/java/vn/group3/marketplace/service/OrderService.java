@@ -60,7 +60,7 @@ public class OrderService {
     private final SellerStoreRepository sellerStoreRepository;
     private final ProductStorageService productStorageService;
     private final ObjectMapper objectMapper;
-    private final NotificationService notificationService;
+    private final WebSocketService webSocketService;
     private final EscrowTransactionService escrowTransactionService;
 
     public OrderService(OrderRepository orderRepository,
@@ -72,7 +72,7 @@ public class OrderService {
             SellerStoreRepository sellerStoreRepository,
             ProductStorageService productStorageService,
             ObjectMapper objectMapper,
-            NotificationService notificationService,
+            WebSocketService webSocketService,
             EscrowTransactionService escrowTransactionService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
@@ -83,7 +83,7 @@ public class OrderService {
         this.sellerStoreRepository = sellerStoreRepository;
         this.productStorageService = productStorageService;
         this.objectMapper = objectMapper;
-        this.notificationService = notificationService;
+        this.webSocketService = webSocketService;
         this.escrowTransactionService = escrowTransactionService;
     }
 
@@ -370,7 +370,8 @@ public class OrderService {
                     productStorage.setDeliveredAt(java.time.LocalDateTime.now());
                     productStorage.setOrder(order);
                 }
-                // Save updated product storages
+
+                // 6. Save updated product storages
                 productStorageService.saveAll(productStoragesToDeliver);
 
                 // 7. Process escrow transaction asynchronously
@@ -392,9 +393,9 @@ public class OrderService {
         }
     }
 
-    // Create order notification
+    // Create order notification and send via WebSocket
     // No RBAC - Internal method called by OrderProcess
     public void createOrderNotification(User user, NotificationType type, String title, String content) {
-        notificationService.createNotification(user, type, title, content);
+        webSocketService.createAndSendNotification(user, type, title, content);
     }
 }
