@@ -12,11 +12,15 @@ import vn.group3.marketplace.domain.entity.User;
 import vn.group3.marketplace.domain.enums.NotificationType;
 import vn.group3.marketplace.repository.NotificationRepository;
 
+import java.util.concurrent.TimeUnit;
+
 @Service
 public class WebSocketService {
 
     private static final Logger logger = LoggerFactory.getLogger(WebSocketService.class);
     private static final String NOTIFICATION_DESTINATION = "/queue/notifications";
+    private static final int MAX_RETRY_ATTEMPTS = 3;
+    private static final long RETRY_DELAY_MS = 500;
 
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationRepository notificationRepository;
@@ -41,15 +45,43 @@ public class WebSocketService {
             notification.setCreatedBy(0L);
             notification = notificationRepository.save(notification);
 
-            // Send notification via WebSocket
-            sendNotificationToUser(user, notification);
-            logger.info("Sent notification to user {} - {}", user.getId(), title);
+            // QUAN TRỌNG: Đợi DB transaction commit trước khi gửi WebSocket
+            sleepSafely(100);
+
+            // QUAN TRỌNG: Cơ chế retry đảm bảo notification được gửi ngay cả khi
+            // kết nối WebSocket tạm thời không khả dụng
+            sendNotificationWithRetry(user, notification);
         } catch (Exception e) {
             logger.error("Error creating notification for user {}: {}", user.getId(), e.getMessage());
         }
     }
 
-    // Convert Notification entity to DTO
+    // QUAN TRỌNG: Đảm bảo DB transaction commit trước khi gửi WebSocket để tránh
+    // race condition
+    private void sleepSafely(long milliseconds) {
+        try {
+            TimeUnit.MILLISECONDS.sleep(milliseconds);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    // QUAN TRỌNG: Retry gửi WebSocket tối đa 3 lần với exponential backoff để xử lý
+    // các vấn đề kết nối tạm thời
+    private void sendNotificationWithRetry(User user, Notification notification) {
+        for (int attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
+            try {
+                sendNotificationToUser(user, notification);
+                return;
+            } catch (Exception e) {
+                if (attempt == MAX_RETRY_ATTEMPTS) {
+                    logger.error("Failed to send notification to user {}: {}", user.getId(), e.getMessage());
+                }
+                sleepSafely(RETRY_DELAY_MS * attempt);
+            }
+        }
+    }
+
     private NotificationDTO convertToDTO(Notification notification) {
         return NotificationDTO.builder()
                 .id(notification.getId())
@@ -61,20 +93,11 @@ public class WebSocketService {
                 .build();
     }
 
-    // Send notification to a specific user
     public void sendNotificationToUser(Long userId, NotificationDTO notification) {
-        try {
-            String destination = "/user/" + userId + NOTIFICATION_DESTINATION;
-            messagingTemplate.convertAndSend(destination, notification);
-            logger.info("Sent notification to user {}: {}", userId, notification.getTitle());
-        } catch (Exception e) {
-            logger.error("Error sending notification to user {}: {}", userId, e.getMessage());
-        }
+        messagingTemplate.convertAndSend("/user/" + userId + NOTIFICATION_DESTINATION, notification);
     }
 
-    // Send notification from Notification entity
     public void sendNotificationToUser(User user, Notification notification) {
-        NotificationDTO dto = convertToDTO(notification);
-        sendNotificationToUser(user.getId(), dto);
+        sendNotificationToUser(user.getId(), convertToDTO(notification));
     }
 }

@@ -116,58 +116,78 @@
                 <sec:authorize access="isAuthenticated()">
                     <sec:authentication property="principal.user.id" var="currentUserId" />
                     <script>
-                        // WebSocket Notification Client
                         let stompClient = null;
+                        let notificationSubscription = null;
+                        let reconnectTimer = null;
 
                         function initNotificationWebSocket(userId) {
                             if (!userId) return;
-
                             if (stompClient && stompClient.connected) return;
+
+                            if (stompClient) {
+                                try {
+                                    stompClient.disconnect();
+                                } catch (e) { }
+                            }
 
                             const socket = new SockJS('/ws');
                             stompClient = Stomp.over(socket);
-                            stompClient.debug = null;
+                            stompClient.debug = function () { };
 
                             stompClient.connect({},
                                 function () {
-                                    stompClient.subscribe('/user/' + userId + '/queue/notifications', function (message) {
-                                        const notification = JSON.parse(message.body);
-                                        showNotification(notification);
+                                    if (notificationSubscription) {
+                                        try {
+                                            notificationSubscription.unsubscribe();
+                                        } catch (e) { }
+                                    }
+
+                                    notificationSubscription = stompClient.subscribe('/user/' + userId + '/queue/notifications', function (message) {
+                                        try {
+                                            showNotification(JSON.parse(message.body));
+                                        } catch (e) { }
                                     });
                                 },
                                 function (error) {
-                                    setTimeout(function () {
+                                    if (reconnectTimer) clearTimeout(reconnectTimer);
+                                    reconnectTimer = setTimeout(function () {
                                         initNotificationWebSocket(userId);
-                                    }, 3000);
+                                    }, 5000);
                                 }
                             );
                         }
 
                         function showNotification(notification) {
+                            if (!notification) return;
                             const isSuccess = notification.type && notification.type.includes('SUCCESS');
-
                             if (isSuccess) {
                                 iziToast.success({
-                                    title: notification.title,
-                                    message: notification.content,
+                                    title: notification.title || 'Thông báo',
+                                    message: notification.content || '',
                                     position: 'topRight',
                                     timeout: 5000
                                 });
                             } else {
-                                iziToast.error({
-                                    title: notification.title,
-                                    message: notification.content,
+                                iziToast.info({
+                                    title: notification.title || 'Thông báo',
+                                    message: notification.content || '',
                                     position: 'topRight',
                                     timeout: 5000
                                 });
                             }
                         }
 
-                        // Initialize WebSocket when page loads
                         document.addEventListener('DOMContentLoaded', function () {
                             const userId = '${currentUserId}';
-                            if (userId) {
-                                initNotificationWebSocket(userId);
+                            if (userId) initNotificationWebSocket(userId);
+                        });
+
+                        document.addEventListener('visibilitychange', function () {
+                            if (!document.hidden && '${currentUserId}') {
+                                const userId = '${currentUserId}';
+                                if (!stompClient || !stompClient.connected) {
+                                    initNotificationWebSocket(userId);
+                                }
                             }
                         });
                     </script>
