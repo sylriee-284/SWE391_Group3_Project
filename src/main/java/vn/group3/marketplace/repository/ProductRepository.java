@@ -37,7 +37,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                                                 AND (:maxPrice IS NULL OR p.price <= :maxPrice)
                                                 AND (:idFrom IS NULL OR p.id >= :idFrom)
                                                 AND (:idTo IS NULL OR p.id <= :idTo)
-                                        ORDER BY p.updatedAt DESC
                         """)
         Page<Product> search(
                         @Param("storeId") Long storeId,
@@ -107,6 +106,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         "LEFT JOIN FETCH s.owner " +
                         "WHERE p.slug = :slug AND p.isDeleted = false")
         Optional<Product> findBySlugWithDetails(@Param("slug") String slug);
+
+        // Distinct categories sold by a store
+        @Query("SELECT DISTINCT p.category FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = 'ACTIVE' AND p.isDeleted = false")
+        java.util.List<vn.group3.marketplace.domain.entity.Category> findDistinctCategoriesByStore(
+                        @Param("storeId") Long storeId);
+
+        @Query("SELECT COALESCE(MIN(p.price), 0) FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = 'ACTIVE' AND p.isDeleted = false")
+        java.math.BigDecimal findMinPriceByStore(@Param("storeId") Long storeId);
+
+        @Query("SELECT COALESCE(MAX(p.price), 0) FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = 'ACTIVE' AND p.isDeleted = false")
+        java.math.BigDecimal findMaxPriceByStore(@Param("storeId") Long storeId);
 
         // Atomic decrement stock with condition
         @Modifying

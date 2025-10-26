@@ -50,3 +50,5 @@
 
     <!-- Custom Styles CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/styles.css">
+    <!-- Store page CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/store.css">

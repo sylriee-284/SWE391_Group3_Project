@@ -13,6 +13,12 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadDir + "/");
+                .addResourceLocations("file:" + uploadDir + "/", "classpath:/static/images/products/");
+        // Serve images moved to classpath static folder under /images/products/**
+        registry.addResourceHandler("/images/products/**")
+                .addResourceLocations("classpath:/static/images/products/");
+        // Serve old path for backward compatibility
+        registry.addResourceHandler("/image/products/**")
+                .addResourceLocations("classpath:/static/images/products/");
     }
 }

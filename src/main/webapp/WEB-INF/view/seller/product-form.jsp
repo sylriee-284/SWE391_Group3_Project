@@ -21,6 +21,10 @@
                     <jsp:include page="../common/navbar.jsp" />
                     <jsp:include page="../common/sidebar.jsp" />
 
+                    <!-- Sidebar Overlay for Mobile -->
+                    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()" role="button"
+                        tabindex="0" onKeyPress="if(event.key === 'Enter') toggleSidebar()"></div>
+
                     <!-- Prefill ids từ Controller -->
                     <span id="prefill" data-parent="${selectedParentId}" data-child="${selectedChildId}"></span>
 
@@ -121,7 +125,7 @@
                                                     <!-- Lấy max từ Model: storeMaxListingPrice -->
                                                     <c:set var="priceMax" value="${storeMaxListingPrice}" />
 
-                                                    <form:input path="price" type="number" step="10000" min="0"
+                                                    <form:input path="price" type="number" step="1" min="0"
                                                         cssClass="product-form-control" required="required"
                                                         max="${priceMax}" />
 
@@ -180,14 +184,24 @@
                                                 <!-- Ảnh đại diện -->
                                                 <div class="product-form-group product-form-full-width">
                                                     <label class="product-form-label">Ảnh đại diện sản phẩm</label>
-                                                    <input class="product-form-control" type="file" name="imageFile"
-                                                        accept="image/jpeg,image/png" />
+                                                    <input class="product-form-control" type="file" name="imageFiles"
+                                                        accept="image/jpeg,image/png" id="imageFileInput" />
                                                     <c:if test="${not empty form.productUrl}">
-                                                        <div class="product-image-container">
-                                                            <img src="${form.productUrl}" alt="Ảnh sản phẩm"
-                                                                class="product-image-preview" />
-                                                            <div class="product-form-text">Ảnh hiện tại. Nếu không chọn
-                                                                ảnh mới, sẽ giữ nguyên.</div>
+                                                        <div class="product-image-container" style="margin-top: 10px;">
+                                                            <img src="<c:url value='${form.productUrl}'/>"
+                                                                alt="Ảnh sản phẩm" class="product-image-preview"
+                                                                onerror="handleImageError(this)"
+                                                                style="max-width: 300px; max-height: 300px; object-fit: contain; border: 1px solid #ddd; padding: 5px;" />
+                                                            <div class="product-form-text">
+                                                                Ảnh hiện tại: <strong>${form.productUrl}</strong>
+                                                                <br />Nếu không chọn ảnh mới, sẽ giữ nguyên.
+                                                            </div>
+                                                        </div>
+                                                    </c:if>
+                                                    <c:if test="${empty form.productUrl}">
+                                                        <div class="product-form-text text-muted"
+                                                            style="margin-top: 10px;">
+                                                            Chưa có ảnh. Vui lòng chọn ảnh để upload.
                                                         </div>
                                                     </c:if>
                                                     <div class="product-form-text">Chỉ JPG/PNG, tối đa 10MB.</div>
@@ -299,6 +313,17 @@
                         <script>iziToast.error({ title: 'Error!', message: '${errorMessage}', position: 'topRight', timeout: 5000 });</script>
                     </c:if>
 
+                    <script>
+                        // Xử lý lỗi khi ảnh không load được
+                        function handleImageError(img) {
+                            if (!img) return;
+                            img.onerror = null; // Tránh loop vô hạn
+                            img.src = '<c:url value="/images/others.png"/>';
+                            img.style.border = '2px dashed #ccc';
+                            img.alt = 'Ảnh không tồn tại';
+                        }
+                    </script>
+
                     <!-- Client-side validation (có thêm vPriceMax) -->
                     <script>
                         (function () {
@@ -392,6 +417,38 @@
                                 form.classList.add('was-validated');
                             });
                         })();
+                    </script>
+
+                    <script>
+                        // Toggle sidebar khi nhấn vào nút (same as other pages)
+                        function toggleSidebar() {
+                            var sidebar = document.getElementById('sidebar');
+                            var content = document.getElementById('content');
+                            var overlay = document.getElementById('sidebarOverlay');
+
+                            if (sidebar && content) {
+                                sidebar.classList.toggle('active');
+                                content.classList.toggle('shifted');
+
+                                // Toggle overlay for mobile
+                                if (overlay) {
+                                    overlay.classList.toggle('active');
+                                }
+                            }
+                        }
+
+                        // Close sidebar when clicking outside on mobile
+                        document.addEventListener('click', function (event) {
+                            var sidebar = document.getElementById('sidebar');
+                            var overlay = document.getElementById('sidebarOverlay');
+                            var menuToggle = document.querySelector('.menu-toggle');
+
+                            if (sidebar && sidebar.classList.contains('active') &&
+                                !sidebar.contains(event.target) &&
+                                menuToggle && !menuToggle.contains(event.target)) {
+                                toggleSidebar();
+                            }
+                        });
                     </script>
                 </body>
 

@@ -1,16 +1,20 @@
 package vn.group3.marketplace.repository;
 
-import org.springframework.data.domain.Pageable;
+// Pageable removed - not used
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.group3.marketplace.domain.entity.Message;
 
-import java.util.List;
+// List not used at top-level imports
 
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
+
+        @Query("SELECT m FROM Message m WHERE ((m.senderUser.id = :userId1 AND m.receiverUser.id = :userId2) OR (m.senderUser.id = :userId2 AND m.receiverUser.id = :userId1)) ORDER BY m.createdAt ASC")
+        java.util.List<vn.group3.marketplace.domain.entity.Message> findMessagesBetweenUsers(
+                        @Param("userId1") Long userId1, @Param("userId2") Long userId2);
 
         // /**
         // * Get all messages between two users (both directions)

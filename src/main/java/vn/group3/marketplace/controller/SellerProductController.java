@@ -15,7 +15,7 @@ import vn.group3.marketplace.domain.entity.SellerStore;
 import vn.group3.marketplace.domain.enums.ProductStatus;
 import vn.group3.marketplace.domain.enums.ProductStorageStatus;
 import vn.group3.marketplace.repository.CategoryRepository;
-import vn.group3.marketplace.repository.ProductStorageRepository;
+// removed unused ProductStorageRepository import
 import vn.group3.marketplace.repository.SellerStoreRepository;
 import vn.group3.marketplace.service.ProductService;
 
@@ -40,7 +40,8 @@ public class SellerProductController {
 
     private final ProductService productService;
     private final CategoryRepository categoryRepo;
-    private final ProductStorageRepository storageRepo;
+    // product storage repository not needed here; use ProductStorageService if
+    // required
     private final SellerStoreRepository storeRepo;
 
     private static final Long DEFAULT_STORE_ID = 1L;
@@ -69,12 +70,77 @@ public class SellerProductController {
         return storeRepo.findById(storeId).map(SellerStore::getMaxListingPrice).orElse(null);
     }
 
-    // Lưu ảnh vào thư mục uploads và trả về đường dẫn public
-    private String saveImageToUploads(MultipartFile file) throws Exception {
+    // Xóa file ảnh cũ từ thư mục static
+    private void deleteOldImageFile(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty())
+            return;
+
+        try {
+            // Chuyển URL thành đường dẫn file
+            String fileName = imageUrl;
+            if (fileName.startsWith("/images/products/")) {
+                fileName = fileName.substring("/images/products/".length());
+            } else if (fileName.startsWith("/image/products/")) {
+                fileName = fileName.substring("/image/products/".length());
+            } else {
+                // Nếu URL không theo format mong đợi, bỏ qua
+                return;
+            }
+
+            Path staticProductsDir = Paths.get("src/main/resources/static/images/products");
+            Path fileToDelete = staticProductsDir.resolve(fileName);
+
+            if (Files.exists(fileToDelete)) {
+                Files.delete(fileToDelete);
+            }
+        } catch (Exception e) {
+            // Log error silently if needed
+        }
+    }
+
+    // Tìm số thứ tự tiếp theo để đặt tên file ảnh (ví dụ: nếu có 1.png, 2.png thì
+    // trả về 3)
+    private int getNextImageNumber(Path directory) throws Exception {
+        if (!Files.exists(directory)) {
+            return 1;
+        }
+
+        int maxNumber = 0;
+        try (var stream = Files.list(directory)) {
+            var files = stream
+                    .filter(Files::isRegularFile)
+                    .map(p -> p.getFileName().toString())
+                    .toList();
+
+            for (String filename : files) {
+                // Lấy tên file không có extension (ví dụ: "123.png" -> "123")
+                String nameWithoutExt = filename;
+                int dotIndex = filename.lastIndexOf('.');
+                if (dotIndex > 0) {
+                    nameWithoutExt = filename.substring(0, dotIndex);
+                }
+
+                // Thử parse thành số
+                try {
+                    int num = Integer.parseInt(nameWithoutExt);
+                    if (num > maxNumber) {
+                        maxNumber = num;
+                    }
+                } catch (NumberFormatException ignored) {
+                    // Bỏ qua file không phải số
+                }
+            }
+        }
+
+        return maxNumber + 1;
+    }
+
+    // Lưu một file ảnh đơn vào thư mục static images của project và trả về đường
+    // dẫn public
+    private String saveSingleImageToStatic(MultipartFile file, Path targetDir, String filename) throws Exception {
         if (file == null || file.isEmpty())
             return null;
 
-        // Kiểm tra MIME & size (<= 10MB)
         long maxBytes = 10L * 1024 * 1024;
         if (file.getSize() > maxBytes) {
             throw new IllegalArgumentException("Ảnh vượt quá 10MB.");
@@ -84,19 +150,60 @@ public class SellerProductController {
             throw new IllegalArgumentException("Chỉ hỗ trợ ảnh JPG hoặc PNG.");
         }
 
-        Path root = Paths.get(uploadDir);
-        Files.createDirectories(root);
+        Files.createDirectories(targetDir);
 
         String original = file.getOriginalFilename();
-        String ext = ".jpg";
+        String ext = ".png";
         if (original != null && original.lastIndexOf('.') >= 0) {
             ext = original.substring(original.lastIndexOf('.')).toLowerCase();
         }
-        String filename = UUID.randomUUID().toString().replace("-", "") + ext;
-        Path dest = root.resolve(filename);
+
+        String safeName = filename + ext;
+        Path dest = targetDir.resolve(safeName);
         Files.copy(file.getInputStream(), dest, StandardCopyOption.REPLACE_EXISTING);
 
-        return "/uploads/" + filename;
+        return "/images/products/" + safeName;
+    }
+
+    // Lưu nhiều file (theo thứ tự số) vào thư mục static images/products
+    private List<String> saveMultipleImagesToStatic(Long productId, MultipartFile[] files) throws Exception {
+        if (files == null || files.length == 0) {
+            return Collections.emptyList();
+        }
+
+        // Kiểm tra xem có file thực sự được upload không
+        boolean hasValidFile = false;
+        for (MultipartFile f : files) {
+            if (f != null && !f.isEmpty() && f.getSize() > 0) {
+                hasValidFile = true;
+                break;
+            }
+        }
+
+        if (!hasValidFile) {
+            return Collections.emptyList();
+        }
+
+        // Target directory inside project static resources
+        Path staticProductsDir = Paths.get("src/main/resources/static/images/products");
+
+        // Tìm số thứ tự tiếp theo
+        int nextNumber = getNextImageNumber(staticProductsDir);
+
+        List<String> saved = new ArrayList<>();
+        for (MultipartFile f : files) {
+            if (f == null || f.isEmpty() || f.getSize() == 0)
+                continue;
+
+            String filenameBase = String.valueOf(nextNumber);
+            String url = saveSingleImageToStatic(f, staticProductsDir, filenameBase);
+            if (url != null) {
+                saved.add(url);
+                nextNumber++; // Tăng số thứ tự cho file tiếp theo
+            }
+        }
+
+        return saved;
     }
 
     // ============ LIST ============
@@ -216,7 +323,7 @@ public class SellerProductController {
     public String create(@Valid @ModelAttribute("form") Product form,
             BindingResult binding,
             @RequestParam(value = "storeId", required = false) Long storeId,
-            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "imageFiles", required = false) MultipartFile[] imageFiles,
             Model model,
             RedirectAttributes ra) {
 
@@ -225,14 +332,15 @@ public class SellerProductController {
         store.setId(sid);
         form.setSellerStore(store);
 
-        // Upload ảnh (nếu có)
-        if (imageFile != null && !imageFile.isEmpty()) {
-            try {
-                String imagePath = saveImageToUploads(imageFile);
-                form.setProductUrl(imagePath);
-            } catch (Exception e) {
-                binding.rejectValue("productUrl", "image.invalid", e.getMessage());
+        // Upload ảnh (nếu có) — nhiều file theo thứ tự
+        try {
+            List<String> saved = saveMultipleImagesToStatic(null, imageFiles);
+            if (!saved.isEmpty()) {
+                // set first image as productUrl
+                form.setProductUrl(saved.get(0));
             }
+        } catch (Exception e) {
+            binding.rejectValue("productUrl", "image.invalid", e.getMessage());
         }
 
         // Kiểm tra giá > 0
@@ -315,7 +423,7 @@ public class SellerProductController {
             @Valid @ModelAttribute("form") Product form,
             BindingResult binding,
             @RequestParam(value = "storeId", required = false) Long storeId,
-            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "imageFiles", required = false) MultipartFile[] imageFiles,
             Model model,
             RedirectAttributes ra) {
 
@@ -324,16 +432,21 @@ public class SellerProductController {
 
         Product existed = productService.getOwned(id, sid);
 
-        // Ảnh: nếu upload mới thì validate; nếu không, giữ ảnh cũ
-        if (imageFile != null && !imageFile.isEmpty()) {
-            try {
-                String imagePath = saveImageToUploads(imageFile);
-                form.setProductUrl(imagePath);
-            } catch (Exception e) {
-                binding.rejectValue("productUrl", "image.invalid", e.getMessage());
+        // Ảnh: nếu upload mới thì XÓA ảnh cũ và lưu ảnh mới; nếu không, giữ ảnh cũ
+        try {
+            List<String> saved = saveMultipleImagesToStatic(id, imageFiles);
+            if (!saved.isEmpty()) {
+                // XÓA ảnh cũ trước khi cập nhật ảnh mới
+                if (existed.getProductUrl() != null && !existed.getProductUrl().isEmpty()) {
+                    deleteOldImageFile(existed.getProductUrl());
+                }
+                form.setProductUrl(saved.get(0));
+            } else {
+                // Không upload ảnh mới, giữ nguyên ảnh cũ
+                form.setProductUrl(existed.getProductUrl());
             }
-        } else {
-            form.setProductUrl(existed.getProductUrl());
+        } catch (Exception e) {
+            binding.rejectValue("productUrl", "image.invalid", e.getMessage());
         }
 
         // Kiểm tra giá > 0

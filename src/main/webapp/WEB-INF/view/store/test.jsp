@@ -7,6 +7,12 @@
 
                 <head>
                     <meta charset="UTF-8">
+                    <title>
+                        <c:choose>
+                            <c:when test="${formMode=='CREATE'}">Thêm sản phẩm</c:when>
+                            <c:otherwise>Cập nhật sản phẩm #${form.id}</c:otherwise>
+                        </c:choose>
+                    </title>
                     <jsp:include page="../common/head.jsp" />
                     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/store.css">
                 </head>
@@ -14,10 +20,6 @@
                 <body>
                     <jsp:include page="../common/navbar.jsp" />
                     <jsp:include page="../common/sidebar.jsp" />
-
-                    <!-- Sidebar Overlay for Mobile -->
-                    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()" role="button"
-                        tabindex="0" onKeyPress="if(event.key === 'Enter') toggleSidebar()"></div>
 
                     <!-- Prefill ids từ Controller -->
                     <span id="prefill" data-parent="${selectedParentId}" data-child="${selectedChildId}"></span>
@@ -30,18 +32,18 @@
                                         <h3>${store.storeName}</h3>
                                         <p class="text-muted">${store.description}</p>
                                         <p>Trạng thái: <strong>${store.status}</strong></p>
-                                        <p>Đánh giá: <strong>${store.rating}</strong></p>
-                                        <p>Tiền đặt cọc: <strong>
+                                        <p>Rating: <strong>${store.rating}</strong></p>
+                                        <p>Deposit: <strong>
                                                 <fmt:formatNumber value="${store.depositAmount}" type="currency"
                                                     currencySymbol="" maxFractionDigits="0" />đ
                                             </strong></p>
                                         <!-- removed Max listing price from public view -->
                                         <hr />
-                                        <h6>Giới thiệu cửa hàng</h6>
-                                        <p>Tổng sản phẩm (ACTIVE): <strong>${totalActiveProducts}</strong></p>
+                                        <h6>KPI nhanh</h6>
+                                        <p>Tổng sản phẩm ACTIVE: <strong>${totalActiveProducts}</strong></p>
                                         <p>Tổng đã bán: <strong>${totalSold}</strong></p>
-                                        <p>Tổng tồn kho khả dụng: <strong>${totalAvailable}</strong></p>
-                                        <p>Khoảng giá sản phẩm: <strong>
+                                        <p>Tổng AVAILABLE: <strong>${totalAvailable}</strong></p>
+                                        <p>Khoảng giá: <strong>
                                                 <fmt:formatNumber value="${minPrice}" type="currency" currencySymbol=""
                                                     maxFractionDigits="0" />đ -
                                                 <fmt:formatNumber value="${maxPrice}" type="currency" currencySymbol=""
@@ -68,7 +70,7 @@
 
                                 <div class="col-md-8">
                                     <div class="mb-3">
-                                        <form class="suggested-filter row g-2" method="get" action="">
+                                        <form class="row g-2" method="get" action="">
                                             <div class="col-md-4">
                                                 <input type="text" name="q" class="form-control" placeholder="Từ khóa"
                                                     value="${param.q}" />
@@ -104,9 +106,9 @@
                                     <div class="row">
                                         <c:forEach var="p" items="${productsPage.content}">
                                             <div class="col-6 col-lg-4 mb-3">
-                                                <div class="card h-100 product-card">
+                                                <div class="card h-100">
                                                     <div class="d-flex align-items-center p-2">
-                                                        <img src="<c:url value='/images/products/${p.id}.png'/>"
+                                                        <img src="<c:url value='/images/products/${p.id}.jpg'/>"
                                                             data-fallback-url="${p.productUrl}"
                                                             onerror="handleThumbError(this)" loading="lazy"
                                                             alt="${p.name}"
@@ -196,9 +198,9 @@
                                         <div class="row">
                                             <c:forEach var="osp" items="${suggestedOtherProductsPage.content}">
                                                 <div class="col-6 col-md-3 mb-3">
-                                                    <div class="card h-100 suggested-product-card">
+                                                    <div class="card h-100">
                                                         <div class="d-flex align-items-center p-2">
-                                                            <img src="<c:url value='/images/products/${osp.id}.png'/>"
+                                                            <img src="<c:url value='/images/products/${osp.id}.jpg'/>"
                                                                 data-fallback-url="${osp.productUrl}"
                                                                 onerror="handleThumbError(this)" loading="lazy"
                                                                 alt="${osp.name}"
@@ -287,37 +289,6 @@
                     </c:if>
 
                     <!-- Client-side validation (có thêm vPriceMax) -->
-                    <script>
-                        // Toggle sidebar khi nhấn vào nút (same as other pages)
-                        function toggleSidebar() {
-                            var sidebar = document.getElementById('sidebar');
-                            var content = document.getElementById('content');
-                            var overlay = document.getElementById('sidebarOverlay');
-
-                            if (sidebar && content) {
-                                sidebar.classList.toggle('active');
-                                content.classList.toggle('shifted');
-
-                                // Toggle overlay for mobile
-                                if (overlay) {
-                                    overlay.classList.toggle('active');
-                                }
-                            }
-                        }
-
-                        // Close sidebar when clicking outside on mobile
-                        document.addEventListener('click', function (event) {
-                            var sidebar = document.getElementById('sidebar');
-                            var overlay = document.getElementById('sidebarOverlay');
-                            var menuToggle = document.querySelector('.menu-toggle');
-
-                            if (sidebar && sidebar.classList.contains('active') &&
-                                !sidebar.contains(event.target) &&
-                                menuToggle && !menuToggle.contains(event.target)) {
-                                toggleSidebar();
-                            }
-                        });
-                    </script>
                 </body>
 
                 </html>

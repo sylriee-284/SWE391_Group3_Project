@@ -9,27 +9,15 @@
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Chatbox</title>
-                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
-                    rel="stylesheet">
-                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                <jsp:include page="../common/head.jsp" />
 
                 <style>
-                    /* CSS để điều chỉnh nội dung khi sidebar mở */
-                    .content {
-                        margin-left: 0;
-                        transition: margin-left 0.3s ease;
-                    }
-
-                    .content.shifted {
-                        margin-left: 250px;
-                    }
-
-                    /* Đảm bảo nội dung không bị che bởi navbar */
+                    /* Custom styles cho chat interface */
+                    /* keep minimal overrides only */
                     body {
                         padding-top: 60px;
                     }
 
-                    /* Custom styles cho chat interface */
                     .shop-item {
                         cursor: pointer;
                         transition: background-color 0.2s;
@@ -86,6 +74,10 @@
 
                     <!-- Include Sidebar -->
                     <%@ include file="../common/sidebar.jsp" %>
+
+                        <!-- Sidebar Overlay for Mobile -->
+                        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()" role="button"
+                            tabindex="0" onKeyPress="if(event.key === 'Enter') toggleSidebar()"></div>
 
                         <!-- Main Content -->
                         <div class="content" id="content">
@@ -205,69 +197,15 @@
                                             </div>
                                         </div>
 
-                                        <!-- Messages Area -->
-                                        <div class="messages-area flex-grow-1 p-3"
+                                        <!-- Messages Area (loaded from server) -->
+                                        <div class="messages-area flex-grow-1 p-3" id="messagesArea"
                                             style="height: 400px; overflow-y: auto; background-color: #f8f9fa;">
-
-                                            <!-- Hardcoded Messages -->
-                                            <div class="message received">
-                                                <div class="message-bubble">
-                                                    Chào bạn! Chúng tôi chuyên bán laptop, điện thoại và phụ kiện công
-                                                    nghệ
-                                                    <div class="small text-muted mt-1">14:30</div>
-                                                </div>
-                                            </div>
-
-                                            <div class="message sent">
-                                                <div class="message-bubble">
-                                                    Bạn có sản phẩm nào đang khuyến mãi không?
-                                                    <div class="small text-muted mt-1">14:32</div>
-                                                </div>
-                                            </div>
-
-                                            <div class="message received">
-                                                <div class="message-bubble">
-                                                    Hiện tại chúng tôi đang có chương trình giảm giá 20% cho laptop
-                                                    gaming
-                                                    <div class="small text-muted mt-1">14:33</div>
-                                                </div>
-                                            </div>
-
-                                            <div class="message sent">
-                                                <div class="message-bubble">
-                                                    Tuyệt vời! Tôi muốn xem laptop gaming Dell
-                                                    <div class="small text-muted mt-1">14:35</div>
-                                                </div>
-                                            </div>
-
-                                            <div class="message received">
-                                                <div class="message-bubble">
-                                                    Chúng tôi có Dell G15 với RTX 4060, giá 25 triệu sau giảm giá. Bạn
-                                                    có quan tâm không?
-                                                    <div class="small text-muted mt-1">14:36</div>
-                                                </div>
-                                            </div>
-
-                                            <div class="message sent">
-                                                <div class="message-bubble">
-                                                    Có ạ! Tôi muốn đặt hàng
-                                                    <div class="small text-muted mt-1">14:38</div>
-                                                </div>
-                                            </div>
-
-                                            <div class="message received">
-                                                <div class="message-bubble">
-                                                    Tuyệt! Tôi sẽ gửi link đặt hàng cho bạn ngay
-                                                    <div class="small text-muted mt-1">14:39</div>
-                                                </div>
-                                            </div>
-
+                                            <!-- messages will be injected here -->
                                         </div>
 
                                         <!-- Message Input -->
                                         <div class="message-input bg-white border-top p-3">
-                                            <form id="chat-form" action="/chat/send" method="post"
-                                                enctype="multipart/form-data">
+                                            <form id="chat-form" action="#" method="post" enctype="multipart/form-data">
                                                 <div class="input-group">
                                                     <input type="text" name="message" class="form-control"
                                                         placeholder="Nhập tin nhắn..." required>
@@ -277,7 +215,7 @@
                                                         onclick="document.getElementById('image-input').click()">
                                                         <i class="fas fa-image"></i>
                                                     </button>
-                                                    <button type="submit" class="btn btn-primary">
+                                                    <button type="submit" class="btn btn-primary" id="sendBtn">
                                                         <i class="fas fa-paper-plane"></i> Gửi
                                                     </button>
                                                 </div>
@@ -288,20 +226,19 @@
                             </div>
                         </div>
 
-                        <!-- Bootstrap JS -->
-                        <script
-                            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+                        <jsp:include page="../common/footer.jsp" />
 
                         <!-- Sidebar Toggle Script -->
                         <script>
                             function toggleSidebar() {
                                 var sidebar = document.getElementById('sidebar');
                                 var content = document.getElementById('content');
-                                sidebar.classList.toggle('active');
-                                content.classList.toggle('shifted');
+                                if (sidebar) sidebar.classList.toggle('active');
+                                if (content) content.classList.toggle('shifted');
                             }
 
                             // Select shop function
+                            var currentSellerId = null;
                             function selectShop(shopId, shopName) {
                                 // Remove active class from all shop items
                                 document.querySelectorAll('.shop-item').forEach(item => {
@@ -311,42 +248,34 @@
                                 // Add active class to selected shop
                                 event.currentTarget.classList.add('active');
 
-                                // Update chat header
-                                document.getElementById('current-shop-name').textContent = shopName;
-                                document.getElementById('shop-status').textContent = 'Online';
+                                // Update chat header (if present)
+                                var headerName = document.querySelector('.chat-header h6');
+                                if (headerName) headerName.textContent = shopName;
+                                var headerStatus = document.querySelector('.chat-header small');
+                                if (headerStatus) headerStatus.textContent = 'Online';
 
+                                currentSellerId = shopId;
                                 // Load messages for selected shop
                                 loadMessages(shopId);
                             }
 
-                            // Load messages function
-                            function loadMessages(shopId) {
-                                const messagesArea = document.querySelector('.messages-area');
-
-                                // Hardcoded messages for demo
-                                const shopMessages = {
-                                    'techstore': [
-                                        { text: 'Chào bạn! Chúng tôi chuyên bán laptop, điện thoại và phụ kiện công nghệ', sender: 'received', time: '14:30' },
-                                        { text: 'Bạn có sản phẩm nào đang khuyến mãi không?', sender: 'sent', time: '14:32' },
-                                        { text: 'Hiện tại chúng tôi đang có chương trình giảm giá 20% cho laptop gaming', sender: 'received', time: '14:33' }
-                                    ],
-                                    'gameshop': [
-                                        { text: 'Chào bạn! Chúng tôi chuyên bán tài khoản game và gift card', sender: 'received', time: '15:00' },
-                                        { text: 'Có tài khoản PUBG Mobile không?', sender: 'sent', time: '15:02' },
-                                        { text: 'Có ạ! Chúng tôi có nhiều loại tài khoản PUBG từ cơ bản đến VIP', sender: 'received', time: '15:03' }
-                                    ]
-                                };
-
-                                // Clear current messages
+                            // Load messages function (from server)
+                            function loadMessages(sellerId) {
+                                const messagesArea = document.getElementById('messagesArea');
                                 messagesArea.innerHTML = '';
-
-                                if (shopMessages[shopId]) {
-                                    shopMessages[shopId].forEach(msg => {
-                                        addMessage(msg.text, msg.sender, msg.time);
+                                if (!sellerId) return;
+                                fetch(`/chat/messages?sellerId=${sellerId}`)
+                                    .then(r => r.json())
+                                    .then(data => {
+                                        if (!Array.isArray(data)) return;
+                                        data.forEach(m => {
+                                            const sender = (m.senderId && m.senderId == /* current user id unknown client-side */ null) ? 'sent' : 'received';
+                                            addMessage(m.content, sender, m.createdAt);
+                                        });
+                                    })
+                                    .catch(err => {
+                                        console.error('Failed to load messages', err);
                                     });
-                                } else {
-                                    addMessage('Chào mừng đến với ' + shopName + '! Bắt đầu cuộc trò chuyện với shop này.', 'received');
-                                }
                             }
 
                             // Add message function
@@ -369,11 +298,38 @@
                             }
 
                             // Enter key to submit form
-                            document.querySelector('input[name="message"]').addEventListener('keypress', function (e) {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    document.getElementById('chat-form').submit();
-                                }
+                            // Wire up AJAX send
+                            document.getElementById('chat-form').addEventListener('submit', function (e) {
+                                e.preventDefault();
+                                var input = this.querySelector('input[name="message"]');
+                                var text = input.value.trim();
+                                if (!text || !currentSellerId) return;
+                                var fd = new FormData();
+                                fd.append('sellerId', currentSellerId);
+                                fd.append('message', text);
+                                // optional: attach productId if present in URL
+                                var params = new URLSearchParams(window.location.search);
+                                if (params.get('productId')) fd.append('productId', params.get('productId'));
+
+                                fetch('/chat/send', { method: 'POST', body: fd })
+                                    .then(r => r.json())
+                                    .then(resp => {
+                                        if (!resp.ok) {
+                                            // not logged in or error
+                                            if (resp.error && resp.error.includes('đăng nhập')) {
+                                                window.location.href = '/login';
+                                            } else {
+                                                console.error('Send error', resp);
+                                            }
+                                            return;
+                                        }
+                                        // append message locally
+                                        addMessage(resp.message.content, 'sent', resp.message.createdAt);
+                                        input.value = '';
+                                    })
+                                    .catch(err => {
+                                        console.error('Failed to send message', err);
+                                    });
                             });
                         </script>
             </body>

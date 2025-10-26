@@ -26,331 +26,346 @@
                     <jsp:include page="../common/navbar.jsp" />
                     <jsp:include page="../common/sidebar.jsp" />
 
-                    <br />
+                    <!-- Sidebar Overlay for Mobile -->
+                    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()" role="button"
+                        tabindex="0" onKeyPress="if(event.key === 'Enter') toggleSidebar()"></div>
 
-                    <div class="container mt-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h4>Danh sách sản phẩm</h4>
-                            <c:url var="newUrl" value="/seller/products/new">
-                                <c:param name="storeId" value="${storeId}" />
-                            </c:url>
-                            <a class="btn btn-primary" href="${newUrl}">Thêm sản phẩm</a>
-                        </div>
-
-                        <!-- Filter form -->
-                        <form id="filterForm" method="get" action="<c:url value='/seller/products'/>"
-                            class="row g-2 mb-3">
-                            <input type="hidden" name="storeId" value="${storeId}" />
-
-                            <div class="col-md-3">
-                                <input class="form-control" name="q" value="${fn:escapeXml(q)}"
-                                    placeholder="Từ khoá tên/slug..." maxlength="100" aria-describedby="qHelp" />
-                                <div id="qHelp" class="form-text">Tối đa 100 ký tự.</div>
-                                <div class="invalid-feedback">Từ khoá quá dài hoặc không hợp lệ.</div>
+                    <div class="content" id="content">
+                        <div class="container mt-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4>Danh sách sản phẩm</h4>
+                                <c:url var="newUrl" value="/seller/products/new">
+                                    <c:param name="storeId" value="${storeId}" />
+                                </c:url>
+                                <a class="btn btn-primary" href="${newUrl}">Thêm sản phẩm</a>
                             </div>
 
-                            <!-- CHỈ ACTIVE / INACTIVE -->
-                            <div class="col-md-2">
-                                <select class="form-select" name="status" aria-label="Trạng thái">
-                                    <option value="">-- Trạng thái --</option>
-                                    <option value="ACTIVE" <c:if test="${status == 'ACTIVE'}">selected</c:if>>ACTIVE
-                                    </option>
-                                    <option value="INACTIVE" <c:if test="${status == 'INACTIVE'}">selected</c:if>
-                                        >INACTIVE</option>
-                                </select>
-                                <div class="invalid-feedback">Giá trị trạng thái không hợp lệ.</div>
-                            </div>
+                            <!-- Filter form -->
+                            <form id="filterForm" method="get" action="<c:url value='/seller/products'/>"
+                                class="row g-2 mb-3">
+                                <input type="hidden" name="storeId" value="${storeId}" />
 
-                            <div class="col-md-3">
-                                <select class="form-select" name="parentCategoryId" onchange="this.form.submit()"
-                                    aria-label="Danh mục cha">
-                                    <option value="">-- Tùy chọn danh mục --</option>
-                                    <c:forEach var="pc" items="${parentCategories}">
-                                        <option value="${pc.id}" <c:if test="${parentCategoryId == pc.id}">selected
-                                            </c:if>>${pc.name}</option>
-                                    </c:forEach>
-                                </select>
-                                <div class="invalid-feedback">Danh mục cha không hợp lệ.</div>
-                            </div>
+                                <div class="col-md-3">
+                                    <input class="form-control" name="q" value="${fn:escapeXml(q)}"
+                                        placeholder="Từ khoá tên/slug..." maxlength="100" aria-describedby="qHelp" />
+                                    <div id="qHelp" class="form-text">Tối đa 100 ký tự.</div>
+                                    <div class="invalid-feedback">Từ khoá quá dài hoặc không hợp lệ.</div>
+                                </div>
 
-                            <div class="col-md-2">
-                                <select class="form-select" name="categoryId" aria-label="Danh mục">
-                                    <option value="">-- Danh mục --</option>
-                                    <c:forEach var="c" items="${subCategories}">
-                                        <option value="${c.id}" <c:if test="${categoryId == c.id}">selected</c:if>
-                                            >${c.name}</option>
-                                    </c:forEach>
-                                </select>
-                                <div class="invalid-feedback">Danh mục không hợp lệ.</div>
-                            </div>
+                                <!-- CHỈ ACTIVE / INACTIVE -->
+                                <div class="col-md-2">
+                                    <select class="form-select" name="status" aria-label="Trạng thái">
+                                        <option value="">-- Trạng thái --</option>
+                                        <option value="ACTIVE" <c:if test="${status == 'ACTIVE'}">selected</c:if>>ACTIVE
+                                        </option>
+                                        <option value="INACTIVE" <c:if test="${status == 'INACTIVE'}">selected</c:if>
+                                            >INACTIVE</option>
+                                    </select>
+                                    <div class="invalid-feedback">Giá trị trạng thái không hợp lệ.</div>
+                                </div>
 
-                            <div class="col-md-2">
-                                <input type="date" class="form-control" name="fromDate" value="${fromDate}"
-                                    placeholder="Từ ngày" aria-label="Từ ngày" />
-                                <div class="invalid-feedback">Ngày bắt đầu không hợp lệ.</div>
-                            </div>
-                            <div class="col-md-2">
-                                <input type="date" class="form-control" name="toDate" value="${toDate}"
-                                    placeholder="Đến ngày" aria-label="Đến ngày" />
-                                <div class="invalid-feedback">Ngày kết thúc phải ≥ ngày bắt đầu.</div>
-                            </div>
-
-                            <div class="col-md-2">
-                                <input type="number" name="minPrice" id="minPrice" class="form-control" step="10000"
-                                    min="0" placeholder="Giá từ (₫)" onchange="checkPriceRange()" />
-                                <div id="minError" class="error-text"></div>
-                            </div>
-
-                            <!-- Giá đến -->
-                            <div class="col-md-2">
-                                <input type="number" name="maxPrice" id="maxPrice" class="form-control" step="10000"
-                                    min="10000" placeholder="Giá đến (₫)" onchange="checkPriceRange()" />
-                                <div id="maxError" class="error-text"></div>
-                            </div>
-                            <script>
-                                function checkPriceRange() {
-                                    const minEl = document.getElementById('minPrice');
-                                    const maxEl = document.getElementById('maxPrice');
-                                    const minErr = document.getElementById('minError');
-                                    const maxErr = document.getElementById('maxError');
-
-                                    // Xoá lỗi cũ
-                                    minErr.textContent = '';
-                                    maxErr.textContent = '';
-
-                                    // Đọc số an toàn (valueAsNumber -> NaN nếu nhập sai)
-                                    const hasMin = minEl.value.trim() !== '';
-                                    const hasMax = maxEl.value.trim() !== '';
-                                    const minVal = hasMin ? minEl.valueAsNumber : null;
-                                    const maxVal = hasMax ? maxEl.valueAsNumber : null;
-
-                                    // Sai định dạng số
-                                    if (hasMin && Number.isNaN(minVal)) {
-                                        minErr.textContent = 'Giá tối thiểu không hợp lệ';
-                                        return;
-                                    }
-                                    if (hasMax && Number.isNaN(maxVal)) {
-                                        maxErr.textContent = 'Giá tối đa không hợp lệ';
-                                        return;
-                                    }
-
-                                    // max < min
-                                    if (hasMin && hasMax && maxVal < minVal) {
-                                        maxErr.textContent = '⚠ Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu';
-                                        return;
-                                    }
-                                }
-                            </script>
-
-                            <div class="col-md-2">
-                                <button class="btn btn-outline-secondary w-100" type="submit">Lọc</button>
-                            </div>
-                        </form>
-
-                        <!-- TABLE -->
-                        <div class="table-container">
-                            <table class="resizable-table table align-middle" id="resizableTable">
-                                <thead>
-                                    <tr>
-                                        <th class="sortable" style="width:90px;" data-column="0" data-type="number">ID
-                                            <div class="resizer"></div>
-                                        </th>
-                                        <th class="sortable" style="width:320px;" data-column="1" data-type="text">Tên
-                                            sản phẩm<div class="resizer"></div>
-                                        </th>
-                                        <th class="sortable" style="width:180px;" data-column="2" data-type="text">Danh
-                                            mục<div class="resizer"></div>
-                                        </th>
-                                        <th class="sortable" style="width:140px;" data-column="3" data-type="number">Giá
-                                            bán<div class="resizer"></div>
-                                        </th>
-                                        <th class="sortable" style="width:140px;" data-column="4" data-type="text">Trạng
-                                            thái<div class="resizer"></div>
-                                        </th>
-                                        <th class="sortable" style="width:160px;" data-column="5" data-type="number">Số
-                                            lượng mã khả dụng<div class="resizer"></div>
-                                        </th>
-                                        <th style="width:260px;">Hành động</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-                                    <c:if test="${empty page.content}">
-                                        <tr>
-                                            <td colspan="7" class="text-center text-muted py-4">Không có sản phẩm nào
-                                                khớp bộ lọc.</td>
-                                        </tr>
-                                    </c:if>
-
-                                    <c:forEach var="p" items="${page.content}">
-                                        <tr>
-                                            <td>#${p.id}</td>
-                                            <td>
-                                                <div class="d-flex gap-2 align-items-center">
-                                                    <c:choose>
-                                                        <c:when test="${not empty p.productUrl}">
-                                                            <img src="${fn:escapeXml(p.productUrl)}" alt="img"
-                                                                style="height:40px;width:40px;object-fit:cover;border-radius:6px;border:1px solid #eee" />
-                                                        </c:when>
-                                                        <c:otherwise>
-                                                            <div style="height:40px;width:40px;border:1px dashed #ccc;border-radius:6px"
-                                                                class="d-flex align-items-center justify-content-center text-muted small">
-                                                                —</div>
-                                                        </c:otherwise>
-                                                    </c:choose>
-                                                    <div>
-                                                        <div class="fw-semibold">${p.name}</div>
-                                                        <div class="text-muted small">${p.slug}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>${p.category != null ? p.category.name : '-'}</td>
-                                            <td>
-                                                <fmt:formatNumber value="${p.price}" type="currency"
-                                                    currencySymbol="₫" />
-                                            </td>
-                                            <td><span
-                                                    class="badge ${p.status=='ACTIVE'?'bg-success':'bg-secondary'}">${p.status}</span>
-                                            </td>
-                                            <td>${p.stock}</td>
-
-                                            <td class="text-end">
-                                                <!-- Toggle -->
-                                                <c:url var="toggleUrl" value="/seller/products/${p.id}/toggle">
-                                                    <c:param name="storeId" value="${storeId}" />
-                                                </c:url>
-                                                <form class="d-inline" method="post" action="${toggleUrl}"
-                                                    data-stock="${p.stock}"
-                                                    data-toggle-to="${p.status=='ACTIVE'?'INACTIVE':'ACTIVE'}">
-                                                    <input type="hidden" name="to"
-                                                        value="${p.status=='ACTIVE'?'INACTIVE':'ACTIVE'}" />
-                                                    <c:if test="${not empty _csrf}">
-                                                        <input type="hidden" name="${_csrf.parameterName}"
-                                                            value="${_csrf.token}" />
-                                                    </c:if>
-                                                    <c:choose>
-                                                        <c:when test="${p.status=='ACTIVE'}">
-                                                            <button class="btn btn-sm btn-outline-warning">Tắt</button>
-                                                        </c:when>
-                                                        <c:otherwise>
-                                                            <c:choose>
-                                                                <c:when test="${p.stock != null && p.stock > 0}">
-                                                                    <button
-                                                                        class="btn btn-sm btn-outline-success">Bật</button>
-                                                                </c:when>
-                                                                <c:otherwise>
-                                                                    <button class="btn btn-sm btn-outline-success"
-                                                                        disabled title="Vui lòng nhập hàng">Bật</button>
-                                                                </c:otherwise>
-                                                            </c:choose>
-                                                        </c:otherwise>
-                                                    </c:choose>
-                                                </form>
-
-                                                <!-- Chi tiết -->
-                                                <button type="button" class="btn btn-sm btn-outline-info me-1"
-                                                    title="Xem chi tiết" data-bs-toggle="modal"
-                                                    data-bs-target="#productDetailModal" data-id="${p.id}"
-                                                    data-name="${fn:escapeXml(p.name)}"
-                                                    data-slug="${fn:escapeXml(p.slug)}"
-                                                    data-category="${p.category != null ? fn:escapeXml(p.category.name) : '-'}"
-                                                    data-price="${p.price}" data-status="${p.status}"
-                                                    data-stock="${p.stock}" data-img="${fn:escapeXml(p.productUrl)}"
-                                                    data-desc="${fn:escapeXml(p.description)}">
-                                                    <i class="bi bi-info-circle-fill"></i>
-                                                    <span class="ms-1">Chi tiết</span>
-                                                </button>
-
-                                                <!-- Sửa -->
-                                                <button type="button" class="btn btn-sm btn-outline-primary me-1"
-                                                    title="Chỉnh sửa" data-bs-toggle="modal"
-                                                    data-bs-target="#productEditModal"
-                                                    data-edit-url="<c:url value='/seller/products/${p.id}/edit'><c:param name='storeId' value='${storeId}'/></c:url>"
-                                                    data-id="${p.id}" data-name="${fn:escapeXml(p.name)}"
-                                                    data-slug="${fn:escapeXml(p.slug)}"
-                                                    data-category="${p.category != null ? fn:escapeXml(p.category.name) : '-'}"
-                                                    data-price="${p.price}" data-status="${p.status}"
-                                                    data-stock="${p.stock}" data-img="${fn:escapeXml(p.productUrl)}"
-                                                    data-desc="${fn:escapeXml(p.description)}">
-                                                    <i class="bi bi-pencil-fill"></i>
-                                                    <span class="ms-1">Sửa</span>
-                                                </button>
-
-                                                <!-- Xóa mềm (để sẵn) -->
-                                                <c:url var="deleteUrl" value="/seller/products/${p.id}/delete">
-                                                    <c:param name="storeId" value="${storeId}" />
-                                                </c:url>
-                                                <form class="d-inline" method="post" action="${deleteUrl}"
-                                                    onsubmit="return confirm('Ẩn sản phẩm này?');">
-                                                    <c:if test="${not empty _csrf}">
-                                                        <input type="hidden" name="${_csrf.parameterName}"
-                                                            value="${_csrf.token}" />
-                                                    </c:if>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    </c:forEach>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Pagination -->
-                        <c:if test="${page.totalPages > 1}">
-                            <div class="pagination-container">
-                                <nav>
-                                    <ul class="pagination">
-                                        <c:if test="${!page.first}">
-                                            <c:url var="prevUrl" value="/seller/products">
-                                                <c:param name="storeId" value="${storeId}" />
-                                                <c:param name="q" value="${q}" />
-                                                <c:param name="status" value="${status}" />
-                                                <c:param name="parentCategoryId" value="${parentCategoryId}" />
-                                                <c:param name="categoryId" value="${categoryId}" />
-                                                <c:param name="fromDate" value="${fromDate}" />
-                                                <c:param name="toDate" value="${toDate}" />
-                                                <c:param name="size" value="${page.size}" />
-                                                <c:param name="page" value="${page.number - 1}" />
-                                            </c:url>
-                                            <li class="page-item"><a class="page-link" href="${prevUrl}">&laquo;</a>
-                                            </li>
-                                        </c:if>
-
-                                        <c:forEach begin="0" end="${page.totalPages-1}" var="i">
-                                            <c:url var="pageUrl" value="/seller/products">
-                                                <c:param name="storeId" value="${storeId}" />
-                                                <c:param name="q" value="${q}" />
-                                                <c:param name="status" value="${status}" />
-                                                <c:param name="parentCategoryId" value="${parentCategoryId}" />
-                                                <c:param name="categoryId" value="${categoryId}" />
-                                                <c:param name="fromDate" value="${fromDate}" />
-                                                <c:param name="toDate" value="${toDate}" />
-                                                <c:param name="size" value="${page.size}" />
-                                                <c:param name="page" value="${i}" />
-                                            </c:url>
-                                            <li class="page-item ${i==page.number?'active':''}">
-                                                <a class="page-link" href="${pageUrl}">${i+1}</a>
-                                            </li>
+                                <div class="col-md-3">
+                                    <select class="form-select" name="parentCategoryId" onchange="this.form.submit()"
+                                        aria-label="Danh mục cha">
+                                        <option value="">-- Tùy chọn danh mục --</option>
+                                        <c:forEach var="pc" items="${parentCategories}">
+                                            <option value="${pc.id}" <c:if test="${parentCategoryId == pc.id}">selected
+                                                </c:if>>${pc.name}</option>
                                         </c:forEach>
+                                    </select>
+                                    <div class="invalid-feedback">Danh mục cha không hợp lệ.</div>
+                                </div>
 
-                                        <c:if test="${!page.last}">
-                                            <c:url var="nextUrl" value="/seller/products">
-                                                <c:param name="storeId" value="${storeId}" />
-                                                <c:param name="q" value="${q}" />
-                                                <c:param name="status" value="${status}" />
-                                                <c:param name="parentCategoryId" value="${parentCategoryId}" />
-                                                <c:param name="categoryId" value="${categoryId}" />
-                                                <c:param name="fromDate" value="${fromDate}" />
-                                                <c:param name="toDate" value="${toDate}" />
-                                                <c:param name="size" value="${page.size}" />
-                                                <c:param name="page" value="${page.number + 1}" />
-                                            </c:url>
-                                            <li class="page-item"><a class="page-link" href="${nextUrl}">&raquo;</a>
-                                            </li>
+                                <div class="col-md-2">
+                                    <select class="form-select" name="categoryId" aria-label="Danh mục">
+                                        <option value="">-- Danh mục --</option>
+                                        <c:forEach var="c" items="${subCategories}">
+                                            <option value="${c.id}" <c:if test="${categoryId == c.id}">selected</c:if>
+                                                >${c.name}</option>
+                                        </c:forEach>
+                                    </select>
+                                    <div class="invalid-feedback">Danh mục không hợp lệ.</div>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <input type="date" class="form-control" name="fromDate" value="${fromDate}"
+                                        placeholder="Từ ngày" aria-label="Từ ngày" />
+                                    <div class="invalid-feedback">Ngày bắt đầu không hợp lệ.</div>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="date" class="form-control" name="toDate" value="${toDate}"
+                                        placeholder="Đến ngày" aria-label="Đến ngày" />
+                                    <div class="invalid-feedback">Ngày kết thúc phải ≥ ngày bắt đầu.</div>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <input type="number" name="minPrice" id="minPrice" class="form-control" step="10000"
+                                        min="0" placeholder="Giá từ (₫)" onchange="checkPriceRange()" />
+                                    <div id="minError" class="error-text"></div>
+                                </div>
+
+                                <!-- Giá đến -->
+                                <div class="col-md-2">
+                                    <input type="number" name="maxPrice" id="maxPrice" class="form-control" step="10000"
+                                        min="10000" placeholder="Giá đến (₫)" onchange="checkPriceRange()" />
+                                    <div id="maxError" class="error-text"></div>
+                                </div>
+                                <script>
+                                    function checkPriceRange() {
+                                        const minEl = document.getElementById('minPrice');
+                                        const maxEl = document.getElementById('maxPrice');
+                                        const minErr = document.getElementById('minError');
+                                        const maxErr = document.getElementById('maxError');
+
+                                        // Xoá lỗi cũ
+                                        minErr.textContent = '';
+                                        maxErr.textContent = '';
+
+                                        // Đọc số an toàn (valueAsNumber -> NaN nếu nhập sai)
+                                        const hasMin = minEl.value.trim() !== '';
+                                        const hasMax = maxEl.value.trim() !== '';
+                                        const minVal = hasMin ? minEl.valueAsNumber : null;
+                                        const maxVal = hasMax ? maxEl.valueAsNumber : null;
+
+                                        // Sai định dạng số
+                                        if (hasMin && Number.isNaN(minVal)) {
+                                            minErr.textContent = 'Giá tối thiểu không hợp lệ';
+                                            return;
+                                        }
+                                        if (hasMax && Number.isNaN(maxVal)) {
+                                            maxErr.textContent = 'Giá tối đa không hợp lệ';
+                                            return;
+                                        }
+
+                                        // max < min
+                                        if (hasMin && hasMax && maxVal < minVal) {
+                                            maxErr.textContent = '⚠ Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu';
+                                            return;
+                                        }
+                                    }
+                                </script>
+
+                                <div class="col-md-2">
+                                    <button class="btn btn-outline-secondary w-100" type="submit">Lọc</button>
+                                </div>
+                            </form>
+
+                            <!-- TABLE -->
+                            <div class="table-container">
+                                <table class="resizable-table table align-middle" id="resizableTable">
+                                    <thead>
+                                        <tr>
+                                            <th class="sortable" style="width:90px;" data-column="0" data-type="number">
+                                                ID
+                                                <div class="resizer"></div>
+                                            </th>
+                                            <th class="sortable" style="width:320px;" data-column="1" data-type="text">
+                                                Tên
+                                                sản phẩm<div class="resizer"></div>
+                                            </th>
+                                            <th class="sortable" style="width:180px;" data-column="2" data-type="text">
+                                                Danh
+                                                mục<div class="resizer"></div>
+                                            </th>
+                                            <th class="sortable" style="width:140px;" data-column="3"
+                                                data-type="number">Giá
+                                                bán<div class="resizer"></div>
+                                            </th>
+                                            <th class="sortable" style="width:140px;" data-column="4" data-type="text">
+                                                Trạng
+                                                thái<div class="resizer"></div>
+                                            </th>
+                                            <th class="sortable" style="width:160px;" data-column="5"
+                                                data-type="number">Số
+                                                lượng mã khả dụng<div class="resizer"></div>
+                                            </th>
+                                            <th style="width:260px;">Hành động</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        <c:if test="${empty page.content}">
+                                            <tr>
+                                                <td colspan="7" class="text-center text-muted py-4">Không có sản phẩm
+                                                    nào
+                                                    khớp bộ lọc.</td>
+                                            </tr>
                                         </c:if>
-                                    </ul>
-                                </nav>
+
+                                        <c:forEach var="p" items="${page.content}">
+                                            <tr>
+                                                <td>#${p.id}</td>
+                                                <td>
+                                                    <div class="d-flex gap-2 align-items-center">
+                                                        <c:choose>
+                                                            <c:when test="${not empty p.productUrl}">
+                                                                <img src="<c:url value='/images/products/${p.id}.png'/>"
+                                                                    data-fallback-url="${fn:escapeXml(p.productUrl)}"
+                                                                    onerror="handleThumbError(this)" alt="img"
+                                                                    style="height:40px;width:40px;object-fit:cover;border-radius:6px;border:1px solid #eee" />
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <div style="height:40px;width:40px;border:1px dashed #ccc;border-radius:6px"
+                                                                    class="d-flex align-items-center justify-content-center text-muted small">
+                                                                    —</div>
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                        <div>
+                                                            <div class="fw-semibold">${p.name}</div>
+                                                            <div class="text-muted small">${p.slug}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>${p.category != null ? p.category.name : '-'}</td>
+                                                <td>
+                                                    <fmt:formatNumber value="${p.price}" type="currency"
+                                                        currencySymbol="₫" />
+                                                </td>
+                                                <td><span
+                                                        class="badge ${p.status=='ACTIVE'?'bg-success':'bg-secondary'}">${p.status}</span>
+                                                </td>
+                                                <td>${p.stock}</td>
+
+                                                <td class="text-end">
+                                                    <!-- Toggle -->
+                                                    <c:url var="toggleUrl" value="/seller/products/${p.id}/toggle">
+                                                        <c:param name="storeId" value="${storeId}" />
+                                                    </c:url>
+                                                    <form class="d-inline" method="post" action="${toggleUrl}"
+                                                        data-stock="${p.stock}"
+                                                        data-toggle-to="${p.status=='ACTIVE'?'INACTIVE':'ACTIVE'}">
+                                                        <input type="hidden" name="to"
+                                                            value="${p.status=='ACTIVE'?'INACTIVE':'ACTIVE'}" />
+                                                        <c:if test="${not empty _csrf}">
+                                                            <input type="hidden" name="${_csrf.parameterName}"
+                                                                value="${_csrf.token}" />
+                                                        </c:if>
+                                                        <c:choose>
+                                                            <c:when test="${p.status=='ACTIVE'}">
+                                                                <button
+                                                                    class="btn btn-sm btn-outline-warning">Tắt</button>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <c:choose>
+                                                                    <c:when test="${p.stock != null && p.stock > 0}">
+                                                                        <button
+                                                                            class="btn btn-sm btn-outline-success">Bật</button>
+                                                                    </c:when>
+                                                                    <c:otherwise>
+                                                                        <button class="btn btn-sm btn-outline-success"
+                                                                            disabled
+                                                                            title="Vui lòng nhập hàng">Bật</button>
+                                                                    </c:otherwise>
+                                                                </c:choose>
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                    </form>
+
+                                                    <!-- Chi tiết -->
+                                                    <button type="button" class="btn btn-sm btn-outline-info me-1"
+                                                        title="Xem chi tiết" data-bs-toggle="modal"
+                                                        data-bs-target="#productDetailModal" data-id="${p.id}"
+                                                        data-name="${fn:escapeXml(p.name)}"
+                                                        data-slug="${fn:escapeXml(p.slug)}"
+                                                        data-category="${p.category != null ? fn:escapeXml(p.category.name) : '-'}"
+                                                        data-price="${p.price}" data-status="${p.status}"
+                                                        data-stock="${p.stock}" data-img="${fn:escapeXml(p.productUrl)}"
+                                                        data-desc="${fn:escapeXml(p.description)}">
+                                                        <i class="bi bi-info-circle-fill"></i>
+                                                        <span class="ms-1">Chi tiết</span>
+                                                    </button>
+
+                                                    <!-- Sửa -->
+                                                    <button type="button" class="btn btn-sm btn-outline-primary me-1"
+                                                        title="Chỉnh sửa" data-bs-toggle="modal"
+                                                        data-bs-target="#productEditModal"
+                                                        data-edit-url="<c:url value='/seller/products/${p.id}/edit'><c:param name='storeId' value='${storeId}'/></c:url>"
+                                                        data-id="${p.id}" data-name="${fn:escapeXml(p.name)}"
+                                                        data-slug="${fn:escapeXml(p.slug)}"
+                                                        data-category="${p.category != null ? fn:escapeXml(p.category.name) : '-'}"
+                                                        data-price="${p.price}" data-status="${p.status}"
+                                                        data-stock="${p.stock}" data-img="${fn:escapeXml(p.productUrl)}"
+                                                        data-desc="${fn:escapeXml(p.description)}">
+                                                        <i class="bi bi-pencil-fill"></i>
+                                                        <span class="ms-1">Sửa</span>
+                                                    </button>
+
+                                                    <!-- Xóa mềm (để sẵn) -->
+                                                    <c:url var="deleteUrl" value="/seller/products/${p.id}/delete">
+                                                        <c:param name="storeId" value="${storeId}" />
+                                                    </c:url>
+                                                    <form class="d-inline" method="post" action="${deleteUrl}"
+                                                        onsubmit="return confirm('Ẩn sản phẩm này?');">
+                                                        <c:if test="${not empty _csrf}">
+                                                            <input type="hidden" name="${_csrf.parameterName}"
+                                                                value="${_csrf.token}" />
+                                                        </c:if>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        </c:forEach>
+                                    </tbody>
+                                </table>
                             </div>
-                        </c:if>
+
+                            <!-- Pagination -->
+                            <c:if test="${page.totalPages > 1}">
+                                <div class="pagination-container">
+                                    <nav>
+                                        <ul class="pagination">
+                                            <c:if test="${!page.first}">
+                                                <c:url var="prevUrl" value="/seller/products">
+                                                    <c:param name="storeId" value="${storeId}" />
+                                                    <c:param name="q" value="${q}" />
+                                                    <c:param name="status" value="${status}" />
+                                                    <c:param name="parentCategoryId" value="${parentCategoryId}" />
+                                                    <c:param name="categoryId" value="${categoryId}" />
+                                                    <c:param name="fromDate" value="${fromDate}" />
+                                                    <c:param name="toDate" value="${toDate}" />
+                                                    <c:param name="size" value="${page.size}" />
+                                                    <c:param name="page" value="${page.number - 1}" />
+                                                </c:url>
+                                                <li class="page-item"><a class="page-link" href="${prevUrl}">&laquo;</a>
+                                                </li>
+                                            </c:if>
+
+                                            <c:forEach begin="0" end="${page.totalPages-1}" var="i">
+                                                <c:url var="pageUrl" value="/seller/products">
+                                                    <c:param name="storeId" value="${storeId}" />
+                                                    <c:param name="q" value="${q}" />
+                                                    <c:param name="status" value="${status}" />
+                                                    <c:param name="parentCategoryId" value="${parentCategoryId}" />
+                                                    <c:param name="categoryId" value="${categoryId}" />
+                                                    <c:param name="fromDate" value="${fromDate}" />
+                                                    <c:param name="toDate" value="${toDate}" />
+                                                    <c:param name="size" value="${page.size}" />
+                                                    <c:param name="page" value="${i}" />
+                                                </c:url>
+                                                <li class="page-item ${i==page.number?'active':''}">
+                                                    <a class="page-link" href="${pageUrl}">${i+1}</a>
+                                                </li>
+                                            </c:forEach>
+
+                                            <c:if test="${!page.last}">
+                                                <c:url var="nextUrl" value="/seller/products">
+                                                    <c:param name="storeId" value="${storeId}" />
+                                                    <c:param name="q" value="${q}" />
+                                                    <c:param name="status" value="${status}" />
+                                                    <c:param name="parentCategoryId" value="${parentCategoryId}" />
+                                                    <c:param name="categoryId" value="${categoryId}" />
+                                                    <c:param name="fromDate" value="${fromDate}" />
+                                                    <c:param name="toDate" value="${toDate}" />
+                                                    <c:param name="size" value="${page.size}" />
+                                                    <c:param name="page" value="${page.number + 1}" />
+                                                </c:url>
+                                                <li class="page-item"><a class="page-link" href="${nextUrl}">&raquo;</a>
+                                                </li>
+                                            </c:if>
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </c:if>
+                        </div>
                     </div>
 
                     <jsp:include page="../common/footer.jsp" />
@@ -819,6 +834,63 @@
                                 });
                             });
                         })();
+
+                        // Thumbnail fallback handler used by seller/products list
+                        function handleThumbError(img) {
+                            try {
+                                if (!img) return;
+                                var tried = img.getAttribute('data-tried') || '0';
+                                tried = parseInt(tried);
+                                if (tried >= 1) {
+                                    img.onerror = null;
+                                    img.src = '<c:url value="/images/others.png"/>';
+                                    return;
+                                }
+                                img.setAttribute('data-tried', tried + 1);
+                                var fallback = img.getAttribute('data-fallback-url');
+                                if (fallback && fallback !== '' && img.src !== fallback) {
+                                    img.src = fallback;
+                                } else {
+                                    img.onerror = null;
+                                    img.src = '<c:url value="/images/others.png"/>';
+                                }
+                            } catch (e) {
+                                img.onerror = null;
+                                img.src = '<c:url value="/images/others.png"/>';
+                            }
+                        }
+                    </script>
+
+                    <script>
+                        // Toggle sidebar khi nhấn vào nút (same as other pages)
+                        function toggleSidebar() {
+                            var sidebar = document.getElementById('sidebar');
+                            var content = document.getElementById('content');
+                            var overlay = document.getElementById('sidebarOverlay');
+
+                            if (sidebar && content) {
+                                sidebar.classList.toggle('active');
+                                content.classList.toggle('shifted');
+
+                                // Toggle overlay for mobile
+                                if (overlay) {
+                                    overlay.classList.toggle('active');
+                                }
+                            }
+                        }
+
+                        // Close sidebar when clicking outside on mobile
+                        document.addEventListener('click', function (event) {
+                            var sidebar = document.getElementById('sidebar');
+                            var overlay = document.getElementById('sidebarOverlay');
+                            var menuToggle = document.querySelector('.menu-toggle');
+
+                            if (sidebar && sidebar.classList.contains('active') &&
+                                !sidebar.contains(event.target) &&
+                                menuToggle && !menuToggle.contains(event.target)) {
+                                toggleSidebar();
+                            }
+                        });
                     </script>
                 </body>
 
