@@ -139,4 +139,19 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         @Param("keyword") String keyword,
                         Pageable pageable);
 
+        // Additional methods for category-based search
+        @Query("SELECT p FROM Product p WHERE p.category = :category AND p.status = :status AND p.isDeleted = false")
+        Page<Product> findByCategoryAndStatus(vn.group3.marketplace.domain.entity.Category category,
+                        @Param("status") ProductStatus status,
+                        Pageable pageable);
+
+        @Query("SELECT p FROM Product p WHERE p.status = :status AND p.isDeleted = false " +
+                        "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) "
+                        +
+                        "AND p.category = :category")
+        Page<Product> findByStatusAndKeywordAndCategory(@Param("status") ProductStatus status,
+                        @Param("keyword") String keyword,
+                        vn.group3.marketplace.domain.entity.Category category,
+                        Pageable pageable);
+
 }

@@ -28,6 +28,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final SellerStoreRepository storeRepository;
+    private final CategoryService categoryService;
 
     /* --- Search / listing helpers (category-based) --- */
     public Page<Product> getProductsByParentCategory(Category parentCategory, int page, int size,
@@ -277,6 +278,59 @@ public class ProductService {
         }
 
         return productRepository.findByStatusAndKeyword(ProductStatus.ACTIVE, keyword.trim(), pageable);
+    }
+
+    /**
+     * Search products with category filters
+     * 
+     * @param keyword          Search keyword
+     * @param parentCategoryId Parent category ID
+     * @param childCategoryId  Child category ID
+     * @param page             Page number (0-based)
+     * @param size             Page size
+     * @param sortBy           Sort field
+     * @param sortDirection    Sort direction (asc/desc)
+     * @return Page of products
+     */
+    public Page<Product> searchProductsWithFilters(String keyword, Long parentCategoryId, Long childCategoryId,
+            int page, int size, String sortBy, String sortDirection) {
+
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // Logic:
+        // 1. If childCategoryId is specified, search by child category only
+        // 2. If only parentCategoryId is specified (childCategoryId is null), search by
+        // parent category (all children)
+        // 3. If neither is specified, search all products
+
+        if (childCategoryId != null) {
+            // Search by specific child category
+            Category childCategory = categoryService.getCategoryById(childCategoryId);
+            if (childCategory != null) {
+                if (keyword == null || keyword.trim().isEmpty()) {
+                    return productRepository.findByCategoryAndStatus(childCategory, ProductStatus.ACTIVE, pageable);
+                } else {
+                    return productRepository.findByStatusAndKeywordAndCategory(ProductStatus.ACTIVE, keyword.trim(),
+                            childCategory, pageable);
+                }
+            }
+        } else if (parentCategoryId != null) {
+            // Search by parent category (all products under any child category of this
+            // parent)
+            Category parentCategory = categoryService.getCategoryById(parentCategoryId);
+            if (parentCategory != null) {
+                if (keyword == null || keyword.trim().isEmpty()) {
+                    return productRepository.findByParentCategoryId(parentCategoryId, ProductStatus.ACTIVE, pageable);
+                } else {
+                    return productRepository.findByParentCategoryIdAndKeyword(parentCategoryId, ProductStatus.ACTIVE,
+                            keyword.trim(), pageable);
+                }
+            }
+        }
+
+        // Fallback to basic search if no valid category
+        return searchAllProducts(keyword, page, size, sortBy, sortDirection);
     }
 
     public void updateSoldQuantity(Long productId, Integer quantity) {
