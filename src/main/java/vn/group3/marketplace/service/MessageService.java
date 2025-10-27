@@ -4,86 +4,99 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import vn.group3.marketplace.domain.entity.Message;
 import vn.group3.marketplace.domain.entity.User;
 import vn.group3.marketplace.repository.MessageRepository;
 import vn.group3.marketplace.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class MessageService {
-    // private final MessageRepository messageRepository;
-    // private final UserRepository userRepository;
+    private final MessageRepository messageRepository;
+    private final UserRepository userRepository;
 
-    // // Save new message
-    // public Message save(Message message) {
-    // if (message.getContent() == null || message.getContent().trim().isEmpty()) {
-    // throw new IllegalArgumentException("Message content cannot be empty");
-    // }
-    // if (message.getSenderUser() == null) {
-    // throw new IllegalArgumentException("Sender user cannot be null");
-    // }
-    // if (message.getReceiverUser() == null) {
-    // throw new IllegalArgumentException("Receiver user cannot be null");
-    // }
+    // Save new message with idempotency check
+    @Transactional
+    public Message saveMessage(Long senderUserId, Long receiverUserId, String content, String clientMsgId) {
+        // Validate message content
+        if (content == null || content.trim().isEmpty()) {
+            throw new IllegalArgumentException("Nội dung tin nhắn không được để trống");
+        }
 
-    // User user = determineUser(message);
-    // User sellerUser = determineSellerUser(message);
+        // Check if message already exists (idempotency check)
+        if (clientMsgId != null && !clientMsgId.isEmpty()) {
+            Optional<Message> existing = messageRepository.findBySenderUser_IdAndClientMsgId(senderUserId, clientMsgId);
+            if (existing.isPresent()) {
+                return existing.get(); // Return existing message to prevent duplicate
+            }
+        }
 
-    // Message msg = Message.builder()
-    // .user(user)
-    // .sellerUser(sellerUser)
-    // .senderUser(message.getSenderUser())
-    // .receiverUser(message.getReceiverUser())
-    // .content(message.getContent().trim())
-    // .clientMsgId(message.getClientMsgId())
-    // .createdBy(message.getSenderUser().getId())
-    // .build();
+        // Get sender user
+        User senderUser = userRepository.findById(senderUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người gửi"));
 
-    // return messageRepository.save(msg);
-    // }
+        // Get receiver user
+        User receiverUser = userRepository.findById(receiverUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người nhận"));
 
-    // // Get all messages between two users
-    // public List<Message> getMessagesBetweenUsers(Long userId, Long otherUserId) {
-    // return messageRepository.findMessagesBetweenUsers(userId, otherUserId);
-    // }
+        // Determine conversation pair (user + sellerUser)
+        User user = senderUser;
+        User sellerUser = receiverUser;
 
-    // // Load older messages (scroll up)
-    // public List<Message> getOlderMessages(Long userId, Long otherUserId, Long
-    // lastMessageId, int limit) {
-    // Pageable pageable = PageRequest.of(0, limit);
-    // return messageRepository.findMessagesBetweenUsersWithCursor(userId,
-    // otherUserId, lastMessageId, pageable);
-    // }
+        // Build and save message
+        Message message = Message.builder()
+                .user(user)
+                .sellerUser(sellerUser)
+                .senderUser(senderUser)
+                .receiverUser(receiverUser)
+                .content(content.trim())
+                .clientMsgId(clientMsgId)
+                .build();
 
-    // // Load newer messages (real-time)
-    // public List<Message> getNewerMessages(Long userId, Long otherUserId, Long
-    // lastMessageId, int limit) {
-    // Pageable pageable = PageRequest.of(0, limit);
-    // return messageRepository.findMessagesBetweenUsersWithCursorAsc(userId,
-    // otherUserId, lastMessageId, pageable);
-    // }
+        return messageRepository.save(message);
+    }
 
-    // // Get conversation list
-    // public List<Message> getConversationsForUser(Long userId) {
-    // return messageRepository.findRecentConversationsForUser(userId);
-    // }
+    // Load latest messages (initial load)
+    public List<Message> getLatestMessages(Long userId1, Long userId2, int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        return messageRepository.findLatestMessages(userId1, userId2, pageable);
+    }
 
-    // // Get message by ID
-    // public Optional<Message> getMessageById(Long messageId) {
-    // return messageRepository.findById(messageId);
-    // }
+    // Load older messages (scroll up - cursor pagination)
+    public List<Message> getOlderMessages(Long userId1, Long userId2, Long cursorId, int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        return messageRepository.findOlderMessages(userId1, userId2, cursorId, pageable);
+    }
 
-    // // Determine regular user (not seller)
-    // private User determineUser(Message message) {
-    // return message.getSenderUser();
-    // }
+    // Get list of conversations (last message of each conversation)
+    public List<Message> getConversations(Long userId) {
+        return messageRepository.findConversationsForUser(userId);
+    }
 
-    // // Determine seller
-    // private User determineSellerUser(Message message) {
-    // return message.getReceiverUser();
-    // }
+    // Count unread messages from a specific user
+    public Long countUnreadMessages(Long userId, Long otherUserId) {
+        return messageRepository.countUnreadMessages(userId, otherUserId);
+    }
+
+    // Count total unread messages (all conversations)
+    public Long countTotalUnreadMessages(Long userId) {
+        return messageRepository.countTotalUnreadMessages(userId);
+    }
+
+    // Mark messages as read
+    @Transactional
+    public int markAsRead(Long userId, Long otherUserId) {
+        LocalDateTime readAt = LocalDateTime.now();
+        return messageRepository.markAsRead(userId, otherUserId, readAt);
+    }
+
+    // Get message by ID
+    public Optional<Message> getMessageById(Long messageId) {
+        return messageRepository.findById(messageId);
+    }
 }
