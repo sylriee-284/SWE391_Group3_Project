@@ -56,7 +56,7 @@ public class SellerStore extends BaseEntity {
     @Builder.Default
     private String depositCurrency = "VND";
 
-    @Column(nullable = false, precision = 3, scale = 2)
+    @Column(name = "refund_percentage_rate", nullable = false, precision = 5, scale = 2)
     @Builder.Default
-    private BigDecimal rating = BigDecimal.ZERO;
+    private BigDecimal refundPercentageRate = BigDecimal.ZERO;
 }
