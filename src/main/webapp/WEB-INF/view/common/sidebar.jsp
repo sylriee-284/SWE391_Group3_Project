@@ -73,7 +73,7 @@
                             <ul class="collapse list-unstyled ms-3 mt-2" id="sellerMenu">
                                 <li><a href="/seller/dashboard" class="text-white text-decoration-none">📊 Bảng điều
                                         khiển người bán</a></li>
-                                <li><a href="/seller/store-info" class="text-white text-decoration-none">🏪 Thông tin
+                                <li><a href="/seller/profile" class="text-white text-decoration-none">🏪 Thông tin
                                         cửa hàng</a></li>
                                 <li><a href="/seller/products" class="text-white text-decoration-none">📦 Quản lý sản
                                         phẩm</a></li>

@@ -136,6 +136,7 @@
 }
 
 /* Pagination */
+
 .pagination .page-link {
     color: #17a2b8;
 }
@@ -144,6 +145,7 @@
     background-color: #17a2b8;
     border-color: #17a2b8;
 }
+
 
 /* Responsive Design */
 @media (max-width: 768px) {

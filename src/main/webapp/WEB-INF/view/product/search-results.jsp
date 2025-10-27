@@ -10,7 +10,14 @@
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>
-                        Tất cả sản phẩm - MMO Market System
+                        <c:choose>
+                            <c:when test="${not empty keyword}">
+                                Kết quả tìm kiếm: "${keyword}" - MMO Market System
+                            </c:when>
+                            <c:otherwise>
+                                Kết quả tìm kiếm - MMO Market System
+                            </c:otherwise>
+                        </c:choose>
                     </title>
 
                     <!-- Include common head with all CSS and JS -->
@@ -18,6 +25,47 @@
 
                     <!-- Custom Product List CSS -->
                     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/productlist.css">
+
+                    <style>
+                        .filter-section {
+                            background-color: #f8f9fa;
+                            border-radius: 10px;
+                            padding: 20px;
+                            margin-bottom: 20px;
+                            border: 1px solid #e9ecef;
+                        }
+
+                        .filter-label {
+                            font-weight: 600;
+                            color: #495057;
+                            margin-bottom: 8px;
+                            font-size: 0.9rem;
+                        }
+
+                        .btn-collapse {
+                            background-color: #6c757d;
+                            border-color: #6c757d;
+                            color: white;
+                            font-size: 0.875rem;
+                            padding: 0.375rem 0.75rem;
+                        }
+
+                        .btn-collapse:hover {
+                            background-color: #5a6268;
+                            border-color: #545b62;
+                            color: white;
+                        }
+
+                        .badge.bg-secondary {
+                            background-color: #6c757d !important;
+                        }
+
+                        .form-select:focus,
+                        .form-control:focus {
+                            border-color: #28a745;
+                            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+                        }
+                    </style>
                 </head>
 
                 <body>
@@ -40,78 +88,106 @@
                                     <li class="breadcrumb-item">
                                         <a href="<c:url value='/'/>" class="text-decoration-none">Trang chủ</a>
                                     </li>
+                                    <li class="breadcrumb-item">
+                                        <a href="<c:url value='/products'/>" class="text-decoration-none">Sản phẩm</a>
+                                    </li>
                                     <li class="breadcrumb-item active" aria-current="page">
-                                        sản phẩm
+                                        <c:choose>
+                                            <c:when test="${not empty keyword}">
+                                                Kết quả tìm kiếm: "${keyword}"
+                                            </c:when>
+                                            <c:otherwise>
+                                                Kết quả tìm kiếm
+                                            </c:otherwise>
+                                        </c:choose>
                                     </li>
                                 </ol>
                             </nav>
 
-                            <!-- Filter Section -->
-                            <div class="filter-section">
-                                <form method="get" action="<c:url value='/products'/>" id="filterForm">
-                                    <!-- Main Filters -->
-                                    <div class="row filter-row">
-                                        <!-- Sort Options with Radio Buttons -->
-                                        <div class="col-md-12 mb-3">
-                                            <div class="filter-label">Sắp xếp sản phẩm</div>
-                                            <div class="d-flex flex-wrap gap-4">
+                            <!-- Search Results Header -->
+                            <div class="mb-4">
+                                <h1 class="h3 mb-2">
+                                    <i class="fas fa-search text-primary me-2"></i>
+                                    <c:choose>
+                                        <c:when test="${not empty keyword}">
+                                            Kết quả tìm kiếm cho: "<span class="text-primary">${keyword}</span>"
+                                        </c:when>
+                                        <c:otherwise>
+                                            Kết quả tìm kiếm
+                                        </c:otherwise>
+                                    </c:choose>
+                                </h1>
+                                <c:if test="${totalElements > 0}">
+                                    <p class="text-muted mb-0">
+                                        Tìm thấy <strong>${totalElements}</strong> sản phẩm
+                                        <c:if test="${not empty keyword}"> cho từ khóa "<strong>${keyword}</strong>"
+                                        </c:if>
+                                    </p>
+                                </c:if>
+                            </div>
+
+                            <!-- Search Section -->
+                            <div class="container my-4">
+                                <div class="row justify-content-center">
+                                    <div class="col-md-8">
+                                        <form method="get" action="<c:url value='/products/search'/>"
+                                            class="d-flex align-items-center">
+                                            <input type="text" class="form-control me-2 rounded-pill" id="keyword"
+                                                name="keyword" value="${keyword}" placeholder="Tìm kiếm sản phẩm..."
+                                                required style="height: 45px;">
+                                            <button type="submit" class="btn btn-success rounded-pill px-4"
+                                                style="height: 45px; white-space: nowrap;">
+                                                <i class="fas fa-search"></i> Tìm kiếm
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sort Filter Section -->
+                            <div class="filter-section mb-4">
+                                <div class="row align-items-center">
+                                    <div class="col-md-2">
+                                        <label class="filter-label mb-0">Sắp xếp theo:</label>
+                                    </div>
+                                    <div class="col-md-10">
+                                        <form method="get" action="<c:url value='/products/search'/>" id="sortForm">
+                                            <input type="hidden" name="keyword" value="${keyword}">
+                                            <div class="d-flex flex-wrap gap-3">
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="radio" name="sort"
-                                                        id="sortSoldQuantity" value="soldQuantity" <c:if
-                                                        test="${originalSort == 'soldQuantity' || empty originalSort}">checked
-                                                    </c:if>
-                                                    onchange="this.form.submit()">
-                                                    <label class="form-check-label" for="sortSoldQuantity">
+                                                        value="soldQuantity" id="sortPopular" ${empty originalSort ||
+                                                        originalSort=='soldQuantity' ? 'checked' : '' }
+                                                        onchange="document.getElementById('sortForm').submit();">
+                                                    <label class="form-check-label" for="sortPopular">
                                                         <i class="fas fa-fire text-danger me-1"></i>Sản phẩm nổi bật
                                                     </label>
                                                 </div>
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="radio" name="sort"
-                                                        id="sortNew" value="createdAt" <c:if
-                                                        test="${originalSort == 'createdAt'}">checked</c:if>
-                                                    onchange="this.form.submit()">
-                                                    <label class="form-check-label" for="sortNew">
-                                                        <i class="fas fa-clock text-primary me-1"></i>Sản phẩm mới
-                                                    </label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="radio" name="sort"
-                                                        id="sortPrice" value="price" <c:if
-                                                        test="${originalSort == 'price'}">checked</c:if>
-                                                    onchange="this.form.submit()">
-                                                    <label class="form-check-label" for="sortPrice">
+                                                        value="price" id="sortPriceAsc" ${originalSort=='price'
+                                                        ? 'checked' : '' }
+                                                        onchange="document.getElementById('sortForm').submit();">
+                                                    <label class="form-check-label" for="sortPriceAsc">
                                                         <i class="fas fa-sort-amount-up text-success me-1"></i>Giá từ
                                                         thấp đến cao
                                                     </label>
                                                 </div>
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="radio" name="sort"
-                                                        id="sortPriceDesc" value="priceDesc" <c:if
-                                                        test="${originalSort == 'priceDesc'}">checked</c:if>
-                                                    onchange="this.form.submit()">
+                                                        value="priceDesc" id="sortPriceDesc" ${originalSort=='priceDesc'
+                                                        ? 'checked' : '' }
+                                                        onchange="document.getElementById('sortForm').submit();">
                                                     <label class="form-check-label" for="sortPriceDesc">
                                                         <i class="fas fa-sort-amount-down text-info me-1"></i>Giá từ cao
                                                         đến thấp
                                                     </label>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </form>
                                     </div>
-
-                                    <!-- Action Buttons Row -->
-                                    <div class="row mt-2">
-                                        <div class="col-md-12 d-flex justify-content-end">
-                                            <button type="button" class="btn btn-outline-secondary"
-                                                onclick="toggleFilterSection()">
-                                                <span id="filterToggleText">THU GỌN</span>
-                                                <i class="fas fa-chevron-up" id="filterToggleIcon"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </form>
+                                </div>
                             </div>
-
-
 
                             <!-- Products Grid -->
                             <div class="row">
@@ -201,20 +277,36 @@
                                     <c:otherwise>
                                         <div class="col-12">
                                             <div class="alert alert-info text-center" role="alert">
-                                                <h4><i class="fas fa-info-circle"></i> Không tìm thấy sản phẩm</h4>
+                                                <h4><i class="fas fa-search"></i> Không tìm thấy sản phẩm nào</h4>
                                                 <p>
-                                                    Không có sản phẩm nào trong hệ thống.
+                                                    <c:choose>
+                                                        <c:when test="${not empty keyword}">
+                                                            Không có sản phẩm nào khớp với từ khóa
+                                                            "<strong>${keyword}</strong>".
+                                                            <br>Hãy thử tìm kiếm với từ khóa khác hoặc kiểm tra lỗi
+                                                            chính tả.
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            Vui lòng nhập từ khóa để tìm kiếm sản phẩm.
+                                                        </c:otherwise>
+                                                    </c:choose>
                                                 </p>
-                                                <a href="<c:url value='/products'/>" class="btn btn-primary">Tải lại
-                                                    trang</a>
+                                                <div class="mt-3">
+                                                    <a href="<c:url value='/products'/>" class="btn btn-primary me-2">
+                                                        <i class="fas fa-list"></i> Xem tất cả sản phẩm
+                                                    </a>
+                                                    <a href="<c:url value='/'/>" class="btn btn-outline-primary">
+                                                        <i class="fas fa-home"></i> Về trang chủ
+                                                    </a>
+                                                </div>
                                             </div>
                                         </div>
                                     </c:otherwise>
                                 </c:choose>
                             </div>
 
-                            <!-- Pagination -->
-                            <c:if test="${totalPages > 1}">
+                            <!-- Pagination - Always show when there are products -->
+                            <c:if test="${totalElements > 0}">
                                 <div class="pagination-container">
                                     <nav>
                                         <ul class="pagination mb-0">
@@ -227,7 +319,8 @@
                                                         </a>
                                                     </c:when>
                                                     <c:otherwise>
-                                                        <c:url var="firstUrl" value="/products">
+                                                        <c:url var="firstUrl" value="/products/search">
+                                                            <c:param name="keyword" value="${keyword}" />
                                                             <c:param name="page" value="0" />
                                                             <c:param name="size" value="${size}" />
                                                             <c:if test="${not empty originalSort}">
@@ -250,7 +343,8 @@
                                                         </a>
                                                     </c:when>
                                                     <c:otherwise>
-                                                        <c:url var="prevUrl" value="/products">
+                                                        <c:url var="prevUrl" value="/products/search">
+                                                            <c:param name="keyword" value="${keyword}" />
                                                             <c:param name="page" value="${previousPage}" />
                                                             <c:param name="size" value="${size}" />
                                                             <c:if test="${not empty originalSort}">
@@ -269,7 +363,8 @@
                                                 <c:choose>
                                                     <c:when
                                                         test="${pageNum < 5 || (pageNum >= currentPage - 2 && pageNum <= currentPage + 2) || pageNum >= totalPages - 1}">
-                                                        <c:url var="pageUrl" value="/products">
+                                                        <c:url var="pageUrl" value="/products/search">
+                                                            <c:param name="keyword" value="${keyword}" />
                                                             <c:param name="page" value="${pageNum}" />
                                                             <c:param name="size" value="${size}" />
                                                             <c:if test="${not empty originalSort}">
@@ -303,7 +398,8 @@
                                                         </a>
                                                     </c:when>
                                                     <c:otherwise>
-                                                        <c:url var="nextUrl" value="/products">
+                                                        <c:url var="nextUrl" value="/products/search">
+                                                            <c:param name="keyword" value="${keyword}" />
                                                             <c:param name="page" value="${nextPage}" />
                                                             <c:param name="size" value="${size}" />
                                                             <c:if test="${not empty originalSort}">
@@ -326,7 +422,8 @@
                                                         </a>
                                                     </c:when>
                                                     <c:otherwise>
-                                                        <c:url var="lastUrl" value="/products">
+                                                        <c:url var="lastUrl" value="/products/search">
+                                                            <c:param name="keyword" value="${keyword}" />
                                                             <c:param name="page" value="${totalPages - 1}" />
                                                             <c:param name="size" value="${size}" />
                                                             <c:if test="${not empty originalSort}">
@@ -406,24 +503,8 @@
                             }
                         });
 
-                        // Toggle filter section
-                        function toggleFilterSection() {
-                            var filterSection = document.querySelector('.filter-section .filter-row');
-                            var toggleText = document.getElementById('filterToggleText');
-                            var toggleIcon = document.getElementById('filterToggleIcon');
 
-                            if (filterSection.style.display === 'none') {
-                                filterSection.style.display = 'flex';
-                                toggleText.textContent = 'THU GỌN';
-                                toggleIcon.classList.remove('fa-chevron-down');
-                                toggleIcon.classList.add('fa-chevron-up');
-                            } else {
-                                filterSection.style.display = 'none';
-                                toggleText.textContent = 'MỞ RỘNG';
-                                toggleIcon.classList.remove('fa-chevron-up');
-                                toggleIcon.classList.add('fa-chevron-down');
-                            }
-                        }
+
 
                         // Auto-hide alerts after 5 seconds
                         document.addEventListener('DOMContentLoaded', function () {
