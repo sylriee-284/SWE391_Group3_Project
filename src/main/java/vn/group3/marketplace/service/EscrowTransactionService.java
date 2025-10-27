@@ -177,6 +177,10 @@ public class EscrowTransactionService {
     @Async("escrowTaskExecutor")
     @Transactional
     public CompletableFuture<Void> releasePaymentFromEscrow(Order order) {
+        // Get admin default wallet id from system setting
+        // (wallet.admin_default_receive_commission)
+        Long adminDefaultWalletId = Long
+                .parseLong(systemSettingService.getSettingValue("wallet.admin_default_receive_commission", "32"));
         try {
             logger.info("Starting payment release process for order: {}", order.getId());
 
@@ -194,7 +198,8 @@ public class EscrowTransactionService {
             if (sellerProxy == null) {
                 throw new IllegalArgumentException("Seller is null for order: " + order.getId());
             }
-            User admin = userRepository.findById(32L).orElseThrow(() -> new RuntimeException("Admin not found"));
+            User admin = userRepository.findById(adminDefaultWalletId)
+                    .orElseThrow(() -> new RuntimeException("Admin not found"));
 
             // 3. Load fresh User entity from database to avoid LazyInitializationException
             User seller = userRepository.findById(sellerProxy.getId())

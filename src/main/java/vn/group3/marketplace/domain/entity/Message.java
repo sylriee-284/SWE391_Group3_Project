@@ -1,5 +1,7 @@
 package vn.group3.marketplace.domain.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -44,4 +46,7 @@ public class Message extends BaseEntity {
 
     @Column(name = "client_msg_id", length = 100)
     private String clientMsgId;
+
+    @Column(name = "read_at")
+    private LocalDateTime readAt;
 }

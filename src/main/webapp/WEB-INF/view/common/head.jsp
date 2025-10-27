@@ -58,6 +58,8 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/categories.css">
     <!-- Custom System Config CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/system-config.css">
+    <!-- Custom Chat CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/chat.css">
 
     <!-- SockJS and STOMP for WebSocket -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
