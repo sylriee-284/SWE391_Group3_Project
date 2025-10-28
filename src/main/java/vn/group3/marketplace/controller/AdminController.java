@@ -431,6 +431,8 @@ public class AdminController {
     @GetMapping("/stores")
     @PreAuthorize("hasRole('ADMIN')")
     public String listStores(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "5") int size,
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String status, // ACTIVE/INACTIVE/BANNED/PENDING
@@ -439,9 +441,34 @@ public class AdminController {
             @RequestParam(name = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo,
             Model model) {
 
+        if (page < 1)
+            page = 1;
+        if (size <= 0)
+            size = 5;
+
         StoreStatus st = (status == null || status.isBlank()) ? null : StoreStatus.valueOf(status);
-        model.addAttribute("stores",
-                sellerStoreService.searchStores(id, name, st, ownerId, createdFrom, createdTo));
+
+        // Đếm tổng theo filter
+        int totalItems = sellerStoreService.countStores(id, name, st, ownerId, createdFrom, createdTo);
+        int totalPages = (int) Math.ceil(totalItems / (double) size);
+        int offset = (page - 1) * size;
+
+        // Lấy dữ liệu trang hiện tại
+        List<SellerStore> stores = sellerStoreService.searchStoresPaged(
+                id, name, st, ownerId, createdFrom, createdTo, offset, size);
+
+        model.addAttribute("stores", stores);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("pageSize", size);
+        model.addAttribute("totalPages", totalPages);
+
+        // giữ filter để bind lại form + build query
+        model.addAttribute("paramId", id == null ? "" : String.valueOf(id));
+        model.addAttribute("paramName", name);
+        model.addAttribute("paramStatus", status);
+        model.addAttribute("paramFrom", createdFrom);
+        model.addAttribute("paramTo", createdTo);
+
         return "admin/stores";
     }
 

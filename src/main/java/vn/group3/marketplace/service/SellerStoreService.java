@@ -285,4 +285,85 @@ public class SellerStoreService {
             }
         }
     }
+
+    @Transactional(readOnly = true)
+    public int countStores(Long id, String name, StoreStatus status, Long ownerId,
+            LocalDate createdFrom, LocalDate createdTo) {
+        StringBuilder jpql = new StringBuilder(
+                "select count(s) from SellerStore s where 1=1");
+        Map<String, Object> p = new HashMap<>();
+
+        if (id != null) {
+            jpql.append(" and s.id = :id");
+            p.put("id", id);
+        }
+        if (name != null && !name.isBlank()) {
+            jpql.append(" and lower(s.storeName) like lower(concat('%', :name, '%'))");
+            p.put("name", name);
+        }
+        if (status != null) {
+            jpql.append(" and s.status = :status");
+            p.put("status", status);
+        }
+        if (ownerId != null) {
+            jpql.append(" and s.owner.id = :ownerId");
+            p.put("ownerId", ownerId);
+        }
+        if (createdFrom != null) {
+            jpql.append(" and s.createdAt >= :from");
+            p.put("from", createdFrom.atStartOfDay());
+        }
+        if (createdTo != null) {
+            jpql.append(" and s.createdAt < :to");
+            p.put("to", createdTo.plusDays(1).atStartOfDay());
+        }
+
+        var q = em.createQuery(jpql.toString(), Long.class);
+        p.forEach(q::setParameter);
+        Long cnt = q.getSingleResult();
+        return cnt == null ? 0 : cnt.intValue();
+    }
+
+    @Transactional(readOnly = true)
+    public List<SellerStore> searchStoresPaged(Long id, String name, StoreStatus status, Long ownerId,
+            LocalDate createdFrom, LocalDate createdTo,
+            int offset, int size) {
+        StringBuilder jpql = new StringBuilder(
+                "select s from SellerStore s left join fetch s.owner where 1=1");
+        Map<String, Object> p = new HashMap<>();
+
+        if (id != null) {
+            jpql.append(" and s.id = :id");
+            p.put("id", id);
+        }
+        if (name != null && !name.isBlank()) {
+            jpql.append(" and lower(s.storeName) like lower(concat('%', :name, '%'))");
+            p.put("name", name);
+        }
+        if (status != null) {
+            jpql.append(" and s.status = :status");
+            p.put("status", status);
+        }
+        if (ownerId != null) {
+            jpql.append(" and s.owner.id = :ownerId");
+            p.put("ownerId", ownerId);
+        }
+        if (createdFrom != null) {
+            jpql.append(" and s.createdAt >= :from");
+            p.put("from", createdFrom.atStartOfDay());
+        }
+        if (createdTo != null) {
+            jpql.append(" and s.createdAt < :to");
+            p.put("to", createdTo.plusDays(1).atStartOfDay());
+        }
+
+        jpql.append(" order by s.id desc");
+
+        var q = em.createQuery(jpql.toString(), SellerStore.class);
+        p.forEach(q::setParameter);
+        q.setFirstResult(Math.max(0, offset));
+        q.setMaxResults(Math.max(1, size));
+        return q.getResultList();
+    }
+
 }
