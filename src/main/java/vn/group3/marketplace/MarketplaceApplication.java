@@ -13,6 +13,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class MarketplaceApplication {
 
 	public static void main(String[] args) {
+		// Set JVM timezone to Vietnam time (GMT+7)
+		System.setProperty("user.timezone", "Asia/Ho_Chi_Minh");
 		SpringApplication.run(MarketplaceApplication.class, args);
 	}
 
