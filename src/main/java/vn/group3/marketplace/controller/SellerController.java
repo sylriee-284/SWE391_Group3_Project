@@ -30,7 +30,6 @@ public class SellerController {
     private final UserService userService;
     private final SellerStoreService sellerStoreService;
     private final WalletTransactionQueueService walletTransactionQueueService;
-    private final vn.group3.marketplace.service.WalletService walletService;
     private final SystemSettingService systemSettingService;
 
     /**
@@ -47,10 +46,10 @@ public class SellerController {
             return "redirect:/seller/dashboard";
         }
 
-        // Find any existing non-active store (PENDING or INACTIVE)
+        // Find any existing PENDING store
         SellerStore nonActiveStore = sellerStoreService.findNonActiveStoreByOwner(currentUser);
         
-        // Add non-active store if exists (could be PENDING or INACTIVE)
+        // Add PENDING store if exists
         if (nonActiveStore != null) {
             model.addAttribute("inactiveStore", nonActiveStore);
         }
@@ -68,6 +67,17 @@ public class SellerController {
     Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
     model.addAttribute("percentageFee", percentageFee);
     model.addAttribute("fixedFee", fixedFee);
+
+    // Add refund rate settings from SystemSetting
+    Integer maxRefundRateMinDuration = systemSettingService.getIntValue("store.max_refund_rate_min_duration_months", 12);
+    Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate", 100.0);
+    Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate", 70.0);
+    Double noFeeRefundRate = systemSettingService.getDoubleValue("store.no_fee_refund_rate", 50.0);
+    
+    model.addAttribute("maxRefundRateMinDuration", maxRefundRateMinDuration);
+    model.addAttribute("percentageMaxRefundRate", percentageMaxRefundRate);
+    model.addAttribute("percentageMinRefundRate", percentageMinRefundRate);
+    model.addAttribute("noFeeRefundRate", noFeeRefundRate);
 
         return "seller/seller-register";
     }
@@ -100,6 +110,17 @@ public class SellerController {
             Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
             model.addAttribute("percentageFee", percentageFee);
             model.addAttribute("fixedFee", fixedFee);
+
+            // Add refund rate settings for validation errors
+            Integer maxRefundRateMinDuration = systemSettingService.getIntValue("store.max_refund_rate_min_duration_months", 12);
+            Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate", 100.0);
+            Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate", 70.0);
+            Double noFeeRefundRate = systemSettingService.getDoubleValue("store.no_fee_refund_rate", 50.0);
+            
+            model.addAttribute("maxRefundRateMinDuration", maxRefundRateMinDuration);
+            model.addAttribute("percentageMaxRefundRate", percentageMaxRefundRate);
+            model.addAttribute("percentageMinRefundRate", percentageMinRefundRate);
+            model.addAttribute("noFeeRefundRate", noFeeRefundRate);
 
             // Parse and validate deposit amount
             BigDecimal deposit;
@@ -210,27 +231,6 @@ public class SellerController {
         // Get store details
         SellerStore store = sellerStoreService.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy cửa hàng"));
-                
-        // Check transaction status for INACTIVE stores (stores that have attempted payment)
-        if (store.getStatus() == StoreStatus.INACTIVE && !model.containsAttribute("paymentError")) {
-            try {
-                String paymentRef = "createdShop" + storeId;
-                vn.group3.marketplace.domain.enums.WalletTransactionStatus txStatus = walletService.getTransactionStatusByOrderId(paymentRef);
-                if (txStatus == vn.group3.marketplace.domain.enums.WalletTransactionStatus.FAILED) {
-                    // Likely failed due to insufficient balance
-                    if (currentUser.getBalance().compareTo(store.getDepositAmount()) < 0) {
-                        java.math.BigDecimal needed = store.getDepositAmount().subtract(currentUser.getBalance());
-                        model.addAttribute("paymentError",
-                                "Thanh toán thất bại: Số dư không đủ. Bạn cần nạp thêm " + String.format("%,.0f", needed) + " VNĐ");
-                    } else {
-                        model.addAttribute("paymentError", "Thanh toán thất bại. Vui lòng thử lại hoặc liên hệ hỗ trợ.");
-                    }
-                }
-            } catch (Exception ex) {
-                // If checking transaction status fails, don't show insufficient-balance prematurely.
-                // Log/debug can be added if needed.
-            }
-        }
         
         // For PENDING stores, show activation prompt
         if (store.getStatus() == StoreStatus.PENDING) {
@@ -245,6 +245,17 @@ public class SellerController {
     Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
     model.addAttribute("percentageFee", percentageFee);
     model.addAttribute("fixedFee", fixedFee);
+
+    // Add refund rate settings so the success page can show refund policy
+    Integer maxRefundRateMinDuration = systemSettingService.getIntValue("store.max_refund_rate_min_duration_months", 12);
+    Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate", 100.0);
+    Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate", 70.0);
+    Double noFeeRefundRate = systemSettingService.getDoubleValue("store.no_fee_refund_rate", 50.0);
+    
+    model.addAttribute("maxRefundRateMinDuration", maxRefundRateMinDuration);
+    model.addAttribute("percentageMaxRefundRate", percentageMaxRefundRate);
+    model.addAttribute("percentageMinRefundRate", percentageMinRefundRate);
+    model.addAttribute("noFeeRefundRate", noFeeRefundRate);
 
         return "seller/register-success";
     }
@@ -282,11 +293,6 @@ public class SellerController {
                     "Số dư không đủ để kích hoạt cửa hàng. Bạn cần nạp thêm " + 
                     String.format("%,.0f", needed) + " VNĐ");
                 return "redirect:/seller/register-success?storeId=" + storeId;
-            }
-
-            // Change store status from PENDING to INACTIVE before payment
-            if (store.getStatus() == StoreStatus.PENDING) {
-                store.setStatus(StoreStatus.INACTIVE);
             }
 
             // Enqueue payment with same ref
@@ -342,20 +348,6 @@ public class SellerController {
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy cửa hàng"));
 
             resp.put("status", store.getStatus().name());
-
-            // If still inactive, check if there's a processed failed transaction to show paymentError
-            if (store.getStatus() == StoreStatus.INACTIVE) {
-                try {
-                    String paymentRef = "createdShop" + storeId;
-                    vn.group3.marketplace.domain.enums.WalletTransactionStatus txStatus = walletService.getTransactionStatusByOrderId(paymentRef);
-                    if (txStatus == vn.group3.marketplace.domain.enums.WalletTransactionStatus.FAILED) {
-                        // Provide a friendly message, caller can show it
-                        resp.put("paymentError", "Thanh toán thất bại: vui lòng nạp tiền hoặc thử lại");
-                    }
-                } catch (Exception ex) {
-                    // ignore: we don't want to surface internal errors to the poller
-                }
-            }
 
             return org.springframework.http.ResponseEntity.ok(resp);
         } catch (Exception e) {
