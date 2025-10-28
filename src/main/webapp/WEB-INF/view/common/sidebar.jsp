@@ -102,7 +102,7 @@
                                 <li><a href="/admin/categories" class="text-white text-decoration-none">📦 Quản lý mặt
                                         hàng</a></li>
                                 <li><a href="#" class="text-white text-decoration-none">💳 Đơn rút tiền</a></li>
-                                <li><a href="admin/system-config" class="text-white text-decoration-none">⚙️ Cài đặt
+                                <li><a href="/admin/system-config" class="text-white text-decoration-none">⚙️ Cài đặt
                                         platform</a></li>
                                 <li><a href="#" class="text-white text-decoration-none">📈 Báo cáo & thống kê</a></li>
                             </ul>
