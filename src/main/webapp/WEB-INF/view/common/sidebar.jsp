@@ -73,7 +73,7 @@
                             <ul class="collapse list-unstyled ms-3 mt-2" id="sellerMenu">
                                 <li><a href="/seller/dashboard" class="text-white text-decoration-none">📊 Bảng điều
                                         khiển người bán</a></li>
-                                <li><a href="/seller/store-info" class="text-white text-decoration-none">🏪 Thông tin
+                                <li><a href="/seller/profile" class="text-white text-decoration-none">🏪 Thông tin
                                         cửa hàng</a></li>
                                 <li><a href="/seller/products" class="text-white text-decoration-none">📦 Quản lý sản
                                         phẩm</a></li>
@@ -96,11 +96,13 @@
                             <ul class="collapse list-unstyled ms-3 mt-2" id="adminMenu">
                                 <li><a href="/admin/dashboard" class="text-white text-decoration-none">📊 Bảng điều
                                         khiển Admin</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">👥 Quản lý người dùng</a></li>
+                                <li><a href="/admin/users" class="text-white text-decoration-none">👥 Quản lý người
+                                        dùng</a></li>
                                 <li><a href="#" class="text-white text-decoration-none">🏪 Quản lý cửa hàng</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">📦 Quản lý mặt hàng</a></li>
+                                <li><a href="/admin/categories" class="text-white text-decoration-none">📦 Quản lý mặt
+                                        hàng</a></li>
                                 <li><a href="#" class="text-white text-decoration-none">💳 Đơn rút tiền</a></li>
-                                <li><a href="admin/system-config" class="text-white text-decoration-none">⚙️ Cài đặt
+                                <li><a href="/admin/system-config" class="text-white text-decoration-none">⚙️ Cài đặt
                                         platform</a></li>
                                 <li><a href="#" class="text-white text-decoration-none">📈 Báo cáo & thống kê</a></li>
                             </ul>

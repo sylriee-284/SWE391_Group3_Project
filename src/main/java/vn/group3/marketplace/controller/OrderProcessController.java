@@ -2,6 +2,7 @@ package vn.group3.marketplace.controller;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -11,11 +12,6 @@ import vn.group3.marketplace.dto.OrderTask;
 import vn.group3.marketplace.security.CustomUserDetails;
 import vn.group3.marketplace.service.OrderService;
 import vn.group3.marketplace.service.OrderQueue;
-import vn.group3.marketplace.service.NotificationService;
-import vn.group3.marketplace.domain.enums.NotificationType;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 @Controller
 @RequestMapping("/order-process")
@@ -23,13 +19,10 @@ public class OrderProcessController {
 
     private final OrderService orderService;
     private final OrderQueue orderQueue;
-    private final NotificationService notificationService;
 
-    public OrderProcessController(OrderService orderService, OrderQueue orderQueue,
-            NotificationService notificationService) {
+    public OrderProcessController(OrderService orderService, OrderQueue orderQueue) {
         this.orderService = orderService;
         this.orderQueue = orderQueue;
-        this.notificationService = notificationService;
     }
 
     @PostMapping("/buy-now")
@@ -47,33 +40,19 @@ public class OrderProcessController {
             boolean addedToQueue = orderQueue.addOrder(orderTask);
 
             if (addedToQueue) {
-                // Create notification for successful order creation
-                notificationService.createNotification(
-                        currentUser.getUser(),
-                        NotificationType.ORDER_SUCCESS,
-                        "Đặt hàng thành công",
+                redirectAttributes.addFlashAttribute("successMessage",
                         "Đơn hàng đã được tạo thành công! Đang xử lý thanh toán...");
+                return "redirect:/homepage?showOrderModal=true";
             } else {
-                // Create error notification
-                notificationService.createNotification(
-                        currentUser.getUser(),
-                        NotificationType.ORDER_FAILED,
-                        "Đặt hàng thất bại",
+                redirectAttributes.addFlashAttribute("errorMessage",
                         "Không thể thêm đơn hàng vào hàng đợi. Vui lòng thử lại.");
+                return "redirect:/homepage";
             }
 
-            return "redirect:/homepage?showOrderModal=true";
-
         } catch (Exception e) {
-            // Create error notification
-            notificationService.createNotification(
-                    currentUser.getUser(),
-                    NotificationType.ORDER_FAILED,
-                    "Đặt hàng thất bại",
+            redirectAttributes.addFlashAttribute("errorMessage",
                     "Có lỗi xảy ra khi tạo đơn hàng: " + e.getMessage());
-
-            return "redirect:/homepage?errorMessage="
-                    + URLEncoder.encode("Có lỗi xảy ra khi tạo đơn hàng: " + e.getMessage(), StandardCharsets.UTF_8);
+            return "redirect:/homepage";
         }
     }
 }

@@ -21,6 +21,7 @@ import vn.group3.marketplace.domain.enums.SellerStoresType;
 import vn.group3.marketplace.service.SellerStoreService;
 import vn.group3.marketplace.service.UserService;
 import vn.group3.marketplace.service.SystemSettingService;
+import vn.group3.marketplace.repository.SellerStoreRepository;
 
 @Controller
 @RequestMapping("/seller")
@@ -30,7 +31,9 @@ public class SellerController {
     private final UserService userService;
     private final SellerStoreService sellerStoreService;
     private final WalletTransactionQueueService walletTransactionQueueService;
+    private final vn.group3.marketplace.service.WalletService walletService;
     private final SystemSettingService systemSettingService;
+    private final SellerStoreRepository sellerStoreRepository;
 
     /**
      * Display seller registration form
@@ -46,10 +49,10 @@ public class SellerController {
             return "redirect:/seller/dashboard";
         }
 
-        // Find any existing PENDING store
+        // Find any existing non-active store (PENDING or INACTIVE)
         SellerStore nonActiveStore = sellerStoreService.findNonActiveStoreByOwner(currentUser);
-        
-        // Add PENDING store if exists
+
+        // Add non-active store if exists (could be PENDING or INACTIVE)
         if (nonActiveStore != null) {
             model.addAttribute("inactiveStore", nonActiveStore);
         }
@@ -222,7 +225,7 @@ public class SellerController {
     /**
      * Show registration success page with store details
      */
-    @GetMapping("/register-success") 
+    @GetMapping("/register-success")
     public String showRegistrationSuccess(@RequestParam Long storeId, Model model) {
         // Get current authenticated user
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

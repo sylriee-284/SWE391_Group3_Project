@@ -11,6 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 
@@ -111,7 +112,8 @@ public class UserController {
             @RequestParam(required = false) String phone,
             @RequestParam(required = false) String dateOfBirth,
             @RequestParam(required = false) String gender,
-            Model model) {
+            Model model,
+            RedirectAttributes redirectAttributes) {
 
         System.out.println("=== RECEIVED UPDATE REQUEST ===");
         System.out.println("Email: " + email);
@@ -122,6 +124,56 @@ public class UserController {
         System.out.println("===============================");
 
         try {
+            // Validate fullName - chỉ được chứa chữ cái, dấu cách và dấu tiếng Việt
+            String namePattern = "^[a-zA-ZàáảãạầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵĂăĐđĨĩŨũƠơƯưÀÁẢÃẠẦẤẨẪẬÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴ\\s]+$";
+            if (fullName == null || fullName.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "Lỗi tên: Tên không được để trống. Nguyên nhân: Bạn chưa nhập tên hoặc chỉ nhập khoảng trắng.");
+                return "redirect:/user/profile";
+            }
+            if (!fullName.trim().matches(namePattern)) {
+                // Phân tích nguyên nhân cụ thể
+                String reason = "";
+                if (fullName.trim().matches(".*\\d.*")) {
+                    reason = "Tên chứa số (0-9)";
+                } else if (fullName.trim().matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?].*")) {
+                    reason = "Tên chứa ký tự đặc biệt (!@#$%^&*...)";
+                } else {
+                    reason = "Tên chứa ký tự không được phép";
+                }
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "Lỗi tên: Tên chỉ được chứa chữ cái và khoảng trắng. Nguyên nhân: " + reason
+                                + ". Bạn đã nhập: \"" + fullName + "\"");
+                return "redirect:/user/profile";
+            }
+
+            // Validate phone - chỉ được chứa số và độ dài 10-11 số
+            if (phone != null && !phone.trim().isEmpty()) {
+                String phonePattern = "^\\d{10,11}$";
+                if (!phone.trim().matches(phonePattern)) {
+                    // Phân tích nguyên nhân cụ thể
+                    String reason = "";
+                    int phoneLength = phone.trim().length();
+
+                    if (phoneLength < 10) {
+                        reason = "Số điện thoại quá ngắn (chỉ có " + phoneLength + " số, cần 10-11 số)";
+                    } else if (phoneLength > 11) {
+                        reason = "Số điện thoại quá dài (có " + phoneLength + " số, chỉ được phép 10-11 số)";
+                    } else if (phone.trim().matches(".*[a-zA-Z].*")) {
+                        reason = "Số điện thoại chứa chữ cái";
+                    } else if (phone.trim().matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?\\s].*")) {
+                        reason = "Số điện thoại chứa ký tự đặc biệt hoặc khoảng trắng";
+                    } else {
+                        reason = "Số điện thoại không đúng định dạng";
+                    }
+
+                    redirectAttributes.addFlashAttribute("errorMessage",
+                            "Lỗi số điện thoại: Chỉ được chứa số và có độ dài từ 10-11 số. Nguyên nhân: " + reason
+                                    + ". Bạn đã nhập: \"" + phone + "\"");
+                    return "redirect:/user/profile";
+                }
+            }
+
             // Get current authenticated user
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String username = auth.getName();
@@ -137,7 +189,7 @@ public class UserController {
             // Get fresh user data for update (bypass cache)
             User user = userService.getFreshUserByUsername(username);
             if (user == null) {
-                model.addAttribute("errorMessage", "Không tìm thấy thông tin người dùng");
+                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy thông tin người dùng");
                 return "redirect:/user/profile";
             }
 
@@ -201,16 +253,16 @@ public class UserController {
             }
 
             System.out.println("=== UPDATE SUCCESS - SIMPLE APPROACH ===");
-            model.addAttribute("successMessage", "Cập nhật thông tin thành công!");
+            redirectAttributes.addFlashAttribute("successMessage", "Cập nhật thông tin thành công!");
 
             // Redirect to profile page with success message
-            return "redirect:/user/profile?success=true";
+            return "redirect:/user/profile";
 
         } catch (Exception e) {
             System.out.println("=== UPDATE ERROR ===");
             e.printStackTrace();
-            model.addAttribute("errorMessage", "Có lỗi xảy ra: " + e.getMessage());
-            return "redirect:/user/profile?error=true";
+            redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/user/profile";
         }
     }
 }

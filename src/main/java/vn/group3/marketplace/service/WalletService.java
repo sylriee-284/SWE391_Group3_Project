@@ -40,7 +40,6 @@ public class WalletService {
     /**
      * Tạo pending deposit transaction cho user (chờ thanh toán VNPay)
      */
-    @PreAuthorize("isAuthenticated() and #user.id == authentication.principal.id")
     public WalletTransaction createPendingDeposit(User user, java.math.BigDecimal amount, String paymentRef) {
         // Lấy managed User từ DB và dùng balance trên user
         User managed = userRepository.findById(user.getId())
@@ -110,8 +109,9 @@ public class WalletService {
         logger.info("=== Deposit Processing Complete ===");
     }
 
-    // Tìm ví theo user ID
-    @PreAuthorize("hasRole('ADMIN') or (isAuthenticated() and #userId == authentication.principal.id)")
+    /**
+     * Tìm ví theo user ID
+     */
     public java.util.Optional<java.math.BigDecimal> findBalanceByUserId(Long userId) {
         return userRepository.findById(userId).map(User::getBalance);
     }

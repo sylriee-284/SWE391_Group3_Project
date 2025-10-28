@@ -135,7 +135,7 @@
                                     <tr>
                                         <td>${systemSetting.id}</td>
                                         <td>${systemSetting.settingKey}</td>
-                                        <td>${systemSetting.settingValue}</td>
+                                        <td class="format-number">${systemSetting.settingValue}</td>
                                         <td>${systemSetting.createdAt}</td>
                                         <td>${systemSetting.updatedAt}</td>
                                         <td>
@@ -470,6 +470,38 @@
 
                 <!-- Common JavaScript -->
                 <script>
+                    // Format number with thousand separators (dots)
+                    function formatNumber(value) {
+                        // Check if the value is numeric
+                        if (value === null || value === undefined || value === '') return value;
+
+                        var strValue = String(value).trim();
+
+                        // Check if it's a valid number
+                        if (isNaN(strValue) || strValue === '') {
+                            return value; // Return original if not numeric
+                        }
+
+                        // If the number has a decimal point (is a decimal number like 0.1, 3.0)
+                        // Keep it as-is without formatting
+                        if (strValue.indexOf('.') !== -1) {
+                            return strValue;
+                        }
+
+                        // For integers, apply thousand separator formatting with dots
+                        return strValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    }
+
+                    // Format all elements with class 'format-number' on page load
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var elements = document.querySelectorAll('.format-number');
+                        elements.forEach(function (element) {
+                            var originalValue = element.textContent.trim();
+                            var formattedValue = formatNumber(originalValue);
+                            element.textContent = formattedValue;
+                        });
+                    });
+
                     // Toggle sidebar function
                     function toggleSidebar() {
                         var sidebar = document.getElementById('sidebar');
@@ -605,7 +637,7 @@
 
                             if (idEl) idEl.textContent = id ?? '';
                             if (keyEl) keyEl.textContent = key ?? '';
-                            if (valEl) valEl.textContent = value ?? '';
+                            if (valEl) valEl.textContent = formatNumber(value) ?? '';
                             if (createdEl) createdEl.textContent = createdAt ?? '';
                             if (updatedEl) updatedEl.textContent = updatedAt ?? '';
 

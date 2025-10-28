@@ -1,7 +1,7 @@
 package vn.group3.marketplace.service;
 
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.context.annotation.Lazy;
 import org.slf4j.Logger;
@@ -22,8 +22,8 @@ import vn.group3.marketplace.domain.entity.User;
 import vn.group3.marketplace.domain.entity.WalletTransaction;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -39,17 +39,15 @@ public class EscrowTransactionService {
     private final EscrowTransactionRepository escrowTransactionRepository;
     private final UserRepository userRepository;
     private final SystemSettingService systemSettingService;
-    private final TaskScheduler taskScheduler;
     private final EscrowTransactionService self;
 
     public EscrowTransactionService(EscrowTransactionRepository escrowTransactionRepository,
-            SystemSettingService systemSettingService, TaskScheduler taskScheduler,
+            SystemSettingService systemSettingService,
             WalletTransactionRepository walletTransactionRepository,
             UserRepository userRepository,
             @Lazy EscrowTransactionService self, SellerStoreRepository sellerStoreRepository) {
         this.escrowTransactionRepository = escrowTransactionRepository;
         this.systemSettingService = systemSettingService;
-        this.taskScheduler = taskScheduler;
         this.walletTransactionRepository = walletTransactionRepository;
         this.userRepository = userRepository;
         this.self = self;
@@ -59,8 +57,8 @@ public class EscrowTransactionService {
     @Transactional
     public void createEscrowTransaction(Order order) {
         try {
-            String holdMinutesStr = systemSettingService.getSettingValue("escrow.default_hold_minutes", "1");
-            int holdMinutes = Integer.parseInt(holdMinutesStr);
+            String holdHoursStr = systemSettingService.getSettingValue("escrow.default_hold_hours", "1");
+            double holdHours = Double.parseDouble(holdHoursStr);
 
             SellerStore sellerStore = order.getSellerStore();
             if (sellerStore.getFeeModel().equals(SellerStoresType.PERCENTAGE)) {
@@ -81,7 +79,7 @@ public class EscrowTransactionService {
                         .sellerAmount(sellerAmount) // Amount for seller
                         .adminAmount(feeAmount) // Amount for admin
                         .status(EscrowStatus.HELD)
-                        .holdUntil(LocalDateTime.now().plusMinutes(holdMinutes))
+                        .holdUntil(LocalDateTime.now().plusSeconds((long) (holdHours * 3600)))
                         .build();
                 escrowTransaction.setCreatedBy(0L);
                 escrowTransactionRepository.save(escrowTransaction);
@@ -105,7 +103,7 @@ public class EscrowTransactionService {
                         .sellerAmount(order.getTotalAmount()) // Full amount goes to seller
                         .adminAmount(BigDecimal.ZERO) // No admin fee
                         .status(EscrowStatus.HELD)
-                        .holdUntil(LocalDateTime.now().plusMinutes(holdMinutes))
+                        .holdUntil(LocalDateTime.now().plusSeconds((long) (holdHours * 3600)))
                         .build();
                 escrowTransaction.setCreatedBy(0L);
                 escrowTransactionRepository.save(escrowTransaction);
@@ -138,36 +136,55 @@ public class EscrowTransactionService {
         }
     }
 
-    @Async("escrowTaskExecutor")
-    public CompletableFuture<Void> scheduleEscrowTransactionRelease(Order order) {
+    @Scheduled(fixedDelayString = "#{@escrowScanIntervalHours}")
+    @Transactional
+    public void scheduleEscrowTransactionRelease() {
         try {
-            String holdMinutesStr = systemSettingService.getSettingValue("escrow.default_hold_minutes", "1");
-            int holdMinutes = Integer.parseInt(holdMinutesStr);
+            logger.info("Starting scheduled escrow transaction scan...");
 
-            Instant releaseTime = Instant.now().plusSeconds((long) holdMinutes * 60);
-            taskScheduler.schedule(() -> {
+            // Get all escrow transactions that are ready to be released
+            List<EscrowTransaction> transactionsToRelease = escrowTransactionRepository
+                    .findByStatusAndHoldUntilBefore(EscrowStatus.HELD, LocalDateTime.now());
+
+            if (transactionsToRelease.isEmpty()) {
+                logger.info("No escrow transactions ready for release");
+                return;
+            }
+
+            logger.info("Found {} escrow transaction(s) ready for release", transactionsToRelease.size());
+
+            // Release each transaction
+            for (EscrowTransaction escrowTransaction : transactionsToRelease) {
                 try {
-                    self.releasePaymentFromEscrow(order);
+                    Order order = escrowTransaction.getOrder();
+                    logger.info("Releasing escrow for order: {}", order.getId());
+                    self.releasePaymentFromEscrow(order).get();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.error("Thread interrupted while releasing escrow transaction: {}", escrowTransaction.getId(),
+                            e);
                 } catch (Exception e) {
-                    logger.error("Failed to release payment for order: {}", order.getId(), e);
+                    logger.error("Failed to release escrow transaction: {}", escrowTransaction.getId(), e);
                 }
-            }, releaseTime);
+            }
 
-            logger.info("Escrow release scheduled for order: {} at {}", order.getId(), releaseTime);
-            return CompletableFuture.completedFuture(null);
+            logger.info("Escrow transaction scan completed");
         } catch (Exception e) {
-            logger.error("Failed to schedule escrow release for order: {}", order.getId(), e);
-            return CompletableFuture.failedFuture(e);
+            logger.error("Error during escrow transaction scan", e);
         }
     }
 
     @Async("escrowTaskExecutor")
     @Transactional
     public CompletableFuture<Void> releasePaymentFromEscrow(Order order) {
+        // Get admin default wallet id from system setting
+        // (wallet.admin_default_receive_commission)
+        Long adminDefaultWalletId = Long
+                .parseLong(systemSettingService.getSettingValue("wallet.admin_default_receive_commission", "32"));
         try {
             logger.info("Starting payment release process for order: {}", order.getId());
 
-            // 1. Cập nhật EscrowTransaction status
+            // 1. Update EscrowTransaction status
             EscrowTransaction escrowTransaction = escrowTransactionRepository.findByOrder(order)
                     .orElseThrow(
                             () -> new RuntimeException("Escrow transaction not found for order: " + order.getId()));
@@ -181,33 +198,32 @@ public class EscrowTransactionService {
             if (sellerProxy == null) {
                 throw new IllegalArgumentException("Seller is null for order: " + order.getId());
             }
-            User admin = userRepository.findById(32L).orElseThrow(() -> new RuntimeException("Admin not found"));
+            Long sellerId = sellerProxy.getId();
 
-            // 3. Load fresh User entity from database to avoid LazyInitializationException
-            User seller = userRepository.findById(sellerProxy.getId())
-                    .orElseThrow(
-                            () -> new IllegalArgumentException("Seller not found with id: " + sellerProxy.getId()));
+            // 3. Create User entities for wallet transactions
+            User seller = userRepository.getReferenceById(sellerId);
+            User admin = userRepository.getReferenceById(adminDefaultWalletId);
 
             // 4. Get amounts from escrow transaction
             BigDecimal sellerAmount = escrowTransaction.getSellerAmount();
             BigDecimal adminAmount = escrowTransaction.getAdminAmount();
 
-            // 5. Tạo WalletTransaction để cập nhật balance seller
+            // 5. Create WalletTransaction to update seller balance
+            String storeName = order.getSellerStore().getStoreName();
             WalletTransaction walletTransaction = WalletTransaction.builder()
                     .user(seller)
                     .amount(sellerAmount)
                     .type(WalletTransactionType.ORDER_RELEASE)
                     .refOrder(order)
                     .paymentStatus(WalletTransactionStatus.RELEASED)
-                    .note("Payment released from escrow for order #" + order.getId() + " to seller "
-                            + seller.getSellerStore().getStoreName())
+                    .note("Payment released from escrow for order #" + order.getId() + " to seller " + storeName)
                     .paymentRef(order.getId().toString())
                     .paymentMethod("INTERNAL")
                     .build();
             walletTransaction.setCreatedBy(0L);
             walletTransactionRepository.save(walletTransaction);
 
-            // 6. Tạo WalletTransaction để cập nhật balance admin
+            // 6. Create WalletTransaction to update admin balance
             if (adminAmount.compareTo(BigDecimal.ZERO) > 0) {
                 WalletTransaction adminWalletTransaction = WalletTransaction.builder()
                         .user(admin)
@@ -223,21 +239,29 @@ public class EscrowTransactionService {
                 walletTransactionRepository.save(adminWalletTransaction);
             }
 
-            // 7. Cập nhật balance của seller
-            seller.setBalance(seller.getBalance().add(sellerAmount));
-            userRepository.save(seller);
+            // 7. Update seller balance using atomic increment to avoid race conditions
+            int sellerRows = userRepository.incrementBalance(sellerId, sellerAmount);
+            if (sellerRows != 1) {
+                logger.warn("Failed to increment balance for seller: {}", sellerId);
+                throw new RuntimeException("Failed to update seller balance");
+            }
+            logger.info("Incremented balance for seller {} by {}", sellerId, sellerAmount);
 
-            // 8. Cập nhật balance của admin
-            admin.setBalance(admin.getBalance().add(adminAmount));
-            userRepository.save(admin);
+            // 8. Update admin balance using atomic increment
+            int adminRows = userRepository.incrementBalance(admin.getId(), adminAmount);
+            if (adminRows != 1) {
+                logger.warn("Failed to increment balance for admin: {}", admin.getId());
+                throw new RuntimeException("Failed to update admin balance");
+            }
+            logger.info("Incremented balance for admin {} by {}", admin.getId(), adminAmount);
 
-            // 9. Cập nhật escrow amount của seller store
+            // 9. Update escrow amount of seller store
             SellerStore sellerStore = order.getSellerStore();
             sellerStore.setEscrowAmount(sellerStore.getEscrowAmount().subtract(sellerAmount));
             sellerStoreRepository.save(sellerStore);
 
             logger.info("Payment release completed successfully for order: {} to seller: {}",
-                    order.getId(), seller.getId());
+                    order.getId(), sellerId);
             logger.info("Payment release completed successfully for order: {} to admin: {}",
                     order.getId(), admin.getId());
             return CompletableFuture.completedFuture(null);
@@ -253,11 +277,12 @@ public class EscrowTransactionService {
         try {
             logger.info("Processing escrow transaction asynchronously for order: {}", order.getId());
 
-            // Tạo escrow transaction
+            // Create escrow transaction
             self.createEscrowTransaction(order);
 
-            // Lên lịch release payment
-            self.scheduleEscrowTransactionRelease(order);
+            // Payment release will be handled automatically by the scheduled task
+            logger.info("Escrow transaction created for order: {}. Release will be handled by scheduled task.",
+                    order.getId());
 
             logger.info("Escrow transaction processing completed for order: {}", order.getId());
             return CompletableFuture.completedFuture(null);

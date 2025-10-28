@@ -27,7 +27,7 @@ public class OrderProcess {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final AuthenticationRefreshService authenticationRefreshService;
-    private final NotificationService notificationService;
+    private final WebSocketService webSocketService;
 
     // Thread management
     private Thread orderProcessingThread;
@@ -37,7 +37,7 @@ public class OrderProcess {
     public OrderProcess(OrderQueue orderQueue, OrderService orderService,
             WalletTransactionQueueService walletTransactionQueueService, UserRepository userRepository,
             EmailService emailService, AuthenticationRefreshService authenticationRefreshService,
-            NotificationService notificationService, ProductService productService,
+            WebSocketService webSocketService, ProductService productService,
             WalletTransactionRepository walletTransactionRepository) {
         this.orderQueue = orderQueue;
         this.orderService = orderService;
@@ -45,7 +45,7 @@ public class OrderProcess {
         this.userRepository = userRepository;
         this.emailService = emailService;
         this.authenticationRefreshService = authenticationRefreshService;
-        this.notificationService = notificationService;
+        this.webSocketService = webSocketService;
         this.productService = productService;
         this.walletTransactionRepository = walletTransactionRepository;
     }
@@ -112,14 +112,14 @@ public class OrderProcess {
                             User buyer = userRepository.findById(orderTask.getUserId()).orElse(null);
                             if (buyer != null) {
                                 // 1. Payment success notification
-                                notificationService.createNotification(
+                                webSocketService.createAndSendNotification(
                                         buyer,
                                         NotificationType.PAYMENT_SUCCESS,
                                         "Thanh toán thành công",
                                         "Đơn hàng #" + order.getId() + " đã thanh toán thành công!");
 
                                 // 2. Purchase success notification
-                                notificationService.createNotification(
+                                webSocketService.createAndSendNotification(
                                         buyer,
                                         NotificationType.PURCHASE_SUCCESS,
                                         "Mua hàng thành công",
@@ -132,17 +132,6 @@ public class OrderProcess {
                             // 7. Send confirmation email asynchronously
                             emailService.sendOrderConfirmationEmailAsync(order);
 
-                            // // 8. Create wallet transaction for user
-                            // WalletTransaction userWalletTransaction = WalletTransaction.builder()
-                            // .user(buyer)
-                            // .amount(order.getTotalAmount())
-                            // .type(WalletTransactionType.PAYMENT)
-                            // .refOrder(order)
-                            // .paymentStatus(WalletTransactionStatus.SUCCESS)
-                            // .note("Thanh toán thành công cho đơn hàng #" + order.getId())
-                            // .build();
-                            // walletTransactionRepository.save(userWalletTransaction);
-
                         } else {
                             // 5.2. Case payment failed:
                             orderService.updateOrderBasedOnPaymentStatus(order, WalletTransactionStatus.FAILED);
@@ -150,30 +139,19 @@ public class OrderProcess {
                             // Create notification for failed payment
                             User buyer = userRepository.findById(orderTask.getUserId()).orElse(null);
                             if (buyer != null) {
-                                notificationService.createNotification(
+                                webSocketService.createAndSendNotification(
                                         buyer,
                                         NotificationType.PAYMENT_FAILED,
                                         "Thanh toán thất bại",
                                         "Đơn hàng #" + order.getId() + " thanh toán thất bại. Vui lòng thử lại!");
 
                                 // Create notification for failed purchase
-                                notificationService.createNotification(
+                                webSocketService.createAndSendNotification(
                                         buyer,
                                         NotificationType.PURCHASE_FAILED,
                                         "Mua hàng thất bại",
                                         "Đơn hàng #" + order.getId() + " không thể hoàn tất do thanh toán thất bại!");
                             }
-
-                            // // Create wallet transaction for failed payment
-                            // WalletTransaction userWalletTransaction = WalletTransaction.builder()
-                            // .user(buyer)
-                            // .amount(order.getTotalAmount())
-                            // .type(WalletTransactionType.PAYMENT)
-                            // .refOrder(order)
-                            // .paymentStatus(WalletTransactionStatus.FAILED)
-                            // .note("Thanh toán thất bại cho đơn hàng #" + order.getId())
-                            // .build();
-                            // walletTransactionRepository.save(userWalletTransaction);
                         }
 
                     } catch (java.util.concurrent.TimeoutException e) {
@@ -183,13 +161,13 @@ public class OrderProcess {
                         // Create notification for timeout
                         User buyer = userRepository.findById(orderTask.getUserId()).orElse(null);
                         if (buyer != null) {
-                            notificationService.createNotification(
+                            webSocketService.createAndSendNotification(
                                     buyer,
                                     NotificationType.PAYMENT_FAILED,
                                     "Thanh toán timeout",
                                     "Đơn hàng #" + order.getId() + " thanh toán bị timeout. Vui lòng thử lại!");
 
-                            notificationService.createNotification(
+                            webSocketService.createAndSendNotification(
                                     buyer,
                                     NotificationType.PURCHASE_FAILED,
                                     "Mua hàng thất bại",
@@ -202,13 +180,13 @@ public class OrderProcess {
                         // Create notification for error
                         User buyer = userRepository.findById(orderTask.getUserId()).orElse(null);
                         if (buyer != null) {
-                            notificationService.createNotification(
+                            webSocketService.createAndSendNotification(
                                     buyer,
                                     NotificationType.PAYMENT_FAILED,
                                     "Lỗi thanh toán",
                                     "Đơn hàng #" + order.getId() + " gặp lỗi trong quá trình thanh toán!");
 
-                            notificationService.createNotification(
+                            webSocketService.createAndSendNotification(
                                     buyer,
                                     NotificationType.PURCHASE_FAILED,
                                     "Mua hàng thất bại",
@@ -226,13 +204,13 @@ public class OrderProcess {
                     // Create notification for out of stock
                     User buyer = userRepository.findById(orderTask.getUserId()).orElse(null);
                     if (buyer != null) {
-                        notificationService.createNotification(
+                        webSocketService.createAndSendNotification(
                                 buyer,
                                 NotificationType.ORDER_FAILED,
                                 "Đặt hàng thất bại",
                                 "Sản phẩm trong đơn hàng #" + order.getId() + " đã hết hàng!");
 
-                        notificationService.createNotification(
+                        webSocketService.createAndSendNotification(
                                 buyer,
                                 NotificationType.PURCHASE_FAILED,
                                 "Mua hàng thất bại",

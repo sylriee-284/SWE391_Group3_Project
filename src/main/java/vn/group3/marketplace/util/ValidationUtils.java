@@ -204,23 +204,23 @@ public class ValidationUtils {
     // Get error message for validation rule
     public static String getValidationErrorMessage(String rule) {
         if (rule == null || rule.isEmpty()) {
-            return "Giá trị không hợp lệ";
+            return "Không được để trống!";
         }
 
         switch (rule) {
             case "email_format":
-                return "Email không đúng định dạng";
+                return "Email không đúng định dạng!";
             case "phone_format":
-                return "Số điện thoại không đúng định dạng";
+                return "Số điện thoại không đúng định dạng!";
             case "numeric_string":
-                return "Chỉ chấp nhận số";
+                return "Chỉ chấp nhận số!";
             case "email_or_phone":
-                return "Phải là email hoặc số điện thoại hợp lệ";
+                return "Phải là email hoặc số điện thoại hợp lệ!";
             default:
                 if (rule.startsWith("min_length:")) {
-                    return "Tối thiểu " + rule.substring(11) + " ký tự";
+                    return "Cần tối thiểu " + rule.substring(11) + " ký tự!";
                 }
-                return "Giá trị không hợp lệ";
+                return "Không được để trống!";
         }
     }
 }

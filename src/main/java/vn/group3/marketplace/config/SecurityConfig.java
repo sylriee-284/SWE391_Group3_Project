@@ -27,6 +27,7 @@ public class SecurityConfig {
                                                                 "/static/**", "/WEB-INF/view/**")
                                                 .permitAll()
                                                 .requestMatchers("/chat/**").authenticated()
+                                                .requestMatchers("/user/**").authenticated()
                                                 .requestMatchers("/admin/**").hasRole("ADMIN")
                                                 .requestMatchers("/seller/register").authenticated()
                                                 .requestMatchers("/seller/register-success").authenticated()
