@@ -3,6 +3,7 @@ package vn.group3.marketplace.controller;
 import vn.group3.marketplace.service.VNPayService;
 import vn.group3.marketplace.service.WalletService;
 import vn.group3.marketplace.service.AuthenticationRefreshService;
+import vn.group3.marketplace.service.SellerStoreService;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
@@ -32,14 +33,17 @@ public class WalletController {
     private final VNPayService vnpayService;
     private final vn.group3.marketplace.service.WalletTransactionQueueService walletTransactionQueueService;
     private final AuthenticationRefreshService authenticationRefreshService;
+    private final SellerStoreService sellerStoreService;
 
     public WalletController(WalletService walletService, VNPayService vnpayService,
             vn.group3.marketplace.service.WalletTransactionQueueService walletTransactionQueueService,
-            AuthenticationRefreshService authenticationRefreshService) {
+            AuthenticationRefreshService authenticationRefreshService,
+            SellerStoreService sellerStoreService) {
         this.walletService = walletService;
         this.vnpayService = vnpayService;
         this.walletTransactionQueueService = walletTransactionQueueService;
         this.authenticationRefreshService = authenticationRefreshService;
+        this.sellerStoreService = sellerStoreService;
     }
 
     @GetMapping
@@ -52,6 +56,18 @@ public class WalletController {
                 .orElse(java.math.BigDecimal.ZERO);
         model.addAttribute("wallet", java.util.Map.of("balance", balance));
         model.addAttribute("user", user);
+        
+        // Check if user is a seller and add deposit amount held
+        boolean isSeller = user.getRoles().stream()
+                .anyMatch(role -> "SELLER".equals(role.getCode()));
+        if (isSeller) {
+            java.math.BigDecimal depositHeld = sellerStoreService.getTotalDepositHeld(user);
+            model.addAttribute("depositHeld", depositHeld);
+            model.addAttribute("isSeller", true);
+        } else {
+            model.addAttribute("isSeller", false);
+        }
+        
         return "wallet/detail";
     }
 
