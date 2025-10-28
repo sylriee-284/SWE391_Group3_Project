@@ -177,4 +177,70 @@ public class SellerStoreService {
 	public Double getPlatformFeeRate() {
 		return systemSettingService.getDoubleValue("fee.fee.percentage_fee", 3.0);
 	}
+
+	/**
+	 * Get total deposit amount being held for active stores owned by user
+	 * Returns the sum of all deposit amounts from ACTIVE stores
+	 */
+	public BigDecimal getTotalDepositHeld(User owner) {
+		if (owner == null || owner.getSellerStore() == null) {
+			return BigDecimal.ZERO;
+		}
+		
+		return sellerStoreRepository.findById(owner.getSellerStore().getId())
+				.filter(store -> store.getStatus() == StoreStatus.ACTIVE)
+				.map(SellerStore::getDepositAmount)
+				.orElse(BigDecimal.ZERO);
+	}
+
+	/**
+	 * Get total escrow amount being held for active stores owned by user
+	 * Returns the sum of all escrow amounts from ACTIVE stores
+	 */
+	public BigDecimal getTotalEscrowHeld(User owner) {
+		if (owner == null || owner.getSellerStore() == null) {
+			return BigDecimal.ZERO;
+		}
+		
+		return sellerStoreRepository.findById(owner.getSellerStore().getId())
+				.filter(store -> store.getStatus() == StoreStatus.ACTIVE)
+				.map(SellerStore::getEscrowAmount)
+				.orElse(BigDecimal.ZERO);
+	}
+
+	/**
+	 * Add amount to store's escrow amount
+	 */
+	@Transactional
+	public void addToEscrow(Long storeId, BigDecimal amount) {
+		if (amount == null || amount.signum() <= 0) {
+			throw new IllegalArgumentException("Amount must be positive");
+		}
+
+		SellerStore store = sellerStoreRepository.findById(storeId)
+				.orElseThrow(() -> new RuntimeException("Store not found with id: " + storeId));
+
+		store.setEscrowAmount(store.getEscrowAmount().add(amount));
+		sellerStoreRepository.save(store);
+	}
+
+	/**
+	 * Subtract amount from store's escrow amount
+	 */
+	@Transactional
+	public void subtractFromEscrow(Long storeId, BigDecimal amount) {
+		if (amount == null || amount.signum() <= 0) {
+			throw new IllegalArgumentException("Amount must be positive");
+		}
+
+		SellerStore store = sellerStoreRepository.findById(storeId)
+				.orElseThrow(() -> new RuntimeException("Store not found with id: " + storeId));
+
+		if (store.getEscrowAmount().compareTo(amount) < 0) {
+			throw new IllegalStateException("Insufficient escrow amount");
+		}
+
+		store.setEscrowAmount(store.getEscrowAmount().subtract(amount));
+		sellerStoreRepository.save(store);
+	}
 }

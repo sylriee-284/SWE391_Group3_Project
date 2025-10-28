@@ -51,14 +51,7 @@
                                                 <div class="card-body p-4">
                                                     <!-- Store Status Badge -->
                                                     <div class="mb-3">
-                                                        <c:choose>
-                                                            <c:when test="${inactiveStore.status == 'PENDING'}">
-                                                                <span class="badge bg-info fs-6"><i class="fas fa-clock"></i> Chờ kích hoạt</span>
-                                                            </c:when>
-                                                            <c:when test="${inactiveStore.status == 'INACTIVE'}">
-                                                                <span class="badge bg-warning fs-6"><i class="fas fa-exclamation-triangle"></i> Đang xử lý thanh toán</span>
-                                                            </c:when>
-                                                        </c:choose>
+                                                        <span class="badge bg-info fs-6"><i class="fas fa-clock"></i> Chờ kích hoạt</span>
                                                     </div>
 
                                                     <!-- Store Information Grid -->
@@ -144,8 +137,8 @@
                                                                         <div class="alert alert-success border-0 mb-0">
                                                                             <h6 class="alert-heading mb-2"><i class="fas fa-money-bill-wave me-2"></i>Chính sách hoàn phí ký quỹ:</h6>
                                                                             <ul class="mb-2 small">
-                                                                                <li>Nếu cửa hàng đóng <strong>sau 01 năm</strong> kể từ ngày kích hoạt → hoàn <strong class="text-success">100% phí ký quỹ</strong>.</li>
-                                                                                <li>Nếu cửa hàng đóng <strong>trước 01 năm</strong> → hoàn <strong class="text-warning">70% phí ký quỹ</strong>.</li>
+                                                                                <li>Nếu cửa hàng đóng <strong>sau ${maxRefundRateMinDuration} tháng</strong> kể từ ngày kích hoạt → hoàn <strong class="text-success"><fmt:formatNumber value="${percentageMaxRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong>.</li>
+                                                                                <li>Nếu cửa hàng đóng <strong>trước ${maxRefundRateMinDuration} tháng</strong> → hoàn <strong class="text-warning"><fmt:formatNumber value="${percentageMinRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong>.</li>
                                                                                 <li>Phí hoàn sẽ được chuyển vào ví hệ thống trong vòng <strong>07 ngày làm việc</strong> sau khi xác nhận đóng cửa hàng.</li>
                                                                             </ul>
                                                                             <p class="mb-0 small fst-italic">
@@ -178,8 +171,8 @@
                                                                         <div class="alert alert-warning border-0 mb-0">
                                                                             <h6 class="alert-heading mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Chính sách hoàn phí ký quỹ:</h6>
                                                                             <ul class="mb-2 small">
-                                                                                <li><strong>Không áp dụng hoàn phí ký quỹ</strong> trong mọi trường hợp.</li>
-                                                                                <li>Khi cửa hàng ngừng hoạt động, phí ký quỹ sẽ <strong>không được hoàn lại</strong>, kể cả khi thời gian hoạt động đã vượt quá 01 năm.</li>
+                                                                                <li>Nếu cửa hàng đóng <strong>sau ${maxRefundRateMinDuration} tháng</strong> kể từ ngày kích hoạt → hoàn <strong class="text-success"><fmt:formatNumber value="${noFeeRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong>.</li>
+                                                                                <li>Nếu cửa hàng đóng <strong>trước ${maxRefundRateMinDuration} tháng</strong> → <strong class="text-danger">Không hoàn phí ký quỹ</strong>.</li>
                                                                             </ul>
                                                                             <p class="mb-0 small fst-italic">
                                                                                 <i class="fas fa-lightbulb text-warning me-1"></i>
@@ -194,83 +187,44 @@
                                                     
                                                     <!-- Action Section -->
                                                     <div class="border-top pt-4">
+                                                        <!-- PENDING store: show activate button -->
+                                                        <div class="alert alert-info border-0 d-flex align-items-center mb-3">
+                                                            <i class="fas fa-info-circle fa-2x me-3"></i>
+                                                            <div>
+                                                                <strong>Cửa hàng đang chờ kích hoạt</strong><br>
+                                                                <small>Vui lòng thanh toán ký quỹ để bắt đầu bán hàng trên nền tảng.</small>
+                                                            </div>
+                                                        </div>
                                                         <c:choose>
-                                                            <c:when test="${inactiveStore.status == 'PENDING'}">
-                                                                <!-- PENDING store: show activate button -->
-                                                                <div class="alert alert-info border-0 d-flex align-items-center mb-3">
-                                                                    <i class="fas fa-info-circle fa-2x me-3"></i>
-                                                                    <div>
-                                                                        <strong>Cửa hàng đang chờ kích hoạt</strong><br>
-                                                                        <small>Vui lòng thanh toán ký quỹ để bắt đầu bán hàng trên nền tảng.</small>
-                                                                    </div>
+                                                            <c:when test="${userBalance.compareTo(inactiveStore.depositAmount) >= 0}">
+                                                                <div class="d-grid gap-2 d-md-flex">
+                                                                    <form action="${pageContext.request.contextPath}/seller/retry-deposit/${inactiveStore.id}" method="POST" class="flex-grow-1">
+                                                                        <button type="submit" class="btn btn-success btn-lg w-100">
+                                                                            <i class="fas fa-check-circle me-2"></i> Kích hoạt cửa hàng (Thanh toán ký quỹ)
+                                                                        </button>
+                                                                    </form>
                                                                 </div>
-                                                                <c:choose>
-                                                                    <c:when test="${userBalance.compareTo(inactiveStore.depositAmount) >= 0}">
-                                                                        <div class="d-grid gap-2 d-md-flex">
-                                                                            <form action="${pageContext.request.contextPath}/seller/retry-deposit/${inactiveStore.id}" method="POST" class="flex-grow-1">
-                                                                                <button type="submit" class="btn btn-success btn-lg w-100">
-                                                                                    <i class="fas fa-check-circle me-2"></i> Kích hoạt cửa hàng (Thanh toán ký quỹ)
-                                                                                </button>
-                                                                            </form>
-                                                                        </div>
-                                                                        <div class="mt-2 text-center">
-                                                                            <small class="text-muted">
-                                                                                <i class="fas fa-wallet me-1"></i>
-                                                                                Số dư hiện tại: <strong class="text-success"><fmt:formatNumber value="${userBalance}" type="number" pattern="#,###" /> VNĐ</strong>
-                                                                            </small>
-                                                                        </div>
-                                                                    </c:when>
-                                                                    <c:otherwise>
-                                                                        <div class="alert alert-warning border-0 d-flex align-items-center mb-3">
-                                                                            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
-                                                                            <div>
-                                                                                <strong>Số dư không đủ</strong><br>
-                                                                                <small>Bạn cần nạp thêm <strong><fmt:formatNumber value="${inactiveStore.depositAmount.subtract(userBalance)}" type="number" pattern="#,###" /> VNĐ</strong> để kích hoạt cửa hàng</small>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div class="d-grid">
-                                                                            <a href="${pageContext.request.contextPath}/wallet/deposit" class="btn btn-primary btn-lg">
-                                                                                <i class="fas fa-wallet me-2"></i> Nạp tiền qua VNPay
-                                                                            </a>
-                                                                        </div>
-                                                                    </c:otherwise>
-                                                                </c:choose>
+                                                                <div class="mt-2 text-center">
+                                                                    <small class="text-muted">
+                                                                        <i class="fas fa-wallet me-1"></i>
+                                                                        Số dư hiện tại: <strong class="text-success"><fmt:formatNumber value="${userBalance}" type="number" pattern="#,###" /> VNĐ</strong>
+                                                                    </small>
+                                                                </div>
                                                             </c:when>
-                                                            <c:when test="${inactiveStore.status == 'INACTIVE'}">
-                                                                <!-- INACTIVE store: payment attempted but failed -->
+                                                            <c:otherwise>
                                                                 <div class="alert alert-warning border-0 d-flex align-items-center mb-3">
-                                                                    <i class="fas fa-sync-alt fa-2x me-3"></i>
+                                                                    <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
                                                                     <div>
-                                                                        <strong>Thanh toán đang được xử lý</strong><br>
-                                                                        <small>Có thể thử lại nếu thanh toán trước đó thất bại.</small>
+                                                                        <strong>Số dư không đủ</strong><br>
+                                                                        <small>Bạn cần nạp thêm <strong><fmt:formatNumber value="${inactiveStore.depositAmount.subtract(userBalance)}" type="number" pattern="#,###" /> VNĐ</strong> để kích hoạt cửa hàng</small>
                                                                     </div>
                                                                 </div>
-                                                                <c:choose>
-                                                                    <c:when test="${userBalance.compareTo(inactiveStore.depositAmount) >= 0}">
-                                                                        <div class="d-grid">
-                                                                            <form action="${pageContext.request.contextPath}/seller/retry-deposit/${inactiveStore.id}" method="POST">
-                                                                                <button type="submit" class="btn btn-success btn-lg w-100">
-                                                                                    <i class="fas fa-sync-alt me-2"></i> Thử lại thanh toán
-                                                                                </button>
-                                                                            </form>
-                                                                        </div>
-                                                                    </c:when>
-                                                                    <c:otherwise>
-                                                                        <div class="alert alert-warning border-0 d-flex align-items-center mb-3">
-                                                                            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
-                                                                            <div>
-                                                                                <strong>Số dư không đủ</strong><br>
-                                                                                <small>Bạn cần nạp thêm <strong><fmt:formatNumber value="${inactiveStore.depositAmount.subtract(userBalance)}" type="number" pattern="#,###" /> VNĐ</strong></small>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div class="d-grid">
-                                                                            <a href="${pageContext.request.contextPath}/wallet/deposit" class="btn btn-primary btn-lg">
-                                                                                <i class="fas fa-wallet me-2"></i> Nạp tiền qua VNPay
-                                                                            </a>
-                                                                        </div>
-                                                                    </c:otherwise>
-                                                                </c:choose>
-                                                            </c:when>
+                                                                <div class="d-grid">
+                                                                    <a href="${pageContext.request.contextPath}/wallet/deposit" class="btn btn-primary btn-lg">
+                                                                        <i class="fas fa-wallet me-2"></i> Nạp tiền qua VNPay
+                                                                    </a>
+                                                                </div>
+                                                            </c:otherwise>
                                                         </c:choose>
                                                     </div>
                                                 </div>
@@ -451,8 +405,8 @@
                                                                 <div class="alert alert-success border-0 mb-0">
                                                                     <p class="mb-2 fw-semibold"><i class="fas fa-money-bill-wave me-2"></i>Chính sách hoàn phí ký quỹ:</p>
                                                                     <ul class="mb-2 small">
-                                                                        <li>Nếu cửa hàng đóng <strong>sau 01 năm</strong> kể từ ngày kích hoạt → hoàn <strong class="text-success">100% phí ký quỹ</strong>.</li>
-                                                                        <li>Nếu cửa hàng đóng <strong>trước 01 năm</strong> → hoàn <strong class="text-warning">70% phí ký quỹ</strong>.</li>
+                                                                        <li>Nếu cửa hàng đóng <strong>sau ${maxRefundRateMinDuration} tháng</strong> kể từ ngày kích hoạt → hoàn <strong class="text-success"><fmt:formatNumber value="${percentageMaxRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong>.</li>
+                                                                        <li>Nếu cửa hàng đóng <strong>trước ${maxRefundRateMinDuration} tháng</strong> → hoàn <strong class="text-warning"><fmt:formatNumber value="${percentageMinRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong>.</li>
                                                                         <li>Phí hoàn sẽ được chuyển vào ví hệ thống trong vòng <strong>07 ngày làm việc</strong> sau khi xác nhận.</li>
                                                                     </ul>
                                                                     <p class="mb-0 small fst-italic">
@@ -498,8 +452,8 @@
                                                                 <div class="alert alert-warning border-0 mb-0">
                                                                     <p class="mb-2 fw-semibold"><i class="fas fa-exclamation-triangle me-2"></i>Chính sách hoàn phí ký quỹ:</p>
                                                                     <ul class="mb-2 small">
-                                                                        <li><strong>Không áp dụng hoàn phí ký quỹ</strong> trong mọi trường hợp.</li>
-                                                                        <li>Khi cửa hàng ngừng hoạt động, phí ký quỹ sẽ <strong>không được hoàn lại</strong>, kể cả khi thời gian hoạt động đã vượt quá 01 năm.</li>
+                                                                        <li>Nếu cửa hàng đóng <strong>sau ${maxRefundRateMinDuration} tháng</strong> kể từ ngày kích hoạt → hoàn <strong class="text-success"><fmt:formatNumber value="${noFeeRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong>.</li>
+                                                                        <li>Nếu cửa hàng đóng <strong>trước ${maxRefundRateMinDuration} tháng</strong> → <strong class="text-danger">Không hoàn phí ký quỹ</strong>.</li>
                                                                     </ul>
                                                                     <p class="mb-0 small fst-italic">
                                                                         <i class="fas fa-lightbulb text-warning me-1"></i>

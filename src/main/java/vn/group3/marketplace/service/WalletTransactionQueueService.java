@@ -77,6 +77,27 @@ public class WalletTransactionQueueService {
         }
     }
 
+    /**
+     * Đưa task cộng tiền cho seller vào queue xử lý
+     */
+    public Future<Boolean> enqueueAddMoneyToSeller(Long sellerId, java.math.BigDecimal amount, Long orderId) {
+        try {
+            logger.info("Enqueueing add money to seller: {}, amount: {}, orderId: {}", sellerId, amount, orderId);
+            return perUserSerialExecutor.submit(sellerId, () -> {
+                logger.info("Processing add money to seller: {}, amount: {}, orderId: {}", sellerId, amount, orderId);
+                WalletService walletService = ctx.getBean(WalletService.class);
+                boolean result = walletService.addMoneyToSeller(sellerId, amount, orderId);
+                logger.info("Add money to seller completed for seller: {}, orderId: {}, result: {}", sellerId, orderId, result);
+                return result;
+            });
+        } catch (Exception ex) {
+            logger.error("Failed to enqueue add money to seller: {}, orderId: {}, error: {}", sellerId, orderId, ex.getMessage(), ex);
+            CompletableFuture<Boolean> f = new CompletableFuture<>();
+            f.completeExceptionally(ex);
+            return f;
+        }
+    }
+
     // Luồng trừ tiền thanh toán shop
     private static final String CREATED_SHOP_PREFIX = "createdShop";
 

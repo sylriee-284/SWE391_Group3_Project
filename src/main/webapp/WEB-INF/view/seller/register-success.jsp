@@ -109,8 +109,8 @@
                                                                 <div class="alert alert-success border-0 mb-0">
                                                                     <h6 class="alert-heading mb-2"><i class="fas fa-money-bill-wave me-2"></i>Chính sách hoàn phí ký quỹ:</h6>
                                                                     <ul class="mb-2 small">
-                                                                        <li>Nếu cửa hàng đóng <strong>sau 01 năm</strong> kể từ ngày kích hoạt → hoàn <strong class="text-success">100% phí ký quỹ</strong>.</li>
-                                                                        <li>Nếu cửa hàng đóng <strong>trước 01 năm</strong> → hoàn <strong class="text-warning">70% phí ký quỹ</strong>.</li>
+                                                                        <li>Nếu cửa hàng đóng <strong>sau ${maxRefundRateMinDuration} tháng</strong> kể từ ngày kích hoạt → hoàn <strong class="text-success"><fmt:formatNumber value="${percentageMaxRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong>.</li>
+                                                                        <li>Nếu cửa hàng đóng <strong>trước ${maxRefundRateMinDuration} tháng</strong> → hoàn <strong class="text-warning"><fmt:formatNumber value="${percentageMinRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong>.</li>
                                                                         <li>Phí hoàn sẽ được chuyển vào ví hệ thống trong vòng <strong>07 ngày làm việc</strong> sau khi xác nhận đóng cửa hàng.</li>
                                                                     </ul>
                                                                     <p class="mb-0 small fst-italic">
@@ -143,8 +143,8 @@
                                                                 <div class="alert alert-warning border-0 mb-0">
                                                                     <h6 class="alert-heading mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Chính sách hoàn phí ký quỹ:</h6>
                                                                     <ul class="mb-2 small">
-                                                                        <li><strong>Không áp dụng hoàn phí ký quỹ</strong> trong mọi trường hợp.</li>
-                                                                        <li>Khi cửa hàng ngừng hoạt động, phí ký quỹ sẽ <strong>không được hoàn lại</strong>, kể cả khi thời gian hoạt động đã vượt quá 01 năm.</li>
+                                                                        <li>Nếu cửa hàng đóng <strong>sau ${maxRefundRateMinDuration} tháng</strong> kể từ ngày kích hoạt → hoàn <strong class="text-success"><fmt:formatNumber value="${noFeeRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong>.</li>
+                                                                        <li>Nếu cửa hàng đóng <strong>trước ${maxRefundRateMinDuration} tháng</strong> → <strong class="text-danger">Không hoàn phí ký quỹ</strong>.</li>
                                                                     </ul>
                                                                     <p class="mb-0 small fst-italic">
                                                                         <i class="fas fa-lightbulb text-warning me-1"></i>
@@ -216,15 +216,6 @@
                                                     </c:choose>
                                                 </li>
                                             </ul>
-
-                                            <!-- Show retry button for INACTIVE stores with payment error -->
-                                            <c:if test="${store.status == 'INACTIVE' && not empty paymentError}">
-                                                <div class="mt-3 d-grid" id="retryButtonContainer">
-                                                    <form action="${pageContext.request.contextPath}/seller/retry-deposit/${store.id}" method="post">
-                                                        <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-sync-alt"></i> Thử lại</button>
-                                                    </form>
-                                                </div>
-                                            </c:if>
                                             
                                             <!-- Show activate button for PENDING stores -->
                                             <c:if test="${store.status == 'PENDING'}">

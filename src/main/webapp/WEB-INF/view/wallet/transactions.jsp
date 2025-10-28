@@ -186,7 +186,7 @@
                                                                 <td class="text-end">
                                                                     <c:choose>
                                                                         <c:when
-                                                                            test='${transaction.type.name() eq "DEPOSIT" || transaction.type.name() eq "REFUND"}'>
+                                                                            test='${transaction.type.name() eq "DEPOSIT" || transaction.type.name() eq "REFUND" || transaction.type.name() eq "SELLER_PAYOUT"}'>
                                                                             <span class="text-success">+
                                                                                 <fmt:formatNumber
                                                                                     value="${transaction.amount}"

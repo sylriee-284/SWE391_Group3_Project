@@ -57,12 +57,14 @@ public class WalletController {
         model.addAttribute("wallet", java.util.Map.of("balance", balance));
         model.addAttribute("user", user);
         
-        // Check if user is a seller and add deposit amount held
+        // Check if user is a seller and add deposit & escrow amounts held
         boolean isSeller = user.getRoles().stream()
                 .anyMatch(role -> "SELLER".equals(role.getCode()));
         if (isSeller) {
             java.math.BigDecimal depositHeld = sellerStoreService.getTotalDepositHeld(user);
+            java.math.BigDecimal escrowHeld = sellerStoreService.getTotalEscrowHeld(user);
             model.addAttribute("depositHeld", depositHeld);
+            model.addAttribute("escrowHeld", escrowHeld);
             model.addAttribute("isSeller", true);
         } else {
             model.addAttribute("isSeller", false);
