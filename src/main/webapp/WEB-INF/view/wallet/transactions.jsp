@@ -166,7 +166,7 @@
                                                                             ${transaction.paymentRef}
                                                                         </c:when>
                                                                         <c:when
-                                                                            test='${transaction.type.name() eq "PAYMENT"}'>
+                                                                            test='${transaction.type.name() eq "PAYMENT" || transaction.type.name() eq "ORDER_RELEASE"}'>
                                                                             <c:choose>
                                                                                 <c:when
                                                                                     test="${not empty transaction.orderId}">
@@ -205,7 +205,7 @@
                                                                 </td>
                                                                 <td class="text-center">
                                                                     <span
-                                                                        class="badge bg-${transaction.paymentStatus == 'SUCCESS' ? 'success' : transaction.paymentStatus == 'PENDING' ? 'warning' : 'danger'}">
+                                                                        class="badge bg-${transaction.paymentStatus == 'SUCCESS' || transaction.paymentStatus == 'RELEASED' ? 'success' : transaction.paymentStatus == 'PENDING' ? 'warning' : 'danger'}">
                                                                         ${transaction.paymentStatus}
                                                                     </span>
                                                                 </td>

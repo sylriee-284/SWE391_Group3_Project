@@ -11,8 +11,6 @@ import vn.group3.marketplace.domain.enums.StoreStatus;
 import vn.group3.marketplace.repository.RoleRepository;
 import vn.group3.marketplace.repository.SellerStoreRepository;
 import vn.group3.marketplace.repository.UserRepository;
-import vn.group3.marketplace.repository.EscrowTransactionRepository;
-import vn.group3.marketplace.domain.enums.EscrowStatus;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -51,7 +49,6 @@ public class SellerStoreService {
 	private final RoleRepository roleRepository;
 	private final WalletTransactionQueueService walletTransactionQueueService;
 	private final SystemSettingService systemSettingService;
-	private final EscrowTransactionRepository escrowTransactionRepository;
 
 	/**
 	 * Check if user has an active store
@@ -223,7 +220,7 @@ public class SellerStoreService {
 
 	/**
 	 * Get total escrow amount being held for active stores owned by user
-	 * Returns the sum of all escrow amounts from ACTIVE stores
+	 * Returns the escrow amount directly from SellerStore entity
 	 */
 	public BigDecimal getTotalEscrowHeld(User owner) {
 		if (owner == null || owner.getSellerStore() == null) {
@@ -234,11 +231,10 @@ public class SellerStoreService {
 		return sellerStoreRepository.findById(owner.getSellerStore().getId())
 				.filter(store -> store.getStatus() == StoreStatus.ACTIVE)
 				.map(store -> {
-					logger.debug("getTotalEscrowHeld: calculating for store id={}", store.getId());
-					java.math.BigDecimal sum = escrowTransactionRepository
-							.sumAmountBySellerStoreAndStatus(store, EscrowStatus.HELD);
-					logger.debug("getTotalEscrowHeld: sum={}", sum);
-					return sum == null ? BigDecimal.ZERO : sum;
+					logger.debug("getTotalEscrowHeld: reading escrowAmount for store id={}", store.getId());
+					BigDecimal escrowAmount = store.getEscrowAmount();
+					logger.debug("getTotalEscrowHeld: escrowAmount={}", escrowAmount);
+					return escrowAmount == null ? BigDecimal.ZERO : escrowAmount;
 				})
 				.orElse(BigDecimal.ZERO);
 	}

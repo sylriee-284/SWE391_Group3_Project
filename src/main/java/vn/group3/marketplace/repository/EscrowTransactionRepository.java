@@ -21,9 +21,6 @@ public interface EscrowTransactionRepository extends JpaRepository<EscrowTransac
 
     Optional<EscrowTransaction> findByOrder(Order order);
 
-    @Query("SELECT SUM(e.sellerAmount) FROM EscrowTransaction e WHERE e.sellerStore = :store AND e.status = :status")
-    BigDecimal sumAmountBySellerStoreAndStatus(@Param("store") SellerStore store, @Param("status") EscrowStatus status);
-
     @Query("SELECT e FROM EscrowTransaction e WHERE e.status = :status AND e.holdUntil <= :currentTime")
     List<EscrowTransaction> findByStatusAndHoldUntilBefore(@Param("status") EscrowStatus status,
             @Param("currentTime") LocalDateTime currentTime);

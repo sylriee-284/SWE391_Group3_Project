@@ -77,26 +77,7 @@ public class WalletTransactionQueueService {
         }
     }
 
-    /**
-     * Đưa task cộng tiền cho seller vào queue xử lý
-     */
-    public Future<Boolean> enqueueAddMoneyToSeller(Long sellerId, java.math.BigDecimal amount, Long orderId) {
-        try {
-            logger.info("Enqueueing add money to seller: {}, amount: {}, orderId: {}", sellerId, amount, orderId);
-            return perUserSerialExecutor.submit(sellerId, () -> {
-                logger.info("Processing add money to seller: {}, amount: {}, orderId: {}", sellerId, amount, orderId);
-                WalletService walletService = ctx.getBean(WalletService.class);
-                boolean result = walletService.addMoneyToSeller(sellerId, amount, orderId);
-                logger.info("Add money to seller completed for seller: {}, orderId: {}, result: {}", sellerId, orderId, result);
-                return result;
-            });
-        } catch (Exception ex) {
-            logger.error("Failed to enqueue add money to seller: {}, orderId: {}, error: {}", sellerId, orderId, ex.getMessage(), ex);
-            CompletableFuture<Boolean> f = new CompletableFuture<>();
-            f.completeExceptionally(ex);
-            return f;
-        }
-    }
+   
 
     // Luồng trừ tiền thanh toán shop
     private static final String CREATED_SHOP_PREFIX = "createdShop";
@@ -170,30 +151,7 @@ public class WalletTransactionQueueService {
         }
     }
 
-    /**
-     * Cập nhật escrow amount của seller store theo queue
-     */
-    public Future<Boolean> enqueueUpdateSellerStoreEscrowAmount(Long sellerStoreId, java.math.BigDecimal amount, boolean isAdd) {
-        try {
-            logger.info("Enqueueing update escrow amount for store: {}, amount: {}, isAdd: {}", 
-                sellerStoreId, amount, isAdd);
-            return perUserSerialExecutor.submit(sellerStoreId, () -> {
-                logger.info("Processing update escrow amount for store: {}, amount: {}, isAdd: {}", 
-                    sellerStoreId, amount, isAdd);
-                SellerStoreService sellerStoreService = ctx.getBean(SellerStoreService.class);
-                sellerStoreService.updateEscrowAmount(sellerStoreId, amount, isAdd);
-                logger.info("Updated escrow amount for store: {}, amount: {}, isAdd: {}", 
-                    sellerStoreId, amount, isAdd);
-                return true;
-            });
-        } catch (Exception ex) {
-            logger.error("Failed to update escrow amount for store: {}, error: {}", 
-                sellerStoreId, ex.getMessage(), ex);
-            CompletableFuture<Boolean> f = new CompletableFuture<>();
-            f.completeExceptionally(ex);
-            return f;
-        }
-    }
+  
 
     public void shutdown() {
         perUserSerialExecutor.shutdown();

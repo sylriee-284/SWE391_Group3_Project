@@ -353,47 +353,5 @@ public class WalletService {
         return WalletTransactionStatus.FAILED; // Default to FAILED if not found
     }
 
-    /**
-     * Cộng tiền vào ví của seller
-     */
-    @Transactional
-    public boolean addMoneyToSeller(Long sellerId, java.math.BigDecimal amount, Long orderId) {
-        logger.info("=== Adding Money to Seller ===");
-        logger.info("Seller ID: {}, Amount: {}, Order ID: {}", sellerId, amount, orderId);
-
-        // Validate input
-        if (amount == null || amount.signum() <= 0) {
-            logger.error("❌ Invalid amount: {}", amount);
-            return false;
-        }
-
-        if (orderId == null) {
-            logger.error("❌ Invalid orderId: null");
-            return false;
-        }
-
-        // Kiểm tra user tồn tại
-        if (!userRepository.existsById(sellerId)) {
-            logger.error("❌ Seller not found: {}", sellerId);
-            return false;
-        }
-
-        try {
-            // Cộng tiền vào ví seller
-            int rows = userRepository.incrementBalance(sellerId, amount);
-
-            if (rows != 1) {
-                logger.error("❌ Failed to add money for sellerId={}. incrementBalance returned {} rows", sellerId, rows);
-                return false;
-            }
-
-            logger.info("✅ Successfully added {} to seller {} for order {}", amount, sellerId, orderId);
-            return true;
-
-        } catch (Exception e) {
-            logger.error("❌ Error adding money to seller {}: {}", sellerId, e.getMessage());
-            return false;
-        }
-    }
-
+    
 }
