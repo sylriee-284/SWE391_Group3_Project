@@ -64,6 +64,11 @@ public class SellerProductController {
         return sellerStore != null ? sellerStore.getId() : null;
     }
 
+    // Resolve store ID: use provided storeId or get from current user
+    private Long resolveStoreId(Long storeId, CustomUserDetails currentUser) {
+        return storeId != null ? storeId : getCurrentSellerStoreId(currentUser);
+    }
+
     // Lấy tối đa 4 danh mục cha để hiển thị nhanh
     private List<Category> top4Parents() {
         List<Category> parents = categoryRepo.findByParentIsNullAndIsDeletedFalseOrderByNameAsc();
@@ -452,6 +457,9 @@ public class SellerProductController {
             @RequestParam(value = "storeId", required = false) Long storeId,
             @RequestParam(value = "imageFiles", required = false) MultipartFile[] imageFiles,
             Model model,
+            RedirectAttributes redirectAttributes) {
+
+        Long sid = resolveStoreId(storeId, currentUser);
         if (sid == null) {
             return "redirect:/login?error=not_authenticated";
         }
@@ -516,7 +524,7 @@ public class SellerProductController {
 
         try {
             productService.update(form, sid);
-            ra.addFlashAttribute("successMessage", "Sửa sản phẩm thành công!");
+            redirectAttributes.addFlashAttribute("successMessage", "Sửa sản phẩm thành công!");
             return "redirect:/seller/products";
         } catch (IllegalArgumentException ex) {
             // Bind error to status field so it shows on the form
@@ -583,10 +591,11 @@ public class SellerProductController {
     // ============ DETAIL (view-only) ============
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam(value = "storeId", required = false) Long storeId,
             Model model,
             RedirectAttributes redirectAttributes) {
-        Long sid = resolveStoreId(storeId);
+        Long sid = resolveStoreId(storeId, currentUser);
 
         try {
             // Use getOwned to ensure seller can only view their product in seller context
@@ -599,8 +608,7 @@ public class SellerProductController {
         } catch (IllegalArgumentException e) {
             // Product not found or doesn't belong to this store
             redirectAttributes.addFlashAttribute("errorMessage",
-       
-
+                    "Không tìm thấy sản phẩm hoặc sản phẩm không thuộc cửa hàng của bạn.");
             return "redirect:/seller/dashboard";
         }
     }
@@ -699,9 +707,10 @@ public class SellerProductController {
     @PostMapping(value = "/{id}/upload-image", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public Map<String, Object> uploadImage(@PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam("imageFile") MultipartFile imageFile,
             @RequestParam(value = "storeId", required = false) Long storeId) {
-        Long sid = resolveStoreId(storeId);
+        Long sid = resolveStoreId(storeId, currentUser);
         Map<String, Object> out = new HashMap<>();
 
         try {

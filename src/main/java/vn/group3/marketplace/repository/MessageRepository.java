@@ -1,6 +1,6 @@
 package vn.group3.marketplace.repository;
 
-// Pageable removed - not used
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

@@ -1,4 +1,4 @@
-package vn.group3.marketplace.domain.dto;
+package vn.group3.marketplace.dto;
 
 import lombok.*;
 import java.math.BigDecimal;
