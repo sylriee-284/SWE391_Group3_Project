@@ -111,7 +111,6 @@
                                                                     <ul class="mb-2 small">
                                                                         <li>Nếu cửa hàng đóng <strong>sau ${maxRefundRateMinDuration} tháng</strong> kể từ ngày kích hoạt → hoàn <strong class="text-success"><fmt:formatNumber value="${percentageMaxRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong>.</li>
                                                                         <li>Nếu cửa hàng đóng <strong>trước ${maxRefundRateMinDuration} tháng</strong> → hoàn <strong class="text-warning"><fmt:formatNumber value="${percentageMinRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong>.</li>
-                                                                        <li>Phí hoàn sẽ được chuyển vào ví hệ thống trong vòng <strong>07 ngày làm việc</strong> sau khi xác nhận đóng cửa hàng.</li>
                                                                     </ul>
                                                                     <p class="mb-0 small fst-italic">
                                                                         <i class="fas fa-lightbulb text-warning me-1"></i>
@@ -143,8 +142,7 @@
                                                                 <div class="alert alert-warning border-0 mb-0">
                                                                     <h6 class="alert-heading mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Chính sách hoàn phí ký quỹ:</h6>
                                                                     <ul class="mb-2 small">
-                                                                        <li>Nếu cửa hàng đóng <strong>sau ${maxRefundRateMinDuration} tháng</strong> kể từ ngày kích hoạt → hoàn <strong class="text-success"><fmt:formatNumber value="${noFeeRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong>.</li>
-                                                                        <li>Nếu cửa hàng đóng <strong>trước ${maxRefundRateMinDuration} tháng</strong> → <strong class="text-danger">Không hoàn phí ký quỹ</strong>.</li>
+                                                                        <li>Đóng cửa hàng → hoàn <strong class="text-warning"><fmt:formatNumber value="${noFeeRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong> (không kể thời gian).</li>
                                                                     </ul>
                                                                     <p class="mb-0 small fst-italic">
                                                                         <i class="fas fa-lightbulb text-warning me-1"></i>

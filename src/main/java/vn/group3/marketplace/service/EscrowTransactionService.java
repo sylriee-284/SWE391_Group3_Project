@@ -89,12 +89,12 @@ public class EscrowTransactionService {
                 escrowTransaction.setCreatedBy(0L);
                 escrowTransactionRepository.save(escrowTransaction);
 
-                // Update seller store escrow amount through queue
+                // Update seller store escrow amount through queue (no need to wait)
                 walletTransactionQueueService.enqueueUpdateSellerStoreEscrowAmount(
                     sellerStore.getId(), 
                     sellerAmount,
                     true // true for add, false for subtract
-                ).get(); // Wait for completion since we're in a transaction
+                );
 
                 logger.info("Escrow transaction created for order: {} with total amount: {}",
                         order.getId(), order.getTotalAmount());
@@ -117,12 +117,12 @@ public class EscrowTransactionService {
                 escrowTransaction.setCreatedBy(0L);
                 escrowTransactionRepository.save(escrowTransaction);
 
-                // Update seller store escrow amount through queue
+                // Update seller store escrow amount through queue (no need to wait)
                 walletTransactionQueueService.enqueueUpdateSellerStoreEscrowAmount(
                     sellerStore.getId(), 
                     order.getTotalAmount(),
                     true // true for add, false for subtract
-                ).get(); // Wait for completion since we're in a transaction
+                );
 
                 logger.info("Escrow transaction created for order: {} with hold until: {}",
                         order.getId(), escrowTransaction.getHoldUntil());
@@ -253,14 +253,12 @@ public class EscrowTransactionService {
                 walletTransactionRepository.save(adminWalletTransaction);
             }
 
-            // 7. Enqueue add money to seller through queue service
-            walletTransactionQueueService.enqueueAddMoneyToSeller(sellerId, sellerAmount, order.getId())
-                .get(); // Wait for completion since we're in a transaction
+            // 7. Enqueue add money to seller through queue (no need to wait)
+            walletTransactionQueueService.enqueueAddMoneyToSeller(sellerId, sellerAmount, order.getId());
 
-            // 8. Enqueue add money to admin through queue service
+            // 8. Enqueue add money to admin through queue (no need to wait)
             if (adminAmount.compareTo(BigDecimal.ZERO) > 0) {
-                walletTransactionQueueService.enqueueAddMoneyToSeller(admin.getId(), adminAmount, order.getId())
-                    .get(); // Wait for completion since we're in a transaction
+                walletTransactionQueueService.enqueueAddMoneyToSeller(admin.getId(), adminAmount, order.getId());
             }
             
             logger.info("Enqueued balance update for seller {} amount {}", sellerId, sellerAmount);
