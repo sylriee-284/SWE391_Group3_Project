@@ -554,16 +554,24 @@ public class SellerProductController {
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id,
             @RequestParam(value = "storeId", required = false) Long storeId,
-            Model model) {
+            Model model,
+            RedirectAttributes redirectAttributes) {
         Long sid = resolveStoreId(storeId);
 
-        // Use getOwned to ensure seller can only view their product in seller context
-        Product product = productService.getOwned(id, sid);
+        try {
+            // Use getOwned to ensure seller can only view their product in seller context
+            Product product = productService.getOwned(id, sid);
 
-        model.addAttribute("product", product);
-        model.addAttribute("storeId", sid);
+            model.addAttribute("product", product);
+            model.addAttribute("storeId", sid);
 
-        return "seller/product-detail";
+            return "seller/product-detail";
+        } catch (IllegalArgumentException e) {
+            // Product not found or doesn't belong to this store
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Sản phẩm không tồn tại hoặc không thuộc cửa hàng của bạn.");
+            return "redirect:/seller/dashboard";
+        }
     }
 
     // ============ AJAX: cập nhật nhanh (dùng cho modal) ============

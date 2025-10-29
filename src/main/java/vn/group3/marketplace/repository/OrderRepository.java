@@ -88,4 +88,82 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                         "AND (:statuses IS NULL OR o.status IN (:statuses))")
         Long sumQuantityByStoreAndStatuses(@Param("storeId") Long storeId,
                         @Param("statuses") java.util.List<vn.group3.marketplace.domain.enums.OrderStatus> statuses);
+
+        // Dashboard queries
+        @Query("SELECT SUM(o.totalAmount) as grossSales, " +
+                        "SUM(CASE WHEN o.status = 'COMPLETED' THEN o.totalAmount ELSE 0 END) as netSales " +
+                        "FROM Order o WHERE o.sellerStore.id = :storeId " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate")
+        List<Object[]> findRevenueByStoreAndDateRange(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        @Query("SELECT COUNT(o) FROM Order o WHERE o.sellerStore.id = :storeId " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate")
+        Long countByStoreAndDateRange(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        @Query("SELECT COUNT(o) FROM Order o WHERE o.sellerStore.id = :storeId " +
+                        "AND o.status = :status AND o.createdAt BETWEEN :startDate AND :endDate")
+        Long countByStoreAndStatusAndDateRange(@Param("storeId") Long storeId,
+                        @Param("status") OrderStatus status,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        @Query("SELECT COUNT(o) FROM Order o WHERE o.sellerStore.id = :storeId AND o.status = :status")
+        Long countByStoreAndStatus(@Param("storeId") Long storeId, @Param("status") OrderStatus status);
+
+        @Query("SELECT s.rating FROM SellerStore s WHERE s.id = :storeId")
+        java.math.BigDecimal findStoreRating(@Param("storeId") Long storeId);
+
+        @Query("SELECT COUNT(DISTINCT o.buyer.id) FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate")
+        Long countUniqueBuyers(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        @Query("SELECT o.buyer.id, COUNT(o) FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate " +
+                        "GROUP BY o.buyer.id HAVING COUNT(o) > 1")
+        List<Object[]> findRepeatBuyers(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND o.status = 'COMPLETED' " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate")
+        java.math.BigDecimal sumRevenueByStoreAndDateRange(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND o.status = :status " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate")
+        java.math.BigDecimal sumRevenueByStoreAndStatusAndDateRange(
+                        @Param("storeId") Long storeId,
+                        @Param("status") OrderStatus status,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        @Query("SELECT p.id, p.name, c.name, " +
+                        "SUM(o.totalAmount) as revenue, " +
+                        "SUM(o.quantity) as units, " +
+                        "p.stock, p.rating " +
+                        "FROM Order o " +
+                        "JOIN o.product p " +
+                        "JOIN p.category c " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND o.status = 'COMPLETED' " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate " +
+                        "GROUP BY p.id, p.name, c.name, p.stock, p.rating " +
+                        "ORDER BY revenue DESC")
+        List<Object[]> findTopProductsByStore(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate,
+                        @Param("limit") int limit);
 }

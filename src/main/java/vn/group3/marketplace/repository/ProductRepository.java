@@ -138,4 +138,19 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         @Query("SELECT COUNT(ps) FROM ProductStorage ps WHERE ps.product.id = :productId AND ps.status = 'AVAILABLE' AND ps.order IS NULL")
         long getDynamicStock(@Param("productId") Long productId);
 
+        // Dashboard queries
+        @Query("SELECT COUNT(p) FROM Product p WHERE p.sellerStore.id = :storeId AND p.stock <= :threshold AND p.stock > 0")
+        Long countLowStockByStore(@Param("storeId") Long storeId, @Param("threshold") Integer threshold);
+
+        @Query("SELECT COUNT(p) FROM Product p WHERE p.sellerStore.id = :storeId AND p.stock = 0")
+        Long countOutOfStockByStore(@Param("storeId") Long storeId);
+
+        @Query("SELECT p.id, p.name, p.stock FROM Product p WHERE p.sellerStore.id = :storeId " +
+                        "AND p.stock <= :threshold AND p.stock > 0 ORDER BY p.stock ASC")
+        java.util.List<Object[]> findLowStockProducts(@Param("storeId") Long storeId,
+                        @Param("threshold") Integer threshold);
+
+        @Query("SELECT p.id, p.name FROM Product p WHERE p.sellerStore.id = :storeId AND p.stock = 0")
+        java.util.List<Object[]> findOutOfStockProducts(@Param("storeId") Long storeId);
+
 }

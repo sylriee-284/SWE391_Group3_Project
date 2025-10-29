@@ -5,6 +5,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import vn.group3.marketplace.domain.dto.ConversationDTO;
 import vn.group3.marketplace.domain.entity.Message;
 import vn.group3.marketplace.domain.entity.User;
 
@@ -12,6 +13,7 @@ import vn.group3.marketplace.repository.MessageRepository;
 
 import vn.group3.marketplace.repository.UserRepository;
 import vn.group3.marketplace.security.CustomUserDetails;
+import vn.group3.marketplace.service.ConversationService;
 
 import java.util.List;
 
@@ -21,22 +23,39 @@ public class ChatController {
 
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final ConversationService conversationService;
 
     @GetMapping("/chat")
     public String chatPage(@RequestParam(value = "sellerId", required = false) Long sellerId,
             @RequestParam(value = "productId", required = false) Long productId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             Model model) {
         model.addAttribute("sellerId", sellerId);
         model.addAttribute("productId", productId);
+        model.addAttribute("currentUserId", currentUser != null ? currentUser.getId() : null);
         return "chat/chatbox";
+    }
+
+    @GetMapping("/chat/conversations")
+    @ResponseBody
+    public List<ConversationDTO> getConversations(@AuthenticationPrincipal CustomUserDetails currentUser) {
+        if (currentUser == null) {
+            return List.of();
+        }
+        return conversationService.getConversations(currentUser.getId());
     }
 
     @GetMapping("/chat/messages")
     @ResponseBody
-    public List<java.util.Map<String, Object>> loadMessages(@AuthenticationPrincipal CustomUserDetails currentUser,
+    public java.util.Map<String, Object> loadMessages(@AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam("sellerId") Long sellerId) {
-        if (currentUser == null)
-            return List.of();
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        if (currentUser == null) {
+            response.put("currentUserId", null);
+            response.put("messages", List.of());
+            return response;
+        }
+
         Long buyerUserId = currentUser.getId();
         // Load messages between buyer and seller
         List<Message> msgs = messageRepository.findMessagesBetweenUsers(buyerUserId, sellerId);
@@ -50,7 +69,10 @@ public class ChatController {
             map.put("receiverId", m.getReceiverUser() != null ? m.getReceiverUser().getId() : null);
             list.add(map);
         }
-        return list;
+
+        response.put("currentUserId", buyerUserId);
+        response.put("messages", list);
+        return response;
     }
 
     @PostMapping("/chat/send")
@@ -71,6 +93,13 @@ public class ChatController {
         if (sender == null || sellerUser == null) {
             resp.put("ok", false);
             resp.put("error", "Người nhận không hợp lệ.");
+            return resp;
+        }
+
+        // Prevent users from chatting with themselves
+        if (sender.getId().equals(sellerUser.getId())) {
+            resp.put("ok", false);
+            resp.put("error", "Bạn không thể tự nhắn tin với chính mình.");
             return resp;
         }
 
