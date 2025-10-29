@@ -153,4 +153,15 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         @Query("SELECT p.id, p.name FROM Product p WHERE p.sellerStore.id = :storeId AND p.stock = 0")
         java.util.List<Object[]> findOutOfStockProducts(@Param("storeId") Long storeId);
 
+        // Find all active products
+        @Query("SELECT p FROM Product p WHERE p.status = :status AND p.isDeleted = false")
+        Page<Product> findByStatus(@Param("status") ProductStatus status, Pageable pageable);
+
+        // Find all active products by keyword
+        @Query("SELECT p FROM Product p WHERE p.status = :status AND p.isDeleted = false " +
+                        "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+        Page<Product> findByStatusAndKeyword(@Param("status") ProductStatus status,
+                        @Param("keyword") String keyword,
+                        Pageable pageable);
+
 }

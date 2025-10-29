@@ -2,11 +2,9 @@ package vn.group3.marketplace.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import jakarta.persistence.EntityNotFoundException;
 import vn.group3.marketplace.domain.entity.*;
@@ -14,8 +12,8 @@ import vn.group3.marketplace.domain.entity.*;
 import vn.group3.marketplace.domain.enums.*;
 import vn.group3.marketplace.dto.OrderTask;
 import vn.group3.marketplace.repository.*;
-import vn.group3.marketplace.security.CustomUserDetails;
 import vn.group3.marketplace.util.ValidationUtils;
+import vn.group3.marketplace.util.SecurityContextUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,13 +24,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 @Service
 public class OrderService {
 
-    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
     private static final String ORDER_NOT_FOUND_MESSAGE = "Order not found";
 
+    @PreAuthorize("isAuthenticated()")
     public Page<Order> searchByCurrentBuyerAndProductName(OrderStatus status, String key, Pageable pageable) {
         return orderRepository.searchByBuyerAndProductName(getCurrentUser(), status, key, pageable);
     }
 
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     public Page<Order> searchByCurrentSellerAndProductName(OrderStatus status, String key, Pageable pageable) {
         SellerStore store = getCurrentUser().getSellerStore();
         if (store == null) {
@@ -41,11 +40,13 @@ public class OrderService {
         return orderRepository.searchBySellerAndProductName(store, status, key, pageable);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public Page<Order> searchByProductName(OrderStatus status, String key, Pageable pageable) {
         return orderRepository.searchByProductName(status, key, pageable);
     }
 
     // Lấy đơn hàng kèm productStorages (fetch join)
+    @PreAuthorize("isAuthenticated()")
     public Optional<Order> findByIdWithProductStorages(Long id) {
         return orderRepository.findByIdWithProductStorages(id);
     }
@@ -59,7 +60,8 @@ public class OrderService {
     private final SellerStoreRepository sellerStoreRepository;
     private final ProductStorageService productStorageService;
     private final ObjectMapper objectMapper;
-    private final NotificationService notificationService;
+    private final WebSocketService webSocketService;
+    private final EscrowTransactionService escrowTransactionService;
 
     public OrderService(OrderRepository orderRepository,
             ProductRepository productRepository,
@@ -70,7 +72,8 @@ public class OrderService {
             SellerStoreRepository sellerStoreRepository,
             ProductStorageService productStorageService,
             ObjectMapper objectMapper,
-            NotificationService notificationService) {
+            WebSocketService webSocketService,
+            EscrowTransactionService escrowTransactionService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.productStorageRepository = productStorageRepository;
@@ -80,37 +83,41 @@ public class OrderService {
         this.sellerStoreRepository = sellerStoreRepository;
         this.productStorageService = productStorageService;
         this.objectMapper = objectMapper;
-        this.notificationService = notificationService;
+        this.webSocketService = webSocketService;
+        this.escrowTransactionService = escrowTransactionService;
     }
 
     // Helper method để lấy thông tin user hiện tại từ SecurityContext
     private User getCurrentUser() {
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
-        return userDetails.getUser();
+        return SecurityContextUtils.getCurrentUserDetails().getUser();
     }
 
     // Tìm đơn hàng theo ID
+    @PreAuthorize("isAuthenticated()")
     public Optional<Order> findById(Long id) {
         return orderRepository.findById(id);
     }
 
     // Tìm tất cả đơn hàng có phân trang
+    @PreAuthorize("hasRole('ADMIN')")
     public Page<Order> findAll(Pageable pageable) {
         return orderRepository.findAll(pageable);
     }
 
     // Tìm đơn hàng theo người mua hiện tại (đã đăng nhập)
+    @PreAuthorize("isAuthenticated()")
     public Page<Order> findByCurrentBuyer(Pageable pageable) {
         return orderRepository.findByBuyer(getCurrentUser(), pageable);
     }
 
     // Tìm đơn hàng theo người mua hiện tại (đã đăng nhập)
+    @PreAuthorize("isAuthenticated()")
     public List<Order> findByCurrentBuyer() {
         return orderRepository.findByBuyer(getCurrentUser());
     }
 
     // Tìm đơn hàng theo người bán hiện tại (đã đăng nhập)
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     public Page<Order> findByCurrentSeller(Pageable pageable) {
         SellerStore store = getCurrentUser().getSellerStore();
         if (store == null) {
@@ -120,6 +127,7 @@ public class OrderService {
     }
 
     // Tìm đơn hàng theo người bán hiện tại (đã đăng nhập)
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     public List<Order> findByCurrentSeller() {
         SellerStore store = getCurrentUser().getSellerStore();
         if (store == null) {
@@ -129,26 +137,31 @@ public class OrderService {
     }
 
     // Tìm đơn hàng theo trạng thái
+    @PreAuthorize("hasRole('ADMIN')")
     public Page<Order> findByStatus(OrderStatus status, Pageable pageable) {
         return orderRepository.findByStatus(status, pageable);
     }
 
     // Tìm đơn hàng theo trạng thái
+    @PreAuthorize("hasRole('ADMIN')")
     public List<Order> findByStatus(OrderStatus status) {
         return orderRepository.findByStatus(status);
     }
 
     // Tìm đơn hàng theo người mua hiện tại và trạng thái
+    @PreAuthorize("isAuthenticated()")
     public Page<Order> findByCurrentBuyerAndStatus(OrderStatus status, Pageable pageable) {
         return orderRepository.findByBuyerAndStatus(getCurrentUser(), status, pageable);
     }
 
     // Tìm đơn hàng theo người mua hiện tại và trạng thái
+    @PreAuthorize("isAuthenticated()")
     public List<Order> findByCurrentBuyerAndStatus(OrderStatus status) {
         return orderRepository.findByBuyerAndStatus(getCurrentUser(), status);
     }
 
     // Tìm đơn hàng theo người bán hiện tại và trạng thái
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     public Page<Order> findByCurrentSellerAndStatus(OrderStatus status, Pageable pageable) {
         SellerStore store = getCurrentUser().getSellerStore();
         if (store == null) {
@@ -158,6 +171,7 @@ public class OrderService {
     }
 
     // Tìm đơn hàng theo người bán hiện tại và trạng thái
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     public List<Order> findByCurrentSellerAndStatus(OrderStatus status) {
         SellerStore store = getCurrentUser().getSellerStore();
         if (store == null) {
@@ -167,6 +181,7 @@ public class OrderService {
     }
 
     // Đếm số đơn hàng theo người bán hiện tại
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     public Long countByCurrentSeller() {
         SellerStore store = getCurrentUser().getSellerStore();
         if (store == null) {
@@ -176,11 +191,13 @@ public class OrderService {
     }
 
     // Đếm số đơn hàng theo người mua hiện tại
+    @PreAuthorize("isAuthenticated()")
     public Long countByCurrentBuyer() {
         return orderRepository.countByBuyer(getCurrentUser());
     }
 
     // Create order
+    @PreAuthorize("isAuthenticated() and #userId == authentication.principal.id")
     public OrderTask createOrderTask(Long userId, Long productId, Integer quantity) {
         // 1. Validate authentication
         if (userId == null) {
@@ -207,6 +224,13 @@ public class OrderService {
         // 5. Calculate total amount
         BigDecimal totalAmount = product.getPrice().multiply(BigDecimal.valueOf(quantity));
 
+        // 2. Validate user balance
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        if (user.getBalance().compareTo(totalAmount) < 0) {
+            throw new IllegalArgumentException("User balance is not enough");
+        }
+
         // 6. Create OrderTask
         OrderTask orderTask = new OrderTask(
                 userId,
@@ -220,6 +244,7 @@ public class OrderService {
     }
 
     // Create order from order task
+    // No RBAC - Called by background OrderProcess thread
     @Transactional
     public Order createOrderFromTask(OrderTask orderTask) {
         // Validate order task data
@@ -258,6 +283,7 @@ public class OrderService {
     }
 
     // check stock availability
+    // No RBAC - Internal method called by OrderProcess
     public boolean checkStockAvailability(Order order) {
         Product product = order.getProduct();
         if (product == null || product.getStock() == null) {
@@ -273,6 +299,7 @@ public class OrderService {
     }
 
     // Update order status
+    // No RBAC - Internal method called by OrderProcess
     @Transactional
     public void updateOrderStatus(Order order, OrderStatus status) {
         if (order == null) {
@@ -286,6 +313,7 @@ public class OrderService {
     }
 
     // decrement stock
+    // No RBAC - Internal method called by OrderProcess
     @Transactional
     public void decrementStock(Order order) {
         if (order == null) {
@@ -300,9 +328,9 @@ public class OrderService {
     }
 
     // Update order based on payment status
+    // No RBAC - Internal method called by OrderProcess
     @Transactional
     public void updateOrderBasedOnPaymentStatus(Order order, WalletTransactionStatus paymentStatus) {
-        logger.info("Updating order {} status from {} to {}", order.getId(), order.getStatus(), paymentStatus);
         switch (paymentStatus) {
             case PAID:
                 // 1. Update order status to PAID
@@ -333,7 +361,6 @@ public class OrderService {
                     String productDataJson = objectMapper.writeValueAsString(productStorageData);
                     order.setProductData(productDataJson);
                 } catch (JsonProcessingException e) {
-                    logger.error("Failed to convert product storages to JSON: {}", e.getMessage(), e);
                     throw new RuntimeException("Failed to convert product storages to JSON", e);
                 }
 
@@ -343,37 +370,32 @@ public class OrderService {
                     productStorage.setDeliveredAt(java.time.LocalDateTime.now());
                     productStorage.setOrder(order);
                 }
-                // Save updated product storages
+
+                // 6. Save updated product storages
                 productStorageService.saveAll(productStoragesToDeliver);
-                logger.info("Updated {} product storages to DELIVERED status", productStoragesToDeliver.size());
 
-                // 6. Stock is automatically managed by ProductStorage status changes
-                // No need to manually update product.stock since it's calculated dynamically
-                Product product = order.getProduct();
-                long currentDynamicStock = productStorageService.getAvailableStock(product.getId());
-                logger.info("Product {} dynamic stock after order completion: {} (was decremented by {})",
-                        product.getId(), currentDynamicStock, order.getQuantity());
+                // 7. Process escrow transaction asynchronously
+                escrowTransactionService.processEscrowTransactionAsync(order);
 
-                // 7. Update order status to COMPLETED
+                // 8. Update order status to COMPLETED
                 order.setStatus(OrderStatus.COMPLETED);
 
-                // 8. Save order
+                // 9. Save order
                 orderRepository.save(order);
-                logger.info("Order {} status updated to COMPLETED", order.getId());
 
                 break;
             case FAILED:
                 // 1. Update order status to PAYMENT_FAILED
                 order.setStatus(OrderStatus.PAYMENT_FAILED);
                 orderRepository.save(order);
-                logger.info("Order {} status updated to PAYMENT_FAILED", order.getId());
 
                 break;
         }
     }
 
-    // Create order notification
+    // Create order notification and send via WebSocket
+    // No RBAC - Internal method called by OrderProcess
     public void createOrderNotification(User user, NotificationType type, String title, String content) {
-        notificationService.createNotification(user, type, title, content);
+        webSocketService.createAndSendNotification(user, type, title, content);
     }
 }

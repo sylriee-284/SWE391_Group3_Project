@@ -7,7 +7,9 @@ import org.springframework.stereotype.Repository;
 
 import vn.group3.marketplace.domain.entity.EscrowTransaction;
 import vn.group3.marketplace.domain.entity.Order;
+import vn.group3.marketplace.domain.enums.EscrowStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,4 +26,8 @@ public interface EscrowTransactionRepository extends JpaRepository<EscrowTransac
             "FROM EscrowTransaction et " +
             "WHERE et.order.sellerStore.id = :storeId")
     List<Object[]> findEscrowSummaryByStore(@Param("storeId") Long storeId);
+
+    @Query("SELECT e FROM EscrowTransaction e WHERE e.status = :status AND e.holdUntil <= :currentTime")
+    List<EscrowTransaction> findByStatusAndHoldUntilBefore(@Param("status") EscrowStatus status,
+            @Param("currentTime") LocalDateTime currentTime);
 }

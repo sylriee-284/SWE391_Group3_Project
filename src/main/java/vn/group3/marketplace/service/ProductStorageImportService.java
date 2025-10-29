@@ -1,5 +1,6 @@
 package vn.group3.marketplace.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,9 +9,11 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import vn.group3.marketplace.domain.dto.*;
+import vn.group3.marketplace.dto.*;
 import vn.group3.marketplace.domain.entity.*;
 import vn.group3.marketplace.domain.enums.ProductStorageStatus;
+import vn.group3.marketplace.dto.ImportResult;
+import vn.group3.marketplace.dto.ProductStorageImportDTO;
 import vn.group3.marketplace.repository.CategoryImportTemplateRepository;
 import vn.group3.marketplace.repository.ProductRepository;
 import vn.group3.marketplace.repository.ProductStorageRepository;
@@ -19,7 +22,10 @@ import vn.group3.marketplace.util.ValidationUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -64,11 +70,7 @@ public class ProductStorageImportService {
             // Add template fields
             for (int i = 0; i < templates.size(); i++) {
                 CategoryImportTemplate template = templates.get(i);
-                String headerText = template.getFieldLabel();
-                if (Boolean.TRUE.equals(template.getIsRequired())) {
-                    headerText += "*";
-                }
-                headerRow.createCell(i + 1).setCellValue(headerText);
+                headerRow.createCell(i + 1).setCellValue(template.getFieldLabel());
             }
 
             workbook.write(out);
@@ -88,6 +90,10 @@ public class ProductStorageImportService {
                 Workbook workbook = WorkbookFactory.create(is)) {
 
             Sheet sheet = workbook.getSheetAt(0);
+
+            // Validate header row
+            validateHeaderRow(sheet, templates);
+
             int rowNum = 0;
 
             for (Row row : sheet) {
@@ -121,6 +127,33 @@ public class ProductStorageImportService {
         return result;
     }
 
+    // Validate header row matches template
+    private void validateHeaderRow(Sheet sheet, List<CategoryImportTemplate> templates) throws Exception {
+        String errorMsg = "File không đúng định dạng. Vui lòng tải template và nhập lại.";
+        Row headerRow = sheet.getRow(0);
+
+        // Check header exists and column count
+        if (headerRow == null || headerRow.getLastCellNum() != templates.size() + 1) {
+            throw new IllegalArgumentException(errorMsg);
+        }
+
+        // Check STT column
+        if (!getCellValueAsString(headerRow.getCell(0)).equalsIgnoreCase("STT")) {
+            throw new IllegalArgumentException(errorMsg);
+        }
+
+        // Check each template column
+        for (int i = 0; i < templates.size(); i++) {
+            String actual = getCellValueAsString(headerRow.getCell(i + 1)).trim();
+            String expected = templates.get(i).getFieldLabel().trim();
+            if (!actual.equalsIgnoreCase(expected)) {
+                throw new IllegalArgumentException(errorMsg);
+            }
+        }
+    }
+
+    // Validate data if it unique in the database
+
     private boolean isRowEmpty(Row row) {
         if (row == null)
             return true;
@@ -152,27 +185,81 @@ public class ProductStorageImportService {
     public void validateImportData(List<ProductStorageImportDTO> dtoList, Long categoryId) {
         List<CategoryImportTemplate> templates = getTemplatesByCategory(categoryId);
 
+        // Basic validation
         for (ProductStorageImportDTO dto : dtoList) {
             for (CategoryImportTemplate template : templates) {
                 String fieldName = template.getFieldName();
                 Object value = dto.getField(fieldName);
-
                 validateField(dto, template, value);
             }
+        }
+
+        // Unique validation
+        validateUniqueFields(dtoList, templates);
+    }
+
+    // Validate unique fields
+    private void validateUniqueFields(List<ProductStorageImportDTO> dtoList, List<CategoryImportTemplate> templates) {
+        for (CategoryImportTemplate template : templates) {
+            // Null-safe (defensive programming)
+            if (!Boolean.TRUE.equals(template.getIsUnique())) {
+                continue;
+            }
+
+            String fieldName = template.getFieldName();
+            String fieldLabel = template.getFieldLabel();
+
+            // Track accepted values (will be added to database after import)
+            Set<String> acceptedValues = new HashSet<>();
+
+            // Check each record sequentially
+            for (ProductStorageImportDTO dto : dtoList) {
+                String value = dto.getField(fieldName) != null ? dto.getField(fieldName).toString().trim() : "";
+                if (value.isEmpty())
+                    continue;
+
+                // Check if exists in database OR in previously accepted values
+                if (isValueExistsInDatabase(fieldName, value)) {
+                    dto.addError(fieldLabel + " đã tồn tại trong hệ thống");
+                } else if (acceptedValues.contains(value)) {
+                    dto.addError(fieldLabel + " bị trùng lặp trong file");
+                } else {
+                    // First occurrence - accept it
+                    acceptedValues.add(value);
+                }
+            }
+        }
+    }
+
+    // Check if value exists in database
+    private boolean isValueExistsInDatabase(String fieldName, String value) {
+        try {
+            List<ProductStorage> allStorage = storageRepository.findAll();
+            for (ProductStorage storage : allStorage) {
+                if (storage.getPayloadJson() != null) {
+                    Map<String, Object> payload = objectMapper.readValue(
+                            storage.getPayloadJson(),
+                            new TypeReference<Map<String, Object>>() {
+                            });
+                    Object dbValue = payload.get(fieldName);
+                    if (dbValue != null && dbValue.toString().trim().equalsIgnoreCase(value)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("Error checking unique value in database: {}", e.getMessage());
+            return false;
         }
     }
 
     private void validateField(ProductStorageImportDTO dto, CategoryImportTemplate template, Object value) {
         String stringValue = value != null ? value.toString().trim() : "";
 
-        // Check required
-        if (template.getIsRequired() && stringValue.isEmpty()) {
-            dto.addError(template.getFieldLabel() + " là bắt buộc");
-            return;
-        }
-
-        // Skip validation if empty and not required
+        // All fields are required
         if (stringValue.isEmpty()) {
+            dto.addError(template.getFieldLabel() + " trống!");
             return;
         }
 
@@ -189,9 +276,6 @@ public class ProductStorageImportService {
     public ImportResult importStorage(Long productId, List<ProductStorageImportDTO> dtoList) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
-
-        // Validate all DTOs
-        validateImportData(dtoList, product.getCategory().getId());
 
         int successCount = 0;
         int errorCount = 0;
