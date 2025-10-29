@@ -11,19 +11,47 @@ import vn.group3.marketplace.domain.enums.StoreStatus;
 import vn.group3.marketplace.repository.RoleRepository;
 import vn.group3.marketplace.repository.SellerStoreRepository;
 import vn.group3.marketplace.repository.UserRepository;
+import vn.group3.marketplace.repository.EscrowTransactionRepository;
+import vn.group3.marketplace.domain.enums.EscrowStatus;
 
 import java.math.BigDecimal;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 @RequiredArgsConstructor
 public class SellerStoreService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(SellerStoreService.class);
 
 	private final SellerStoreRepository sellerStoreRepository;
 	private final UserRepository userRepository;
+
+    /**
+     * Cập nhật escrow amount cho seller store
+     * @param sellerStoreId ID của seller store
+     * @param amount Số tiền cần thay đổi
+     * @param isAdd true nếu cộng thêm, false nếu trừ đi
+     */
+    @Transactional
+    public void updateEscrowAmount(Long sellerStoreId, BigDecimal amount, boolean isAdd) {
+        try {
+            sellerStoreRepository.updateEscrowAmount(sellerStoreId, amount, isAdd);
+            logger.info("Updated escrow amount for store {}: {} {}", 
+                sellerStoreId, 
+                isAdd ? "+" : "-", 
+                amount);
+        } catch (Exception e) {
+            logger.error("Failed to update escrow amount for store {}", sellerStoreId, e);
+            throw e;
+        }
+    }
 	private final RoleRepository roleRepository;
 	private final WalletTransactionQueueService walletTransactionQueueService;
 	private final SystemSettingService systemSettingService;
+	private final EscrowTransactionRepository escrowTransactionRepository;
 
 	/**
 	 * Check if user has an active store
@@ -199,48 +227,21 @@ public class SellerStoreService {
 	 */
 	public BigDecimal getTotalEscrowHeld(User owner) {
 		if (owner == null || owner.getSellerStore() == null) {
+			logger.debug("getTotalEscrowHeld: owner or store is null");
 			return BigDecimal.ZERO;
 		}
-		
+
 		return sellerStoreRepository.findById(owner.getSellerStore().getId())
 				.filter(store -> store.getStatus() == StoreStatus.ACTIVE)
-				.map(SellerStore::getEscrowAmount)
+				.map(store -> {
+					logger.debug("getTotalEscrowHeld: calculating for store id={}", store.getId());
+					java.math.BigDecimal sum = escrowTransactionRepository
+							.sumAmountBySellerStoreAndStatus(store, EscrowStatus.HELD);
+					logger.debug("getTotalEscrowHeld: sum={}", sum);
+					return sum == null ? BigDecimal.ZERO : sum;
+				})
 				.orElse(BigDecimal.ZERO);
 	}
 
-	/**
-	 * Add amount to store's escrow amount
-	 */
-	@Transactional
-	public void addToEscrow(Long storeId, BigDecimal amount) {
-		if (amount == null || amount.signum() <= 0) {
-			throw new IllegalArgumentException("Amount must be positive");
-		}
 
-		SellerStore store = sellerStoreRepository.findById(storeId)
-				.orElseThrow(() -> new RuntimeException("Store not found with id: " + storeId));
-
-		store.setEscrowAmount(store.getEscrowAmount().add(amount));
-		sellerStoreRepository.save(store);
-	}
-
-	/**
-	 * Subtract amount from store's escrow amount
-	 */
-	@Transactional
-	public void subtractFromEscrow(Long storeId, BigDecimal amount) {
-		if (amount == null || amount.signum() <= 0) {
-			throw new IllegalArgumentException("Amount must be positive");
-		}
-
-		SellerStore store = sellerStoreRepository.findById(storeId)
-				.orElseThrow(() -> new RuntimeException("Store not found with id: " + storeId));
-
-		if (store.getEscrowAmount().compareTo(amount) < 0) {
-			throw new IllegalStateException("Insufficient escrow amount");
-		}
-
-		store.setEscrowAmount(store.getEscrowAmount().subtract(amount));
-		sellerStoreRepository.save(store);
-	}
 }

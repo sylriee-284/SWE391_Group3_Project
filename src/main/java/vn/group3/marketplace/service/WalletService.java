@@ -26,15 +26,12 @@ public class WalletService {
     private static final Logger logger = LoggerFactory.getLogger(WalletService.class);
     private final WalletTransactionRepository walletTransactionRepository;
     private final UserRepository userRepository;
-    private final SellerStoreService sellerStoreService;
 
     public WalletService(
             WalletTransactionRepository walletTransactionRepository,
-            UserRepository userRepository,
-            SellerStoreService sellerStoreService) {
+            UserRepository userRepository) {
         this.walletTransactionRepository = walletTransactionRepository;
         this.userRepository = userRepository;
-        this.sellerStoreService = sellerStoreService;
     }
 
     /**
@@ -235,18 +232,6 @@ public class WalletService {
             transaction.setPaymentStatus(WalletTransactionStatus.SUCCESS);
             walletTransactionRepository.save(transaction);
 
-            // Thêm tiền vào escrow của seller nếu là giao dịch mua hàng
-            if (order != null && order.getSellerStore() != null) {
-                try {
-                    sellerStoreService.addToEscrow(order.getSellerStore().getId(), amount);
-                    logger.info("Added {} to seller's escrow for store {}", 
-                        amount, order.getSellerStore().getId());
-                } catch (Exception e) {
-                    logger.error("Failed to add money to seller's escrow: {}", e.getMessage());
-                    // Không rollback transaction chính nếu cập nhật escrow thất bại
-                }
-            }
-
             logger.info("Payment processed successfully for userId={}", userId);
             return true; // Payment successful
 
@@ -387,33 +372,11 @@ public class WalletService {
             return false;
         }
 
-        // Lấy user từ database
-        User seller = userRepository.findById(sellerId)
-                .orElseThrow(() -> {
-                    logger.error("❌ Seller not found: {}", sellerId);
-                    return new RuntimeException("Seller not found with id: " + sellerId);
-                });
-
-        // Tạo transaction record
-        WalletTransaction transaction = WalletTransaction.builder()
-                .user(seller)
-                .type(WalletTransactionType.SELLER_PAYOUT)
-                .amount(amount)
-                .paymentRef(orderId.toString())
-                .paymentStatus(WalletTransactionStatus.PENDING)
-                .paymentMethod("INTERNAL")
-                .note("Cộng tiền doanh thu từ đơn hàng #" + orderId)
-                .build();
-
-        // Set createdBy manually
-        Long currentUserId = SecurityContextUtils.getCurrentUserId();
-        if (currentUserId != null) {
-            transaction.setCreatedBy(currentUserId);
-        } else {
-            transaction.setCreatedBy(sellerId);
+        // Kiểm tra user tồn tại
+        if (!userRepository.existsById(sellerId)) {
+            logger.error("❌ Seller not found: {}", sellerId);
+            return false;
         }
-
-        transaction = walletTransactionRepository.save(transaction);
 
         try {
             // Cộng tiền vào ví seller
@@ -421,25 +384,7 @@ public class WalletService {
 
             if (rows != 1) {
                 logger.error("❌ Failed to add money for sellerId={}. incrementBalance returned {} rows", sellerId, rows);
-                transaction.setPaymentStatus(WalletTransactionStatus.FAILED);
-                walletTransactionRepository.save(transaction);
                 return false;
-            }
-
-            // Cập nhật trạng thái transaction thành công
-            transaction.setPaymentStatus(WalletTransactionStatus.SUCCESS);
-            walletTransactionRepository.save(transaction);
-
-            // Trừ tiền từ escrow của seller store
-            if (seller.getSellerStore() != null) {
-                try {
-                    sellerStoreService.subtractFromEscrow(seller.getSellerStore().getId(), amount);
-                    logger.info("Subtracted {} from seller's escrow for store {}", 
-                        amount, seller.getSellerStore().getId());
-                } catch (Exception e) {
-                    logger.error("Failed to subtract money from seller's escrow: {}", e.getMessage());
-                    // Không rollback transaction chính nếu cập nhật escrow thất bại
-                }
             }
 
             logger.info("✅ Successfully added {} to seller {} for order {}", amount, sellerId, orderId);
@@ -447,10 +392,6 @@ public class WalletService {
 
         } catch (Exception e) {
             logger.error("❌ Error adding money to seller {}: {}", sellerId, e.getMessage());
-            
-            // Cập nhật transaction thành FAILED
-            transaction.setPaymentStatus(WalletTransactionStatus.FAILED);
-            walletTransactionRepository.save(transaction);
             return false;
         }
     }

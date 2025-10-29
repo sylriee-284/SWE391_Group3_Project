@@ -179,14 +179,14 @@
                                                                             </c:choose>
                                                                         </c:when>
                                                                         <c:otherwise>
-                                                                            -
+                                                                             ${transaction.paymentRef}
                                                                         </c:otherwise>
                                                                     </c:choose>
                                                                 </td>
                                                                 <td class="text-end">
                                                                     <c:choose>
                                                                         <c:when
-                                                                            test='${transaction.type.name() eq "DEPOSIT" || transaction.type.name() eq "REFUND" || transaction.type.name() eq "SELLER_PAYOUT"}'>
+                                                                            test='${transaction.type.name() eq "DEPOSIT" || transaction.type.name() eq "REFUND" || transaction.type.name() eq "ORDER_RELEASE" || transaction.type.name() eq "SELLER_PAYOUT"}'>
                                                                             <span class="text-success">+
                                                                                 <fmt:formatNumber
                                                                                     value="${transaction.amount}"

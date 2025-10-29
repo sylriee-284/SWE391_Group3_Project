@@ -38,6 +38,7 @@ public class EscrowTransactionService {
     private final WalletTransactionRepository walletTransactionRepository;
     private final EscrowTransactionRepository escrowTransactionRepository;
     private final UserRepository userRepository;
+    private final WalletTransactionQueueService walletTransactionQueueService;
     private final SystemSettingService systemSettingService;
     private final EscrowTransactionService self;
 
@@ -45,13 +46,16 @@ public class EscrowTransactionService {
             SystemSettingService systemSettingService,
             WalletTransactionRepository walletTransactionRepository,
             UserRepository userRepository,
-            @Lazy EscrowTransactionService self, SellerStoreRepository sellerStoreRepository) {
+            @Lazy EscrowTransactionService self, 
+            SellerStoreRepository sellerStoreRepository,
+            WalletTransactionQueueService walletTransactionQueueService) {
         this.escrowTransactionRepository = escrowTransactionRepository;
         this.systemSettingService = systemSettingService;
         this.walletTransactionRepository = walletTransactionRepository;
         this.userRepository = userRepository;
         this.self = self;
         this.sellerStoreRepository = sellerStoreRepository;
+        this.walletTransactionQueueService = walletTransactionQueueService;
     }
 
     @Transactional
@@ -75,6 +79,7 @@ public class EscrowTransactionService {
                 // Create single escrow transaction with both seller and admin amounts
                 EscrowTransaction escrowTransaction = EscrowTransaction.builder()
                         .order(order)
+                        .sellerStore(sellerStore)  // Add this line to set sellerStore
                         .totalAmount(order.getTotalAmount()) // Total amount
                         .sellerAmount(sellerAmount) // Amount for seller
                         .adminAmount(feeAmount) // Amount for admin
@@ -84,9 +89,12 @@ public class EscrowTransactionService {
                 escrowTransaction.setCreatedBy(0L);
                 escrowTransactionRepository.save(escrowTransaction);
 
-                // Update seller store escrow amount
-                sellerStore.setEscrowAmount(sellerStore.getEscrowAmount().add(sellerAmount));
-                sellerStoreRepository.save(sellerStore);
+                // Update seller store escrow amount through queue
+                walletTransactionQueueService.enqueueUpdateSellerStoreEscrowAmount(
+                    sellerStore.getId(), 
+                    sellerAmount,
+                    true // true for add, false for subtract
+                ).get(); // Wait for completion since we're in a transaction
 
                 logger.info("Escrow transaction created for order: {} with total amount: {}",
                         order.getId(), order.getTotalAmount());
@@ -99,6 +107,7 @@ public class EscrowTransactionService {
             } else {
                 EscrowTransaction escrowTransaction = EscrowTransaction.builder()
                         .order(order)
+                        .sellerStore(sellerStore)  // Add this line to set sellerStore
                         .totalAmount(order.getTotalAmount())
                         .sellerAmount(order.getTotalAmount()) // Full amount goes to seller
                         .adminAmount(BigDecimal.ZERO) // No admin fee
@@ -108,8 +117,13 @@ public class EscrowTransactionService {
                 escrowTransaction.setCreatedBy(0L);
                 escrowTransactionRepository.save(escrowTransaction);
 
-                sellerStore.setEscrowAmount(sellerStore.getEscrowAmount().add(order.getTotalAmount()));
-                sellerStoreRepository.save(sellerStore);
+                // Update seller store escrow amount through queue
+                walletTransactionQueueService.enqueueUpdateSellerStoreEscrowAmount(
+                    sellerStore.getId(), 
+                    order.getTotalAmount(),
+                    true // true for add, false for subtract
+                ).get(); // Wait for completion since we're in a transaction
+
                 logger.info("Escrow transaction created for order: {} with hold until: {}",
                         order.getId(), escrowTransaction.getHoldUntil());
             }
@@ -239,21 +253,18 @@ public class EscrowTransactionService {
                 walletTransactionRepository.save(adminWalletTransaction);
             }
 
-            // 7. Update seller balance using atomic increment to avoid race conditions
-            int sellerRows = userRepository.incrementBalance(sellerId, sellerAmount);
-            if (sellerRows != 1) {
-                logger.warn("Failed to increment balance for seller: {}", sellerId);
-                throw new RuntimeException("Failed to update seller balance");
-            }
-            logger.info("Incremented balance for seller {} by {}", sellerId, sellerAmount);
+            // 7. Enqueue add money to seller through queue service
+            walletTransactionQueueService.enqueueAddMoneyToSeller(sellerId, sellerAmount, order.getId())
+                .get(); // Wait for completion since we're in a transaction
 
-            // 8. Update admin balance using atomic increment
-            int adminRows = userRepository.incrementBalance(admin.getId(), adminAmount);
-            if (adminRows != 1) {
-                logger.warn("Failed to increment balance for admin: {}", admin.getId());
-                throw new RuntimeException("Failed to update admin balance");
+            // 8. Enqueue add money to admin through queue service
+            if (adminAmount.compareTo(BigDecimal.ZERO) > 0) {
+                walletTransactionQueueService.enqueueAddMoneyToSeller(admin.getId(), adminAmount, order.getId())
+                    .get(); // Wait for completion since we're in a transaction
             }
-            logger.info("Incremented balance for admin {} by {}", admin.getId(), adminAmount);
+            
+            logger.info("Enqueued balance update for seller {} amount {}", sellerId, sellerAmount);
+            logger.info("Enqueued balance update for admin {} amount {}", admin.getId(), adminAmount);
 
             // 9. Update escrow amount of seller store
             SellerStore sellerStore = order.getSellerStore();

@@ -170,6 +170,31 @@ public class WalletTransactionQueueService {
         }
     }
 
+    /**
+     * Cập nhật escrow amount của seller store theo queue
+     */
+    public Future<Boolean> enqueueUpdateSellerStoreEscrowAmount(Long sellerStoreId, java.math.BigDecimal amount, boolean isAdd) {
+        try {
+            logger.info("Enqueueing update escrow amount for store: {}, amount: {}, isAdd: {}", 
+                sellerStoreId, amount, isAdd);
+            return perUserSerialExecutor.submit(sellerStoreId, () -> {
+                logger.info("Processing update escrow amount for store: {}, amount: {}, isAdd: {}", 
+                    sellerStoreId, amount, isAdd);
+                SellerStoreService sellerStoreService = ctx.getBean(SellerStoreService.class);
+                sellerStoreService.updateEscrowAmount(sellerStoreId, amount, isAdd);
+                logger.info("Updated escrow amount for store: {}, amount: {}, isAdd: {}", 
+                    sellerStoreId, amount, isAdd);
+                return true;
+            });
+        } catch (Exception ex) {
+            logger.error("Failed to update escrow amount for store: {}, error: {}", 
+                sellerStoreId, ex.getMessage(), ex);
+            CompletableFuture<Boolean> f = new CompletableFuture<>();
+            f.completeExceptionally(ex);
+            return f;
+        }
+    }
+
     public void shutdown() {
         perUserSerialExecutor.shutdown();
     }
