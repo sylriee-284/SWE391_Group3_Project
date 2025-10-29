@@ -28,16 +28,42 @@ public class ProductListController {
             @PageableDefault(size = 12) Pageable pageable,
             Model model) {
 
+        String originalSort = sort; // Keep original sort value for UI display
+
+        // Determine sort direction based on field
+        String sortDirection;
+        switch (sort) {
+            case "price":
+                sortDirection = "asc"; // Giá từ thấp đến cao
+                break;
+            case "priceDesc":
+                sortDirection = "desc"; // Giá từ cao đến thấp
+                sort = "price"; // Use 'price' field but desc direction
+                break;
+            case "soldQuantity":
+                sortDirection = "desc"; // Sản phẩm nổi bật từ cao đến thấp
+                break;
+            case "createdAt":
+                sortDirection = "desc"; // Mới nhất trước
+                break;
+            default:
+                sortDirection = "desc"; // Mặc định từ cao đến thấp
+                sort = "soldQuantity";
+                originalSort = "soldQuantity";
+        }
+
         // Get all products with sorting
         Page<Product> products = productService.getAllProducts(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
                 sort,
-                "asc");
+                sortDirection);
 
         // Add attributes to model
         model.addAttribute("products", products);
         model.addAttribute("sortBy", sort);
+        model.addAttribute("originalSort", originalSort); // For radio button selection
+        model.addAttribute("sortDirection", sortDirection);
 
         // Pagination attributes
         model.addAttribute("currentPage", products.getNumber());
@@ -50,5 +76,64 @@ public class ProductListController {
         model.addAttribute("nextPage", products.hasNext() ? products.getNumber() + 1 : products.getTotalPages() - 1);
 
         return "product/list";
+    }
+
+    @GetMapping("/search")
+    public String searchProducts(
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "sort", defaultValue = "soldQuantity") String sort,
+            @PageableDefault(size = 12) Pageable pageable,
+            Model model) {
+
+        String originalSort = sort; // Keep original sort value for UI display
+
+        // Determine sort direction based on field (same logic as getAllProducts)
+        String sortDirection;
+        switch (sort) {
+            case "price":
+                sortDirection = "asc"; // Giá từ thấp đến cao
+                break;
+            case "priceDesc":
+                sortDirection = "desc"; // Giá từ cao đến thấp
+                sort = "price"; // Use 'price' field but desc direction
+                break;
+            case "soldQuantity":
+                sortDirection = "desc"; // Sản phẩm nổi bật từ cao đến thấp
+                break;
+            case "createdAt":
+                sortDirection = "desc"; // Mới nhất trước
+                break;
+            default:
+                sortDirection = "desc"; // Mặc định từ cao đến thấp
+                sort = "soldQuantity";
+                originalSort = "soldQuantity";
+        }
+
+        // Use search with sorting
+        Page<Product> products = productService.searchAllProducts(
+                keyword != null ? keyword.trim() : "",
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                sort,
+                sortDirection);
+
+        // Add attributes to model
+        model.addAttribute("products", products);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("sortBy", sort);
+        model.addAttribute("originalSort", originalSort); // For radio button selection
+        model.addAttribute("sortDirection", sortDirection);
+
+        // Pagination attributes
+        model.addAttribute("currentPage", products.getNumber());
+        model.addAttribute("totalPages", products.getTotalPages());
+        model.addAttribute("totalElements", products.getTotalElements());
+        model.addAttribute("size", products.getSize());
+        model.addAttribute("hasPrevious", products.hasPrevious());
+        model.addAttribute("hasNext", products.hasNext());
+        model.addAttribute("previousPage", products.hasPrevious() ? products.getNumber() - 1 : 0);
+        model.addAttribute("nextPage", products.hasNext() ? products.getNumber() + 1 : products.getTotalPages() - 1);
+
+        return "product/search-results";
     }
 }
