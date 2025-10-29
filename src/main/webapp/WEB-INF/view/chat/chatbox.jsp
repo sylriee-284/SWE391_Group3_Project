@@ -36,38 +36,57 @@
                                 <h3>
                                     Gần đây
                                 </h3>
-                                <span class="collapse-icon">❮❮</span>
                             </div>
 
                             <!-- Contact Items -->
                             <div class="contact-items">
-                                <!-- Active Contact -->
-                                <div class="contact-item active">
-                                    <img src="${pageContext.request.contextPath}/images/chat/mmo-user.jpg" alt="toannx"
-                                        class="contact-avatar">
-                                    <div class="contact-info">
-                                        <div class="contact-name-row">
-                                            <span class="contact-name">toannx</span>
+                                <c:forEach var="conversation" items="${conversations}">
+                                    <c:set var="conversationPartner"
+                                        value="${messageService.getConversationPartner(conversation, currentUser.id)}" />
+                                    <a href="/chat?chat-to=${conversationPartner.username}" class="contact-item-link">
+                                        <div class="contact-item">
+                                            <c:choose>
+                                                <c:when test="${messageService.isAdminUser(conversationPartner)}">
+                                                    <img src="${pageContext.request.contextPath}/images/chat/mmo-avatar.jpg"
+                                                        alt="${messageService.getUserDisplayName(conversationPartner)}"
+                                                        class="contact-avatar">
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <img src="${pageContext.request.contextPath}/images/chat/mmo-user.jpg"
+                                                        alt="${messageService.getUserDisplayName(conversationPartner)}"
+                                                        class="contact-avatar">
+                                                </c:otherwise>
+                                            </c:choose>
+                                            <div class="contact-info">
+                                                <div class="contact-name-row">
+                                                    <span
+                                                        class="contact-name">${messageService.getUserDisplayName(conversationPartner)}</span>
+                                                </div>
+                                                <div class="contact-preview">
+                                                    ${messageService.getConversationPreview(conversation,
+                                                    currentUser.id)}
+                                                </div>
+                                                <div class="contact-date">
+                                                    ${messageService.formatMessageTime(conversation.createdAt)}</div>
+                                            </div>
                                         </div>
-                                        <div class="contact-preview">oki</div>
-                                        <div class="contact-date">24/10/2025</div>
-                                    </div>
-                                </div>
-
-                                <!-- Platform Contact -->
-                                <div class="contact-item">
-                                    <img src="${pageContext.request.contextPath}/images/chat/mmo-avatar.jpg"
-                                        alt="taphoammo" class="contact-avatar">
-                                    <div class="contact-info">
-                                        <div class="contact-name-row">
-                                            <span class="contact-name">MMO Market System</span>
-                                        </div>
-                                        <div class="contact-preview">Chào mừng bạn đến với taphoammo. Mình có thể hỗ trợ
-                                            gì cho bạn?</div>
-                                        <div class="contact-date">15/10/2025</div>
-                                    </div>
-                                </div>
+                                    </a>
+                                </c:forEach>
                             </div>
+
+                            <!-- Contact Admin Button -->
+                            <a href="/chat/admin" class="contact-admin-btn" role="button" tabindex="0"
+                                aria-label="Liên hệ Admin">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" aria-hidden="true">
+                                    <path
+                                        d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                                    <circle cx="8" cy="13" r="1" fill="currentColor" />
+                                    <circle cx="12" cy="13" r="1" fill="currentColor" />
+                                    <circle cx="16" cy="13" r="1" fill="currentColor" />
+                                </svg>
+                                <span class="admin-btn-label">Liên hệ Admin</span>
+                            </a>
                         </div>
 
                         <!-- Right Column - Chat Area -->
@@ -75,71 +94,24 @@
                             <!-- Chat Header -->
                             <div class="chat-header">
                                 <h4>
-                                    @toannx <span class="online-status">Online 33 phút trước</span>
+                                    ${messageService.getUserDisplayName(selectedUser)}
                                 </h4>
                             </div>
 
                             <!-- Chat Messages -->
                             <div class="chat-messages" id="chatMessages">
-                                <!-- Message 1 - Received -->
-                                <div class="message message-received">
-                                    <div>
-                                        <div class="message-content">
-                                            copy bắt đầu từ [{... nhé bạn
+                                <c:forEach var="message" items="${messages}">
+                                    <div
+                                        class="message ${message.senderUser.id eq currentUser.id ? 'message-sent' : 'message-received'}">
+                                        <div>
+                                            <div class="message-content">
+                                                ${message.content}
+                                            </div>
+                                            <div class="message-time">
+                                                ${messageService.formatMessageTime(message.createdAt)}</div>
                                         </div>
-                                        <div class="message-time">20:57 - 24/10</div>
                                     </div>
-                                </div>
-
-                                <!-- Message 2 - Sent -->
-                                <div class="message message-sent">
-                                    <div>
-                                        <div class="message-content">
-                                            là có lấy cả 2 cái đó ạ
-                                        </div>
-                                        <div class="message-time">20:58 - 24/10</div>
-                                    </div>
-                                </div>
-
-                                <!-- Message 3 - Received -->
-                                <div class="message message-received">
-                                    <div>
-                                        <div class="message-content">
-                                            đợi mình check nhé
-                                        </div>
-                                        <div class="message-time">20:59 - 24/10</div>
-                                    </div>
-                                </div>
-
-                                <!-- Message 4 - Received -->
-                                <div class="message message-received">
-                                    <div>
-                                        <div class="message-content">
-                                            vẫn bình thường bạn ơi
-                                        </div>
-                                        <div class="message-time">21:10 - 24/10</div>
-                                    </div>
-                                </div>
-
-                                <!-- Message 5 - Received -->
-                                <div class="message message-received">
-                                    <div>
-                                        <div class="message-content">
-                                            bạn clear cache ở cursor trước nhé
-                                        </div>
-                                        <div class="message-time">21:10 - 24/10</div>
-                                    </div>
-                                </div>
-
-                                <!-- Message 6 - Sent -->
-                                <div class="message message-sent">
-                                    <div>
-                                        <div class="message-content">
-                                            oki
-                                        </div>
-                                        <div class="message-time">21:17 - 24/10</div>
-                                    </div>
-                                </div>
+                                </c:forEach>
                             </div>
 
                             <!-- Chat Input Area -->
@@ -155,6 +127,8 @@
                         </div>
                     </div>
                 </div>
+
+
 
                 <!-- Script to display notifications using iziToast -->
                 <c:if test="${not empty successMessage}">
@@ -188,6 +162,118 @@
 
                 <!-- Common JavaScript -->
                 <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const messageInput = document.getElementById('messageInput');
+                        const sendButton = document.getElementById('sendButton');
+
+                        <c:choose>
+                            <c:when test="${selectedUser != null}">
+                                const partnerUserId = ${selectedUser.id};
+                            </c:when>
+                            <c:otherwise>
+                                const partnerUserId = null;
+                            </c:otherwise>
+                        </c:choose>
+
+                        // Auto scroll to bottom to show latest messages
+                        const chatMessages = document.getElementById('chatMessages');
+                        if (chatMessages) {
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+
+                        function sendMessage() {
+                            const content = messageInput.value.trim();
+                            if (!content || partnerUserId === null) return;
+
+                            fetch('/api/chat/send', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    partnerUserId: partnerUserId,
+                                    content: content
+                                })
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        // Add message to UI immediately
+                                        const chatMessages = document.getElementById('chatMessages');
+                                        if (!chatMessages) {
+                                            console.error('Chat messages container not found');
+                                            return;
+                                        }
+
+                                        const timestamp = new Date().toLocaleTimeString('vi-VN', {
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        });
+
+                                        const messageHTML = `
+                                            <div class="message message-sent">
+                                                <div>
+                                                    <div class="message-content">${'${content}'}</div>
+                                                    <div class="message-time">${'${timestamp}'}</div>
+                                                </div>
+                                            </div>
+                                        `;
+
+                                        chatMessages.insertAdjacentHTML('beforeend', messageHTML);
+                                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                                    }
+                                })
+                                .catch(error => console.error('Error:', error));
+
+                            messageInput.value = '';
+                        }
+
+                        sendButton.addEventListener('click', sendMessage);
+                        messageInput.addEventListener('keypress', function (e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                sendMessage();
+                            }
+                        });
+                    });
+
+                    // Subscribe to WebSocket messages
+                    if (stompClient && partnerUserId) {
+                        stompClient.subscribe('/user/' + partnerUserId + '/queue/messages', function (message) {
+
+                            // Parse the message
+                            const messageData = JSON.parse(message.body);
+
+                            // Only show messages from other users (not our own)
+                            if (messageData.senderUserId !== partnerUserId) {
+                                return;
+                            }
+
+                            // Create message element
+                            const chatMessages = document.getElementById('chatMessages');
+
+                            // Format timestamp
+                            const timestamp = new Date(messageData.timestamp).toLocaleTimeString('vi-VN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+
+                            // Create message using template - simpler approach
+                            const messageHTML = `
+                                <div class="message message-received">
+                                    <div>
+                                        <div class="message-content">${messageData.content}</div>
+                                        <div class="message-time">${timestamp}</div>
+                                    </div>
+                                </div>
+                            `;
+
+                            chatMessages.insertAdjacentHTML('beforeend', messageHTML);
+
+                            // Scroll to bottom
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        });
+                    }
+
+
                     // Toggle sidebar function
                     function toggleSidebar() {
                         var sidebar = document.getElementById('sidebar');

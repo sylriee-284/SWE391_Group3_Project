@@ -17,6 +17,7 @@
     display: flex;
     flex-direction: column;
     background: #fff;
+    position: relative;
 }
 
 .contact-header {
@@ -52,6 +53,19 @@
 .contact-items {
     flex: 1;
     overflow-y: auto;
+    padding-bottom: 70px;
+    /* Space for admin button */
+}
+
+.contact-item-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.contact-item-link:hover {
+    text-decoration: none;
+    color: inherit;
 }
 
 .contact-item {
@@ -133,17 +147,20 @@
     background: #f8f9fa;
     display: flex;
     align-items: center;
+    justify-content: center;
     height: 60px;
 }
 
 .chat-header h4 {
     margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #333;
+    font-size: 18px;
+    font-weight: 700;
+    color: #2d5016;
     display: flex;
     align-items: center;
     gap: 8px;
+    letter-spacing: 0.5px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .chat-header .online-status {
@@ -163,8 +180,23 @@
 .chat-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 20px 0px 20px 20px;
     background: #fafafa;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    /* Ensure proper text flow */
+    writing-mode: horizontal-tb;
+    direction: ltr;
+}
+
+.no-messages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #666;
+    font-style: italic;
 }
 
 .message {
@@ -173,17 +205,30 @@
     align-items: flex-start;
 }
 
-.message-content {
-    max-width: 70%;
-    padding: 10px 14px;
-    border-radius: 18px;
-    font-size: 14px;
-    line-height: 1.5;
-    word-wrap: break-word;
-    word-break: normal;
-    overflow-wrap: break-word;
-    white-space: normal;
-    display: inline-block;
+/* Force message content to display correctly - highest specificity */
+.chat-messages .message .message-content {
+    max-width: 70% !important;
+    min-width: 80px !important;
+    padding: 12px 16px !important;
+    border-radius: 18px !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    word-wrap: break-word !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    display: block !important;
+    text-align: left !important;
+    direction: ltr !important;
+    unicode-bidi: normal !important;
+    writing-mode: horizontal-tb !important;
+    /* Reset any inherited properties */
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    font-variant: normal !important;
+    /* Ensure content is visible */
+    min-height: 40px !important;
+    /* Remove background from here - let specific classes handle it */
 }
 
 .message-received {
@@ -191,19 +236,29 @@
 }
 
 .message-received .message-content {
-    background: #e5e5e5;
-    color: #333;
+    background: #e5e5e5 !important;
+    color: #333 !important;
     border-bottom-left-radius: 4px;
+    /* Ensure text is visible */
+    font-weight: 400 !important;
+    text-shadow: none !important;
 }
 
 .message-sent {
     justify-content: flex-end;
+    margin-left: auto;
+    width: calc(100% - 10px);
+    margin-right: 0;
+    padding-right: 0;
 }
 
 .message-sent .message-content {
-    background: #0d6efd;
-    color: #fff;
+    background: #0d6efd !important;
+    color: #fff !important;
     border-bottom-right-radius: 4px;
+    /* Ensure text is visible */
+    font-weight: 400 !important;
+    text-shadow: none !important;
 }
 
 .message-time {
@@ -290,6 +345,84 @@
 .contact-items::-webkit-scrollbar-thumb:hover,
 .chat-messages::-webkit-scrollbar-thumb:hover {
     background: #555;
+}
+
+/* Contact Admin Button */
+.contact-admin-btn {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: #6c757d;
+    color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.contact-admin-btn:hover {
+    background: #5a6268;
+    transform: scale(1.05);
+}
+
+.contact-admin-btn:hover::after {
+    content: 'Liên hệ Admin';
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #2c3e50;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+    animation: fadeIn 0.2s ease;
+}
+
+.contact-admin-btn:hover::before {
+    content: '';
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-right-color: #2c3e50;
+    z-index: 1001;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+.contact-admin-btn:active {
+    transform: scale(0.95);
+}
+
+.contact-admin-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.admin-btn-label {
+    display: none;
 }
 
 /* Responsive */

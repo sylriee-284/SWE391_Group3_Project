@@ -24,6 +24,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SystemSettingService systemSettingService;
+    private final MessageService messageService;
     private static final String DEFAULT_PLAIN_PASSWORD = "123456789";
 
     public java.util.List<Role> getAllRoles() {
@@ -84,7 +86,16 @@ public class UserService {
         user.getRoles().add(role);
 
         // Save user (cascade sẽ tự động lưu userRole)
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        // Create welcome message from admin
+        try {
+            messageService.createWelcomeMessageForNewUser(savedUser.getId());
+        } catch (Exception e) {
+            // Log error but don't fail registration
+            System.err
+                    .println("Failed to create welcome message for user " + savedUser.getId() + ": " + e.getMessage());
+        }
     }
 
     public Optional<User> findByUsername(String username) {
@@ -256,6 +267,20 @@ public class UserService {
 
             db.setRoles(mapRoleIds(roleIds)); // NEW: thay roles theo form
             return userRepository.save(db);
+        }
+    }
+
+    // Find admin user by getting admin ID from system setting key
+    public Optional<User> findAdminUser() {
+        try {
+            String adminIdStr = systemSettingService.getSettingValue("wallet.admin_default_receive_commission", "");
+            if (adminIdStr == null || adminIdStr.isEmpty()) {
+                return Optional.empty();
+            }
+            Long adminId = Long.parseLong(adminIdStr);
+            return userRepository.findById(adminId);
+        } catch (NumberFormatException e) {
+            return Optional.empty();
         }
     }
 
