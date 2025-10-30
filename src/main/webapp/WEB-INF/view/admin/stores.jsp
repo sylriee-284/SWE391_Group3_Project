@@ -211,21 +211,15 @@
                             word-break: break-word
                         }
 
+
                         @media (min-width: 992px) {
-                            .filter .col-status {
-                                flex: 0 0 320px;
-                                max-width: 320px;
+                            .w-lg-auto {
+                                width: auto !important;
                             }
                         }
 
-                        .filter #f-status {
-                            width: 100%;
-                        }
 
-                        .filter .form-control,
-                        .filter .form-select {
-                            height: 38px;
-                        }
+
 
                         .page-item.disabled .page-link {
                             pointer-events: none;
@@ -270,44 +264,51 @@
                             novalidate>
 
                             <!-- ID -->
-                            <div class="col-12 col-sm-6 col-lg-2">
-                                <input class="form-control" id="f-id" name="id" placeholder="Tìm theo ID"
-                                    maxlength="12" />
+                            <div class="col-12 col-lg-2">
+                                <input class="form-control" id="f-id" name="id" placeholder="Tìm theo ID" maxlength="12"
+                                    value="${fn:escapeXml(param.id)}" />
                             </div>
 
                             <!-- Tên cửa hàng -->
-                            <div class="col-12 col-sm-6 col-lg-3">
+                            <div class="col-12 col-lg-3">
                                 <input class="form-control" id="f-name" name="name" placeholder="Tên cửa hàng"
-                                    maxlength="100" />
+                                    maxlength="100" value="${fn:escapeXml(param.name)}" />
                             </div>
 
                             <!-- Trạng thái -->
-                            <div class="col-12 col-sm-6 col-lg-2 col-status">
+                            <div class="col-12 col-lg-2">
                                 <select class="form-select" id="f-status" name="status" aria-label="Trạng thái">
                                     <option value="">-- Tất cả trạng thái --</option>
-                                    <option value="ACTIVE">ACTIVE</option>
-                                    <option value="INACTIVE">INACTIVE</option>
-                                    <option value="BANNED">BANNED</option>
-                                    <option value="PENDING">PENDING</option>
+                                    <option value="ACTIVE" ${param.status=='ACTIVE' ? 'selected' : '' }>ACTIVE</option>
+                                    <option value="INACTIVE" ${param.status=='INACTIVE' ? 'selected' : '' }>INACTIVE
+                                    </option>
+                                    <option value="BANNED" ${param.status=='BANNED' ? 'selected' : '' }>BANNED</option>
+                                    <option value="PENDING" ${param.status=='PENDING' ? 'selected' : '' }>PENDING
+                                    </option>
                                 </select>
                             </div>
 
                             <!-- Từ ngày -->
-                            <div class="col-6 col-sm-3 col-lg-2">
-                                <input type="date" class="form-control" id="f-from" name="from" aria-label="Từ ngày" />
+                            <div class="col-6 col-lg-2">
+                                <input type="date" class="form-control" id="f-from" name="from" aria-label="Từ ngày"
+                                    value="${param.from}" />
                             </div>
 
                             <!-- Đến ngày -->
-                            <div class="col-6 col-sm-3 col-lg-2">
-                                <input type="date" class="form-control" id="f-to" name="to" aria-label="Đến ngày" />
+                            <div class="col-6 col-lg-2">
+                                <input type="date" class="form-control" id="f-to" name="to" aria-label="Đến ngày"
+                                    value="${param.to}" />
                             </div>
 
-                            <!-- Nút hành động: luôn xuống dòng dưới -->
+
+
+                            <!-- Nút hành động: xuống hàng dưới -->
                             <div class="col-12 d-flex gap-2 mt-1">
                                 <button class="btn btn-primary" type="button" id="btnApply">Lọc</button>
                                 <a class="btn btn-outline-secondary" href="<c:url value='/admin/stores'/>"
                                     id="btnClear">Bỏ lọc</a>
                             </div>
+
                         </form>
 
 
@@ -339,20 +340,14 @@
 
                                         <c:forEach var="s" items="${stores}">
                                             <tr data-id="${s.id}" data-name="${fn:escapeXml(s.storeName)}"
-                                                data-status="${s.status}"
-                                                data-description="${fn:escapeXml(s.description)}"
-                                                data-fee-model="${s.feeModel}" data-fee-rate="${s.feePercentageRate}"
-                                                data-deposit="${s.depositAmount}"
+                                                data-status="${s.status}" data-deposit="${s.depositAmount}"
                                                 data-deposit-currency="${s.depositCurrency}"
-                                                data-escrow="${s.escrowAmount}" data-rating="${s.rating}"
                                                 data-created="${s.createdAt}">
                                                 <td>#${s.id}</td>
                                                 <td>
                                                     <div class="fw-semibold">${fn:escapeXml(s.storeName)}</div>
                                                     <div class="small text-muted">
-                                                        Owner: #${s.owner.id} • Rating:
-                                                        <fmt:formatNumber value="${s.rating}" minFractionDigits="2"
-                                                            maxFractionDigits="2" />
+                                                        Owner: #${s.owner.id}
                                                     </div>
                                                 </td>
                                                 <td>
@@ -409,7 +404,7 @@
                                                         </button>
 
                                                         <!-- Đổi trạng thái (ACTIVE/INACTIVE/PENDING) -->
-                                                        <form method="post"
+                                                        <%-- ẨN TẠM NÚT ĐỔI TRẠNG THÁI <form method="post"
                                                             action="<c:url value='/admin/stores/status'/>"
                                                             class="d-inline">
                                                             <input type="hidden" name="storeId" value="${s.id}" />
@@ -436,7 +431,8 @@
                                                                         data-status="PENDING">PENDING</button>
                                                                 </div>
                                                             </span>
-                                                        </form>
+                                                            </form>
+                                                            --%>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -755,6 +751,24 @@
                             document.querySelectorAll('.navbar form[action], .sidebar form[action]').forEach(fixAction);
                         })();
                     </script>
+
+                    <script>
+                        (function () {
+                            const btn = document.getElementById('btnApply');
+                            const form = document.getElementById('filterForm');
+                            if (!btn || !form) return;
+                            btn.addEventListener('click', function () {
+                                let p = form.querySelector('input[name="page"]');
+                                if (!p) { p = document.createElement('input'); p.type = 'hidden'; p.name = 'page'; form.appendChild(p); }
+                                p.value = 1; // reset về trang 1 khi lọc
+                                let s = form.querySelector('input[name="size"]');
+                                if (!s) { s = document.createElement('input'); s.type = 'hidden'; s.name = 'size'; form.appendChild(s); }
+                                s.value = '${pageSize}';
+                                form.submit();
+                            });
+                        })();
+                    </script>
+
                 </body>
 
                 </html>
