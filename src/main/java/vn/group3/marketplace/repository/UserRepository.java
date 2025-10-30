@@ -1,5 +1,6 @@
 package vn.group3.marketplace.repository;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import vn.group3.marketplace.domain.entity.User;
@@ -19,7 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
 
-        Optional<User> findByUsername(String username);
+        @Query("SELECT u FROM User u LEFT JOIN FETCH u.sellerStore WHERE u.username = :username")
+        Optional<User> findByUsername(@Param("username") String username);
 
         Optional<User> findByEmail(String email);
 
@@ -38,18 +40,15 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
         @Modifying
         @Query(value = "UPDATE users SET balance = balance + :amount WHERE id = :id", nativeQuery = true)
-        int incrementBalance(@org.springframework.data.repository.query.Param("id") Long id,
-                        @org.springframework.data.repository.query.Param("amount") java.math.BigDecimal amount);
+        int incrementBalance(@Param("id") Long id, @Param("amount") BigDecimal amount);
 
         @Modifying
         @Query(value = "UPDATE users SET balance = balance - :amount WHERE id = :id AND balance >= :amount", nativeQuery = true)
-        int decrementBalance(@org.springframework.data.repository.query.Param("id") Long id,
-                        @org.springframework.data.repository.query.Param("amount") java.math.BigDecimal amount);
+        int decrementBalance(@Param("id") Long id, @Param("amount") BigDecimal amount);
 
         @Modifying
         @Transactional
         @Query(value = "UPDATE users SET balance = balance - :amount WHERE id = :id AND balance >= :amount", nativeQuery = true)
-        int decrementIfEnough(@org.springframework.data.repository.query.Param("id") Long id,
-                        @org.springframework.data.repository.query.Param("amount") java.math.BigDecimal amount);
+        int decrementIfEnough(@Param("id") Long id, @Param("amount") BigDecimal amount);
 
 }

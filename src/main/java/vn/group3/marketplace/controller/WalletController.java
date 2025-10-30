@@ -3,11 +3,14 @@ package vn.group3.marketplace.controller;
 import vn.group3.marketplace.service.VNPayService;
 import vn.group3.marketplace.service.WalletService;
 import vn.group3.marketplace.service.AuthenticationRefreshService;
+import vn.group3.marketplace.service.SellerStoreService;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 import vn.group3.marketplace.domain.entity.User;
+import vn.group3.marketplace.domain.entity.WalletTransaction;
+import vn.group3.marketplace.domain.enums.WalletTransactionStatus;
 import vn.group3.marketplace.security.CustomUserDetails;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,14 +33,17 @@ public class WalletController {
     private final VNPayService vnpayService;
     private final vn.group3.marketplace.service.WalletTransactionQueueService walletTransactionQueueService;
     private final AuthenticationRefreshService authenticationRefreshService;
+    private final SellerStoreService sellerStoreService;
 
     public WalletController(WalletService walletService, VNPayService vnpayService,
             vn.group3.marketplace.service.WalletTransactionQueueService walletTransactionQueueService,
-            AuthenticationRefreshService authenticationRefreshService) {
+            AuthenticationRefreshService authenticationRefreshService,
+            SellerStoreService sellerStoreService) {
         this.walletService = walletService;
         this.vnpayService = vnpayService;
         this.walletTransactionQueueService = walletTransactionQueueService;
         this.authenticationRefreshService = authenticationRefreshService;
+        this.sellerStoreService = sellerStoreService;
     }
 
     @GetMapping
@@ -50,6 +56,20 @@ public class WalletController {
                 .orElse(java.math.BigDecimal.ZERO);
         model.addAttribute("wallet", java.util.Map.of("balance", balance));
         model.addAttribute("user", user);
+        
+        // Check if user is a seller and add deposit & escrow amounts held
+        boolean isSeller = user.getRoles().stream()
+                .anyMatch(role -> "SELLER".equals(role.getCode()));
+        if (isSeller) {
+            java.math.BigDecimal depositHeld = sellerStoreService.getTotalDepositHeld(user);
+            java.math.BigDecimal escrowHeld = sellerStoreService.getTotalEscrowHeld(user);
+            model.addAttribute("depositHeld", depositHeld);
+            model.addAttribute("escrowHeld", escrowHeld);
+            model.addAttribute("isSeller", true);
+        } else {
+            model.addAttribute("isSeller", false);
+        }
+        
         return "wallet/detail";
     }
 
@@ -95,9 +115,10 @@ public class WalletController {
 
     // User tự nạp tiền cho chính mình
     @PostMapping("/deposit")
-    public String deposit(@RequestParam java.math.BigDecimal amount,
+    public String deposit(@RequestParam(required = false) String amount,
             @AuthenticationPrincipal CustomUserDetails currentUser,
-            HttpServletRequest request) {
+            HttpServletRequest request,
+            Model model) {
         logger.debug("=== Wallet Controller Debug ===");
         logger.debug("User: {}", (currentUser != null ? currentUser.getUsername() : "NULL"));
         logger.debug("User ID: {}", (currentUser != null ? currentUser.getId() : "NULL"));
@@ -110,15 +131,33 @@ public class WalletController {
             return REDIRECT_NOT_AUTHENTICATED;
         }
 
+        // Validation: kiểm tra amount không rỗng
+        if (amount == null || amount.trim().isEmpty()) {
+            logger.warn("Amount is null or empty");
+            model.addAttribute("error", "Vui lòng nhập số tiền");
+            return "wallet/deposit";
+        }
+
+        // Convert amount từ String sang BigDecimal với validation
+        java.math.BigDecimal amountBD;
+        try {
+            amountBD = new java.math.BigDecimal(amount.trim());
+        } catch (NumberFormatException e) {
+            logger.warn("Invalid amount format: {}", amount);
+            model.addAttribute("error", "Số tiền không hợp lệ. Vui lòng nhập số nguyên (VD: 100000 )");
+            return "wallet/deposit";
+        }
+
+        // Validation số tiền phải >= 10000
+        if (amountBD.compareTo(new java.math.BigDecimal(10000)) < 0) {
+            logger.warn("Invalid amount: {} - must be >= 10000", amountBD);
+            model.addAttribute("error", "Số tiền nạp tối thiểu là 10.000 VNĐ");
+            return "wallet/deposit";
+        }
+
         // Lấy User entity từ CustomUserDetails
         User user = currentUser.getUser();
         logger.debug("User from CustomUserDetails: {}", (user != null ? user.getUsername() : "NULL"));
-
-        // Validation số tiền
-        if (amount == null || amount.compareTo(new java.math.BigDecimal(10000)) < 0) {
-            logger.warn("Invalid amount: {}", amount);
-            return "redirect:/wallet/deposit?error=invalid_amount";
-        }
 
         String paymentRef = java.util.UUID.randomUUID().toString();
         String ip = vnpayService.getIpAddress(request);
@@ -128,32 +167,37 @@ public class WalletController {
 
         // Tạo pending transaction cho user hiện tại
         try {
-            walletService.createPendingDeposit(user, amount, paymentRef);
+            walletService.createPendingDeposit(user, amountBD, paymentRef);
             if (user != null) {
-                logger.info("Created pending deposit for userId={} amount={} ref={}", user.getId(), amount, paymentRef);
+                logger.info("Created pending deposit for userId={} amount={} ref={}", user.getId(), amountBD,
+                        paymentRef);
             } else {
-                logger.info("Created pending deposit for unknown user amount={} ref={}", amount, paymentRef);
+                logger.info("Created pending deposit for unknown user amount={} ref={}", amountBD, paymentRef);
             }
         } catch (Exception e) {
             logger.error("Error creating pending deposit: {}", e.getMessage(), e);
-            return "redirect:/wallet/deposit?error=database";
+            model.addAttribute("error", "Lỗi hệ thống khi tạo yêu cầu nạp tiền");
+            return "wallet/deposit";
         }
 
         try {
-            String paymentUrl = vnpayService.generateVNPayURL(amount.doubleValue(), paymentRef, ip);
+            String paymentUrl = vnpayService.generateVNPayURL(amountBD.doubleValue(), paymentRef, ip);
             logger.debug("Generated VNPay URL: {}", paymentUrl);
             logger.debug("Redirecting to VNPay...");
             logger.debug("=== End Wallet Controller Debug ===");
             return "redirect:" + paymentUrl;
         } catch (UnsupportedEncodingException e) {
             logger.error("Encoding error: {}", e.getMessage(), e);
-            return "redirect:/wallet/deposit?error=encoding";
+            model.addAttribute("error", "Lỗi encoding URL thanh toán");
+            return "wallet/deposit";
         } catch (IllegalArgumentException e) {
             logger.error("Invalid VNPay configuration: {}", e.getMessage(), e);
-            return "redirect:/wallet/deposit?error=config";
+            model.addAttribute("error", "Lỗi cấu hình VNPay");
+            return "wallet/deposit";
         } catch (Exception e) {
             logger.error("Unexpected error while generating VNPay URL: {}", e.getMessage(), e);
-            return "redirect:/wallet/deposit?error=vnpay";
+            model.addAttribute("error", "Lỗi hệ thống khi tạo URL thanh toán");
+            return "wallet/deposit";
         }
     }
 
@@ -178,8 +222,12 @@ public class WalletController {
             logger.info("Payment successful (ref={}), enqueueing deposit processing...", paymentRef);
 
             try {
-                // Tìm userId từ paymentRef bằng API rõ ràng trên WalletService
-                Long partitionUserId = walletService.findUserIdByPaymentRef(paymentRef).orElse(0L);
+                // Tìm userId từ paymentRef từ  WalletService
+                Long partitionUserId = walletService.findUserIdByPaymentRef(paymentRef)
+                    .orElseThrow(() -> {
+                        logger.error("❌ Transaction not found for paymentRef={}", paymentRef);
+                        return new IllegalArgumentException("Transaction not found: " + paymentRef);
+                    });
 
                 var future = walletTransactionQueueService.enqueueDeposit(partitionUserId, paymentRef);
 
@@ -193,7 +241,35 @@ public class WalletController {
                             paymentRef);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    logger.warn("Deposit processing interrupted for ref={}", paymentRef);
+                    logger.error("❌ Deposit processing interrupted for ref={}", paymentRef);
+                    
+                    // ✅ Check transaction status to see if payment was actually processed
+                    try {
+                        java.util.Optional<WalletTransaction> txOpt = walletService
+                            .findTransactionByPaymentRef(paymentRef);
+                        
+                        if (txOpt.isPresent()) {
+                            WalletTransaction tx = txOpt.get();
+                            WalletTransactionStatus status = tx.getPaymentStatus();
+                            
+                            if (status == WalletTransactionStatus.SUCCESS) {
+                                logger.info("✅ Deposit already processed successfully despite interrupt");
+                                // Tiền đã cộng rồi - return success an toàn
+                                authenticationRefreshService.refreshAuthenticationContext();
+                                return "wallet/success";
+                            } else {
+                                logger.error("❌ Transaction status={} (not SUCCESS), cannot confirm deposit", status);
+                            }
+                        } else {
+                            logger.error("❌ Transaction not found for ref={}", paymentRef);
+                        }
+                    } catch (Exception checkEx) {
+                        logger.error("Error checking transaction status: {}", checkEx.getMessage(), checkEx);
+                    }
+                    
+                    // Không thể xác nhận tiền đã cộng → return failure
+                    logger.warn("⚠️ Cannot confirm deposit status after interrupt, returning failure page");
+                    return "wallet/failure";
                 }
 
                 // REFRESH AUTHENTICATION để cập nhật số dư trong session
@@ -206,6 +282,13 @@ public class WalletController {
             }
         } else {
             logger.warn("Payment failed with response code: {}", responseCode);
+            try {
+                // Cập nhật trạng thái giao dịch thành CANCELLED khi thanh toán thất bại
+                walletService.updateTransactionStatusToCancelled(paymentRef);
+                logger.info("Transaction status updated to CANCELLED for ref={}", paymentRef);
+            } catch (Exception e) {
+                logger.error("Error updating transaction status to CANCELLED: {}", e.getMessage(), e);
+            }
             return "wallet/failure";
         }
     }

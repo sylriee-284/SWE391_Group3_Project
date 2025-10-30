@@ -32,14 +32,7 @@
                     <div class="content" id="content">
                         <div class="container-fluid">
                             <h1>
-                                <c:choose>
-                                    <c:when test="${isSeller}">
-                                        <i class="fas fa-shop"></i> Store Orders
-                                    </c:when>
-                                    <c:otherwise>
-                                        <i class="fas fa-shopping-cart"></i> My Orders
-                                    </c:otherwise>
-                                </c:choose>
+                                <i class="fas fa-shopping-cart"></i> My Orders
                             </h1>
 
                             <!-- Filter Section -->
@@ -95,10 +88,7 @@
                                                     <div class="resizer"></div>
                                                 </th>
                                                 <th class="sortable" data-column="2" data-type="text">
-                                                    <c:choose>
-                                                        <c:when test="${isSeller}">Buyer</c:when>
-                                                        <c:otherwise>Store</c:otherwise>
-                                                    </c:choose>
+                                                    Store
                                                     <div class="resizer"></div>
                                                 </th>
                                                 <th class="sortable" data-column="3" data-type="number">
@@ -147,18 +137,12 @@
                                                         </c:if>
                                                     </td>
                                                     <td>
-                                                        <c:choose>
-                                                            <c:when test="${isSeller}">
-                                                                <c:if test="${order.buyer != null}">
-                                                                    ${order.buyer.username}
-                                                                </c:if>
-                                                            </c:when>
-                                                            <c:otherwise>
-                                                                <c:if test="${order.sellerStore != null}">
-                                                                    ${order.sellerStore.storeName}
-                                                                </c:if>
-                                                            </c:otherwise>
-                                                        </c:choose>
+                                                        <c:if test="${order.sellerStore != null}">
+                                                            ${order.sellerStore.storeName}
+                                                        </c:if>
+                                                        <c:if test="${order.sellerStore == null}">
+                                                            N/A
+                                                        </c:if>
                                                     </td>
                                                     <td>${order.quantity}</td>
                                                     <td>
