@@ -6,6 +6,7 @@
             <div class="sidebar" id="sidebar">
                 <ul class="menu">
                     <li><a href="/homepage">🏠 Trang chủ</a></li>
+                    <li><a href="/wallet">💰 Ví của tôi</a></li>
 
                     <c:if test="${pageContext.request.userPrincipal == null}">
                         <li><a href="/register">📝 Đăng ký ngay</a></li>
