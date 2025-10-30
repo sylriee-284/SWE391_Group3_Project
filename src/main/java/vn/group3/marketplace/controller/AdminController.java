@@ -1,5 +1,10 @@
 package vn.group3.marketplace.controller;
 
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -7,15 +12,21 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import vn.group3.marketplace.domain.entity.User;
+import vn.group3.marketplace.domain.enums.StoreStatus;
 import vn.group3.marketplace.service.UserService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import vn.group3.marketplace.domain.entity.SellerStore;
 import vn.group3.marketplace.domain.entity.SystemSetting;
+import vn.group3.marketplace.service.SellerStoreService;
 import vn.group3.marketplace.service.SystemSettingService;
 
 @Controller
@@ -26,11 +37,14 @@ public class AdminController {
 
     private final UserService userService;
     private final SystemSettingService systemSettingService;
+    private final SellerStoreService sellerStoreService;
 
     public AdminController(UserService userService,
-            SystemSettingService systemSettingService) { // <- thêm tham số này
+            SystemSettingService systemSettingService,
+            SellerStoreService sellerStoreService) {
         this.userService = userService;
-        this.systemSettingService = systemSettingService; // <- gán vào field
+        this.systemSettingService = systemSettingService;
+        this.sellerStoreService = sellerStoreService;
     }
 
     private static final String SUCCESS_MESSAGE = "successMessage";
@@ -53,27 +67,39 @@ public class AdminController {
 
     @GetMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
-    public String listUsers(@RequestParam(defaultValue = "1") int page,
+    public String listUsers(
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String phone,
             Model model) {
+
         vn.group3.marketplace.domain.enums.UserStatus st = null;
         if (status != null && !status.isBlank()) {
             try {
                 st = vn.group3.marketplace.domain.enums.UserStatus.valueOf(status.toUpperCase());
             } catch (IllegalArgumentException ignore) {
-                st = null; // nếu sai chuỗi thì bỏ lọc
             }
         }
 
-        Page<User> p = userService.findUsers(page - 1, size, st);
+        Page<User> p = userService.searchUsers(page - 1, size, id, username, email, phone, st);
 
         model.addAttribute("users", p.getContent());
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", p.getTotalPages());
         model.addAttribute("pageSize", size);
-        model.addAttribute("status", status); // để giữ lại select đã chọn
+
+        // giữ lại filter để bind về form
+        model.addAttribute("status", status);
+        model.addAttribute("id", id);
+        model.addAttribute("username", username);
+        model.addAttribute("email", email);
+        model.addAttribute("phone", phone);
         model.addAttribute("pageTitle", "Quản lý người dùng");
+
         return "admin/users";
     }
 
@@ -149,12 +175,32 @@ public class AdminController {
     // GIỮ một endpoint lưu duy nhất cho form tạo/sửa
     @PostMapping("/users/save")
     @PreAuthorize("hasRole('ADMIN')")
-    public String saveUserFromAdmin(
-            @ModelAttribute("user") vn.group3.marketplace.domain.entity.User user,
-            @RequestParam(value = "roleIds", required = false) java.util.List<Long> roleIds,
-            RedirectAttributes ra) {
+    public String saveUserFromAdmin(@ModelAttribute("user") User user,
+            @RequestParam(value = "roleIds", required = false) List<Long> roleIds,
+            Model model, RedirectAttributes ra) {
 
-        userService.saveFromAdminWithRoles(user, roleIds); // NEW: set mật khẩu mặc định + roles
+        try {
+            userService.saveFromAdminWithRoles(user, roleIds);
+        } catch (IllegalArgumentException ex) {
+            // Chuẩn bị lại dữ liệu cho form
+            model.addAttribute("user", user);
+            model.addAttribute("formMode", user.getId() == null ? "create" : "edit");
+            model.addAttribute("pageTitle", (user.getId() == null ? "Tạo" : "Chỉnh sửa") + " người dùng");
+            model.addAttribute("allRoles", userService.getAllRoles());
+            model.addAttribute("selectedRoleIds",
+                    roleIds == null ? java.util.Set.of(userService.getDefaultUserRoleId())
+                            : new java.util.HashSet<>(roleIds));
+
+            // mapping field -> thông báo
+            switch (ex.getMessage()) {
+                case "USERNAME_DUPLICATED" -> model.addAttribute("usernameError", "Username đã tồn tại.");
+                case "EMAIL_DUPLICATED" -> model.addAttribute("emailError", "Email đã tồn tại.");
+                case "PHONE_DUPLICATED" -> model.addAttribute("phoneError", "Số điện thoại đã tồn tại.");
+                default -> throw ex;
+            }
+            return "admin/user_form"; // TRẢ LẠI FORM để hiện lỗi cạnh ô input
+        }
+
         ra.addFlashAttribute("success",
                 user.getId() == null ? "Tạo người dùng thành công" : "Cập nhật người dùng thành công");
         return "redirect:/admin/users";
@@ -379,6 +425,91 @@ public class AdminController {
             redirectAttributes.addFlashAttribute(ERROR_MESSAGE, "Lỗi khi xóa cài đặt: " + e.getMessage());
         }
         return REDIRECT_SYSTEM_CONFIG;
+    }
+
+    // GET /admin/stores
+    @GetMapping("/stores")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String listStores(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String status, // ACTIVE/INACTIVE/BANNED/PENDING
+            @RequestParam(name = "owner", required = false) Long ownerId,
+            @RequestParam(name = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdFrom,
+            @RequestParam(name = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo,
+            Model model) {
+
+        if (page < 1)
+            page = 1;
+        if (size <= 0)
+            size = 5;
+
+        StoreStatus st = (status == null || status.isBlank()) ? null : StoreStatus.valueOf(status);
+
+        // Đếm tổng theo filter
+        int totalItems = sellerStoreService.countStores(id, name, st, ownerId, createdFrom, createdTo);
+        int totalPages = (int) Math.ceil(totalItems / (double) size);
+        int offset = (page - 1) * size;
+
+        // Lấy dữ liệu trang hiện tại
+        List<SellerStore> stores = sellerStoreService.searchStoresPaged(
+                id, name, st, ownerId, createdFrom, createdTo, offset, size);
+
+        model.addAttribute("stores", stores);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("pageSize", size);
+        model.addAttribute("totalPages", totalPages);
+
+        // giữ filter để bind lại form + build query
+        model.addAttribute("paramId", id == null ? "" : String.valueOf(id));
+        model.addAttribute("paramName", name);
+        model.addAttribute("paramStatus", status);
+        model.addAttribute("paramFrom", createdFrom);
+        model.addAttribute("paramTo", createdTo);
+
+        return "admin/stores";
+    }
+
+    // POST /admin/stores/ban
+    @PostMapping("/stores/ban")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String banStore(@RequestParam("storeId") Long storeId, RedirectAttributes ra) {
+        boolean ok = sellerStoreService.banStore(storeId); // transaction ở service
+        if (ok)
+            ra.addFlashAttribute("successMessage", "Đã ban shop #" + storeId);
+        else
+            ra.addFlashAttribute("errorMessage", "Không tìm thấy shop #" + storeId);
+        return "redirect:/admin/stores";
+    }
+
+    @PostMapping("/stores/activate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String activateStore(@RequestParam("storeId") Long storeId, RedirectAttributes ra) {
+        try {
+            sellerStoreService.activateStore(storeId); // transaction ở Service
+            ra.addFlashAttribute("successMessage", "Đã kích hoạt shop #" + storeId);
+        } catch (Exception ex) {
+            ra.addFlashAttribute("errorMessage", "Kích hoạt thất bại: " + ex.getMessage());
+        }
+        return "redirect:/admin/stores";
+    }
+
+    @PostMapping("/stores/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String changeStatus(@RequestParam("storeId") Long storeId,
+            @RequestParam("status") StoreStatus status,
+            RedirectAttributes ra) {
+        try {
+            sellerStoreService.changeStatus(storeId, status);
+            ra.addFlashAttribute("successMessage", "Đã đổi trạng thái shop #" + storeId + " → " + status);
+        } catch (IllegalArgumentException ex) {
+            ra.addFlashAttribute("errorMessage", ex.getMessage());
+        } catch (Exception ex) {
+            ra.addFlashAttribute("errorMessage", "Đổi trạng thái thất bại: " + ex.getMessage());
+        }
+        return "redirect:/admin/stores";
     }
 
 }

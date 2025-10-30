@@ -119,9 +119,14 @@
                                     <div class="col-12">
                                         <label class="form-label">Tên danh mục <span
                                                 class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" name="name" value="${category.name}"
-                                            required minlength="2" maxlength="100">
-                                        <div class="invalid-feedback">Tên danh mục là bắt buộc (2-100 ký tự).</div>
+                                        <input type="text"
+                                            class="form-control ${not empty nameError ? 'is-invalid' : ''}" name="name"
+                                            value="${fn:escapeXml(category.name)}" required minlength="2"
+                                            maxlength="100">
+                                        <div class="invalid-feedback">
+                                            <c:out
+                                                value="${empty nameError ? 'Tên danh mục là bắt buộc (2-100 ký tự).' : nameError}" />
+                                        </div>
                                     </div>
                                     <div class="col-12">
                                         <label class="form-label">Mô tả</label>
@@ -441,6 +446,34 @@
                             });
                         })();
                     </script>
+
+                    <script>
+                        (function () {
+                            var CP = '${pageContext.request.contextPath}';
+                            function isAbs(u) { return /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u); } // http:, https:, mailto:, ...
+
+                            function fixHref(a) {
+                                var href = a.getAttribute('href');
+                                if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+                                if (isAbs(href)) return;                    // link tuyệt đối thì bỏ qua
+                                if (href.startsWith(CP + '/')) return;      // đã có contextPath thì bỏ qua
+                                var abs = href.startsWith('/') ? (CP + href) : (CP + '/' + href.replace(/^(\.\/)+/, ''));
+                                a.setAttribute('href', abs);
+                            }
+                            function fixAction(f) {
+                                var act = f.getAttribute('action');
+                                if (!act || isAbs(act)) return;
+                                if (act.startsWith(CP + '/')) return;
+                                var abs = act.startsWith('/') ? (CP + act) : (CP + '/' + act.replace(/^(\.\/)+/, ''));
+                                f.setAttribute('action', abs);
+                            }
+
+                            // Chỉ sửa link trong navbar & sidebar (không đụng nội dung trang)
+                            document.querySelectorAll('.navbar a[href], .sidebar a[href]').forEach(fixHref);
+                            document.querySelectorAll('.navbar form[action], .sidebar form[action]').forEach(fixAction);
+                        })();
+                    </script>
+
 
                 </body>
 

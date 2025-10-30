@@ -170,9 +170,30 @@ public class CategoryService {
 
     @Transactional
     public Category save(Category c) {
+        // chuẩn hoá parent
         if (c.getParent() != null && c.getParent().getId() != null && c.getParent().getId() == 0) {
             c.setParent(null);
         }
+
+        // ---- UNIQUE CHECK theo cùng cấp ----
+        final Long excludeId = c.getId();
+        final String name = c.getName() == null ? "" : c.getName().trim();
+        final Long parentId = (c.getParent() == null ? null : c.getParent().getId());
+
+        boolean duplicated;
+        if (parentId == null) {
+            var ex = categoryRepository.findByNameIgnoreCaseAndParentIsNull(name);
+            duplicated = ex.isPresent() && (excludeId == null || !ex.get().getId().equals(excludeId));
+        } else {
+            var ex = categoryRepository.findByNameIgnoreCaseAndParent_Id(name, parentId);
+            duplicated = ex.isPresent() && (excludeId == null || !ex.get().getId().equals(excludeId));
+        }
+        if (duplicated) {
+            // ném lỗi có ý nghĩa để Controller bắt và trả về form
+            throw new IllegalArgumentException("CATEGORY_NAME_DUPLICATED");
+        }
+        // -----------------------------------
+
         if (c.getId() == null) {
             c.setIsDeleted(false);
             em.persist(c);

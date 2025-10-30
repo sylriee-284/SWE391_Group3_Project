@@ -1,12 +1,13 @@
 package vn.group3.marketplace.service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -231,32 +232,87 @@ public class UserService {
     }
 
     @Transactional
-    public User saveFromAdminWithRoles(User incoming, java.util.List<Long> roleIds) {
+    public User saveFromAdminWithRoles(User incoming, List<Long> roleIds) {
+        // ----- UNIQUE CHECK -----
+        Long id = incoming.getId();
+
+        // username
+        userRepository.findByUsername(incoming.getUsername()).ifPresent(ex -> {
+            if (id == null || !ex.getId().equals(id)) {
+                throw new IllegalArgumentException("USERNAME_DUPLICATED");
+            }
+        });
+
+        // email
+        userRepository.findByEmail(incoming.getEmail()).ifPresent(ex -> {
+            if (id == null || !ex.getId().equals(id)) {
+                throw new IllegalArgumentException("EMAIL_DUPLICATED");
+            }
+        });
+
+        // nếu muốn ràng buộc phone là unique:
+        if (incoming.getPhone() != null && !incoming.getPhone().isBlank()) {
+            Optional.ofNullable(userRepository.findByPhone(incoming.getPhone()).orElse(null)).ifPresent(ex -> {
+                if (id == null || !ex.getId().equals(id)) {
+                    throw new IllegalArgumentException("PHONE_DUPLICATED");
+                }
+            });
+        }
+        // -------------------------
+
         if (incoming.getId() == null) {
-            // CREATE
             if (incoming.getPasswordHash() == null || incoming.getPasswordHash().isBlank()) {
                 incoming.setPasswordHash(passwordEncoder.encode(DEFAULT_PLAIN_PASSWORD));
             }
             if (incoming.getIsDeleted() == null)
                 incoming.setIsDeleted(false);
-
-            incoming.setRoles(mapRoleIds(roleIds)); // NEW
+            incoming.setRoles(mapRoleIds(roleIds));
             return userRepository.save(incoming);
-
         } else {
-            // UPDATE
             User db = userRepository.findById(incoming.getId())
                     .orElseThrow(() -> new IllegalArgumentException("User không tồn tại: id=" + incoming.getId()));
-
             db.setUsername(incoming.getUsername());
             db.setEmail(incoming.getEmail());
             db.setFullName(incoming.getFullName());
             db.setPhone(incoming.getPhone());
             db.setStatus(incoming.getStatus());
-
-            db.setRoles(mapRoleIds(roleIds)); // NEW: thay roles theo form
+            db.setRoles(mapRoleIds(roleIds));
             return userRepository.save(db);
         }
+    }
+
+    public Page<User> searchUsers(int page, int size,
+            Long id, String username, String email, String phone,
+            UserStatus status) {
+        Pageable pr = PageRequest.of(Math.max(0, page), Math.max(1, size));
+
+        Specification<User> spec = Specification.where(null);
+
+        if (id != null) {
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("id"), id));
+        }
+        if (username != null && !username.trim().isEmpty()) {
+            String v = "%" + username.trim().toLowerCase() + "%";
+            spec = spec.and((root, q, cb) -> cb.like(cb.lower(root.get("username")), v));
+        }
+        if (email != null && !email.trim().isEmpty()) {
+            String v = "%" + email.trim().toLowerCase() + "%";
+            spec = spec.and((root, q, cb) -> cb.like(cb.lower(root.get("email")), v));
+        }
+        if (phone != null && !phone.trim().isEmpty()) {
+            String v = "%" + phone.trim() + "%";
+            spec = spec.and((root, q, cb) -> cb.like(root.get("phone"), v));
+        }
+        if (status != null) {
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("status"), status));
+        }
+
+        // (Tuỳ chọn) loại user có role ADMIN từ DB để phân trang chuẩn:
+        // Join<Object, Object> roles = root.join("roles", JoinType.LEFT);
+        // q.distinct(true);
+        // return cb.notEqual(roles.get("code"), "ADMIN");
+
+        return userRepository.findAll(spec, pr);
     }
 
 }
