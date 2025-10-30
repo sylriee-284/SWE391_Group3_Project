@@ -397,13 +397,6 @@ public class SellerStoreService {
     }
 
     /**
-     * Get platform fee rate from system settings
-     */
-    public Double getPlatformFeeRate() {
-        return systemSettingService.getDoubleValue("fee.fee.percentage_fee", 3.0);
-    }
-
-    /**
      * Get total deposit amount being held for active stores owned by user
      * Returns the sum of all deposit amounts from ACTIVE stores
      */
