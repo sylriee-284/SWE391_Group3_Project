@@ -32,6 +32,12 @@ public class SystemSettingService {
                 .orElse(null);
     }
 
+    // Get admin user ID
+    public Long getAdminUserId() {
+        String adminUserId = getSettingValue("wallet.admin_default_receive_commission", "1");
+        return Long.parseLong(adminUserId);
+    }
+
     // Lấy giá trị setting với giá trị mặc định
     public String getSettingValue(String key, String defaultValue) {
         String value = getSettingValue(key);

@@ -41,33 +41,28 @@
                             <!-- Contact Items -->
                             <div class="contact-items">
                                 <c:forEach var="conversation" items="${conversations}">
-                                    <c:set var="conversationPartner"
-                                        value="${messageService.getConversationPartner(conversation, currentUser.id)}" />
-                                    <a href="/chat?chat-to=${conversationPartner.username}" class="contact-item-link">
+                                    <a href="/chat?conversationId=${conversation.id}" class="contact-item-link">
                                         <div class="contact-item">
-                                            <c:choose>
-                                                <c:when test="${messageService.isAdminUser(conversationPartner)}">
-                                                    <img src="${pageContext.request.contextPath}/images/chat/mmo-avatar.jpg"
-                                                        alt="${messageService.getUserDisplayName(conversationPartner)}"
-                                                        class="contact-avatar">
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <img src="${pageContext.request.contextPath}/images/chat/mmo-user.jpg"
-                                                        alt="${messageService.getUserDisplayName(conversationPartner)}"
-                                                        class="contact-avatar">
-                                                </c:otherwise>
-                                            </c:choose>
+                                            <img src="${pageContext.request.contextPath}/images/chat/mmo-user.jpg"
+                                                alt="${conversation.conversationPartnerName}" class="contact-avatar">
                                             <div class="contact-info">
                                                 <div class="contact-name-row">
                                                     <span
-                                                        class="contact-name">${messageService.getUserDisplayName(conversationPartner)}</span>
+                                                        class="contact-name">${conversation.conversationPartnerName}</span>
                                                 </div>
                                                 <div class="contact-preview">
-                                                    ${messageService.getConversationPreview(conversation,
-                                                    currentUser.id)}
+                                                    ${conversation.lastMessage}
                                                 </div>
                                                 <div class="contact-date">
-                                                    ${messageService.formatMessageTime(conversation.createdAt)}</div>
+                                                    <c:choose>
+                                                        <c:when test="${not empty conversation.lastMessageAt}">
+                                                            ${conversation.lastMessageAt}
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            ${conversation.createdAt}
+                                                        </c:otherwise>
+                                                    </c:choose>
+                                                </div>
                                             </div>
                                         </div>
                                     </a>
@@ -94,14 +89,21 @@
                             <!-- Chat Header -->
                             <div class="chat-header">
                                 <h4>
-                                    ${messageService.getUserDisplayName(selectedUser)}
+                                    <c:choose>
+                                        <c:when test="${not empty lastConversation}">
+                                            ${lastConversation.conversationPartnerName}
+                                        </c:when>
+                                        <c:otherwise>
+                                            Select a conversation
+                                        </c:otherwise>
+                                    </c:choose>
                                 </h4>
                             </div>
 
                             <!-- Chat Messages -->
                             <div class="chat-messages" id="chatMessages">
-                                <c:forEach var="message" items="${messages}">
-                                    <c:set var="isSent" value="${message.senderUser.id eq currentUser.id}" />
+                                <c:forEach var="message" items="${lastConversationChat}">
+                                    <c:set var="isSent" value="${message.senderId eq currentUser.id}" />
                                     <c:choose>
                                         <c:when test="${isSent}">
                                             <div
@@ -113,7 +115,8 @@
                                                     </div>
                                                     <div
                                                         style="font-size: 11px !important; color: #999 !important; margin-top: 4px !important; text-align: right !important;">
-                                                        ${messageService.formatMessageTime(message.createdAt)}</div>
+                                                        ${message.timestamp}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </c:when>
@@ -127,7 +130,8 @@
                                                     </div>
                                                     <div
                                                         style="font-size: 11px !important; color: #999 !important; margin-top: 4px !important; text-align: left !important;">
-                                                        ${messageService.formatMessageTime(message.createdAt)}</div>
+                                                        ${message.timestamp}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </c:otherwise>
@@ -136,15 +140,25 @@
                             </div>
 
                             <!-- Chat Input Area -->
-                            <div class="chat-input-area">
-                                <div class="chat-input-row">
-                                    <input type="text" class="chat-input" placeholder="Type a message"
-                                        id="messageInput">
-                                    <button class="send-button" id="sendButton">
-                                        <i class="fas fa-paper-plane"></i>
-                                    </button>
+                            <c:if test="${not empty lastConversation}">
+                                <div class="chat-input-area">
+                                    <div class="chat-input-row">
+                                        <input type="text" class="chat-input" placeholder="Type a message"
+                                            id="messageInput" data-conversation-id="${lastConversation.id}"
+                                            data-receiver-id="${lastConversation.conversationPartnerId}">
+                                        <button class="send-button" id="sendButton">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            </c:if>
+                            <c:if test="${empty lastConversation}">
+                                <div class="chat-input-area">
+                                    <div style="text-align: center; padding: 20px; color: #999;">
+                                        Select a conversation to start chatting
+                                    </div>
+                                </div>
+                            </c:if>
                         </div>
                     </div>
                 </div>
@@ -183,155 +197,6 @@
 
                 <!-- Common JavaScript -->
                 <script>
-                    document.addEventListener('DOMContentLoaded', function () {
-                        const messageInput = document.getElementById('messageInput');
-                        const sendButton = document.getElementById('sendButton');
-                        const currentUserId = '${currentUser.id}';
-
-                        <c:choose>
-                            <c:when test="${selectedUser != null}">
-                                const partnerUserId = ${selectedUser.id};
-                            </c:when>
-                            <c:otherwise>
-                                const partnerUserId = null;
-                            </c:otherwise>
-                        </c:choose>
-
-                        // Auto scroll to bottom to show latest messages
-                        const chatMessages = document.getElementById('chatMessages');
-                        if (chatMessages) {
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
-                        }
-
-                        function sendMessage() {
-                            const content = messageInput.value.trim();
-                            if (!content || partnerUserId === null) return;
-
-                            fetch('/api/chat/send', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    partnerUserId: partnerUserId,
-                                    content: content
-                                })
-                            })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        // Add message to UI immediately
-                                        const chatMessages = document.getElementById('chatMessages');
-                                        if (!chatMessages) {
-                                            console.error('Chat messages container not found');
-                                            return;
-                                        }
-
-                                        const timestamp = new Date().toLocaleTimeString('vi-VN', {
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        });
-
-                                        const messageHTML = `
-                                            <div style="display: flex !important; margin-bottom: 15px; align-items: flex-start; justify-content: flex-end;">
-                                                <div style="max-width: 70% !important;">
-                                                    <div style="padding: 12px 16px !important; border-radius: 18px !important; font-size: 14px !important; line-height: 1.4 !important; background: #0d6efd !important; color: #fff !important; border-bottom-right-radius: 4px !important; word-break: normal !important; white-space: normal !important;">${'${content}'}</div>
-                                                    <div style="font-size: 11px !important; color: #999 !important; margin-top: 4px !important; text-align: right !important;">${'${timestamp}'}</div>
-                                                </div>
-                                            </div>
-                                        `;
-
-                                        chatMessages.insertAdjacentHTML('beforeend', messageHTML);
-                                        chatMessages.scrollTop = chatMessages.scrollHeight;
-                                    }
-                                })
-                                .catch(error => console.error('Error:', error));
-
-                            messageInput.value = '';
-                        }
-
-                        sendButton.addEventListener('click', sendMessage);
-                        messageInput.addEventListener('keypress', function (e) {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                sendMessage();
-                            }
-                        });
-                    });
-
-                    // Subscribe to WebSocket messages - Subscribe to CURRENT USER's queue
-                    if (stompClient && stompClient.connected && partnerUserId) {
-                        stompClient.subscribe('/user/' + currentUserId + '/queue/messages', function (message) {
-                            try {
-                                // Parse the message
-                                const messageData = JSON.parse(message.body);
-
-                                // Only show messages from the partner
-                                if (messageData.senderUserId !== partnerUserId) {
-                                    return;
-                                }
-
-                                // Create message element
-                                const chatMessages = document.getElementById('chatMessages');
-                                if (!chatMessages) return;
-
-                                // Format timestamp - handle both LocalDateTime and millis
-                                let timestamp;
-                                if (messageData.timestamp) {
-                                    // If timestamp is ISO string (LocalDateTime)
-                                    if (typeof messageData.timestamp === 'string') {
-                                        timestamp = new Date(messageData.timestamp).toLocaleTimeString('vi-VN', {
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        });
-                                    } else {
-                                        // If timestamp is milliseconds
-                                        timestamp = new Date(messageData.timestamp).toLocaleTimeString('vi-VN', {
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        });
-                                    }
-                                } else {
-                                    timestamp = new Date().toLocaleTimeString('vi-VN', {
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    });
-                                }
-
-                                // Create message HTML
-                                const messageHTML = `
-                                    <div style="display: flex !important; margin-bottom: 15px; align-items: flex-start; justify-content: flex-start;">
-                                        <div style="max-width: 70% !important;">
-                                            <div style="padding: 12px 16px !important; border-radius: 18px !important; font-size: 14px !important; line-height: 1.4 !important; background: #e5e5e5 !important; color: #333 !important; border-bottom-left-radius: 4px !important; word-break: normal !important; white-space: normal !important;">${messageData.content}</div>
-                                            <div style="font-size: 11px !important; color: #999 !important; margin-top: 4px !important; text-align: left !important;">${timestamp}</div>
-                                        </div>
-                                    </div>
-                                `;
-
-                                chatMessages.insertAdjacentHTML('beforeend', messageHTML);
-                                chatMessages.scrollTop = chatMessages.scrollHeight;
-                            } catch (error) {
-                                console.error('Error processing message:', error);
-                            }
-                        });
-                    }
-
-                    // Start chat refresh when page loads
-                    startChatRefresh();
-
-                    // Stop refresh when page is hidden or user leaves
-                    document.addEventListener('visibilitychange', function () {
-                        if (document.hidden) {
-                            stopChatRefresh();
-                        } else {
-                            startChatRefresh();
-                        }
-                    });
-
-                    // Stop refresh when user leaves the page
-                    window.addEventListener('beforeunload', function () {
-                        stopChatRefresh();
-                    });
-
-
                     // Toggle sidebar function
                     function toggleSidebar() {
                         var sidebar = document.getElementById('sidebar');

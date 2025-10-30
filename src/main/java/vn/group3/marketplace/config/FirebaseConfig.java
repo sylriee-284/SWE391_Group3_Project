@@ -1,8 +1,10 @@
 package vn.group3.marketplace.config;
 
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.firestore.Firestore;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.cloud.FirestoreClient;
 import com.google.firebase.database.FirebaseDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,5 +65,10 @@ public class FirebaseConfig {
     @Bean
     public FirebaseDatabase firebaseDatabase() {
         return FirebaseDatabase.getInstance(firebaseApp());
+    }
+
+    @Bean
+    public Firestore firestore() {
+        return FirestoreClient.getFirestore();
     }
 }

@@ -22,7 +22,7 @@ import java.io.IOException;
 public class AuthController {
 
     private final EmailService emailService;
-
+    private final FirebaseChatService firebaseChatService;
     @Autowired
     private UserService userService;
 
@@ -37,8 +37,9 @@ public class AuthController {
 
     private static final String CAPTCHA_SESSION_KEY = "CAPTCHA_TEXT";
 
-    AuthController(EmailService emailService) {
+    AuthController(EmailService emailService, FirebaseChatService firebaseChatService) {
         this.emailService = emailService;
+        this.firebaseChatService = firebaseChatService;
     }
 
     @GetMapping("/login")
@@ -411,9 +412,20 @@ public class AuthController {
                 session.removeAttribute("registration_password");
                 session.removeAttribute("registration_time");
 
+                // Get saved user
+                var savedUser = userService.findByUsername(username)
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+
                 // Success message
                 redirectAttributes.addFlashAttribute("successMessage",
                         "Đăng ký thành công! Vui lòng đăng nhập.");
+
+                // Send welcome message to user
+                try {
+                    firebaseChatService.sendWelcomeMessageAsync(savedUser.getId());
+                } catch (Exception e) {
+                    model.addAttribute("errorMessage", "Đã xảy ra lỗi khi gửi tin nhắn chào mừng. Vui lòng thử lại.");
+                }
                 return "redirect:/login";
 
             } catch (Exception ex) {
