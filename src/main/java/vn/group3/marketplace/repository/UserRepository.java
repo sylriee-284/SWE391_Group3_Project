@@ -29,6 +29,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
         @Query("SELECT u FROM User u WHERE u.username = :username OR u.email = :email")
         Optional<User> findByUsernameOrEmail(@Param("username") String username, @Param("email") String email);
 
+        Optional<User> findBySellerStore_StoreName(String storeName);
+
+        Optional<User> findByFullName(String fullName);
+
         @Modifying
         @Transactional
         @Query(value = "UPDATE users SET password_hash = ?1 WHERE email = ?2", nativeQuery = true)

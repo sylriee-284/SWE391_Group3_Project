@@ -30,7 +30,7 @@ public class ChatController {
     @GetMapping
     public String chatPage(
             @AuthenticationPrincipal CustomUserDetails currentUser,
-            @RequestParam(required = false) String conversationId,
+            @RequestParam(name = "chat-to", required = false) String conversationPartnerName,
             Model model) {
         if (currentUser == null) {
             return "redirect:/login?error=not_authenticated";
@@ -44,8 +44,10 @@ public class ChatController {
             ConversationDTO selectedConversation = null;
             List<MessageDTO> messages = null;
 
-            if (conversationId != null && !conversationId.isEmpty()) {
+            if (conversationPartnerName != null && !conversationPartnerName.isEmpty()) {
                 // User selected a specific conversation
+                String conversationId = firebaseChatService.getOrCreateConversationByPartnerName(currentUser.getId(),
+                        conversationPartnerName);
                 selectedConversation = conversations.stream()
                         .filter(c -> conversationId.equals(c.getId()))
                         .findFirst()
@@ -72,22 +74,6 @@ public class ChatController {
             e.printStackTrace();
             model.addAttribute("errorMessage", "Error loading chat: " + e.getMessage());
             return "chat/chatbox";
-        }
-    }
-
-    // Create or show conversation
-    @PostMapping("/api/conversation")
-    @ResponseBody
-    public ResponseEntity<?> getOrCreateConversation(
-            @AuthenticationPrincipal CustomUserDetails currentUser,
-            @RequestParam Long otherUserId) {
-        try {
-            String conversationId = firebaseChatService.getOrCreateConversation(
-                    currentUser.getId(),
-                    otherUserId);
-            return ResponseEntity.ok(Map.of("conversationId", conversationId));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 

@@ -41,10 +41,10 @@
                             <!-- Contact Items -->
                             <div class="contact-items">
                                 <c:forEach var="conversation" items="${conversations}">
-                                    <a href="/chat?conversationId=${conversation.id}" class="contact-item-link">
+                                    <a href="/chat?chat-to=${conversation.partnerUsername}" class="contact-item-link">
                                         <div class="contact-item">
                                             <img src="${pageContext.request.contextPath}/images/chat/mmo-user.jpg"
-                                                alt="${conversation.conversationPartnerName}" class="contact-avatar">
+                                                alt="${conversation.partnerUsername}" class="contact-avatar">
                                             <div class="contact-info">
                                                 <div class="contact-name-row">
                                                     <span
@@ -70,7 +70,7 @@
                             </div>
 
                             <!-- Contact Admin Button -->
-                            <a href="/chat/admin" class="contact-admin-btn" role="button" tabindex="0"
+                            <a href="/chat?chat-to=admin" class="contact-admin-btn" role="button" tabindex="0"
                                 aria-label="Liên hệ Admin">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2" aria-hidden="true">

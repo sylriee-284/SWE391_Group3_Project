@@ -19,4 +19,5 @@ public class ConversationDTO {
     // Additional fields enriched at runtime
     private Long conversationPartnerId;
     private String conversationPartnerName;
+    private String partnerUsername;
 }
