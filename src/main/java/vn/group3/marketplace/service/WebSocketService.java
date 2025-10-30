@@ -7,10 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import vn.group3.marketplace.dto.NotificationDTO;
-import vn.group3.marketplace.dto.MessageDTO;
 import vn.group3.marketplace.domain.entity.Notification;
 import vn.group3.marketplace.domain.entity.User;
-import vn.group3.marketplace.domain.entity.Message;
 import vn.group3.marketplace.domain.enums.NotificationType;
 import vn.group3.marketplace.repository.NotificationRepository;
 
@@ -101,24 +99,6 @@ public class WebSocketService {
 
     public void sendNotificationToUser(User user, Notification notification) {
         sendNotificationToUser(user.getId(), convertToDTO(notification));
-    }
-
-    // Send message to conversation partner via WebSocket
-    @Async("notificationTaskExecutor")
-    public void sendMessageToPartner(Message message) {
-        try {
-            // Convert Message entity to MessageDTO
-            MessageDTO messageDTO = MessageDTO.fromMessage(message);
-
-            // Send message to conversation partner
-            String destination = "/user/" + message.getReceiverUser().getId() + "/queue/messages";
-            messagingTemplate.convertAndSend(destination, messageDTO);
-
-            logger.info("Message sent via WebSocket to user {} from user {}",
-                    message.getReceiverUser().getId(), message.getSenderUser().getId());
-        } catch (Exception e) {
-            logger.error("Error sending message via WebSocket: {}", e.getMessage());
-        }
     }
 
 }

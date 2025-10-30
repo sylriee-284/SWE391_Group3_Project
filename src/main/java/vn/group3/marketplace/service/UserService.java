@@ -25,7 +25,6 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final SystemSettingService systemSettingService;
-    private final MessageService messageService;
     private static final String DEFAULT_PLAIN_PASSWORD = "123456789";
 
     public java.util.List<Role> getAllRoles() {
@@ -87,15 +86,6 @@ public class UserService {
 
         // Save user (cascade sẽ tự động lưu userRole)
         User savedUser = userRepository.save(user);
-
-        // Create welcome message from admin
-        try {
-            messageService.createWelcomeMessageForNewUser(savedUser.getId());
-        } catch (Exception e) {
-            // Log error but don't fail registration
-            System.err
-                    .println("Failed to create welcome message for user " + savedUser.getId() + ": " + e.getMessage());
-        }
     }
 
     public Optional<User> findByUsername(String username) {

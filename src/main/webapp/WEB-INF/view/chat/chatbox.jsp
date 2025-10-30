@@ -101,16 +101,37 @@
                             <!-- Chat Messages -->
                             <div class="chat-messages" id="chatMessages">
                                 <c:forEach var="message" items="${messages}">
-                                    <div
-                                        class="message ${message.senderUser.id eq currentUser.id ? 'message-sent' : 'message-received'}">
-                                        <div>
-                                            <div class="message-content">
-                                                ${message.content}
+                                    <c:set var="isSent" value="${message.senderUser.id eq currentUser.id}" />
+                                    <c:choose>
+                                        <c:when test="${isSent}">
+                                            <div
+                                                style="display: flex !important; margin-bottom: 15px; align-items: flex-start; justify-content: flex-end;">
+                                                <div style="max-width: 70% !important;">
+                                                    <div
+                                                        style="padding: 12px 16px !important; border-radius: 18px !important; font-size: 14px !important; line-height: 1.4 !important; background: #0d6efd !important; color: #fff !important; border-bottom-right-radius: 4px !important; word-break: normal !important; white-space: normal !important;">
+                                                        ${message.content}
+                                                    </div>
+                                                    <div
+                                                        style="font-size: 11px !important; color: #999 !important; margin-top: 4px !important; text-align: right !important;">
+                                                        ${messageService.formatMessageTime(message.createdAt)}</div>
+                                                </div>
                                             </div>
-                                            <div class="message-time">
-                                                ${messageService.formatMessageTime(message.createdAt)}</div>
-                                        </div>
-                                    </div>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <div
+                                                style="display: flex !important; margin-bottom: 15px; align-items: flex-start; justify-content: flex-start;">
+                                                <div style="max-width: 70% !important;">
+                                                    <div
+                                                        style="padding: 12px 16px !important; border-radius: 18px !important; font-size: 14px !important; line-height: 1.4 !important; background: #e5e5e5 !important; color: #333 !important; border-bottom-left-radius: 4px !important; word-break: normal !important; white-space: normal !important;">
+                                                        ${message.content}
+                                                    </div>
+                                                    <div
+                                                        style="font-size: 11px !important; color: #999 !important; margin-top: 4px !important; text-align: left !important;">
+                                                        ${messageService.formatMessageTime(message.createdAt)}</div>
+                                                </div>
+                                            </div>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </c:forEach>
                             </div>
 
@@ -165,6 +186,7 @@
                     document.addEventListener('DOMContentLoaded', function () {
                         const messageInput = document.getElementById('messageInput');
                         const sendButton = document.getElementById('sendButton');
+                        const currentUserId = '${currentUser.id}';
 
                         <c:choose>
                             <c:when test="${selectedUser != null}">
@@ -209,10 +231,10 @@
                                         });
 
                                         const messageHTML = `
-                                            <div class="message message-sent">
-                                                <div>
-                                                    <div class="message-content">${'${content}'}</div>
-                                                    <div class="message-time">${'${timestamp}'}</div>
+                                            <div style="display: flex !important; margin-bottom: 15px; align-items: flex-start; justify-content: flex-end;">
+                                                <div style="max-width: 70% !important;">
+                                                    <div style="padding: 12px 16px !important; border-radius: 18px !important; font-size: 14px !important; line-height: 1.4 !important; background: #0d6efd !important; color: #fff !important; border-bottom-right-radius: 4px !important; word-break: normal !important; white-space: normal !important;">${'${content}'}</div>
+                                                    <div style="font-size: 11px !important; color: #999 !important; margin-top: 4px !important; text-align: right !important;">${'${timestamp}'}</div>
                                                 </div>
                                             </div>
                                         `;
@@ -235,43 +257,79 @@
                         });
                     });
 
-                    // Subscribe to WebSocket messages
-                    if (stompClient && partnerUserId) {
-                        stompClient.subscribe('/user/' + partnerUserId + '/queue/messages', function (message) {
+                    // Subscribe to WebSocket messages - Subscribe to CURRENT USER's queue
+                    if (stompClient && stompClient.connected && partnerUserId) {
+                        stompClient.subscribe('/user/' + currentUserId + '/queue/messages', function (message) {
+                            try {
+                                // Parse the message
+                                const messageData = JSON.parse(message.body);
 
-                            // Parse the message
-                            const messageData = JSON.parse(message.body);
+                                // Only show messages from the partner
+                                if (messageData.senderUserId !== partnerUserId) {
+                                    return;
+                                }
 
-                            // Only show messages from other users (not our own)
-                            if (messageData.senderUserId !== partnerUserId) {
-                                return;
-                            }
+                                // Create message element
+                                const chatMessages = document.getElementById('chatMessages');
+                                if (!chatMessages) return;
 
-                            // Create message element
-                            const chatMessages = document.getElementById('chatMessages');
+                                // Format timestamp - handle both LocalDateTime and millis
+                                let timestamp;
+                                if (messageData.timestamp) {
+                                    // If timestamp is ISO string (LocalDateTime)
+                                    if (typeof messageData.timestamp === 'string') {
+                                        timestamp = new Date(messageData.timestamp).toLocaleTimeString('vi-VN', {
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        });
+                                    } else {
+                                        // If timestamp is milliseconds
+                                        timestamp = new Date(messageData.timestamp).toLocaleTimeString('vi-VN', {
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        });
+                                    }
+                                } else {
+                                    timestamp = new Date().toLocaleTimeString('vi-VN', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    });
+                                }
 
-                            // Format timestamp
-                            const timestamp = new Date(messageData.timestamp).toLocaleTimeString('vi-VN', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            });
-
-                            // Create message using template - simpler approach
-                            const messageHTML = `
-                                <div class="message message-received">
-                                    <div>
-                                        <div class="message-content">${messageData.content}</div>
-                                        <div class="message-time">${timestamp}</div>
+                                // Create message HTML
+                                const messageHTML = `
+                                    <div style="display: flex !important; margin-bottom: 15px; align-items: flex-start; justify-content: flex-start;">
+                                        <div style="max-width: 70% !important;">
+                                            <div style="padding: 12px 16px !important; border-radius: 18px !important; font-size: 14px !important; line-height: 1.4 !important; background: #e5e5e5 !important; color: #333 !important; border-bottom-left-radius: 4px !important; word-break: normal !important; white-space: normal !important;">${messageData.content}</div>
+                                            <div style="font-size: 11px !important; color: #999 !important; margin-top: 4px !important; text-align: left !important;">${timestamp}</div>
+                                        </div>
                                     </div>
-                                </div>
-                            `;
+                                `;
 
-                            chatMessages.insertAdjacentHTML('beforeend', messageHTML);
-
-                            // Scroll to bottom
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                                chatMessages.insertAdjacentHTML('beforeend', messageHTML);
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            } catch (error) {
+                                console.error('Error processing message:', error);
+                            }
                         });
                     }
+
+                    // Start chat refresh when page loads
+                    startChatRefresh();
+
+                    // Stop refresh when page is hidden or user leaves
+                    document.addEventListener('visibilitychange', function () {
+                        if (document.hidden) {
+                            stopChatRefresh();
+                        } else {
+                            startChatRefresh();
+                        }
+                    });
+
+                    // Stop refresh when user leaves the page
+                    window.addEventListener('beforeunload', function () {
+                        stopChatRefresh();
+                    });
 
 
                     // Toggle sidebar function

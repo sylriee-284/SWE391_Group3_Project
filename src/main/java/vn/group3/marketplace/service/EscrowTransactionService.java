@@ -178,7 +178,6 @@ public class EscrowTransactionService {
     @Transactional
     public CompletableFuture<Void> releasePaymentFromEscrow(Order order) {
         // Get admin default wallet id from system setting
-        // (wallet.admin_default_receive_commission)
         Long adminDefaultWalletId = Long
                 .parseLong(systemSettingService.getSettingValue("wallet.admin_default_receive_commission", "32"));
         try {
