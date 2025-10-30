@@ -130,6 +130,10 @@
                                                     <span class="text-muted"> Total review:
                                                         ${product.ratingCount}</span>
                                                 </small>
+                                                <span class="ms-1 text-muted">
+                                                    Đã bán: ${product.soldQuantity != null ?
+                                                    product.soldQuantity : 0}
+                                                </span>
                                             </div>
                                         </div>
 

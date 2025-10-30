@@ -1,13 +1,16 @@
 package vn.group3.marketplace.repository;
 
-// Pageable removed - not used
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.group3.marketplace.domain.entity.Message;
 
-// List not used at top-level imports
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
@@ -29,105 +32,72 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
         // "ORDER BY m.createdAt ASC")
         // List<Message> findMessagesBetweenUsers(@Param("userId1") Long userId1,
         // @Param("userId2") Long userId2);
+        // 1. Load initial 20 tin nhắn mới nhất
+        @Query("SELECT m FROM Message m WHERE " +
+                        "((m.user.id = :userId1 AND m.sellerUser.id = :userId2) OR " +
+                        " (m.user.id = :userId2 AND m.sellerUser.id = :userId1)) " +
+                        "AND m.isDeleted = false " +
+                        "ORDER BY m.createdAt DESC, m.id DESC")
+        List<Message> findLatestMessages(@Param("userId1") Long userId1,
+                        @Param("userId2") Long userId2,
+                        Pageable pageable);
 
-        // /**
-        // * Get messages between two users with cursor-based pagination (scroll)
-        // *
-        // * @param userId1 first user ID
-        // * @param userId2 second user ID
-        // * @param lastMessageId last message ID for cursor (null for first page)
-        // * @param limit number of messages to fetch
-        // * @return list of messages for scroll pagination
-        // */
-        // @Query("SELECT m FROM Message m WHERE " +
-        // "((m.senderUser.id = :userId1 AND m.receiverUser.id = :userId2) OR " +
-        // "(m.senderUser.id = :userId2 AND m.receiverUser.id = :userId1)) " +
-        // "AND (:lastMessageId IS NULL OR m.id < :lastMessageId) " +
-        // "ORDER BY m.createdAt DESC")
-        // List<Message> findMessagesBetweenUsersWithCursor(@Param("userId1") Long
-        // userId1,
-        // @Param("userId2") Long userId2,
-        // @Param("lastMessageId") Long lastMessageId,
-        // Pageable pageable);
+        // 2. Load thêm 20 tin nhắn cũ hơn khi scroll up (cursor-based pagination)
+        @Query("SELECT m FROM Message m WHERE " +
+                        "((m.user.id = :userId1 AND m.sellerUser.id = :userId2) OR " +
+                        " (m.user.id = :userId2 AND m.sellerUser.id = :userId1)) " +
+                        "AND m.id < :cursorId " +
+                        "AND m.isDeleted = false " +
+                        "ORDER BY m.id DESC")
+        List<Message> findOlderMessages(@Param("userId1") Long userId1,
+                        @Param("userId2") Long userId2,
+                        @Param("cursorId") Long cursorId,
+                        Pageable pageable);
 
-        // /**
-        // * Get messages between two users with cursor-based pagination (scroll) -
-        // * ascending order
-        // *
-        // * @param userId1 first user ID
-        // * @param userId2 second user ID
-        // * @param lastMessageId last message ID for cursor (null for first page)
-        // * @param limit number of messages to fetch
-        // * @return list of messages for scroll pagination
-        // */
-        // @Query("SELECT m FROM Message m WHERE " +
-        // "((m.senderUser.id = :userId1 AND m.receiverUser.id = :userId2) OR " +
-        // "(m.senderUser.id = :userId2 AND m.receiverUser.id = :userId1)) " +
-        // "AND (:lastMessageId IS NULL OR m.id > :lastMessageId) " +
-        // "ORDER BY m.createdAt ASC")
-        // List<Message> findMessagesBetweenUsersWithCursorAsc(@Param("userId1") Long
-        // userId1,
-        // @Param("userId2") Long userId2,
-        // @Param("lastMessageId") Long lastMessageId,
-        // Pageable pageable);
+        // 3. Danh sách conversations (tin nhắn cuối mỗi conversation)
+        @Query("SELECT m FROM Message m WHERE " +
+                        "m.id IN (" +
+                        "   SELECT MAX(m2.id) FROM Message m2 " +
+                        "   WHERE (m2.user.id = :userId OR m2.sellerUser.id = :userId) " +
+                        "   AND m2.isDeleted = false " +
+                        "   GROUP BY " +
+                        "       CASE " +
+                        "           WHEN m2.user.id = :userId THEN m2.sellerUser.id " +
+                        "           ELSE m2.user.id " +
+                        "       END " +
+                        ") " +
+                        "AND m.isDeleted = false " +
+                        "ORDER BY m.createdAt DESC")
+        List<Message> findConversationsForUser(@Param("userId") Long userId);
 
-        // /**
-        // * Get recent conversations for a user (last message from each conversation)
-        // *
-        // * @param userId the user ID
-        // * @return list of recent messages from different conversations
-        // */
-        // @Query("SELECT m FROM Message m WHERE " +
-        // "(m.senderUser.id = :userId OR m.receiverUser.id = :userId) " +
-        // "AND m.id IN (" +
-        // " SELECT MAX(m2.id) FROM Message m2 " +
-        // " WHERE (m2.senderUser.id = :userId OR m2.receiverUser.id = :userId) " +
-        // " GROUP BY " +
-        // " CASE " +
-        // " WHEN m2.senderUser.id = :userId THEN m2.receiverUser.id " +
-        // " ELSE m2.senderUser.id " +
-        // " END" +
-        // ") " +
-        // "ORDER BY m.createdAt DESC")
-        // List<Message> findRecentConversationsForUser(@Param("userId") Long userId);
+        // 4. Đếm tin nhắn chưa đọc từ một user cụ thể
+        @Query("SELECT COUNT(m) FROM Message m WHERE " +
+                        "m.receiverUser.id = :userId " +
+                        "AND ((m.user.id = :userId AND m.sellerUser.id = :otherUserId) OR " +
+                        "     (m.user.id = :otherUserId AND m.sellerUser.id = :userId)) " +
+                        "AND m.readAt IS NULL " +
+                        "AND m.isDeleted = false")
+        Long countUnreadMessages(@Param("userId") Long userId, @Param("otherUserId") Long otherUserId);
 
-        // /**
-        // * Get the last message between two users
-        // *
-        // * @param userId1 first user ID
-        // * @param userId2 second user ID
-        // * @return the last message between the two users
-        // */
-        // @Query("SELECT m FROM Message m WHERE " +
-        // "((m.senderUser.id = :userId1 AND m.receiverUser.id = :userId2) OR " +
-        // "(m.senderUser.id = :userId2 AND m.receiverUser.id = :userId1)) " +
-        // "ORDER BY m.createdAt DESC " +
-        // "LIMIT 1")
-        // Message findLastMessageBetweenUsers(@Param("userId1") Long userId1,
-        // @Param("userId2") Long userId2);
+        // 5. Đếm tổng tin nhắn chưa đọc (tất cả conversations)
+        @Query("SELECT COUNT(m) FROM Message m WHERE " +
+                        "m.receiverUser.id = :userId " +
+                        "AND m.readAt IS NULL " +
+                        "AND m.isDeleted = false")
+        Long countTotalUnreadMessages(@Param("userId") Long userId);
 
-        // /**
-        // * Find messages by client message ID (for idempotency)
-        // *
-        // * @param senderUserId sender user ID
-        // * @param clientMsgId client message ID
-        // * @return message if found
-        // */
-        // @Query("SELECT m FROM Message m WHERE " +
-        // "m.senderUser.id = :senderUserId AND m.clientMsgId = :clientMsgId")
-        // Message findBySenderAndClientMsgId(@Param("senderUserId") Long senderUserId,
-        // @Param("clientMsgId") String clientMsgId);
+        // 6. Kiểm tra tin nhắn đã tồn tại (idempotency check)
+        Optional<Message> findBySenderUser_IdAndClientMsgId(Long senderUserId, String clientMsgId);
 
-        // /**
-        // * Check if a message with given client message ID exists
-        // *
-        // * @param senderUserId sender user ID
-        // * @param clientMsgId client message ID
-        // * @return true if message exists
-        // */
-        // @Query("SELECT COUNT(m) > 0 FROM Message m WHERE " +
-        // "m.senderUser.id = :senderUserId AND m.clientMsgId = :clientMsgId")
-        // boolean existsBySenderAndClientMsgId(@Param("senderUserId") Long
-        // senderUserId,
-        // @Param("clientMsgId") String clientMsgId);
+        // 7. Đánh dấu tin nhắn đã đọc (mark as read)
+        @Modifying
+        @Query("UPDATE Message m SET m.readAt = :readAt " +
+                        "WHERE m.receiverUser.id = :userId " +
+                        "AND ((m.user.id = :userId AND m.sellerUser.id = :otherUserId) OR " +
+                        "     (m.user.id = :otherUserId AND m.sellerUser.id = :userId)) " +
+                        "AND m.readAt IS NULL " +
+                        "AND m.isDeleted = false")
+        int markAsRead(@Param("userId") Long userId,
+                        @Param("otherUserId") Long otherUserId,
+                        @Param("readAt") LocalDateTime readAt);
 }

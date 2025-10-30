@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.group3.marketplace.domain.entity.Category;
@@ -86,14 +87,7 @@ public class ProductService {
     }
 
     /**
-     * Get product by ID
-     * 
-     * @param productId Product ID
-     * @return Product or null if not found
-     * 
-     * 
-     *         /**
-     *         Get active product by ID
+     * Get active product by ID
      * 
      * @param productId Product ID
      * @return Active product or null if not found or inactive
@@ -125,6 +119,7 @@ public class ProductService {
                 minPrice, maxPrice, idFrom, idTo, pageable);
     }
 
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     public Product getOwned(Long id, Long storeId) {
         return productRepository.findById(id)
                 .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
@@ -133,6 +128,7 @@ public class ProductService {
                         "Không tìm thấy sản phẩm hoặc không thuộc cửa hàng của bạn."));
     }
 
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     @Transactional
     public Product create(Product p) {
         SellerStore store = storeRepository.findById(p.getSellerStore().getId())
@@ -156,6 +152,7 @@ public class ProductService {
         return productRepository.save(p);
     }
 
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     @Transactional
     public Product update(Product p, Long storeId) {
         Product db = getOwned(p.getId(), storeId);
@@ -202,6 +199,7 @@ public class ProductService {
         return productRepository.save(db);
     }
 
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     @Transactional
     public void toggle(Long id, Long storeId, ProductStatus toStatus) {
         Product db = getOwned(id, storeId);
@@ -216,6 +214,7 @@ public class ProductService {
         productRepository.save(db);
     }
 
+    @PreAuthorize("isAuthenticated() and hasRole('SELLER')")
     @Transactional
     public void softDelete(Long id, Long storeId, Long userId) {
         Product db = getOwned(id, storeId);
@@ -240,6 +239,52 @@ public class ProductService {
      */
     public long getDynamicStock(Long productId) {
         return productRepository.getDynamicStock(productId);
+    }
+
+    /**
+     * Get all active products with pagination
+     * 
+     * @param page          Page number (0-based)
+     * @param size          Page size
+     * @param sortBy        Sort field
+     * @param sortDirection Sort direction (asc/desc)
+     * @return Page of all active products
+     */
+    public Page<Product> getAllProducts(int page, int size, String sortBy, String sortDirection) {
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return productRepository.findByStatus(ProductStatus.ACTIVE, pageable);
+    }
+
+    /**
+     * Search all products by keyword
+     * 
+     * @param keyword       Search keyword
+     * @param page          Page number (0-based)
+     * @param size          Page size
+     * @param sortBy        Sort field
+     * @param sortDirection Sort direction (asc/desc)
+     * @return Page of products matching keyword
+     */
+    public Page<Product> searchAllProducts(String keyword, int page, int size,
+            String sortBy, String sortDirection) {
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getAllProducts(page, size, sortBy, sortDirection);
+        }
+
+        return productRepository.findByStatusAndKeyword(ProductStatus.ACTIVE, keyword.trim(), pageable);
+    }
+
+    public void updateSoldQuantity(Long productId, Integer quantity) {
+        Product product = getProductById(productId);
+        if (product != null) {
+            product.setSoldQuantity(product.getSoldQuantity() + quantity);
+            productRepository.save(product);
+        }
     }
 
     public Product getProductById(Long productId) {

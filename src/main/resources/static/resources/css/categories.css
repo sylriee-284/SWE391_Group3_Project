@@ -1,0 +1,131 @@
+ /* Nút có chữ */
+ .btn-chip {
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     gap: 6px;
+     height: 34px;
+     /* gọn hơn */
+     padding: 0 10px;
+     /* gọn hơn */
+     min-width: 72px;
+     /* gọn hơn */
+     border: 0;
+     border-radius: 8px;
+     font-size: 13px;
+     font-weight: 600;
+     color: #fff;
+     text-decoration: none;
+     white-space: nowrap;
+ }
+
+ .btn-chip i {
+     font-size: 16px;
+     line-height: 1
+ }
+
+ .btn-chip:hover {
+     filter: brightness(.96)
+ }
+
+ /* Màu chức năng */
+ .chip-info {
+     background: #0d6efd;
+ }
+
+ /* Chi tiết */
+ .chip-edit {
+     background: #f4b400;
+ }
+
+ /* Sửa */
+ .chip-toggle {
+     background: #fd7e14;
+ }
+
+ /* Tắt */
+ .chip-on {
+     background: #198754;
+ }
+
+ /* Bật */
+ .chip-disabled {
+     background: #6c757d;
+     opacity: .85;
+     cursor: not-allowed
+ }
+
+ /* Căn hàng các nút trong cột Hành động */
+ td.text-end .actions {
+     display: flex;
+     justify-content: flex-end;
+     gap: 6px;
+     flex-wrap: wrap;
+ }
+
+ td.text-end .actions .btn-chip {
+     min-width: 72px;
+ }
+
+ /* đồng bộ với .btn-chip */
+ /* navbar cố định: để ngắn thôi */
+ body.has-fixed-navbar {
+     padding-top: 56px;
+ }
+
+ /* desktop */
+ @media (max-width: 991.98px) {
+     body.has-fixed-navbar {
+         padding-top: 48px;
+     }
+
+     /* mobile/tablet */
+ }
+
+ /* sidebar thu gọn & mở (desktop) */
+ :root {
+     --sb-closed: 64px;
+     /* chiều rộng khi thu gọn */
+     --sb-open: 240px;
+     /* chiều rộng khi mở ra */
+ }
+
+ /* mặc định desktop: coi như sidebar đang thu gọn */
+ #pageContainer {
+     margin-left: var(--sb-closed);
+     transition: margin-left .24s ease;
+ }
+
+ /* khi body có class sidebar-open => đẩy nội dung nhiều hơn */
+ body.sidebar-open #pageContainer {
+     margin-left: var(--sb-open);
+ }
+
+ /* mobile/tablet: sidebar overlay, không đẩy nội dung */
+ @media (max-width: 991.98px) {
+
+     #pageContainer,
+     body.sidebar-open #pageContainer {
+         margin-left: 0 !important;
+     }
+ }
+
+ /* XÓA VIỀN XANH quanh bảng/card */
+ .card,
+ .table,
+ .table-responsive {
+     border: 0 !important;
+     box-shadow: none !important;
+ }
+
+ .table:focus,
+ .table-responsive:focus,
+ .card:focus {
+     outline: none !important;
+ }
+
+ .table,
+ .table th,
+ .table td {
+     border-color: transparent !important;
+ }

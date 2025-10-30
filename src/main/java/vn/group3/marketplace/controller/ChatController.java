@@ -5,7 +5,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import vn.group3.marketplace.domain.dto.ConversationDTO;
+import vn.group3.marketplace.dto.ConversationDTO;
 import vn.group3.marketplace.domain.entity.Message;
 import vn.group3.marketplace.domain.entity.User;
 

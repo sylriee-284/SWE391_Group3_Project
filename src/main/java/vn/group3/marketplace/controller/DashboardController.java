@@ -8,7 +8,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import vn.group3.marketplace.domain.dto.*;
+import vn.group3.marketplace.dto.*;
 import vn.group3.marketplace.domain.entity.SellerStore;
 import vn.group3.marketplace.domain.entity.User;
 import vn.group3.marketplace.repository.SellerStoreRepository;
@@ -23,135 +23,141 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DashboardController {
 
-    private final DashboardService dashboardService;
-    private final SellerStoreRepository sellerStoreRepository;
-    private final ObjectMapper objectMapper;
+        private final DashboardService dashboardService;
+        private final SellerStoreRepository sellerStoreRepository;
+        private final ObjectMapper objectMapper;
 
-    @GetMapping
-    public String dashboard(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(required = false, defaultValue = "LAST_7_DAYS") String timeRange,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) Long productId,
-            @RequestParam(required = false) Long categoryId,
-            Model model) throws JsonProcessingException {
+        @GetMapping
+        public String dashboard(
+                        @AuthenticationPrincipal CustomUserDetails userDetails,
+                        @RequestParam(required = false, defaultValue = "LAST_7_DAYS") String timeRange,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                        @RequestParam(required = false) Long productId,
+                        @RequestParam(required = false) Long categoryId,
+                        Model model) throws JsonProcessingException {
 
-        User user = userDetails.getUser();
+                if (userDetails == null) {
+                        model.addAttribute("error", "Vui lòng đăng nhập để truy cập dashboard");
+                        return "error/403";
+                }
 
-        // Get seller store
-        SellerStore store = sellerStoreRepository.findByOwner(user)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
+                User user = userDetails.getUser();
 
-        // Build filter
-        DashboardFilterDTO filter = DashboardFilterDTO.builder()
-                .timeRange(timeRange)
-                .startDate(startDate)
-                .endDate(endDate)
-                .productId(productId)
-                .categoryId(categoryId)
-                .build();
+                // Get seller store
+                SellerStore store = sellerStoreRepository.findByOwner(user)
+                                .orElseThrow(() -> new RuntimeException(
+                                                "Bạn chưa có cửa hàng. Vui lòng tạo cửa hàng trước khi truy cập dashboard."));
 
-        // Get dashboard data
-        DashboardKPIDTO kpis = dashboardService.getKPIs(store.getId(), filter);
-        SalesChartDTO salesChart = dashboardService.getSalesChart(store.getId(), filter);
-        List<TopProductDTO> topProducts = dashboardService.getTopProducts(store.getId(), filter, "revenue", 10);
-        List<DashboardAlertDTO> alerts = dashboardService.getAlerts(store.getId());
+                // Build filter
+                DashboardFilterDTO filter = DashboardFilterDTO.builder()
+                                .timeRange(timeRange)
+                                .startDate(startDate)
+                                .endDate(endDate)
+                                .productId(productId)
+                                .categoryId(categoryId)
+                                .build();
 
-        // Convert to JSON for JavaScript
-        String salesChartJson = objectMapper.writeValueAsString(salesChart);
-        String topProductsJson = objectMapper.writeValueAsString(topProducts);
+                // Get dashboard data
+                DashboardKPIDTO kpis = dashboardService.getKPIs(store.getId(), filter);
+                SalesChartDTO salesChart = dashboardService.getSalesChart(store.getId(), filter);
+                List<TopProductDTO> topProducts = dashboardService.getTopProducts(store.getId(), filter, "revenue", 10);
+                List<DashboardAlertDTO> alerts = dashboardService.getAlerts(store.getId());
 
-        // Add to model
-        model.addAttribute("store", store);
-        model.addAttribute("kpis", kpis);
-        model.addAttribute("salesChart", salesChart);
-        model.addAttribute("topProducts", topProducts);
-        model.addAttribute("alerts", alerts);
-        model.addAttribute("filter", filter);
-        model.addAttribute("timeRange", timeRange);
-        model.addAttribute("salesChartJson", salesChartJson);
-        model.addAttribute("topProductsJson", topProductsJson);
+                // Convert to JSON for JavaScript
+                String salesChartJson = objectMapper.writeValueAsString(salesChart);
+                String topProductsJson = objectMapper.writeValueAsString(topProducts);
 
-        return "seller/dashboard";
-    }
+                // Add to model
+                model.addAttribute("store", store);
+                model.addAttribute("kpis", kpis);
+                model.addAttribute("salesChart", salesChart);
+                model.addAttribute("topProducts", topProducts);
+                model.addAttribute("alerts", alerts);
+                model.addAttribute("filter", filter);
+                model.addAttribute("timeRange", timeRange);
+                model.addAttribute("salesChartJson", salesChartJson);
+                model.addAttribute("topProductsJson", topProductsJson);
 
-    @GetMapping("/api/kpis")
-    @ResponseBody
-    public DashboardKPIDTO getKPIs(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(required = false, defaultValue = "LAST_7_DAYS") String timeRange,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) Long productId,
-            @RequestParam(required = false) Long categoryId) {
+                return "seller/dashboard";
+        }
 
-        User user = userDetails.getUser();
-        SellerStore store = sellerStoreRepository.findByOwner(user)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
+        @GetMapping("/api/kpis")
+        @ResponseBody
+        public DashboardKPIDTO getKPIs(
+                        @AuthenticationPrincipal CustomUserDetails userDetails,
+                        @RequestParam(required = false, defaultValue = "LAST_7_DAYS") String timeRange,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                        @RequestParam(required = false) Long productId,
+                        @RequestParam(required = false) Long categoryId) {
 
-        DashboardFilterDTO filter = DashboardFilterDTO.builder()
-                .timeRange(timeRange)
-                .startDate(startDate)
-                .endDate(endDate)
-                .productId(productId)
-                .categoryId(categoryId)
-                .build();
+                User user = userDetails.getUser();
+                SellerStore store = sellerStoreRepository.findByOwner(user)
+                                .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        return dashboardService.getKPIs(store.getId(), filter);
-    }
+                DashboardFilterDTO filter = DashboardFilterDTO.builder()
+                                .timeRange(timeRange)
+                                .startDate(startDate)
+                                .endDate(endDate)
+                                .productId(productId)
+                                .categoryId(categoryId)
+                                .build();
 
-    @GetMapping("/api/sales-chart")
-    @ResponseBody
-    public SalesChartDTO getSalesChart(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(required = false, defaultValue = "LAST_7_DAYS") String timeRange,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+                return dashboardService.getKPIs(store.getId(), filter);
+        }
 
-        User user = userDetails.getUser();
-        SellerStore store = sellerStoreRepository.findByOwner(user)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
+        @GetMapping("/api/sales-chart")
+        @ResponseBody
+        public SalesChartDTO getSalesChart(
+                        @AuthenticationPrincipal CustomUserDetails userDetails,
+                        @RequestParam(required = false, defaultValue = "LAST_7_DAYS") String timeRange,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
-        DashboardFilterDTO filter = DashboardFilterDTO.builder()
-                .timeRange(timeRange)
-                .startDate(startDate)
-                .endDate(endDate)
-                .build();
+                User user = userDetails.getUser();
+                SellerStore store = sellerStoreRepository.findByOwner(user)
+                                .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        return dashboardService.getSalesChart(store.getId(), filter);
-    }
+                DashboardFilterDTO filter = DashboardFilterDTO.builder()
+                                .timeRange(timeRange)
+                                .startDate(startDate)
+                                .endDate(endDate)
+                                .build();
 
-    @GetMapping("/api/top-products")
-    @ResponseBody
-    public List<TopProductDTO> getTopProducts(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(required = false, defaultValue = "LAST_7_DAYS") String timeRange,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false, defaultValue = "revenue") String sortBy,
-            @RequestParam(required = false, defaultValue = "10") int limit) {
+                return dashboardService.getSalesChart(store.getId(), filter);
+        }
 
-        User user = userDetails.getUser();
-        SellerStore store = sellerStoreRepository.findByOwner(user)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
+        @GetMapping("/api/top-products")
+        @ResponseBody
+        public List<TopProductDTO> getTopProducts(
+                        @AuthenticationPrincipal CustomUserDetails userDetails,
+                        @RequestParam(required = false, defaultValue = "LAST_7_DAYS") String timeRange,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                        @RequestParam(required = false, defaultValue = "revenue") String sortBy,
+                        @RequestParam(required = false, defaultValue = "10") int limit) {
 
-        DashboardFilterDTO filter = DashboardFilterDTO.builder()
-                .timeRange(timeRange)
-                .startDate(startDate)
-                .endDate(endDate)
-                .build();
+                User user = userDetails.getUser();
+                SellerStore store = sellerStoreRepository.findByOwner(user)
+                                .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        return dashboardService.getTopProducts(store.getId(), filter, sortBy, limit);
-    }
+                DashboardFilterDTO filter = DashboardFilterDTO.builder()
+                                .timeRange(timeRange)
+                                .startDate(startDate)
+                                .endDate(endDate)
+                                .build();
 
-    @GetMapping("/api/alerts")
-    @ResponseBody
-    public List<DashboardAlertDTO> getAlerts(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        User user = userDetails.getUser();
-        SellerStore store = sellerStoreRepository.findByOwner(user)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
+                return dashboardService.getTopProducts(store.getId(), filter, sortBy, limit);
+        }
 
-        return dashboardService.getAlerts(store.getId());
-    }
+        @GetMapping("/api/alerts")
+        @ResponseBody
+        public List<DashboardAlertDTO> getAlerts(@AuthenticationPrincipal CustomUserDetails userDetails) {
+                User user = userDetails.getUser();
+                SellerStore store = sellerStoreRepository.findByOwner(user)
+                                .orElseThrow(() -> new RuntimeException("Store not found"));
+
+                return dashboardService.getAlerts(store.getId());
+        }
 }

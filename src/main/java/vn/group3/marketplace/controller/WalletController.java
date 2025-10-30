@@ -63,27 +63,25 @@ public class WalletController {
         if (currentUser == null) {
             return java.util.Map.of("error", "Not authenticated");
         }
-        
+
         try {
             // Refresh authentication context để lấy balance mới nhất
             authenticationRefreshService.refreshAuthenticationContext();
-            
+
             // Lấy balance từ database (fresh data)
             java.math.BigDecimal balance = walletService.findBalanceByUserId(currentUser.getId())
                     .orElse(java.math.BigDecimal.ZERO);
-            
+
             return java.util.Map.of(
-                "success", true,
-                "balance", balance,
-                "userId", currentUser.getId(),
-                "username", currentUser.getUsername()
-            );
+                    "success", true,
+                    "balance", balance,
+                    "userId", currentUser.getId(),
+                    "username", currentUser.getUsername());
         } catch (Exception e) {
             logger.error("Error getting current balance for user {}: {}", currentUser.getId(), e.getMessage(), e);
             return java.util.Map.of(
-                "success", false,
-                "error", "Failed to get balance: " + e.getMessage()
-            );
+                    "success", false,
+                    "error", "Failed to get balance: " + e.getMessage());
         }
     }
 
@@ -150,6 +148,9 @@ public class WalletController {
         } catch (UnsupportedEncodingException e) {
             logger.error("Encoding error: {}", e.getMessage(), e);
             return "redirect:/wallet/deposit?error=encoding";
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid VNPay configuration: {}", e.getMessage(), e);
+            return "redirect:/wallet/deposit?error=config";
         } catch (Exception e) {
             logger.error("Unexpected error while generating VNPay URL: {}", e.getMessage(), e);
             return "redirect:/wallet/deposit?error=vnpay";

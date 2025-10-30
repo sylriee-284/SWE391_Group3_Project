@@ -25,15 +25,22 @@ public class EscrowTransaction extends BaseEntity {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @Column(nullable = false, precision = 18, scale = 2)
-    private BigDecimal amount;
+    @Column(name = "total_amount", nullable = false, precision = 18, scale = 2)
+    private BigDecimal totalAmount;
+
+    @Column(name = "seller_amount", nullable = false, precision = 18, scale = 2)
+    private BigDecimal sellerAmount;
+
+    @Column(name = "admin_amount", nullable = false, precision = 18, scale = 2)
+    @Builder.Default
+    private BigDecimal adminAmount = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
     @Builder.Default
     private EscrowStatus status = EscrowStatus.HELD;
 
-    @Column(name = "hold_until", insertable = false, updatable = false)
+    @Column(name = "hold_until")
     private LocalDateTime holdUntil;
 
     @Column(name = "released_at")

@@ -174,10 +174,13 @@
                                                 <div class="card product-card border-0 shadow-sm">
                                                     <div class="card-body">
                                                         <div class="text-center mb-3">
-                                                            <img src="<c:url value='/images/products/${product.id}.png'/>"
-                                                                data-fallback-url="<c:out value='${product.productUrl}'/>"
-                                                                alt="${product.name}" class="product-image rounded"
-                                                                onerror="handleImgError(this)" />
+                                                            <a href="<c:url value='/product/${product.slug}'/>"
+                                                                class="text-decoration-none text-dark">
+                                                                <img src="<c:url value='/images/products/${product.id}.png'/>"
+                                                                    data-fallback-url="<c:out value='${product.productUrl}'/>"
+                                                                    alt="${product.name}" class="product-image rounded"
+                                                                    onerror="handleImgError(this)" />
+                                                            </a>
                                                         </div>
                                                         <h6 class="card-title">
                                                             <a href="<c:url value='/product/${product.slug}'/>"
@@ -212,8 +215,11 @@
                                                                 ${product.category.name}
                                                             </small>
                                                             <small class="text-muted">
-                                                                <i class="fas fa-store"></i>
-                                                                ${product.sellerStore.storeName}
+                                                                <a href="<c:url value='/store/${product.sellerStore.id}/infor'/>"
+                                                                    class="text-decoration-none text-muted">
+                                                                    <i class="fas fa-store"></i>
+                                                                    ${product.sellerStore.storeName}
+                                                                </a>
                                                             </small>
                                                         </div>
                                                         <div class="mt-2">
@@ -227,6 +233,10 @@
                                                                     <span class="text-muted"> Total review:
                                                                         ${product.ratingCount}</span>
                                                                 </small>
+                                                                <span class="ms-1 text-muted">
+                                                                    Đã bán: ${product.soldQuantity != null ?
+                                                                    product.soldQuantity : 0}
+                                                                </span>
                                                             </div>
                                                         </div>
                                                         <div class="mt-3">
@@ -432,14 +442,8 @@
                         </div>
                     </div>
 
-
-
-
                     <!-- Include Footer -->
                     <jsp:include page="../common/footer.jsp" />
-                    <!-- Include Footer -->
-                    <jsp:include page="../common/footer.jsp" />
-
                     <!-- Page-specific JavaScript -->
                     <c:if test="${not empty pageJS}">
                         <c:forEach var="js" items="${pageJS}">
@@ -509,40 +513,19 @@
                             if (sidebar && content) {
                                 sidebar.classList.toggle('active');
                                 content.classList.toggle('shifted');
-                                if (sidebar && content) {
-                                    sidebar.classList.toggle('active');
-                                    content.classList.toggle('shifted');
-
-                                    // Toggle overlay for mobile
-                                    if (overlay) {
-                                        overlay.classList.toggle('active');
-                                    }
-                                }
                             }
-                            // Toggle overlay for mobile
+
                             if (overlay) {
                                 overlay.classList.toggle('active');
                             }
                         }
-
 
                         // Close sidebar when clicking outside on mobile
                         document.addEventListener('click', function (event) {
                             var sidebar = document.getElementById('sidebar');
                             var overlay = document.getElementById('sidebarOverlay');
                             var menuToggle = document.querySelector('.menu-toggle');
-                            // Close sidebar when clicking outside on mobile
-                            document.addEventListener('click', function (event) {
-                                var sidebar = document.getElementById('sidebar');
-                                var overlay = document.getElementById('sidebarOverlay');
-                                var menuToggle = document.querySelector('.menu-toggle');
 
-                                if (sidebar && sidebar.classList.contains('active') &&
-                                    !sidebar.contains(event.target) &&
-                                    !menuToggle.contains(event.target)) {
-                                    toggleSidebar();
-                                }
-                            });
                             if (sidebar && sidebar.classList.contains('active') &&
                                 !sidebar.contains(event.target) &&
                                 !menuToggle.contains(event.target)) {
@@ -563,7 +546,7 @@
                             });
                         });
                     </script>
-                    >>>>>>> main
+
                 </body>
 
                 </html>

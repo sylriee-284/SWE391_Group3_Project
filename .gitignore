@@ -41,3 +41,9 @@ src/main/resources/application-dev.properties
 # Ignore environment-specific configuration
 src/main/resources/application-*.properties
 !src/main/resources/application.properties
+
+#pom.xml
+pom.xml
+
+#application.properties
+src/main/resources/application.properties

@@ -6,8 +6,10 @@ import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import vn.group3.marketplace.domain.entity.Order;
 import vn.group3.marketplace.util.PerUserSerialExecutor;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
@@ -52,20 +54,94 @@ public class WalletTransactionQueueService {
     /**
      * Đưa task trừ tiền mua hàng vào queue xử lý
      */
-    public Future<Boolean> enqueuePurchasePayment(Long userId, java.math.BigDecimal amount, String orderId) {
+    public Future<Boolean> enqueuePurchasePayment(Long userId, java.math.BigDecimal amount, Order order) {
         try {
-            logger.info("Enqueueing purchase payment for user: {}, amount: {}, orderId: {}", userId, amount, orderId);
+            logger.info("Enqueueing purchase payment for user: {}, amount: {}, orderId: {}", userId, amount,
+                    order.getId());
             return perUserSerialExecutor.submit(userId, () -> {
                 logger.info("Processing purchase payment for user: {}, amount: {}, orderId: {}", userId, amount,
-                        orderId);
+                        order.getId());
                 WalletService walletService = ctx.getBean(WalletService.class);
-                boolean result = walletService.processPurchasePayment(userId, amount, orderId);
-                logger.info("Purchase payment completed for user: {}, orderId: {}, result: {}", userId, orderId,
+                boolean result = walletService.processPurchasePayment(userId, amount, order);
+                logger.info("Purchase payment completed for user: {}, orderId: {}, result: {}", userId, order.getId(),
                         result);
                 return result;
             });
         } catch (Exception ex) {
-            logger.error("Failed to enqueue purchase payment for user: {}, orderId: {}, error: {}", userId, orderId,
+            logger.error("Failed to enqueue purchase payment for user: {}, orderId: {}, error: {}", userId,
+                    order.getId(),
+                    ex.getMessage(), ex);
+            CompletableFuture<Boolean> f = new CompletableFuture<>();
+            f.completeExceptionally(ex);
+            return f;
+        }
+    }
+
+    // Luồng trừ tiền thanh toán shop
+    private static final String CREATED_SHOP_PREFIX = "createdShop";
+
+    private void handleStoreActivation(Long storeId) {
+        try {
+            logger.info("🔄 Attempting to activate store: {}", storeId);
+            SellerStoreService sellerStoreService = ctx.getBean(SellerStoreService.class);
+            sellerStoreService.activateStore(storeId);
+            logger.info("✅ Store {} activated after successful deposit", storeId);
+        } catch (Exception e) {
+            logger.error("❌ Failed to activate store after successful deposit. storeId: {}. Error: {}",
+                    storeId, e.getMessage(), e);
+        }
+    }
+
+    private boolean isStoreDepositPayment(String paymentRef) {
+        return paymentRef != null && paymentRef.startsWith(CREATED_SHOP_PREFIX);
+    }
+
+    private String getPaymentCheckStatus(String paymentRef) {
+        if (paymentRef == null) {
+            return "NULL";
+        }
+        if (paymentRef.startsWith(CREATED_SHOP_PREFIX)) {
+            return "PASS";
+        }
+        return "Not a createdShop";
+    }
+
+    public Future<Boolean> enqueuePurchasePayment(Long userId, java.math.BigDecimal amount, String paymentRef) {
+        try {
+            logger.info("Enqueueing purchase payment for user: {}, amount: {}, paymentRef: {}", userId, amount,
+                    paymentRef);
+            
+            return perUserSerialExecutor.submit(userId, new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    logger.info("Processing purchase payment for user: {}, amount: {}, paymentRef: {}", userId, amount,
+                            paymentRef);
+                    WalletService walletService = ctx.getBean(WalletService.class);
+                    boolean result = walletService.processPurchasePayment(userId, amount, paymentRef);
+
+                    // Process store activation if needed
+                    logger.info("Payment result: {}, paymentRef: {}", result, paymentRef);
+                    if (isStoreDepositPayment(paymentRef) && result) {
+                        try {
+                            Long storeId = Long.parseLong(paymentRef.substring(CREATED_SHOP_PREFIX.length()));
+                            handleStoreActivation(storeId);
+                        } catch (NumberFormatException e) {
+                            logger.error("❌ Failed to parse storeId from paymentRef: {}. Error: {}", paymentRef,
+                                    e.getMessage(), e);
+                        }
+                    } else {
+                        logger.warn("⚠️ Store activation skipped. Result: {}, paymentRef check: {}", 
+                            result, getPaymentCheckStatus(paymentRef));
+                    }
+
+                    logger.info("Purchase payment completed for user: {}, paymentRef: {}, result: {}", userId, paymentRef,
+                            result);
+                    return result;
+                }
+            });
+        } catch (Exception ex) {
+            logger.error("Failed to enqueue purchase payment for user: {}, paymentRef: {}, error: {}", userId,
+                    paymentRef,
                     ex.getMessage(), ex);
             CompletableFuture<Boolean> f = new CompletableFuture<>();
             f.completeExceptionally(ex);

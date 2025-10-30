@@ -811,17 +811,21 @@
                                 }
                             });
 
-                            // STUB click cho nút "Nhập sản phẩm" (không điều hướng)
+                            // Click handler cho nút "Nhập sản phẩm" - điều hướng đến trang import
                             document.getElementById('btnImportProductModal')?.addEventListener('click', function () {
-                                const pid = this.dataset.productId || '(chưa có id)';
-                                if (window.iziToast) {
-                                    iziToast.info({
-                                        title: 'Info',
-                                        message: 'Nút "Nhập sản phẩm" (id: ' + pid + ') chưa gắn hành động.',
-                                        position: 'topRight'
-                                    });
+                                const pid = this.dataset.productId;
+                                if (pid) {
+                                    window.location.href = window.location.origin + '/seller/import/' + pid;
                                 } else {
-                                    alert('Nút "Nhập sản phẩm" (id: ' + pid + ') chưa gắn hành động.');
+                                    if (window.iziToast) {
+                                        iziToast.warning({
+                                            title: 'Cảnh báo',
+                                            message: 'Không tìm thấy ID sản phẩm',
+                                            position: 'topRight'
+                                        });
+                                    } else {
+                                        alert('Không tìm thấy ID sản phẩm');
+                                    }
                                 }
                             });
                         })();

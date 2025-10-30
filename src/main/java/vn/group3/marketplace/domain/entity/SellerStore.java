@@ -3,6 +3,7 @@ package vn.group3.marketplace.domain.entity;
 import java.math.BigDecimal;
 import jakarta.persistence.*;
 import lombok.*;
+import vn.group3.marketplace.domain.enums.SellerStoresType;
 import vn.group3.marketplace.domain.enums.StoreStatus;
 
 @Getter
@@ -33,6 +34,17 @@ public class SellerStore extends BaseEntity {
     @Builder.Default
     private StoreStatus status = StoreStatus.ACTIVE;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "fee_model", length = 20)
+    private SellerStoresType feeModel;
+
+    @Column(name = "fee_percentage_rate", precision = 5, scale = 2)
+    private BigDecimal feePercentageRate;
+
+    @Column(name = "escrow_amount", nullable = false, precision = 18, scale = 2)
+    @Builder.Default
+    private BigDecimal escrowAmount = BigDecimal.ZERO;
+
     @Column(name = "deposit_amount", nullable = false, precision = 18, scale = 2)
     @Builder.Default
     private BigDecimal depositAmount = BigDecimal.ZERO;
@@ -44,7 +56,7 @@ public class SellerStore extends BaseEntity {
     @Builder.Default
     private String depositCurrency = "VND";
 
-    @Column(nullable = false, precision = 3, scale = 2)
+    @Column(name = "refund_percentage_rate", nullable = false, precision = 5, scale = 2)
     @Builder.Default
-    private BigDecimal rating = BigDecimal.ZERO;
+    private BigDecimal refundPercentageRate = BigDecimal.ZERO;
 }

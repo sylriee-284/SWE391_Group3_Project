@@ -18,14 +18,16 @@ public class SecurityConfig {
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/", "/homepage", "/products/**", "/login", "/logout",
-                                                                "/register",
+                                                                "/register", "/verify-otp",
                                                                 "/login/captcha", "/forgot-password", "/reset-password",
+                                                                "/wallet/vnpay-callback",
                                                                 "/debug/**",
                                                                 "/css/**", "/js/**", "/images/**", "/resources/**",
                                                                 "/webjars/**",
                                                                 "/static/**", "/WEB-INF/view/**")
                                                 .permitAll()
                                                 .requestMatchers("/chat/**").authenticated()
+                                                .requestMatchers("/user/**").authenticated()
                                                 .requestMatchers("/admin/**").hasRole("ADMIN")
                                                 .requestMatchers("/seller/**").hasRole("SELLER")
                                                 .requestMatchers("/orders/**").hasAnyRole("USER", "SELLER")

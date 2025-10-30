@@ -1,10 +1,11 @@
-package vn.group3.marketplace.domain.dto;
+package vn.group3.marketplace.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +13,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ImportResult {
+public class ImportResult implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private int successCount;
     private int errorCount;
