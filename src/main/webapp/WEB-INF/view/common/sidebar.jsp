@@ -99,7 +99,8 @@
                                         khiển Admin</a></li>
                                 <li><a href="/admin/users" class="text-white text-decoration-none">👥 Quản lý người
                                         dùng</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">🏪 Quản lý cửa hàng</a></li>
+                                <li><a href="/admin/stores" class="text-white text-decoration-none">🏪 Quản lý cửa
+                                        hàng</a></li>
                                 <li><a href="/admin/categories" class="text-white text-decoration-none">📦 Quản lý mặt
                                         hàng</a></li>
                                 <li><a href="#" class="text-white text-decoration-none">💳 Đơn rút tiền</a></li>
