@@ -61,21 +61,7 @@
                             </c:choose>
                         </div>
 
-                        <!-- Flash Messages -->
-                        <c:if test="${not empty success}">
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                ${success}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"
-                                    aria-label="Close"></button>
-                            </div>
-                        </c:if>
-                        <c:if test="${not empty error}">
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                ${error}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"
-                                    aria-label="Close"></button>
-                            </div>
-                        </c:if>
+
 
                         <!-- Filter Form -->
                         <form id="filterForm" method="get" action="" class="row g-2 mb-3 needs-validation" novalidate>
@@ -411,21 +397,29 @@
                         </div>
                     </div>
 
-                    <!-- Toast notifications -->
-                    <c:if test="${not empty successMessage}">
+                    <!-- Toast notifications (iziToast) -->
+                    <c:if
+                        test="${not empty success || not empty successMessage || not empty error || not empty errorMessage}">
                         <script>
-                            if (window.iziToast) {
-                                iziToast.success({ title: 'Success!', message: '${successMessage}', position: 'topRight', timeout: 5000 });
-                            }
+                            (function () {
+                                var s = '${fn:escapeXml(success != null ? success : successMessage)}';
+                                var e = '${fn:escapeXml(error != null ? error : errorMessage)}';
+                                if (window.iziToast) {
+                                    if (s && s.trim()) {
+                                        iziToast.success({ title: 'Success!', message: s, position: 'topRight', timeout: 5000 });
+                                    }
+                                    if (e && e.trim()) {
+                                        iziToast.error({ title: 'Error!', message: e, position: 'topRight', timeout: 5000 });
+                                    }
+                                } else {
+                                    // Fallback khi chưa load iziToast (hiếm gặp)
+                                    if (s && s.trim()) console.log('Success:', s);
+                                    if (e && e.trim()) console.error('Error:', e);
+                                }
+                            })();
                         </script>
                     </c:if>
-                    <c:if test="${not empty errorMessage}">
-                        <script>
-                            if (window.iziToast) {
-                                iziToast.error({ title: 'Error!', message: '${errorMessage}', position: 'topRight', timeout: 5000 });
-                            }
-                        </script>
-                    </c:if>
+
 
                     <!-- Form validation + Double submit prevention -->
                     <script>
@@ -713,6 +707,32 @@
                         }
                     </script>
 
+                    <script>
+                        (function () {
+                            var CP = '${pageContext.request.contextPath}';
+                            function isAbs(u) { return /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u); } // http:, https:, mailto:, ...
+
+                            function fixHref(a) {
+                                var href = a.getAttribute('href');
+                                if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+                                if (isAbs(href)) return;                    // link tuyệt đối thì bỏ qua
+                                if (href.startsWith(CP + '/')) return;      // đã có contextPath thì bỏ qua
+                                var abs = href.startsWith('/') ? (CP + href) : (CP + '/' + href.replace(/^(\.\/)+/, ''));
+                                a.setAttribute('href', abs);
+                            }
+                            function fixAction(f) {
+                                var act = f.getAttribute('action');
+                                if (!act || isAbs(act)) return;
+                                if (act.startsWith(CP + '/')) return;
+                                var abs = act.startsWith('/') ? (CP + act) : (CP + '/' + act.replace(/^(\.\/)+/, ''));
+                                f.setAttribute('action', abs);
+                            }
+
+                            // Chỉ sửa link trong navbar & sidebar (không đụng nội dung trang)
+                            document.querySelectorAll('.navbar a[href], .sidebar a[href]').forEach(fixHref);
+                            document.querySelectorAll('.navbar form[action], .sidebar form[action]').forEach(fixAction);
+                        })();
+                    </script>
 
 
                 </body>

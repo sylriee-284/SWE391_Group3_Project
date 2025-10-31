@@ -183,14 +183,10 @@ public class EscrowTransactionService {
         try {
             logger.info("Starting payment release process for order: {}", order.getId());
 
-            // 1. Update EscrowTransaction status
+            // 1. Get EscrowTransaction and update status
             EscrowTransaction escrowTransaction = escrowTransactionRepository.findByOrder(order)
                     .orElseThrow(
                             () -> new RuntimeException("Escrow transaction not found for order: " + order.getId()));
-
-            escrowTransaction.setStatus(EscrowStatus.RELEASED);
-            escrowTransaction.setReleasedAt(LocalDateTime.now());
-            escrowTransactionRepository.save(escrowTransaction);
 
             // 2. Validate seller owner
             User sellerProxy = order.getSellerStore().getOwner();
@@ -263,6 +259,12 @@ public class EscrowTransactionService {
                     order.getId(), sellerId);
             logger.info("Payment release completed successfully for order: {} to admin: {}",
                     order.getId(), admin.getId());
+
+            // 10. Update EscrowTransaction status
+            escrowTransaction.setStatus(EscrowStatus.RELEASED);
+            escrowTransaction.setReleasedAt(LocalDateTime.now());
+            escrowTransactionRepository.save(escrowTransaction);
+
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             logger.error("Failed to release payment for order: {}", order.getId(), e);
