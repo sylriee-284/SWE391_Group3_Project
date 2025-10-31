@@ -41,38 +41,38 @@
                             <div class="transaction-header text-center">
                                 <div class="row align-items-center">
                                     <div class="col-md-2">
-                                        <c:choose>
-                                            <c:when test='${transaction.type eq "DEPOSIT"}'>
-                                                <i class="fas fa-plus-circle fa-4x"></i>
-                                            </c:when>
-                                            <c:when test='${transaction.type eq "WITHDRAWAL"}'>
-                                                <i class="fas fa-minus-circle fa-4x"></i>
-                                            </c:when>
-                                            <c:when test='${transaction.type eq "PAYMENT"}'>
-                                                <i class="fas fa-shopping-cart fa-4x"></i>
-                                            </c:when>
-                                            <c:when test='${transaction.type eq "REFUND"}'>
-                                                <i class="fas fa-undo fa-4x"></i>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <i class="fas fa-exchange-alt fa-4x"></i>
-                                            </c:otherwise>
-                                        </c:choose>
+                                        <c:forEach var="type" items="${transactionTypes}">
+                                            <c:if test="${transaction.type == type}">
+                                                <c:choose>
+                                                    <c:when test="${type == 'DEPOSIT'}">
+                                                        <i class="fas fa-plus-circle fa-4x"></i>
+                                                    </c:when>
+                                                    <c:when test="${type == 'WITHDRAWAL'}">
+                                                        <i class="fas fa-minus-circle fa-4x"></i>
+                                                    </c:when>
+                                                    <c:when test="${type == 'PAYMENT'}">
+                                                        <i class="fas fa-shopping-cart fa-4x"></i>
+                                                    </c:when>
+                                                    <c:when test="${type == 'REFUND'}">
+                                                        <i class="fas fa-undo fa-4x"></i>
+                                                    </c:when>
+                                                    <c:when test="${type == 'SELLER_PAYOUT'}">
+                                                        <i class="fas fa-hand-holding-usd fa-4x"></i>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <i class="fas fa-exchange-alt fa-4x"></i>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </c:if>
+                                        </c:forEach>
                                     </div>
                                     <div class="col-md-8">
                                         <h2 class="mb-2">
-                                            <c:choose>
-                                                <c:when test='${transaction.type eq "DEPOSIT"}'>Deposit Transaction
-                                                </c:when>
-                                                <c:when test='${transaction.type eq "WITHDRAWAL"}'>Withdrawal
-                                                    Transaction
-                                                </c:when>
-                                                <c:when test='${transaction.type eq "PAYMENT"}'>Payment Transaction
-                                                </c:when>
-                                                <c:when test='${transaction.type eq "REFUND"}'>Refund Transaction
-                                                </c:when>
-                                                <c:otherwise>Transfer Transaction</c:otherwise>
-                                            </c:choose>
+                                            <c:forEach var="type" items="${transactionTypes}">
+                                                <c:if test="${transaction.type == type}">
+                                                    ${type} Transaction
+                                                </c:if>
+                                            </c:forEach>
                                         </h2>
                                         <p class="mb-0 opacity-75">
                                             <i class="fas fa-clock"></i>
@@ -110,17 +110,15 @@
                                 <div class="col-md-6 mb-4">
                                     <div class="card detail-card">
                                         <div class="card-body text-center">
-                                            <h5 class="card-title text-muted mb-3">
-                                                <i class="fas fa-money-bill-wave"></i> Amount
-                                            </h5>
-                                            <c:set var="isPositive"
-                                                value="${transaction.type.name() eq 'DEPOSIT' or transaction.type.name() eq 'REFUND'}" />
+                            <h5 class="card-title text-muted mb-3">
+                                <i class="fas fa-money-bill-wave"></i> Amount
+                            </h5>
+                            <c:set var="isPositive"
+                                value="${transaction.type.name() eq 'DEPOSIT' or transaction.type.name() eq 'REFUND' or transaction.type.name() eq 'ORDER_RELEASE' or transaction.type.name() eq 'ADMIN_COMMISSION_FEE' or transaction.paymentStatus.name() eq 'RELEASED'}" />
 
-                                            <div
-                                                class="amount-display ${isPositive ? 'amount-positive' : 'amount-negative'}">
-                                                ${isPositive ? '+' : '-'}
-
-                                                <fmt:formatNumber value="${transaction.amount}" type="number"
+                            <div
+                                class="amount-display ${isPositive ? 'amount-positive' : 'amount-negative'}">
+                                ${isPositive ? '+' : '-'}                                                <fmt:formatNumber value="${transaction.amount}" type="number"
                                                     pattern="#,###" />
                                                 <small class="fs-4">VNĐ</small>
                                             </div>
@@ -139,7 +137,7 @@
 
                                             <div class="info-row">
                                                 <div class="row">
-                                                    <div class="col-5 info-label">Transaction ID:</div>
+                                                    <div class="col-5 info-label">Payment reference:</div>
                                                     <div class="col-7">
                                                         <c:choose>
                                                             <c:when test="${transaction.paymentRef != null}">
@@ -158,18 +156,11 @@
                                                     <div class="col-5 info-label">Transaction Type:</div>
                                                     <div class="col-7">
                                                         <span class="badge bg-primary">
-                                                            <c:choose>
-                                                                <c:when test='${transaction.type == "DEPOSIT"}'>Deposit
-                                                                </c:when>
-                                                                <c:when test='${transaction.type == "WITHDRAWAL"}'>
-                                                                    Withdrawal</c:when>
-                                                                <c:when test='${transaction.type == "PAYMENT"}'>Payment
-                                                                </c:when>
-                                                                <c:when test='${transaction.type == "REFUND"}'>Refund
-                                                                </c:when>
-                                                                <c:otherwise><span class="text-muted">Unknown</span>
-                                                                </c:otherwise>
-                                                            </c:choose>
+                                                            <c:forEach var="type" items="${transactionTypes}">
+                                                                <c:if test="${transaction.type == type}">
+                                                                    ${type}
+                                                                </c:if>
+                                                            </c:forEach>
                                                         </span>
                                                     </div>
                                                 </div>

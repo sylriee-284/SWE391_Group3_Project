@@ -29,6 +29,11 @@ public class SecurityConfig {
                                                 .requestMatchers("/chat/**").authenticated()
                                                 .requestMatchers("/user/**").authenticated()
                                                 .requestMatchers("/admin/**").hasRole("ADMIN")
+                                                .requestMatchers("/seller/register").authenticated()
+                                                .requestMatchers("/seller/register-success").authenticated()
+                                                .requestMatchers("/seller/retry-deposit/**").authenticated()
+                                                // Allow anonymous users to check store name availability
+                                                .requestMatchers("/seller/check-store-name").permitAll()
                                                 .requestMatchers("/seller/**").hasRole("SELLER")
                                                 .requestMatchers("/orders/**").hasAnyRole("USER", "SELLER")
                                                 .anyRequest().permitAll())

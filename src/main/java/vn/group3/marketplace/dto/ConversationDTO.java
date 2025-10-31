@@ -1,40 +1,23 @@
 package vn.group3.marketplace.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import java.util.List;
 
-import java.time.LocalDateTime;
-
-@Data
-@Builder
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class ConversationDTO {
-    private String conversationId; // "buyerId_sellerId"
-    private OtherUserDTO otherUser;
-    private LastMessageDTO lastMessage;
-    private Integer unreadCount;
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class OtherUserDTO {
-        private Long id;
-        private String username;
-        private String fullName;
-        private String avatar;
-    }
+    private String id;
+    private List<Long> participants;
+    private Object createdAt;
+    private Object lastMessageAt;
+    private String lastMessage;
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class LastMessageDTO {
-        private String content;
-        private LocalDateTime createdAt;
-        private Long senderId;
-    }
+    // Additional fields enriched at runtime
+    private Long conversationPartnerId;
+    private String conversationPartnerName;
+    private String partnerUsername;
 }

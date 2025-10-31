@@ -78,4 +78,18 @@ public class AsyncConfig implements AsyncConfigurer {
             logger.error("Async method '{}' failed with error: {}", method.getName(), ex.getMessage(), ex);
         }
     }
+
+    @Bean(name = "chatTaskExecutor")
+    public TaskExecutor chatTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(3);
+        executor.setMaxPoolSize(10);
+        executor.setQueueCapacity(200);
+        executor.setThreadNamePrefix("Chat-");
+        executor.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(30);
+        executor.initialize();
+        return executor;
+    }
 }

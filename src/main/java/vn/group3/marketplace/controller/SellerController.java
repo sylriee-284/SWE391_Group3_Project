@@ -61,18 +61,26 @@ public class SellerController {
         model.addAttribute("user", currentUser);
         model.addAttribute("userBalance", currentUser.getBalance());
 
-        // Add system settings to model
-        model.addAttribute("minDepositAmount", sellerStoreService.getMinDepositAmount());
-        model.addAttribute("maxListingPriceRate", sellerStoreService.getMaxListingPriceRate());
+    // Add system settings to model
+    model.addAttribute("minDepositAmount", sellerStoreService.getMinDepositAmount());
+    model.addAttribute("maxListingPriceRate", sellerStoreService.getMaxListingPriceRate());
 
-        // Add fee settings from SystemSetting (percentage fee and fixed fee for small
-        // orders)
-        Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
-        Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
-        Integer minOrderWithFreeFee = systemSettingService.getIntValue("fee.min_order_with_free_fee", 100000);
-        model.addAttribute("percentageFee", percentageFee);
-        model.addAttribute("fixedFee", fixedFee);
-        model.addAttribute("minOrderWithFreeFee", minOrderWithFreeFee);
+    // Add fee settings from SystemSetting (percentage fee and fixed fee for small orders)
+    Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
+    Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
+    model.addAttribute("percentageFee", percentageFee);
+    model.addAttribute("fixedFee", fixedFee);
+
+    // Add refund rate settings from SystemSetting
+    Integer maxRefundRateMinDuration = systemSettingService.getIntValue("store.max_refund_rate_min_duration_months", 12);
+    Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate", 100.0);
+    Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate", 70.0);
+    Double noFeeRefundRate = systemSettingService.getDoubleValue("store.no_fee_refund_rate", 50.0);
+    
+    model.addAttribute("maxRefundRateMinDuration", maxRefundRateMinDuration);
+    model.addAttribute("percentageMaxRefundRate", percentageMaxRefundRate);
+    model.addAttribute("percentageMinRefundRate", percentageMinRefundRate);
+    model.addAttribute("noFeeRefundRate", noFeeRefundRate);
 
         return "seller/seller-register";
     }
@@ -103,10 +111,19 @@ public class SellerController {
             // add fee settings so view can show them on validation errors
             Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
             Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
-            Integer minOrderWithFreeFee = systemSettingService.getIntValue("fee.min_order_with_free_fee", 100000);
             model.addAttribute("percentageFee", percentageFee);
             model.addAttribute("fixedFee", fixedFee);
-            model.addAttribute("minOrderWithFreeFee", minOrderWithFreeFee);
+
+            // Add refund rate settings for validation errors
+            Integer maxRefundRateMinDuration = systemSettingService.getIntValue("store.max_refund_rate_min_duration_months", 12);
+            Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate", 100.0);
+            Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate", 70.0);
+            Double noFeeRefundRate = systemSettingService.getDoubleValue("store.no_fee_refund_rate", 50.0);
+            
+            model.addAttribute("maxRefundRateMinDuration", maxRefundRateMinDuration);
+            model.addAttribute("percentageMaxRefundRate", percentageMaxRefundRate);
+            model.addAttribute("percentageMinRefundRate", percentageMinRefundRate);
+            model.addAttribute("noFeeRefundRate", noFeeRefundRate);
 
             // Parse and validate deposit amount
             BigDecimal deposit;
@@ -171,6 +188,13 @@ public class SellerController {
                 return "seller/seller-register";
             }
 
+            // Get fee percentage rate from system setting if fee model is PERCENTAGE
+            BigDecimal feePercentageRate = null;
+            if (feeModelEnum == SellerStoresType.PERCENTAGE) {
+                Double percentageFeeFromSettings = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
+                feePercentageRate = BigDecimal.valueOf(percentageFeeFromSettings);
+            }
+
             // Create new store in PENDING status (no immediate payment)
             SellerStore store = SellerStore.builder()
                     .owner(currentUser)
@@ -178,6 +202,7 @@ public class SellerController {
                     .description(storeDescription)
                     .depositAmount(deposit)
                     .feeModel(feeModelEnum)
+                    .feePercentageRate(feePercentageRate)
                     .status(StoreStatus.PENDING)
                     .build();
 
@@ -209,33 +234,7 @@ public class SellerController {
         // Get store details
         SellerStore store = sellerStoreService.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy cửa hàng"));
-
-        // Check transaction status for INACTIVE stores (stores that have attempted
-        // payment)
-        if (store.getStatus() == StoreStatus.INACTIVE && !model.containsAttribute("paymentError")) {
-            try {
-                String paymentRef = "createdShop" + storeId;
-                vn.group3.marketplace.domain.enums.WalletTransactionStatus txStatus = walletService
-                        .getTransactionStatusByOrderId(paymentRef);
-                if (txStatus == vn.group3.marketplace.domain.enums.WalletTransactionStatus.FAILED) {
-                    // Likely failed due to insufficient balance
-                    if (currentUser.getBalance().compareTo(store.getDepositAmount()) < 0) {
-                        java.math.BigDecimal needed = store.getDepositAmount().subtract(currentUser.getBalance());
-                        model.addAttribute("paymentError",
-                                "Thanh toán thất bại: Số dư không đủ. Bạn cần nạp thêm "
-                                        + String.format("%,.0f", needed) + " VNĐ");
-                    } else {
-                        model.addAttribute("paymentError",
-                                "Thanh toán thất bại. Vui lòng thử lại hoặc liên hệ hỗ trợ.");
-                    }
-                }
-            } catch (Exception ex) {
-                // If checking transaction status fails, don't show insufficient-balance
-                // prematurely.
-                // Log/debug can be added if needed.
-            }
-        }
-
+        
         // For PENDING stores, show activation prompt
         if (store.getStatus() == StoreStatus.PENDING) {
             model.addAttribute("pendingActivation", true);
@@ -244,13 +243,22 @@ public class SellerController {
         // Add data to model
         model.addAttribute("user", currentUser);
         model.addAttribute("store", store);
-        // Add fee settings so the success page can show contract values
-        Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
-        Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
-        Integer minOrderWithFreeFee = systemSettingService.getIntValue("fee.min_order_with_free_fee", 100000);
-        model.addAttribute("percentageFee", percentageFee);
-        model.addAttribute("fixedFee", fixedFee);
-        model.addAttribute("minOrderWithFreeFee", minOrderWithFreeFee);
+    // Add fee settings so the success page can show contract values
+    Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
+    Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
+    model.addAttribute("percentageFee", percentageFee);
+    model.addAttribute("fixedFee", fixedFee);
+
+    // Add refund rate settings so the success page can show refund policy
+    Integer maxRefundRateMinDuration = systemSettingService.getIntValue("store.max_refund_rate_min_duration_months", 12);
+    Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate", 100.0);
+    Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate", 70.0);
+    Double noFeeRefundRate = systemSettingService.getDoubleValue("store.no_fee_refund_rate", 50.0);
+    
+    model.addAttribute("maxRefundRateMinDuration", maxRefundRateMinDuration);
+    model.addAttribute("percentageMaxRefundRate", percentageMaxRefundRate);
+    model.addAttribute("percentageMinRefundRate", percentageMinRefundRate);
+    model.addAttribute("noFeeRefundRate", noFeeRefundRate);
 
         return "seller/register-success";
     }
@@ -284,27 +292,22 @@ public class SellerController {
             // Check balance before attempting payment
             if (currentUser.getBalance().compareTo(store.getDepositAmount()) < 0) {
                 BigDecimal needed = store.getDepositAmount().subtract(currentUser.getBalance());
-                redirectAttributes.addFlashAttribute("paymentError",
-                        "Số dư không đủ để kích hoạt cửa hàng. Bạn cần nạp thêm " +
-                                String.format("%,.0f", needed) + " VNĐ");
+                redirectAttributes.addFlashAttribute("paymentError", 
+                    "Số dư không đủ để kích hoạt cửa hàng. Bạn cần nạp thêm " + 
+                    String.format("%,.0f", needed) + " VNĐ");
                 return "redirect:/seller/register-success?storeId=" + storeId;
-            }
-
-            // Change store status from PENDING to INACTIVE before payment
-            if (store.getStatus() == StoreStatus.PENDING) {
-                store.setStatus(StoreStatus.INACTIVE);
-                sellerStoreService.findById(storeId); // refresh
             }
 
             // Enqueue payment with same ref
             String paymentRef = "createdShop" + storeId;
             walletTransactionQueueService.enqueuePurchasePayment(
-                    currentUser.getId(),
-                    store.getDepositAmount(),
-                    paymentRef);
+                currentUser.getId(), 
+                store.getDepositAmount(),
+                paymentRef
+            );
 
-            redirectAttributes.addFlashAttribute("success",
-                    "Yêu cầu thanh toán đã được gửi. Vui lòng chờ trong khi chúng tôi xử lý khoản tiền ký quỹ.");
+            redirectAttributes.addFlashAttribute("success", 
+                "Yêu cầu thanh toán đã được gửi. Vui lòng chờ trong khi chúng tôi xử lý khoản tiền ký quỹ.");
             return "redirect:/seller/register-success?storeId=" + storeId;
 
         } catch (Exception e) {
@@ -341,8 +344,7 @@ public class SellerController {
      */
     @GetMapping("/status/{storeId}")
     @ResponseBody
-    public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> getStoreStatus(
-            @PathVariable Long storeId) {
+    public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> getStoreStatus(@PathVariable Long storeId) {
         java.util.Map<String, Object> resp = new java.util.HashMap<>();
         try {
             SellerStore store = sellerStoreService.findById(storeId)
@@ -350,110 +352,10 @@ public class SellerController {
 
             resp.put("status", store.getStatus().name());
 
-            // If still inactive, check if there's a processed failed transaction to show
-            // paymentError
-            if (store.getStatus() == StoreStatus.INACTIVE) {
-                try {
-                    String paymentRef = "createdShop" + storeId;
-                    vn.group3.marketplace.domain.enums.WalletTransactionStatus txStatus = walletService
-                            .getTransactionStatusByOrderId(paymentRef);
-                    if (txStatus == vn.group3.marketplace.domain.enums.WalletTransactionStatus.FAILED) {
-                        // Provide a friendly message, caller can show it
-                        resp.put("paymentError", "Thanh toán thất bại: vui lòng nạp tiền hoặc thử lại");
-                    }
-                } catch (Exception ex) {
-                    // ignore: we don't want to surface internal errors to the poller
-                }
-            }
-
             return org.springframework.http.ResponseEntity.ok(resp);
         } catch (Exception e) {
             resp.put("error", e.getMessage());
-            return org.springframework.http.ResponseEntity
-                    .status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(resp);
-        }
-    }
-
-    /**
-     * Display seller profile page
-     */
-    @GetMapping("/profile")
-    public String showSellerProfile(Model model) {
-        try {
-            // Get current authenticated user
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            User currentUser = userService.getFreshUserByUsername(auth.getName());
-
-            // Check if user has a store
-            if (currentUser.getSellerStore() == null) {
-                model.addAttribute("errorMessage", "Bạn chưa có cửa hàng");
-                return "redirect:/seller/register";
-            }
-
-            // Get store information
-            SellerStore store = sellerStoreService.findById(currentUser.getSellerStore().getId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin cửa hàng"));
-
-            // Add user and store information to model
-            model.addAttribute("user", currentUser);
-            model.addAttribute("store", store);
-
-            // Add system settings for display
-            Double systemPercentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
-            model.addAttribute("systemPercentageFee", systemPercentageFee);
-
-            return "seller/profile";
-
-        } catch (Exception e) {
-            model.addAttribute("errorMessage", "Có lỗi xảy ra: " + e.getMessage());
-            return "redirect:/";
-        }
-    }
-
-    /**
-     * Update seller profile
-     */
-    @PostMapping("/profile/update")
-    public String updateSellerProfile(
-            @RequestParam String storeName,
-            @RequestParam(required = false) String description,
-            RedirectAttributes redirectAttributes) {
-
-        try {
-            // Get current authenticated user
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            User currentUser = userService.getFreshUserByUsername(auth.getName());
-
-            // Get current store
-            if (currentUser.getSellerStore() == null) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy cửa hàng của bạn");
-                return "redirect:/seller/register";
-            }
-
-            SellerStore store = sellerStoreService.findById(currentUser.getSellerStore().getId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin cửa hàng"));
-
-            // Validate store name (only check if different from current name)
-            if (!storeName.equals(store.getStoreName()) && sellerStoreService.isStoreNameExists(storeName)) {
-                redirectAttributes.addFlashAttribute("errorMessage",
-                        "Lỗi tên cửa hàng: Tên cửa hàng đã tồn tại. Nguyên nhân: Tên \"" + storeName
-                                + "\" đã được sử dụng bởi cửa hàng khác.");
-                return "redirect:/seller/profile";
-            }
-
-            // Update store information
-            store.setStoreName(storeName);
-            store.setDescription(description);
-
-            // Save updated store using repository directly since there's no update method
-            sellerStoreRepository.save(store);
-
-            redirectAttributes.addFlashAttribute("successMessage", "Cập nhật thông tin cửa hàng thành công!");
-            return "redirect:/seller/profile";
-
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi xảy ra: " + e.getMessage());
-            return "redirect:/seller/profile";
+            return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(resp);
         }
     }
 }

@@ -126,6 +126,7 @@ public class WalletTransactionController {
 
         model.addAttribute("transaction", transaction);
         model.addAttribute("user", user);
+        model.addAttribute("transactionTypes", WalletTransactionType.values());
 
         return "wallet/transaction-detail";
     }

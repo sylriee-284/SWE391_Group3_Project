@@ -17,8 +17,6 @@ import vn.group3.marketplace.domain.enums.OrderStatus;
 import vn.group3.marketplace.security.CustomUserDetails;
 import vn.group3.marketplace.service.OrderService;
 
-import java.util.Objects;
-
 @Controller
 @RequestMapping("/orders")
 public class OrderController {
@@ -27,12 +25,6 @@ public class OrderController {
 
     public OrderController(OrderService orderService) {
         this.orderService = orderService;
-    }
-
-    private boolean hasAuthority(CustomUserDetails user, String authority) {
-        if (user == null)
-            return false;
-        return user.getAuthorities().stream().anyMatch(a -> Objects.equals(a.getAuthority(), authority));
     }
 
     @GetMapping
@@ -50,21 +42,14 @@ public class OrderController {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        boolean isSeller = hasAuthority(currentUser, "ROLE_SELLER");
-        boolean isAdmin = hasAuthority(currentUser, "ROLE_ADMIN");
-
+        // Show only orders purchased by current user (buyer)
         Page<Order> ordersPage;
-        if (isAdmin) {
-            ordersPage = (key != null && !key.isEmpty()) ? orderService.searchByProductName(status, key, pageable)
-                    : getOrdersPage(isAdmin, isSeller, status, pageable);
-        } else if (isSeller) {
-            ordersPage = (key != null && !key.isEmpty())
-                    ? orderService.searchByCurrentSellerAndProductName(status, key, pageable)
-                    : getOrdersPage(isAdmin, isSeller, status, pageable);
+        if (key != null && !key.isEmpty()) {
+            ordersPage = orderService.searchByCurrentBuyerAndProductName(status, key, pageable);
         } else {
-            ordersPage = (key != null && !key.isEmpty())
-                    ? orderService.searchByCurrentBuyerAndProductName(status, key, pageable)
-                    : getOrdersPage(isAdmin, isSeller, status, pageable);
+            ordersPage = status != null
+                    ? orderService.findByCurrentBuyerAndStatus(status, pageable)
+                    : orderService.findByCurrentBuyer(pageable);
         }
 
         // Paging helpers
@@ -90,26 +75,9 @@ public class OrderController {
         model.addAttribute("hasNext", currentPage + 1 < totalPages);
         model.addAttribute("orderStatuses", OrderStatus.values()); // Send all enum values
         model.addAttribute("selectedStatus", status); // Current selected status
-        model.addAttribute("isSeller", isSeller);
         model.addAttribute("key", key);
 
         return "order/list";
-    }
-
-    private Page<Order> getOrdersPage(boolean isAdmin, boolean isSeller, OrderStatus status, Pageable pageable) {
-        if (isAdmin) {
-            return status != null
-                    ? orderService.findByStatus(status, pageable)
-                    : orderService.findAll(pageable);
-        }
-        if (isSeller) {
-            return status != null
-                    ? orderService.findByCurrentSellerAndStatus(status, pageable)
-                    : orderService.findByCurrentSeller(pageable);
-        }
-        return status != null
-                ? orderService.findByCurrentBuyerAndStatus(status, pageable)
-                : orderService.findByCurrentBuyer(pageable);
     }
 
     @GetMapping("/{id}")
@@ -124,10 +92,8 @@ public class OrderController {
             return "redirect:/error";
         }
 
-        boolean isAdmin = hasAuthority(currentUser, "ROLE_ADMIN");
-        boolean canView = isAdmin
-                || (order.getBuyer() != null && currentUser != null
-                        && order.getBuyer().getId().equals(currentUser.getId()))
+        boolean canView = (order.getBuyer() != null && currentUser != null
+                && order.getBuyer().getId().equals(currentUser.getId()))
                 || (order.getSellerStore() != null && currentUser != null
                         && order.getSellerStore().getOwner() != null
                         && order.getSellerStore().getOwner().getId().equals(currentUser.getId()));
@@ -139,7 +105,6 @@ public class OrderController {
         // Lấy trực tiếp các ProductStorage đã gán cho order này qua quan hệ @OneToMany
         model.addAttribute("deliveredStorages", order.getProductStorages());
         model.addAttribute("order", order);
-        model.addAttribute("isSeller", hasAuthority(currentUser, "ROLE_SELLER"));
         model.addAttribute("orderStatuses", OrderStatus.values()); // Send all enum values
         model.addAttribute("selectedStatus", order.getStatus()); // Current order status
         return "order/detail";

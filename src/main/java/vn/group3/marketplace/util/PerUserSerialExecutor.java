@@ -13,7 +13,7 @@ public class PerUserSerialExecutor {
     private final ConcurrentHashMap<Long, UserExecutor> executors = new ConcurrentHashMap<>();
     private final ScheduledExecutorService janitor = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "PerUserSerialExecutor-Janitor");
-        t.setDaemon(true);
+        t.setDaemon(true); //không giữ JVM sống nếu tất cả luồng “chính” (non-daemon) đã kết thúc.
         return t;
     });
 
@@ -21,8 +21,8 @@ public class PerUserSerialExecutor {
     private final int queueCapacity;
 
     public PerUserSerialExecutor(long idleMillis, int queueCapacity) {
-        this.idleMillis = idleMillis;
-        this.queueCapacity = queueCapacity;
+        this.idleMillis = idleMillis;  // Thời gian chờ trước khi xóa (ms)
+        this.queueCapacity = queueCapacity; // Kích cỡ tối đa của queue
         janitor.scheduleAtFixedRate(this::cleanupIdleExecutors, idleMillis, idleMillis, TimeUnit.MILLISECONDS);
     }
 
@@ -74,7 +74,7 @@ public class PerUserSerialExecutor {
                         Thread t = new Thread(r, "per-user-exec-" + userId);
                         t.setDaemon(true);
                         return t;
-                    }, new ThreadPoolExecutor.AbortPolicy());
+                    }, new ThreadPoolExecutor.AbortPolicy()); // Ném lỗi RejectedExecutionException khi queue đầy 
         }
 
         <T> Future<T> submit(Callable<T> task) {
@@ -89,7 +89,7 @@ public class PerUserSerialExecutor {
         long getLastAccess() {
             return lastAccess;
         }
-
+       // Dừng nhận task mới → chờ 5s → nếu chưa xong thì ép dừng mọi thứ.
         void shutdown() {
             try {
                 executor.shutdown();

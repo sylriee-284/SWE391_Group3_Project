@@ -46,6 +46,8 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/product-form.css">
     <!-- Custom Transaction CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/transaction.css">
+    <!-- register-success.css -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/register-success.css">
     <!-- Custom Profile CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/profile.css">
     <!-- transaction-detail CSS -->
@@ -60,6 +62,9 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/categories.css">
     <!-- Custom System Config CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/system-config.css">
+
+    <!-- Custom Seller Register CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/seller-register.css">
     <!-- Custom Chat CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/chat.css">
 

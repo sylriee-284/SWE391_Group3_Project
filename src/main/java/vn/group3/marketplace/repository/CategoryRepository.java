@@ -41,4 +41,8 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     // THÊM: lấy con KHÔNG lọc isDeleted (để hiển thị cả ON/OFF)
     org.springframework.data.domain.Page<Category> findByParent_Id(Long parentId,
             org.springframework.data.domain.Pageable p);
+
+    Optional<Category> findByNameIgnoreCaseAndParent_Id(String name, Long parentId);
+
+    Optional<Category> findByNameIgnoreCaseAndParentIsNull(String name);
 }
