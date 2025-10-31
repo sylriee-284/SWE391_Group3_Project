@@ -19,7 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-        Optional<User> findByUsername(String username);
+        @Query("SELECT u FROM User u LEFT JOIN FETCH u.sellerStore WHERE u.username = :username")
+        Optional<User> findByUsername(@Param("username") String username);
 
         Optional<User> findByEmail(String email);
 
