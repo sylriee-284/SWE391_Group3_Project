@@ -47,3 +47,6 @@ pom.xml
 
 #application.properties
 src/main/resources/application.properties
+
+#firebase
+src/main/resources/mmo-market-system-firebase-adminsdk-fbsvc-959f754527.json

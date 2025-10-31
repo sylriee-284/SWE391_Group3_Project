@@ -223,4 +223,43 @@ public class ValidationUtils {
                 return "Không được để trống!";
         }
     }
+
+    // ==== Firebase common validates ====
+
+    public static void validateUserId(Long userId, String fieldName) {
+        if (userId == null) {
+            throw new IllegalArgumentException(fieldName + " cannot be null");
+        }
+    }
+
+    public static void validateConversationId(String conversationId) {
+        if (conversationId == null || conversationId.isEmpty()) {
+            throw new IllegalArgumentException("Conversation ID cannot be null or empty");
+        }
+    }
+
+    public static void validateContent(String content) {
+        if (content == null || content.isEmpty()) {
+            throw new IllegalArgumentException("Content cannot be null or empty");
+        }
+    }
+
+    public static void validateLimit(int limit, String fieldName) {
+        if (limit <= 0) {
+            throw new IllegalArgumentException(fieldName + " must be greater than 0");
+        }
+    }
+
+    public static void validateLastDocument(com.google.cloud.firestore.DocumentSnapshot lastDoc,
+            String timestampField) {
+        if (lastDoc == null) {
+            throw new IllegalArgumentException("Last document cannot be null");
+        }
+        if (lastDoc.get(timestampField) == null) {
+            throw new IllegalArgumentException("Last document timestamp cannot be null");
+        }
+        if (lastDoc.getId() == null || lastDoc.getId().isEmpty()) {
+            throw new IllegalArgumentException("Last document id cannot be null or empty");
+        }
+    }
 }

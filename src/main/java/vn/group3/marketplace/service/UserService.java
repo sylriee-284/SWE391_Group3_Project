@@ -25,6 +25,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SystemSettingService systemSettingService;
     private static final String DEFAULT_PLAIN_PASSWORD = "123456789";
 
     public java.util.List<Role> getAllRoles() {
@@ -85,7 +86,7 @@ public class UserService {
         user.getRoles().add(role);
 
         // Save user (cascade sẽ tự động lưu userRole)
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
     }
 
     public Optional<User> findByUsername(String username) {

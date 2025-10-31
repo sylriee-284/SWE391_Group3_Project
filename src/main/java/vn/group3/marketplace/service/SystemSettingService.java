@@ -11,12 +11,16 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import vn.group3.marketplace.domain.entity.SystemSetting;
 import vn.group3.marketplace.repository.SystemSettingRepository;
+import vn.group3.marketplace.security.CustomUserDetails;
 
 @Service
 @Slf4j
@@ -30,6 +34,12 @@ public class SystemSettingService {
         return systemSettingRepository.findBySettingKeyAndIsDeletedFalse(key)
                 .map(SystemSetting::getSettingValue)
                 .orElse(null);
+    }
+
+    // Get admin user ID
+    public Long getAdminUserId() {
+        String adminUserId = getSettingValue("wallet.admin_default_receive_commission", "1");
+        return Long.parseLong(adminUserId);
     }
 
     // Lấy giá trị setting với giá trị mặc định
@@ -146,6 +156,7 @@ public class SystemSettingService {
     }
 
     // Cập nhật hoặc tạo mới setting
+    @PreAuthorize("hasRole('ADMIN')")
     public void updateSetting(String key, String value) {
         Optional<SystemSetting> existingSetting = systemSettingRepository.findBySettingKeyAndIsDeletedFalse(key);
 
@@ -153,18 +164,17 @@ public class SystemSettingService {
             SystemSetting setting = existingSetting.get();
             setting.setSettingValue(value);
             systemSettingRepository.save(setting);
-            log.info("Updated system setting: {} = {}", key, value);
         } else {
             SystemSetting newSetting = SystemSetting.builder()
                     .settingKey(key)
                     .settingValue(value)
                     .build();
             systemSettingRepository.save(newSetting);
-            log.info("Created new system setting: {} = {}", key, value);
         }
     }
 
     // Soft delete setting theo ID
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteSetting(Long id) {
         Optional<SystemSetting> setting = systemSettingRepository.findById(id);
         if (setting.isPresent()) {
@@ -172,10 +182,10 @@ public class SystemSettingService {
             systemSetting.setIsDeleted(true);
             // Try to set deleted_by with current user if available in SecurityContext
             try {
-                org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder
+                Authentication auth = SecurityContextHolder
                         .getContext().getAuthentication();
                 if (auth != null
-                        && auth.getPrincipal() instanceof vn.group3.marketplace.security.CustomUserDetails cud) {
+                        && auth.getPrincipal() instanceof CustomUserDetails cud) {
                     Long currentUserId = cud.getId();
                     systemSetting.setDeletedBy(currentUserId);
                 }
@@ -183,10 +193,6 @@ public class SystemSettingService {
                 // ignore if security context is not available
             }
             systemSettingRepository.save(systemSetting);
-            log.info("Soft deleted system setting with ID: {}", id);
-        } else {
-            log.warn("System setting with ID {} not found for deletion", id);
         }
     }
-
 }
