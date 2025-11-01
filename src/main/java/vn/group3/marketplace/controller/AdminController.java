@@ -31,7 +31,7 @@ import vn.group3.marketplace.service.SystemSettingService;
 
 @Controller
 @RequestMapping("/admin")
-@RequiredArgsConstructor
+// @RequiredArgsConstructor
 @Slf4j
 public class AdminController {
 
