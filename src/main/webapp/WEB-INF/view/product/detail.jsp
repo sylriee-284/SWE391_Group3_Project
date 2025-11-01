@@ -158,7 +158,7 @@
                                                 <div class="flex-grow-1">
                                                     <h6 class="mb-1 text-dark">Người bán:
                                                         <a href="<c:url value='/store/${shop.id}'/>"
-                                                            class="text-decoration-none text-dark">${shop.storeName}</a>
+                                                            class="text-decoration-none text-primary fw-bold">${shop.storeName}</a>
                                                     </h6>
                                                 </div>
                                             </div>

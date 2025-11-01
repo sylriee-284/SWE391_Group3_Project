@@ -164,4 +164,30 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         @Param("keyword") String keyword,
                         Pageable pageable);
 
+        // Count products by store and status (for performance)
+        @Query("SELECT COUNT(p) FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = :status AND p.isDeleted = false")
+        Long countBySellerStoreIdAndStatus(@Param("storeId") Long storeId, @Param("status") ProductStatus status);
+
+        // Find hot products from OTHER stores (exclude specific store)
+        @Query("""
+                        SELECT p FROM Product p
+                        WHERE p.sellerStore.id != :excludeStoreId
+                            AND p.status = :status
+                            AND p.isDeleted = false
+                            AND (:keyword IS NULL OR :keyword = ''
+                                OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                                OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
+                            AND (:categoryId IS NULL OR p.category.id = :categoryId)
+                            AND (:minPrice IS NULL OR p.price >= :minPrice)
+                            AND (:maxPrice IS NULL OR p.price <= :maxPrice)
+                        """)
+        Page<Product> findHotProductsExcludingStore(
+                        @Param("excludeStoreId") Long excludeStoreId,
+                        @Param("status") ProductStatus status,
+                        @Param("keyword") String keyword,
+                        @Param("categoryId") Long categoryId,
+                        @Param("minPrice") java.math.BigDecimal minPrice,
+                        @Param("maxPrice") java.math.BigDecimal maxPrice,
+                        Pageable pageable);
+
 }

@@ -1,7 +1,6 @@
 package vn.group3.marketplace.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -11,11 +10,13 @@ import vn.group3.marketplace.domain.enums.ProductStatus;
 import vn.group3.marketplace.repository.ProductRepository;
 import vn.group3.marketplace.repository.SellerStoreRepository;
 import vn.group3.marketplace.service.ProductService;
-import vn.group3.marketplace.service.ProductStorageService;
 import vn.group3.marketplace.repository.OrderRepository;
+import vn.group3.marketplace.service.CategoryService;
+import vn.group3.marketplace.domain.entity.Category;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Collections;
 
 @Controller
 @RequestMapping("/store")
@@ -26,286 +27,255 @@ public class StoreController {
     private final ProductRepository productRepo;
     private final OrderRepository orderRepository;
     private final ProductService productService;
-    private final ProductStorageService productStorageService;
+    private final CategoryService categoryService;
 
     @GetMapping("/{id}")
     public String storeHome(@PathVariable Long id,
-            @RequestParam(value = "categoryId", required = false) Long categoryId,
+            // Main filters
             @RequestParam(value = "q", required = false) String q,
-            @RequestParam(value = "minPrice", required = false) String minPrice,
-            @RequestParam(value = "maxPrice", required = false) String maxPrice,
-            // suggestion filters
-            @RequestParam(value = "suggest_q", required = false) String suggestQ,
-            @RequestParam(value = "suggest_categoryId", required = false) Long suggestCategoryId,
-            @RequestParam(value = "suggest_minPrice", required = false) String suggestMinPrice,
-            @RequestParam(value = "suggest_maxPrice", required = false) String suggestMaxPrice,
-            @RequestParam(value = "suggest_sort", required = false, defaultValue = "sold") String suggestSort,
-            // suggestion from other shops
-            @RequestParam(value = "suggestOther_q", required = false) String suggestOtherQ,
-            @RequestParam(value = "suggestOther_categoryId", required = false) Long suggestOtherCategoryId,
-            @RequestParam(value = "suggestOther_minPrice", required = false) String suggestOtherMinPrice,
-            @RequestParam(value = "suggestOther_maxPrice", required = false) String suggestOtherMaxPrice,
-            @RequestParam(value = "suggestOther_sort", required = false, defaultValue = "sold") String suggestOtherSort,
-            @RequestParam(value = "suggestOtherPage", required = false, defaultValue = "0") int suggestOtherPage,
-            @RequestParam(value = "suggestOtherSize", required = false, defaultValue = "8") int suggestOtherSize,
+            @RequestParam(value = "parentCategoryId", required = false) Long parentCategoryId,
+            @RequestParam(value = "categoryId", required = false) Long categoryId,
+            @RequestParam(value = "priceMin", required = false) String priceMin,
+            @RequestParam(value = "priceMax", required = false) String priceMax,
+            @RequestParam(value = "inStock", required = false) Boolean inStock,
+            @RequestParam(value = "ratingGte", required = false) String ratingGte,
             @RequestParam(value = "sort", required = false, defaultValue = "newest") String sort,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "24") int size,
+
+            // Hot products from other stores filters
+            @RequestParam(value = "hotPage", defaultValue = "0") int hotPage,
+            @RequestParam(value = "hotSize", defaultValue = "12") int hotSize,
+            @RequestParam(value = "hotQ", required = false) String hotQ,
+            @RequestParam(value = "hotCategoryId", required = false) Long hotCategoryId,
+            @RequestParam(value = "hotPriceMin", required = false) String hotPriceMin,
+            @RequestParam(value = "hotPriceMax", required = false) String hotPriceMax,
+            @RequestParam(value = "hotSort", required = false, defaultValue = "best_seller") String hotSort,
             Model model) {
 
+        long startTime = System.currentTimeMillis();
+
+        // ===== 1. VALIDATE STORE =====
         SellerStore store = storeRepo.findById(id).orElse(null);
         if (store == null) {
             model.addAttribute("errorMessage", "Cửa hàng không tồn tại");
             return "redirect:/";
         }
 
-        // KPIs
-        long totalActiveProducts = productService.search(id, null, ProductStatus.ACTIVE, null, null, null, null, null,
-                null, null, null, PageRequest.of(0, 1)).getTotalElements();
+        // ===== 2. KPIs - ONLY ON FIRST PAGE (CACHE-FRIENDLY) =====
+        long totalActiveProducts = 0;
+        long totalSold = 0;
+        BigDecimal storeRating = BigDecimal.ZERO;
+        Long ratingCount = 0L;
+        long totalAvailable = 0;
+        List<?> categories = java.util.Collections.emptyList();
+        BigDecimal minP = BigDecimal.ZERO;
+        BigDecimal maxP = BigDecimal.ZERO;
 
-        // total sold - aggregate via OrderRepository for meaningful statuses
-        java.util.List<vn.group3.marketplace.domain.enums.OrderStatus> countedStatuses = java.util.List.of(
-                vn.group3.marketplace.domain.enums.OrderStatus.PAID,
-                vn.group3.marketplace.domain.enums.OrderStatus.CONFIRMED,
-                vn.group3.marketplace.domain.enums.OrderStatus.COMPLETED);
+        if (page == 0) {
+            // Only calculate KPIs on first page load
+            totalActiveProducts = productRepo.countBySellerStoreIdAndStatus(id, ProductStatus.ACTIVE);
 
-        Long totalSoldObj = orderRepository.sumQuantityByStoreAndStatuses(id, countedStatuses);
-        long totalSold = totalSoldObj == null ? 0L : totalSoldObj.longValue();
+            java.util.List<vn.group3.marketplace.domain.enums.OrderStatus> countedStatuses = java.util.List.of(
+                    vn.group3.marketplace.domain.enums.OrderStatus.PAID,
+                    vn.group3.marketplace.domain.enums.OrderStatus.CONFIRMED,
+                    vn.group3.marketplace.domain.enums.OrderStatus.COMPLETED);
+            Long totalSoldObj = orderRepository.sumQuantityByStoreAndStatuses(id, countedStatuses);
+            totalSold = totalSoldObj == null ? 0L : totalSoldObj.longValue();
 
-        // total available storage items across products - sum dynamic stock
-        List<Product> productsForCount = productService.search(id, null, ProductStatus.ACTIVE, null, null, null, null,
-                null, null, null, null, PageRequest.of(0, 1000)).getContent();
-        long totalAvailable = productsForCount.stream()
-                .mapToLong(p -> productStorageService.getAvailableStock(p.getId())).sum();
+            storeRating = orderRepository.findStoreRating(id);
+            ratingCount = orderRepository.countStoreRatings(id);
 
-        // distinct categories
-        List<?> categories = productRepo.findDistinctCategoriesByStore(id);
+            if (storeRating == null)
+                storeRating = BigDecimal.ZERO;
+            if (ratingCount == null)
+                ratingCount = 0L;
 
-        BigDecimal minP = productRepo.findMinPriceByStore(id);
-        BigDecimal maxP = productRepo.findMaxPriceByStore(id);
+            totalAvailable = totalActiveProducts;
+            categories = productRepo.findDistinctCategoriesByStore(id);
+            minP = productRepo.findMinPriceByStore(id);
+            maxP = productRepo.findMaxPriceByStore(id);
 
-        // Product list with filters
+            System.out
+                    .println("=== KPIs Loaded (page 0) - Time: " + (System.currentTimeMillis() - startTime) + "ms ===");
+        }
+
+        // ===== 2.5. LOAD PARENT CATEGORIES & SUBCATEGORIES FOR FILTER =====
+        List<Category> parentCategories = categoryService.getParentCategories();
+        List<Category> subCategories = Collections.emptyList();
+
+        // Determine which parent to show subcategories for
+        Long selectedParentId = parentCategoryId;
+
+        if (categoryId != null) {
+            Category selectedCategory = categoryService.getCategoryById(categoryId);
+            if (selectedCategory != null && selectedCategory.getParent() != null) {
+                // If selected is a child category, get its parent
+                selectedParentId = selectedCategory.getParent().getId();
+                subCategories = categoryService.getChildCategories(selectedCategory.getParent());
+            }
+        } else if (parentCategoryId != null) {
+            // Load subcategories for the selected parent
+            Category parentCat = categoryService.getCategoryById(parentCategoryId);
+            if (parentCat != null) {
+                subCategories = categoryService.getChildCategories(parentCat);
+            }
+        }
+
+        // ===== 3. PARSE FILTER PARAMETERS =====
         java.math.BigDecimal minPriceDec = null, maxPriceDec = null;
         try {
-            if (minPrice != null && !minPrice.isEmpty())
-                minPriceDec = new java.math.BigDecimal(minPrice);
+            if (priceMin != null && !priceMin.isEmpty())
+                minPriceDec = new java.math.BigDecimal(priceMin);
         } catch (Exception ignored) {
         }
         try {
-            if (maxPrice != null && !maxPrice.isEmpty())
-                maxPriceDec = new java.math.BigDecimal(maxPrice);
+            if (priceMax != null && !priceMax.isEmpty())
+                maxPriceDec = new java.math.BigDecimal(priceMax);
         } catch (Exception ignored) {
         }
 
-        // Determine Sort
-        org.springframework.data.domain.Sort sortObj = org.springframework.data.domain.Sort
-                .by(org.springframework.data.domain.Sort.Direction.DESC, "updatedAt");
-        if ("price_asc".equals(sort)) {
-            sortObj = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC,
-                    "price");
-        } else if ("price_desc".equals(sort)) {
-            sortObj = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
-                    "price");
-        } else if ("newest".equals(sort)) {
-            sortObj = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
-                    "createdAt");
-        } else if ("sold".equals(sort)) {
-            // Best effort: products with higher rating & updatedAt (fallback). For accurate
-            // sold sorting, need OrderRepository aggregate.
-            sortObj = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
-                    "rating");
+        // ===== 4. DETERMINE SORT =====
+        org.springframework.data.domain.Sort sortObj;
+        switch (sort) {
+            case "price_asc":
+                sortObj = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC,
+                        "price");
+                break;
+            case "price_desc":
+                sortObj = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                        "price");
+                break;
+            case "rating_desc":
+                sortObj = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                        "rating");
+                break;
+            case "best_seller":
+                sortObj = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                        "soldQuantity");
+                break;
+            case "newest":
+            default:
+                sortObj = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                        "createdAt");
+                break;
         }
 
+        // ===== 5. GET PRODUCTS WITH FILTERS (SINGLE QUERY) =====
         org.springframework.data.domain.PageRequest pr = org.springframework.data.domain.PageRequest.of(page, size,
                 sortObj);
-
-        org.springframework.data.domain.Page<Product> pageData = productService.search(id, q, ProductStatus.ACTIVE,
+        org.springframework.data.domain.Page<Product> productsPage = productService.search(id, q, ProductStatus.ACTIVE,
                 categoryId, null, null, null, minPriceDec, maxPriceDec, null, null, pr);
 
-        model.addAttribute("currentSort", sort);
+        System.out.println("=== Products Loaded - Time: " + (System.currentTimeMillis() - startTime) + "ms ===");
 
+        // ===== 6. COLLECTIONS (ONLY ON FIRST PAGE) =====
+        List<Product> newestProducts = java.util.Collections.emptyList();
+        List<Product> bestSellers = java.util.Collections.emptyList();
+
+        if (page == 0) {
+            org.springframework.data.domain.PageRequest newestPr = org.springframework.data.domain.PageRequest.of(0, 8,
+                    org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                            "createdAt"));
+            newestProducts = productService.search(id, null, ProductStatus.ACTIVE,
+                    null, null, null, null, null, null, null, null, newestPr).getContent();
+
+            org.springframework.data.domain.PageRequest bestSellerPr = org.springframework.data.domain.PageRequest.of(0,
+                    8,
+                    org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                            "soldQuantity"));
+            bestSellers = productService.search(id, null, ProductStatus.ACTIVE,
+                    null, null, null, null, null, null, null, null, bestSellerPr).getContent();
+        }
+
+        // ===== 7. HOT PRODUCTS FROM OTHER STORES (OPTIMIZED - DATABASE QUERY) =====
+        java.math.BigDecimal hotMinPriceDec = null, hotMaxPriceDec = null;
+        try {
+            if (hotPriceMin != null && !hotPriceMin.isEmpty())
+                hotMinPriceDec = new java.math.BigDecimal(hotPriceMin);
+        } catch (Exception ignored) {
+        }
+        try {
+            if (hotPriceMax != null && !hotPriceMax.isEmpty())
+                hotMaxPriceDec = new java.math.BigDecimal(hotPriceMax);
+        } catch (Exception ignored) {
+        }
+
+        // Determine hot products sort
+        org.springframework.data.domain.Sort hotSortObj;
+        switch (hotSort) {
+            case "newest":
+                hotSortObj = org.springframework.data.domain.Sort
+                        .by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt");
+                break;
+            case "price_asc":
+                hotSortObj = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC,
+                        "price");
+                break;
+            case "price_desc":
+                hotSortObj = org.springframework.data.domain.Sort
+                        .by(org.springframework.data.domain.Sort.Direction.DESC, "price");
+                break;
+            case "best_seller":
+            default:
+                hotSortObj = org.springframework.data.domain.Sort
+                        .by(org.springframework.data.domain.Sort.Direction.DESC, "soldQuantity");
+                break;
+        }
+
+        // Get hot products from OTHER stores - SINGLE DATABASE QUERY (FAST!)
+        org.springframework.data.domain.PageRequest hotPr = org.springframework.data.domain.PageRequest.of(hotPage,
+                hotSize, hotSortObj);
+
+        // Use optimized query to exclude current store and apply all filters at
+        // database level
+        org.springframework.data.domain.Page<Product> hotProductsPage = productRepo.findHotProductsExcludingStore(
+                id, // excludeStoreId
+                ProductStatus.ACTIVE,
+                hotQ,
+                hotCategoryId,
+                hotMinPriceDec,
+                hotMaxPriceDec,
+                hotPr);
+
+        System.out.println("=== Hot Products Loaded - Time: " + (System.currentTimeMillis() - startTime) + "ms ===");
+
+        // ===== 8. ADD TO MODEL =====
         model.addAttribute("store", store);
+        model.addAttribute("storeRating", storeRating);
+        model.addAttribute("ratingCount", ratingCount);
         model.addAttribute("totalActiveProducts", totalActiveProducts);
         model.addAttribute("totalSold", totalSold);
         model.addAttribute("totalAvailable", totalAvailable);
         model.addAttribute("categories", categories);
-        model.addAttribute("minPrice", minP);
-        model.addAttribute("maxPrice", maxP);
-        model.addAttribute("productsPage", pageData);
+        model.addAttribute("parentCategories", parentCategories);
+        model.addAttribute("subCategories", subCategories);
+        model.addAttribute("minPrice", minP != null ? minP : BigDecimal.ZERO);
+        model.addAttribute("maxPrice", maxP != null ? maxP : BigDecimal.ZERO);
+        model.addAttribute("productsPage", productsPage);
+        model.addAttribute("newestProducts", newestProducts);
+        model.addAttribute("bestSellers", bestSellers);
 
-        // --- Suggested products (best-sellers) ---
-        // We'll fetch top product IDs by sold quantity for this store (limit 12), then
-        // filter in-memory
-        java.util.List<Object[]> top = orderRepository.findTopSoldProductIdsByStore(id, null,
-                org.springframework.data.domain.PageRequest.of(0, 12));
-        java.util.List<Long> topIds = new java.util.ArrayList<>();
-        for (Object[] row : top) {
-            if (row != null && row.length > 0 && row[0] instanceof Number) {
-                topIds.add(((Number) row[0]).longValue());
-            }
-        }
+        // Hot products
+        model.addAttribute("hotProductsPage", hotProductsPage);
+        model.addAttribute("hotQ", hotQ);
+        model.addAttribute("hotCategoryId", hotCategoryId);
+        model.addAttribute("hotPriceMin", hotPriceMin);
+        model.addAttribute("hotPriceMax", hotPriceMax);
+        model.addAttribute("hotSort", hotSort);
 
-        java.util.List<Product> suggestedProducts = new java.util.ArrayList<>();
-        if (!topIds.isEmpty()) {
-            java.util.List<Product> prods = productRepo.findAllById(topIds);
+        // Filter states
+        model.addAttribute("currentSort", sort);
+        model.addAttribute("filterQ", q);
+        model.addAttribute("filterParentCategoryId", selectedParentId);
+        model.addAttribute("filterCategoryId", categoryId);
+        model.addAttribute("filterPriceMin", priceMin);
+        model.addAttribute("filterPriceMax", priceMax);
+        model.addAttribute("filterInStock", inStock);
+        model.addAttribute("filterRatingGte", ratingGte);
 
-            // Apply lightweight suggestion filters in-memory
-            java.math.BigDecimal sMin = null, sMax = null;
-            try {
-                if (suggestMinPrice != null && !suggestMinPrice.isEmpty())
-                    sMin = new java.math.BigDecimal(suggestMinPrice);
-            } catch (Exception ignored) {
-            }
-            try {
-                if (suggestMaxPrice != null && !suggestMaxPrice.isEmpty())
-                    sMax = new java.math.BigDecimal(suggestMaxPrice);
-            } catch (Exception ignored) {
-            }
-
-            for (Product p : prods) {
-                if (p.getSellerStore() == null || !p.getSellerStore().getId().equals(id))
-                    continue;
-                if (suggestCategoryId != null
-                        && (p.getCategory() == null || !p.getCategory().getId().equals(suggestCategoryId)))
-                    continue;
-                if (sMin != null && p.getPrice() != null && p.getPrice().compareTo(sMin) < 0)
-                    continue;
-                if (sMax != null && p.getPrice() != null && p.getPrice().compareTo(sMax) > 0)
-                    continue;
-                if (suggestQ != null && !suggestQ.trim().isEmpty()) {
-                    String qq = suggestQ.trim().toLowerCase();
-                    if ((p.getName() == null || !p.getName().toLowerCase().contains(qq))
-                            && (p.getDescription() == null || !p.getDescription().toLowerCase().contains(qq))) {
-                        continue;
-                    }
-                }
-                suggestedProducts.add(p);
-            }
-
-            // sort suggestedProducts based on suggestSort
-            // (sold/newest/price_asc/price_desc)
-            if ("price_asc".equals(suggestSort)) {
-                suggestedProducts.sort(java.util.Comparator
-                        .comparing(p -> p.getPrice() == null ? java.math.BigDecimal.ZERO : p.getPrice()));
-            } else if ("price_desc".equals(suggestSort)) {
-                suggestedProducts.sort(java.util.Comparator
-                        .comparing((Product p) -> p.getPrice() == null ? java.math.BigDecimal.ZERO : p.getPrice())
-                        .reversed());
-            } else if ("newest".equals(suggestSort)) {
-                suggestedProducts.sort(java.util.Comparator.comparing(Product::getCreatedAt,
-                        java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())));
-            } else { // sold or default
-                     // keep order roughly as in topIds
-                java.util.Map<Long, Integer> index = new java.util.HashMap<>();
-                int idx = 0;
-                for (Long idd : topIds) {
-                    index.put(idd, idx++);
-                }
-                suggestedProducts.sort((a, b) -> Integer.compare(index.getOrDefault(a.getId(), 9999),
-                        index.getOrDefault(b.getId(), 9999)));
-            }
-        }
-
-        model.addAttribute("suggestedProducts", suggestedProducts);
-        model.addAttribute("suggest_q", suggestQ);
-        model.addAttribute("suggest_categoryId", suggestCategoryId);
-        model.addAttribute("suggest_minPrice", suggestMinPrice);
-        model.addAttribute("suggest_maxPrice", suggestMaxPrice);
-        model.addAttribute("suggest_sort", suggestSort);
-
-        // --- Suggested products from other shops ---
-        java.util.List<Object[]> topOther = orderRepository.findTopSoldProductIdsExcludingStore(id,
-                org.springframework.data.domain.PageRequest.of(0, 12));
-        java.util.List<Long> topOtherIds = new java.util.ArrayList<>();
-        for (Object[] row : topOther) {
-            if (row != null && row.length > 0 && row[0] instanceof Number) {
-                topOtherIds.add(((Number) row[0]).longValue());
-            }
-        }
-
-        java.util.List<Product> suggestedOtherProducts = new java.util.ArrayList<>();
-        if (!topOtherIds.isEmpty()) {
-            java.util.List<Product> prods = productRepo.findAllById(topOtherIds);
-
-            // Apply lightweight suggestion-other filters in-memory
-            java.math.BigDecimal sMinO = null, sMaxO = null;
-            try {
-                if (suggestOtherMinPrice != null && !suggestOtherMinPrice.isEmpty())
-                    sMinO = new java.math.BigDecimal(suggestOtherMinPrice);
-            } catch (Exception ignored) {
-            }
-            try {
-                if (suggestOtherMaxPrice != null && !suggestOtherMaxPrice.isEmpty())
-                    sMaxO = new java.math.BigDecimal(suggestOtherMaxPrice);
-            } catch (Exception ignored) {
-            }
-
-            for (Product p : prods) {
-                if (p.getSellerStore() == null || p.getSellerStore().getId().equals(id))
-                    continue; // ensure other shops
-                if (suggestOtherCategoryId != null
-                        && (p.getCategory() == null || !p.getCategory().getId().equals(suggestOtherCategoryId)))
-                    continue;
-                if (sMinO != null && p.getPrice() != null && p.getPrice().compareTo(sMinO) < 0)
-                    continue;
-                if (sMaxO != null && p.getPrice() != null && p.getPrice().compareTo(sMaxO) > 0)
-                    continue;
-                if (suggestOtherQ != null && !suggestOtherQ.trim().isEmpty()) {
-                    String qq = suggestOtherQ.trim().toLowerCase();
-                    if ((p.getName() == null || !p.getName().toLowerCase().contains(qq))
-                            && (p.getDescription() == null || !p.getDescription().toLowerCase().contains(qq))) {
-                        continue;
-                    }
-                }
-                suggestedOtherProducts.add(p);
-            }
-
-            // sort suggestedOtherProducts based on suggestOtherSort
-            if ("price_asc".equals(suggestOtherSort)) {
-                suggestedOtherProducts.sort(java.util.Comparator
-                        .comparing(p -> p.getPrice() == null ? java.math.BigDecimal.ZERO : p.getPrice()));
-            } else if ("price_desc".equals(suggestOtherSort)) {
-                suggestedOtherProducts.sort(java.util.Comparator
-                        .comparing((Product p) -> p.getPrice() == null ? java.math.BigDecimal.ZERO : p.getPrice())
-                        .reversed());
-            } else if ("newest".equals(suggestOtherSort)) {
-                suggestedOtherProducts.sort(java.util.Comparator.comparing(Product::getCreatedAt,
-                        java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())));
-            } else { // sold or default
-                java.util.Map<Long, Integer> index = new java.util.HashMap<>();
-                int idx = 0;
-                for (Long idd : topOtherIds) {
-                    index.put(idd, idx++);
-                }
-                suggestedOtherProducts.sort((a, b) -> Integer.compare(index.getOrDefault(a.getId(), 9999),
-                        index.getOrDefault(b.getId(), 9999)));
-            }
-        }
-
-        // Create a Page for suggestedOtherProducts for pagination
-        org.springframework.data.domain.Page<Product> suggestedOtherPageObj;
-        if (suggestedOtherProducts.isEmpty()) {
-            suggestedOtherPageObj = new org.springframework.data.domain.PageImpl<>(java.util.List.of(),
-                    org.springframework.data.domain.PageRequest.of(suggestOtherPage, suggestOtherSize), 0);
-        } else {
-            int total = suggestedOtherProducts.size();
-            int start = suggestOtherPage * suggestOtherSize;
-            if (start > total)
-                start = 0; // reset if out of range
-            int end = Math.min(start + suggestOtherSize, total);
-            java.util.List<Product> pageContent = suggestedOtherProducts.subList(start, end);
-            suggestedOtherPageObj = new org.springframework.data.domain.PageImpl<>(pageContent,
-                    org.springframework.data.domain.PageRequest.of(suggestOtherPage, suggestOtherSize), total);
-        }
-
-        model.addAttribute("suggestedOtherProductsPage", suggestedOtherPageObj);
-        model.addAttribute("suggestOther_q", suggestOtherQ);
-        model.addAttribute("suggestOther_categoryId", suggestOtherCategoryId);
-        model.addAttribute("suggestOther_minPrice", suggestOtherMinPrice);
-        model.addAttribute("suggestOther_maxPrice", suggestOtherMaxPrice);
-        model.addAttribute("suggestOther_sort", suggestOtherSort);
-        model.addAttribute("suggestOtherPage", suggestOtherPage);
-        model.addAttribute("suggestOtherSize", suggestOtherSize);
+        long totalTime = System.currentTimeMillis() - startTime;
+        System.out.println("=== TOTAL PAGE LOAD TIME: " + totalTime + "ms ===");
 
         return "store/info";
     }

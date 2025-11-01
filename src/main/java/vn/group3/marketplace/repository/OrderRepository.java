@@ -119,6 +119,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                         "WHERE o.sellerStore.id = :storeId AND o.rating IS NOT NULL")
         java.math.BigDecimal findStoreRating(@Param("storeId") Long storeId);
 
+        // Count total ratings for a store
+        @Query("SELECT COUNT(o) FROM Order o WHERE o.sellerStore.id = :storeId AND o.rating IS NOT NULL")
+        Long countStoreRatings(@Param("storeId") Long storeId);
+
         @Query("SELECT COUNT(DISTINCT o.buyer.id) FROM Order o " +
                         "WHERE o.sellerStore.id = :storeId " +
                         "AND o.createdAt BETWEEN :startDate AND :endDate")
