@@ -43,6 +43,11 @@
                         <!-- Nếu đã login -->
                         <sec:authorize access="isAuthenticated()">
                             <sec:authentication var="user" property="principal" />
+
+                            <a href="/chat" class="btn btn-outline-light btn-sm me-2" title="Chat">
+                                💬 Chat
+                            </a>
+
                             <div class="dropdown">
                                 <button class="btn btn-success btn-sm dropdown-toggle" type="button" id="userDropdown"
                                     data-bs-toggle="dropdown" aria-expanded="false">

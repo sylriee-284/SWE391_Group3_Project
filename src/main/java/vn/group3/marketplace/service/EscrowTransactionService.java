@@ -177,43 +177,41 @@ public class EscrowTransactionService {
     @Async("escrowTaskExecutor")
     @Transactional
     public CompletableFuture<Void> releasePaymentFromEscrow(Order order) {
+        // Get admin default wallet id from system setting
+        Long adminDefaultWalletId = Long
+                .parseLong(systemSettingService.getSettingValue("wallet.admin_default_receive_commission", "32"));
         try {
             logger.info("Starting payment release process for order: {}", order.getId());
 
-            // 1. Update EscrowTransaction status
+            // 1. Get EscrowTransaction and update status
             EscrowTransaction escrowTransaction = escrowTransactionRepository.findByOrder(order)
                     .orElseThrow(
                             () -> new RuntimeException("Escrow transaction not found for order: " + order.getId()));
-
-            escrowTransaction.setStatus(EscrowStatus.RELEASED);
-            escrowTransaction.setReleasedAt(LocalDateTime.now());
-            escrowTransactionRepository.save(escrowTransaction);
 
             // 2. Validate seller owner
             User sellerProxy = order.getSellerStore().getOwner();
             if (sellerProxy == null) {
                 throw new IllegalArgumentException("Seller is null for order: " + order.getId());
             }
-            User admin = userRepository.findById(32L).orElseThrow(() -> new RuntimeException("Admin not found"));
+            Long sellerId = sellerProxy.getId();
 
-            // 3. Load fresh User entity from database to avoid LazyInitializationException
-            User seller = userRepository.findById(sellerProxy.getId())
-                    .orElseThrow(
-                            () -> new IllegalArgumentException("Seller not found with id: " + sellerProxy.getId()));
+            // 3. Create User entities for wallet transactions
+            User seller = userRepository.getReferenceById(sellerId);
+            User admin = userRepository.getReferenceById(adminDefaultWalletId);
 
             // 4. Get amounts from escrow transaction
             BigDecimal sellerAmount = escrowTransaction.getSellerAmount();
             BigDecimal adminAmount = escrowTransaction.getAdminAmount();
 
             // 5. Create WalletTransaction to update seller balance
+            String storeName = order.getSellerStore().getStoreName();
             WalletTransaction walletTransaction = WalletTransaction.builder()
                     .user(seller)
                     .amount(sellerAmount)
                     .type(WalletTransactionType.ORDER_RELEASE)
                     .refOrder(order)
                     .paymentStatus(WalletTransactionStatus.RELEASED)
-                    .note("Payment released from escrow for order #" + order.getId() + " to seller "
-                            + seller.getSellerStore().getStoreName())
+                    .note("Payment released from escrow for order #" + order.getId() + " to seller " + storeName)
                     .paymentRef(order.getId().toString())
                     .paymentMethod("INTERNAL")
                     .build();
@@ -236,13 +234,21 @@ public class EscrowTransactionService {
                 walletTransactionRepository.save(adminWalletTransaction);
             }
 
-            // 7. Update seller balance
-            seller.setBalance(seller.getBalance().add(sellerAmount));
-            userRepository.save(seller);
+            // 7. Update seller balance using atomic increment to avoid race conditions
+            int sellerRows = userRepository.incrementBalance(sellerId, sellerAmount);
+            if (sellerRows != 1) {
+                logger.warn("Failed to increment balance for seller: {}", sellerId);
+                throw new RuntimeException("Failed to update seller balance");
+            }
+            logger.info("Incremented balance for seller {} by {}", sellerId, sellerAmount);
 
-            // 8. Update admin balance
-            admin.setBalance(admin.getBalance().add(adminAmount));
-            userRepository.save(admin);
+            // 8. Update admin balance using atomic increment
+            int adminRows = userRepository.incrementBalance(admin.getId(), adminAmount);
+            if (adminRows != 1) {
+                logger.warn("Failed to increment balance for admin: {}", admin.getId());
+                throw new RuntimeException("Failed to update admin balance");
+            }
+            logger.info("Incremented balance for admin {} by {}", admin.getId(), adminAmount);
 
             // 9. Update escrow amount of seller store
             SellerStore sellerStore = order.getSellerStore();
@@ -250,9 +256,15 @@ public class EscrowTransactionService {
             sellerStoreRepository.save(sellerStore);
 
             logger.info("Payment release completed successfully for order: {} to seller: {}",
-                    order.getId(), seller.getId());
+                    order.getId(), sellerId);
             logger.info("Payment release completed successfully for order: {} to admin: {}",
                     order.getId(), admin.getId());
+
+            // 10. Update EscrowTransaction status
+            escrowTransaction.setStatus(EscrowStatus.RELEASED);
+            escrowTransaction.setReleasedAt(LocalDateTime.now());
+            escrowTransactionRepository.save(escrowTransaction);
+
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             logger.error("Failed to release payment for order: {}", order.getId(), e);

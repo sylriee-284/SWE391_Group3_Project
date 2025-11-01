@@ -22,7 +22,6 @@ import java.io.IOException;
 public class AuthController {
 
     private final EmailService emailService;
-
     @Autowired
     private UserService userService;
 
@@ -194,8 +193,16 @@ public class AuthController {
                 return "login";
             }
 
+            // Tạo authentication token chứa thông tin user (username, roles)
+            // - Principal: UserDetails (thông tin user)
+            // - Credentials: null (không lưu password)
+            // - Authorities: Danh sách roles [ROLE_USER, ROLE_SELLER, ...]
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null,
                     userDetails.getAuthorities());
+
+            // Lưu authentication vào SecurityContext (để Spring Security biết user
+            // đã đăng nhập)
+            // SecurityContext cho phép BẤT KỲ ĐÂU trong app cũng có thể lấy user hiện tại
             SecurityContextHolder.getContext().setAuthentication(authToken);
             session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 

@@ -1,8 +1,16 @@
 package vn.group3.marketplace.service;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import vn.group3.marketplace.domain.entity.Role;
 import vn.group3.marketplace.domain.entity.SellerStore;
@@ -13,14 +21,46 @@ import vn.group3.marketplace.repository.SellerStoreRepository;
 import vn.group3.marketplace.repository.UserRepository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @RequiredArgsConstructor
 public class SellerStoreService {
 
+    private static final Logger logger = LoggerFactory.getLogger(SellerStoreService.class);
+
     private final SellerStoreRepository sellerStoreRepository;
     private final UserRepository userRepository;
+
+    /**
+     * Cập nhật escrow amount cho seller store
+     * 
+     * @param sellerStoreId ID của seller store
+     * @param amount        Số tiền cần thay đổi
+     * @param isAdd         true nếu cộng thêm, false nếu trừ đi
+     */
+    @Transactional
+    public void updateEscrowAmount(Long sellerStoreId, BigDecimal amount, boolean isAdd) {
+        try {
+            sellerStoreRepository.updateEscrowAmount(sellerStoreId, amount, isAdd);
+            logger.info("Updated escrow amount for store {}: {} {}",
+                    sellerStoreId,
+                    isAdd ? "+" : "-",
+                    amount);
+        } catch (Exception e) {
+            logger.error("Failed to update escrow amount for store {}", sellerStoreId, e);
+            throw e;
+        }
+    }
+
     private final RoleRepository roleRepository;
     private final WalletTransactionQueueService walletTransactionQueueService;
     private final SystemSettingService systemSettingService;
@@ -55,6 +95,191 @@ public class SellerStoreService {
         return sellerStoreRepository.findById(owner.getSellerStore().getId())
                 .filter(store -> store.getStatus() == StoreStatus.INACTIVE)
                 .orElse(null);
+    }
+
+    /**
+     * Get platform fee rate from system settings
+     */
+    public Double getPlatformFeeRate() {
+        return systemSettingService.getDoubleValue("fee.fee.percentage_fee", 3.0);
+    }
+
+    @Transactional
+    public boolean banStore(Long storeId) {
+        var s = em.find(SellerStore.class, storeId);
+        if (s == null)
+            return false;
+        if (s.getStatus() != StoreStatus.BANNED)
+            s.setStatus(StoreStatus.BANNED);
+        return true;
+    }
+
+    @PersistenceContext
+    private EntityManager em;
+
+    // ✅ LẤY DANH SÁCH STORE (đọc thôi, không cần transaction ghi)
+    @Transactional(readOnly = true)
+    public List<SellerStore> findAllStores() {
+        return sellerStoreRepository.findAll(); // đủ cho JSP (lọc client-side)
+    }
+
+    // ✅ server-side filter cho trang Stores
+    @Transactional(readOnly = true)
+    public List<SellerStore> searchStores(
+            Long id,
+            String name,
+            StoreStatus status,
+            Long ownerId,
+            LocalDate createdFrom,
+            LocalDate createdTo) {
+        StringBuilder jpql = new StringBuilder(
+                "select distinct s from SellerStore s " +
+                        "left join fetch s.owner " +
+                        "where 1=1");
+        Map<String, Object> p = new HashMap<>();
+
+        if (id != null) {
+            jpql.append(" and s.id = :id");
+            p.put("id", id);
+        }
+        if (name != null && !name.isBlank()) {
+            jpql.append(" and lower(s.storeName) like lower(concat('%', :name, '%'))");
+            p.put("name", name);
+        }
+        if (status != null) {
+            jpql.append(" and s.status = :status");
+            p.put("status", status);
+        }
+        if (ownerId != null) {
+            jpql.append(" and s.owner.id = :ownerId");
+            p.put("ownerId", ownerId);
+        }
+        if (createdFrom != null) {
+            jpql.append(" and s.createdAt >= :from");
+            p.put("from", createdFrom.atStartOfDay());
+        }
+        if (createdTo != null) {
+            jpql.append(" and s.createdAt < :to");
+            p.put("to", createdTo.plusDays(1).atStartOfDay());
+        }
+
+        jpql.append(" order by s.id desc");
+
+        var q = em.createQuery(jpql.toString(), SellerStore.class);
+        p.forEach(q::setParameter);
+        return q.getResultList();
+    }
+
+    @Transactional
+    public void changeStatus(Long storeId, StoreStatus target) {
+        if (target == null) {
+            throw new IllegalArgumentException("Trạng thái không hợp lệ");
+        }
+
+        // Lấy store
+        SellerStore s = sellerStoreRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy store #" + storeId));
+
+        // Không cần làm gì nếu trùng trạng thái
+        if (s.getStatus() == target)
+            return;
+
+        // Điều hướng theo trạng thái
+        switch (target) {
+            case ACTIVE -> {
+                // Dùng đúng flow kích hoạt của bạn (thêm SELLER role, v.v.)
+                activateStore(storeId);
+            }
+            case INACTIVE, PENDING -> {
+                s.setStatus(target);
+                sellerStoreRepository.save(s);
+            }
+            case BANNED -> {
+                // Không cho đổi sang BANNED bằng dropdown "Đổi trạng thái"
+                // (nút Ban riêng sẽ gọi banStore(...))
+                throw new IllegalArgumentException("Đổi sang BANNED không được phép ở đây. Vui lòng dùng nút Ban.");
+            }
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public int countStores(Long id, String name, StoreStatus status, Long ownerId,
+            LocalDate createdFrom, LocalDate createdTo) {
+        StringBuilder jpql = new StringBuilder(
+                "select count(s) from SellerStore s where 1=1");
+        Map<String, Object> p = new HashMap<>();
+
+        if (id != null) {
+            jpql.append(" and s.id = :id");
+            p.put("id", id);
+        }
+        if (name != null && !name.isBlank()) {
+            jpql.append(" and lower(s.storeName) like lower(concat('%', :name, '%'))");
+            p.put("name", name);
+        }
+        if (status != null) {
+            jpql.append(" and s.status = :status");
+            p.put("status", status);
+        }
+        if (ownerId != null) {
+            jpql.append(" and s.owner.id = :ownerId");
+            p.put("ownerId", ownerId);
+        }
+        if (createdFrom != null) {
+            jpql.append(" and s.createdAt >= :from");
+            p.put("from", createdFrom.atStartOfDay());
+        }
+        if (createdTo != null) {
+            jpql.append(" and s.createdAt < :to");
+            p.put("to", createdTo.plusDays(1).atStartOfDay());
+        }
+
+        var q = em.createQuery(jpql.toString(), Long.class);
+        p.forEach(q::setParameter);
+        Long cnt = q.getSingleResult();
+        return cnt == null ? 0 : cnt.intValue();
+    }
+
+    @Transactional(readOnly = true)
+    public List<SellerStore> searchStoresPaged(Long id, String name, StoreStatus status, Long ownerId,
+            LocalDate createdFrom, LocalDate createdTo,
+            int offset, int size) {
+        StringBuilder jpql = new StringBuilder(
+                "select s from SellerStore s left join fetch s.owner where 1=1");
+        Map<String, Object> p = new HashMap<>();
+
+        if (id != null) {
+            jpql.append(" and s.id = :id");
+            p.put("id", id);
+        }
+        if (name != null && !name.isBlank()) {
+            jpql.append(" and lower(s.storeName) like lower(concat('%', :name, '%'))");
+            p.put("name", name);
+        }
+        if (status != null) {
+            jpql.append(" and s.status = :status");
+            p.put("status", status);
+        }
+        if (ownerId != null) {
+            jpql.append(" and s.owner.id = :ownerId");
+            p.put("ownerId", ownerId);
+        }
+        if (createdFrom != null) {
+            jpql.append(" and s.createdAt >= :from");
+            p.put("from", createdFrom.atStartOfDay());
+        }
+        if (createdTo != null) {
+            jpql.append(" and s.createdAt < :to");
+            p.put("to", createdTo.plusDays(1).atStartOfDay());
+        }
+
+        jpql.append(" order by s.id desc");
+
+        var q = em.createQuery(jpql.toString(), SellerStore.class);
+        p.forEach(q::setParameter);
+        q.setFirstResult(Math.max(0, offset));
+        q.setMaxResults(Math.max(1, size));
+        return q.getResultList();
     }
 
     /**
@@ -172,9 +397,39 @@ public class SellerStoreService {
     }
 
     /**
-     * Get platform fee rate from system settings
+     * Get total deposit amount being held for active stores owned by user
+     * Returns the sum of all deposit amounts from ACTIVE stores
      */
-    public Double getPlatformFeeRate() {
-        return systemSettingService.getDoubleValue("fee.fee.percentage_fee", 3.0);
+    public BigDecimal getTotalDepositHeld(User owner) {
+        if (owner == null || owner.getSellerStore() == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return sellerStoreRepository.findById(owner.getSellerStore().getId())
+                .filter(store -> store.getStatus() == StoreStatus.ACTIVE)
+                .map(SellerStore::getDepositAmount)
+                .orElse(BigDecimal.ZERO);
     }
+
+    /**
+     * Get total escrow amount being held for active stores owned by user
+     * Returns the escrow amount directly from SellerStore entity
+     */
+    public BigDecimal getTotalEscrowHeld(User owner) {
+        if (owner == null || owner.getSellerStore() == null) {
+            logger.debug("getTotalEscrowHeld: owner or store is null");
+            return BigDecimal.ZERO;
+        }
+
+        return sellerStoreRepository.findById(owner.getSellerStore().getId())
+                .filter(store -> store.getStatus() == StoreStatus.ACTIVE)
+                .map(store -> {
+                    logger.debug("getTotalEscrowHeld: reading escrowAmount for store id={}", store.getId());
+                    BigDecimal escrowAmount = store.getEscrowAmount();
+                    logger.debug("getTotalEscrowHeld: escrowAmount={}", escrowAmount);
+                    return escrowAmount == null ? BigDecimal.ZERO : escrowAmount;
+                })
+                .orElse(BigDecimal.ZERO);
+    }
+
 }

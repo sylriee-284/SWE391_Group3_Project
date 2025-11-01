@@ -77,6 +77,8 @@ public class WalletTransactionQueueService {
         }
     }
 
+   
+
     // Luồng trừ tiền thanh toán shop
     private static final String CREATED_SHOP_PREFIX = "createdShop";
 
@@ -148,6 +150,8 @@ public class WalletTransactionQueueService {
             return f;
         }
     }
+
+  
 
     public void shutdown() {
         perUserSerialExecutor.shutdown();

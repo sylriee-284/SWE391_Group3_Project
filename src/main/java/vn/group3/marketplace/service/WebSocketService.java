@@ -100,4 +100,5 @@ public class WebSocketService {
     public void sendNotificationToUser(User user, Notification notification) {
         sendNotificationToUser(user.getId(), convertToDTO(notification));
     }
+
 }

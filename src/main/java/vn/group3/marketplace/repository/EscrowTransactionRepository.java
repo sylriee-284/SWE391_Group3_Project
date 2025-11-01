@@ -10,8 +10,11 @@ import vn.group3.marketplace.domain.entity.Order;
 import vn.group3.marketplace.domain.enums.EscrowStatus;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+
+import vn.group3.marketplace.domain.entity.SellerStore;
 
 @Repository
 public interface EscrowTransactionRepository extends JpaRepository<EscrowTransaction, Long> {
