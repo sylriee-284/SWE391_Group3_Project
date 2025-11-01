@@ -20,18 +20,12 @@ import vn.group3.marketplace.service.SystemSettingService;
 
 @Controller
 @RequestMapping("/admin")
-// @RequiredArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class AdminController {
 
     private final UserService userService;
     private final SystemSettingService systemSettingService;
-
-    public AdminController(UserService userService,
-            SystemSettingService systemSettingService) { // <- thêm tham số này
-        this.userService = userService;
-        this.systemSettingService = systemSettingService; // <- gán vào field
-    }
 
     private static final String SUCCESS_MESSAGE = "successMessage";
     private static final String ERROR_MESSAGE = "errorMessage";
@@ -43,6 +37,77 @@ public class AdminController {
     public String dashboard(Model model) {
         // Load report data: orders, users, revenue, disputes...
         return "admin/dashboard";
+    }
+
+    // API endpoints for chart data
+    @GetMapping("/api/user-growth-data")
+    @ResponseBody
+    public java.util.Map<String, Object> getUserGrowthData() {
+        // TODO: Replace with actual database queries
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("labels", java.util.Arrays.asList("Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6"));
+        data.put("data", java.util.Arrays.asList(45, 78, 95, 120, 145, 178));
+        return data;
+    }
+
+    @GetMapping("/api/order-stats-data")
+    @ResponseBody
+    public java.util.Map<String, Object> getOrderStatsData() {
+        // TODO: Replace with actual database queries from Order entity
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("labels", java.util.Arrays.asList("Hoàn thành", "Đang xử lý", "Đã hủy", "Chờ thanh toán"));
+        data.put("data", java.util.Arrays.asList(65, 20, 10, 5));
+        return data;
+    }
+
+    @GetMapping("/api/revenue-data")
+    @ResponseBody
+    public java.util.Map<String, Object> getRevenueData() {
+        // TODO: Replace with actual database queries from WalletTransaction entity
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("labels",
+                java.util.Arrays.asList("T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"));
+        data.put("data", java.util.Arrays.asList(25000000, 32000000, 28000000, 35000000, 42000000, 38000000, 45000000,
+                48000000, 52000000, 47000000, 55000000, 60000000));
+        return data;
+    }
+
+    @GetMapping("/api/category-data")
+    @ResponseBody
+    public java.util.Map<String, Object> getCategoryData() {
+        // TODO: Replace with actual database queries from Category/Product entities
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("labels", java.util.Arrays.asList("Phần mềm", "Tài khoản", "Dịch vụ", "Khác"));
+        data.put("data", java.util.Arrays.asList(35, 25, 30, 10));
+        return data;
+    }
+
+    @GetMapping("/api/kpi-data")
+    @ResponseBody
+    public java.util.Map<String, Object> getKpiData() {
+        // TODO: Replace with actual database queries
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+
+        // Total users count (from User entity)
+        data.put("totalUsers", 1234);
+        data.put("newUsersThisMonth", 56);
+
+        // Total orders count (from Order entity)
+        data.put("totalOrders", 2847);
+        data.put("pendingOrders", 23);
+
+        // Total products count (from Product entity)
+        data.put("totalProducts", 456);
+        data.put("activeProducts", 398);
+
+        // Total stores count (from SellerStore entity)
+        data.put("totalStores", 89);
+        data.put("activeStores", 76);
+
+        // Active users now (could be from sessions or recent activity)
+        data.put("activeUsersNow", 45);
+
+        return data;
     }
 
     @GetMapping("/categories/overview")
