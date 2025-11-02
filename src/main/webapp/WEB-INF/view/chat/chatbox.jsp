@@ -28,9 +28,9 @@
 
                         <script>
                             const firebaseConfig = {
-                                apiKey: "AIzaSyDenK3979rENG3vgxb3MlynYZqLzyZfV_A",
-                                authDomain: "mmo-market-system.firebaseapp.com",
-                                projectId: "mmo-market-system"
+                                apiKey: "${firebaseApiKey}",
+                                authDomain: "${firebaseAuthDomain}",
+                                projectId: "${firebaseProjectId}"
                             };
                         </script>
 

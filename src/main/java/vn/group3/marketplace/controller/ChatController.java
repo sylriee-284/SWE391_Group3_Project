@@ -1,5 +1,6 @@
 package vn.group3.marketplace.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,6 +13,15 @@ import vn.group3.marketplace.security.CustomUserDetails;
 @RequestMapping("/chat")
 public class ChatController {
 
+    @Value("${firebase.api-key}")
+    private String firebaseApiKey;
+
+    @Value("${firebase.auth-domain}")
+    private String firebaseAuthDomain;
+
+    @Value("${firebase.project-id}")
+    private String firebaseProjectId;
+
     @GetMapping
     public String chatPage(
             @AuthenticationPrincipal CustomUserDetails currentUser,
@@ -22,6 +32,9 @@ public class ChatController {
         }
 
         model.addAttribute("currentUser", currentUser);
+        model.addAttribute("firebaseApiKey", firebaseApiKey);
+        model.addAttribute("firebaseAuthDomain", firebaseAuthDomain);
+        model.addAttribute("firebaseProjectId", firebaseProjectId);
         if (chatTo != null && !chatTo.isBlank()) {
             model.addAttribute("chatTo", chatTo);
         }
