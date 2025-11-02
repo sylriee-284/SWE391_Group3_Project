@@ -77,7 +77,8 @@
                                         cửa hàng</a></li>
                                 <li><a href="/seller/products" class="text-white text-decoration-none">📦 Quản lý sản
                                         phẩm</a></li>
-                                <li><a href="/seller/reports" class="text-white text-decoration-none">📈 Báo cáo & thống
+                                <li><a href="/seller/dashboard" class="text-white text-decoration-none">📈 Báo cáo &
+                                        thống
                                         kê</a></li>
                             </ul>
                         </li>

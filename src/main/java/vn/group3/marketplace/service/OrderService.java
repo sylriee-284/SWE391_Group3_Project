@@ -390,6 +390,17 @@ public class OrderService {
                 orderRepository.save(order);
 
                 break;
+            case SUCCESS:
+            case PENDING:
+            case HELD:
+            case RELEASED:
+            case CANCELLED:
+            case REFUNDED:
+                // These statuses are handled elsewhere or don't require order updates
+                break;
+            default:
+                // Unknown status - log warning but don't fail
+                break;
         }
     }
 
