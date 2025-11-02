@@ -130,6 +130,9 @@
                             let activeCid = null;
                             let unsubConvos = null;
                             let unsubMsgs = null;
+                            let oldestMessageDoc = null; // Document của message cũ nhất đã load
+                            let isLoadingMore = false;    // Đang load thêm messages
+                            let hasMoreMessages = true;  // Còn messages cũ hơn để load
 
                             // ====== HÀM CHÍNH, CHỈ CHẠY SAU KHI DOM SẴN SÀNG ======
                             async function boot() {
@@ -289,11 +292,126 @@
                                     return cid;
                                 }
 
+                                // ---- Render một message thành DOM element
+                                function renderMessage(doc) {
+                                    const m = doc.data();
+                                    const isMe = String(m.senderUsername || '').toLowerCase() === meUsername;
+
+                                    const row = document.createElement('div');
+                                    row.className = 'message-row';
+                                    row.setAttribute('data-msg-id', doc.id);
+                                    row.style.cssText = 'display:flex;margin-bottom:15px;align-items:flex-start;justify-content:' + (isMe ? 'flex-end' : 'flex-start') + ';';
+
+                                    const col = document.createElement('div');
+                                    col.style.maxWidth = '70%';
+
+                                    const bubble = document.createElement('div');
+                                    bubble.style.cssText =
+                                        'padding:12px 16px;border-radius:18px;font-size:14px;line-height:1.4;' +
+                                        'background:' + (isMe ? '#0d6efd' : '#e5e5e5') + ';color:' + (isMe ? '#fff' : '#333') + ';' +
+                                        (isMe ? 'border-bottom-right-radius:4px;' : 'border-bottom-left-radius:4px;') +
+                                        'white-space:pre-wrap;word-break:break-word;';
+                                    bubble.textContent = m.text || '';
+
+                                    const meta = document.createElement('div');
+                                    meta.style.cssText = 'font-size:11px;color:#999;margin-top:4px;text-align:' + (isMe ? 'right' : 'left') + ';';
+                                    meta.textContent = (m.ts && m.ts.toDate) ? m.ts.toDate().toLocaleString() : '';
+
+                                    col.appendChild(bubble);
+                                    col.appendChild(meta);
+                                    row.appendChild(col);
+                                    return row;
+                                }
+
+                                // ---- Load thêm messages cũ hơn (20 messages mỗi lần)
+                                async function loadMoreMessages() {
+                                    if (!activeCid || isLoadingMore || !hasMoreMessages || !oldestMessageDoc) {
+                                        return;
+                                    }
+
+                                    isLoadingMore = true;
+                                    const loadMoreBtn = msgsEl.querySelector('.load-more-btn');
+                                    if (loadMoreBtn) {
+                                        loadMoreBtn.textContent = 'Đang tải...';
+                                        loadMoreBtn.style.pointerEvents = 'none';
+                                    }
+
+                                    try {
+                                        const q = db.collection('conversations').doc(activeCid)
+                                            .collection('messages')
+                                            .orderBy('ts', 'desc')
+                                            .startAfter(oldestMessageDoc)
+                                            .limit(20);
+
+                                        const snap = await q.get();
+
+                                        if (snap.empty) {
+                                            hasMoreMessages = false;
+                                            if (loadMoreBtn) {
+                                                loadMoreBtn.textContent = 'Không còn tin nhắn cũ hơn';
+                                                loadMoreBtn.style.opacity = '0.5';
+                                                loadMoreBtn.style.cursor = 'default';
+                                            }
+                                            isLoadingMore = false;
+                                            return;
+                                        }
+
+                                        // Lưu document cũ nhất mới load được
+                                        oldestMessageDoc = snap.docs[snap.docs.length - 1];
+                                        if (snap.docs.length < 20) {
+                                            hasMoreMessages = false;
+                                        }
+
+                                        // Lấy scroll position trước khi thêm messages
+                                        const scrollBefore = msgsEl.scrollHeight - msgsEl.scrollTop;
+                                        const firstMsgRow = msgsEl.querySelector('.message-row');
+
+                                        // Thêm messages cũ vào đầu (theo thứ tự cũ → mới)
+                                        for (let i = snap.docs.length - 1; i >= 0; i--) {
+                                            const doc = snap.docs[i];
+                                            const msgRow = renderMessage(doc);
+                                            if (firstMsgRow) {
+                                                msgsEl.insertBefore(msgRow, firstMsgRow);
+                                            } else {
+                                                msgsEl.insertBefore(msgRow, msgsEl.firstChild);
+                                            }
+                                        }
+
+                                        // Restore scroll position
+                                        msgsEl.scrollTop = msgsEl.scrollHeight - scrollBefore;
+
+                                        // Update button
+                                        if (loadMoreBtn) {
+                                            if (hasMoreMessages) {
+                                                loadMoreBtn.textContent = 'Tải thêm tin nhắn cũ';
+                                            } else {
+                                                loadMoreBtn.textContent = 'Đã tải hết tin nhắn';
+                                                loadMoreBtn.style.opacity = '0.5';
+                                                loadMoreBtn.style.cursor = 'default';
+                                            }
+                                            loadMoreBtn.style.pointerEvents = 'auto';
+                                        }
+                                    } catch (error) {
+                                        console.error('Error loading more messages:', error);
+                                        if (loadMoreBtn) {
+                                            loadMoreBtn.textContent = 'Lỗi tải tin nhắn. Nhấn để thử lại';
+                                            loadMoreBtn.style.pointerEvents = 'auto';
+                                        }
+                                    } finally {
+                                        isLoadingMore = false;
+                                    }
+                                }
+
                                 // ---- Chọn conversation & nghe messages
                                 function selectConversation(cid) {
                                     activeCid = cid;
                                     if (unsubMsgs) unsubMsgs();
                                     enableComposer(true);
+
+                                    // Reset pagination state
+                                    oldestMessageDoc = null;
+                                    isLoadingMore = false;
+                                    hasMoreMessages = true;
 
                                     // header
                                     db.collection('conversations').doc(cid).get().then(function (s) {
@@ -305,38 +423,45 @@
 
                                     msgsEl.innerHTML = '<div style="color:#999;padding:12px">Đang tải…</div>';
 
-                                    const q = db.collection('conversations').doc(cid)
-                                        .collection('messages').orderBy('ts', 'asc').limit(200);
+                                    // Load 20 messages mới nhất ban đầu (orderBy desc)
+                                    const initialQuery = db.collection('conversations').doc(cid)
+                                        .collection('messages')
+                                        .orderBy('ts', 'desc')
+                                        .limit(20);
 
-                                    unsubMsgs = q.onSnapshot(async function (snap) {
+                                    initialQuery.get().then(async function (snap) {
                                         msgsEl.innerHTML = '';
-                                        snap.forEach(function (doc) {
-                                            const m = doc.data();
-                                            const isMe = String(m.senderUsername || '').toLowerCase() === meUsername;
 
-                                            const row = document.createElement('div');
-                                            row.style.cssText = 'display:flex;margin-bottom:15px;align-items:flex-start;justify-content:' + (isMe ? 'flex-end' : 'flex-start') + ';';
+                                        if (snap.empty) {
+                                            msgsEl.innerHTML = '<div style="text-align:center; padding: 20px; color:#999;">Chưa có tin nhắn nào</div>';
+                                            return;
+                                        }
 
-                                            const col = document.createElement('div');
-                                            col.style.maxWidth = '70%';
+                                        // Lưu document cũ nhất đã load
+                                        oldestMessageDoc = snap.docs[snap.docs.length - 1];
+                                        if (snap.docs.length < 20) {
+                                            hasMoreMessages = false;
+                                        }
 
-                                            const bubble = document.createElement('div');
-                                            bubble.style.cssText =
-                                                'padding:12px 16px;border-radius:18px;font-size:14px;line-height:1.4;' +
-                                                'background:' + (isMe ? '#0d6efd' : '#e5e5e5') + ';color:' + (isMe ? '#fff' : '#333') + ';' +
-                                                (isMe ? 'border-bottom-right-radius:4px;' : 'border-bottom-left-radius:4px;') +
-                                                'white-space:pre-wrap;word-break:break-word;';
-                                            bubble.textContent = m.text || '';
+                                        // Thêm nút "Tải thêm" ở đầu nếu còn messages cũ hơn
+                                        if (hasMoreMessages) {
+                                            const loadMoreBtn = document.createElement('button');
+                                            loadMoreBtn.className = 'load-more-btn';
+                                            loadMoreBtn.type = 'button';
+                                            loadMoreBtn.style.cssText = 'width:100%;padding:10px;margin-bottom:10px;background:#f0f0f0;border:1px solid #ddd;border-radius:5px;color:#0d6efd;cursor:pointer;font-size:14px;';
+                                            loadMoreBtn.textContent = 'Tải thêm tin nhắn cũ';
+                                            loadMoreBtn.onclick = loadMoreMessages;
+                                            msgsEl.appendChild(loadMoreBtn);
+                                        }
 
-                                            const meta = document.createElement('div');
-                                            meta.style.cssText = 'font-size:11px;color:#999;margin-top:4px;text-align:' + (isMe ? 'right' : 'left') + ';';
-                                            meta.textContent = (m.ts && m.ts.toDate) ? m.ts.toDate().toLocaleString() : '';
+                                        // Render messages từ cũ → mới (reverse để hiển thị đúng thứ tự)
+                                        for (let i = snap.docs.length - 1; i >= 0; i--) {
+                                            const doc = snap.docs[i];
+                                            const msgRow = renderMessage(doc);
+                                            msgsEl.appendChild(msgRow);
+                                        }
 
-                                            col.appendChild(bubble);
-                                            col.appendChild(meta);
-                                            row.appendChild(col);
-                                            msgsEl.appendChild(row);
-                                        });
+                                        // Scroll xuống cuối
                                         msgsEl.scrollTop = msgsEl.scrollHeight;
 
                                         // mark read
@@ -344,7 +469,84 @@
                                             await db.collection('conversations').doc(cid)
                                                 .set({ lastSeenAt: (function (o) { o[meUsername] = firebase.firestore.FieldValue.serverTimestamp(); return o; })({}) }, { merge: true });
                                         } catch (e) { }
-                                    }, function (err) { });
+
+                                        // Listen real-time cho messages mới
+                                        const newestDoc = snap.docs[0];
+                                        const newestTimestamp = newestDoc.data().ts;
+
+                                        // Query cho messages mới hơn message mới nhất
+                                        const realtimeQuery = db.collection('conversations').doc(cid)
+                                            .collection('messages')
+                                            .where('ts', '>', newestTimestamp)
+                                            .orderBy('ts', 'asc')
+                                            .limit(50);
+
+                                        unsubMsgs = realtimeQuery.onSnapshot(async function (newSnap) {
+                                            if (!newSnap.empty) {
+                                                newSnap.forEach(function (doc) {
+                                                    // Kiểm tra xem message đã tồn tại chưa
+                                                    const existingRow = msgsEl.querySelector(`[data-msg-id="${doc.id}"]`);
+                                                    if (!existingRow) {
+                                                        const msgRow = renderMessage(doc);
+                                                        msgsEl.appendChild(msgRow);
+                                                    }
+                                                });
+
+                                                // Chỉ scroll nếu đang ở gần cuối
+                                                const isNearBottom = msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < 100;
+                                                if (isNearBottom) {
+                                                    msgsEl.scrollTop = msgsEl.scrollHeight;
+                                                }
+                                            }
+
+                                            // mark read
+                                            try {
+                                                await db.collection('conversations').doc(cid)
+                                                    .set({ lastSeenAt: (function (o) { o[meUsername] = firebase.firestore.FieldValue.serverTimestamp(); return o; })({}) }, { merge: true });
+                                            } catch (e) { }
+                                        }, function (err) {
+                                            // Nếu lỗi do thiếu index, fallback: query messages mới nhất và filter
+                                            if (err.code === 'failed-precondition') {
+                                                console.warn('Firestore index missing, using fallback query');
+                                                const fallbackQuery = db.collection('conversations').doc(cid)
+                                                    .collection('messages')
+                                                    .orderBy('ts', 'desc')
+                                                    .limit(20);
+
+                                                unsubMsgs = fallbackQuery.onSnapshot(async function (fallbackSnap) {
+                                                    if (!fallbackSnap.empty) {
+                                                        fallbackSnap.forEach(function (doc) {
+                                                            const docTimestamp = doc.data().ts;
+                                                            // Chỉ thêm nếu message mới hơn
+                                                            if (docTimestamp && docTimestamp > newestTimestamp) {
+                                                                const existingRow = msgsEl.querySelector(`[data-msg-id="${doc.id}"]`);
+                                                                if (!existingRow) {
+                                                                    const msgRow = renderMessage(doc);
+                                                                    msgsEl.appendChild(msgRow);
+                                                                    const isNearBottom = msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < 100;
+                                                                    if (isNearBottom) {
+                                                                        msgsEl.scrollTop = msgsEl.scrollHeight;
+                                                                    }
+                                                                }
+                                                            }
+                                                        });
+                                                    }
+
+                                                    try {
+                                                        await db.collection('conversations').doc(cid)
+                                                            .set({ lastSeenAt: (function (o) { o[meUsername] = firebase.firestore.FieldValue.serverTimestamp(); return o; })({}) }, { merge: true });
+                                                    } catch (e) { }
+                                                }, function (fallbackErr) {
+                                                    console.error('Error in fallback real-time listener:', fallbackErr);
+                                                });
+                                            } else {
+                                                console.error('Error in real-time listener:', err);
+                                            }
+                                        });
+                                    }).catch(function (err) {
+                                        console.error('Error loading messages:', err);
+                                        msgsEl.innerHTML = '<div style="text-align:center; padding: 20px; color:#f00;">Lỗi tải tin nhắn</div>';
+                                    });
                                 }
 
                                 // ---- Gửi message (text-only)
