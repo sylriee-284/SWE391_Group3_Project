@@ -76,6 +76,45 @@
                                         </div>
                                     </div>
 
+                                    <!-- Held Balances (Only for Sellers) -->
+                                    <c:if test="${isSeller}">
+                                        <div class="row mb-4">
+                                            <div class="col-md-6">
+                                                <div class="card border-warning">
+                                                    <div class="card-body text-center">
+                                                        <h5 class="card-title text-warning">
+                                                            <i class="fas fa-lock"></i> Tiền Cọc Đang Giữ
+                                                        </h5>
+                                                        <p class="card-text">
+                                                            <strong class="h4">
+                                                                <fmt:formatNumber value="${depositHeld}" type="currency" 
+                                                                    currencySymbol="₫" maxFractionDigits="0"/>
+                                                            </strong><br>
+                                                            <small class="text-muted">Deposit held for orders</small>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="card border-info">
+                                                    <div class="card-body text-center">
+                                                        <h5 class="card-title text-info">
+                                                            <i class="fas fa-hourglass-half"></i> Tiền Ký Quỹ Đang Giữ
+                                                        </h5>
+                                                        <p class="card-text">
+                                                            <strong class="h4">
+                                                                <fmt:formatNumber value="${escrowHeld}" type="currency" 
+                                                                    currencySymbol="₫" maxFractionDigits="0"/>
+                                                            </strong><br>
+                                                            <small class="text-muted">Escrow held for transactions</small>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </c:if>
+
                                     <!-- Thao tác -->
                                     <div class="row mb-4">
                                         <div class="col-12">
