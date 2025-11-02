@@ -31,8 +31,7 @@
 
                                 <!-- Chỉ hiển thị nếu user có role SELLER -->
                                 <sec:authorize access="hasRole('SELLER')">
-                                    <li><a href="/wallet/withdraw" class="text-white text-decoration-none">📤 Rút
-                                            tiền</a></li>
+                                    <li><a href="/seller/withdrawals" class="text-white text-decoration-none">💸 Yêu cầu rút tiền</a></li>
                                 </sec:authorize>
                             </ul>
                         </li>
@@ -103,7 +102,7 @@
                                         hàng</a></li>
                                 <li><a href="/admin/categories" class="text-white text-decoration-none">📦 Quản lý mặt
                                         hàng</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">💳 Đơn rút tiền</a></li>
+                                <li><a href="#" class="text-white text-decoration-none">💲 Quản lý rút tiền</a></li>
                                 <li><a href="/admin/system-config" class="text-white text-decoration-none">⚙️ Cài đặt
                                         platform</a></li>
                                 <li><a href="#" class="text-white text-decoration-none">📈 Báo cáo & thống kê</a></li>

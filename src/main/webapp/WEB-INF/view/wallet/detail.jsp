@@ -76,59 +76,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- Seller Deposit Info (Only for Sellers) -->
-                                    <c:if test="${isSeller}">
-                                        <div class="row mb-4">
-                                            <div class="col-12">
-                                                <div class="card border-warning">
-                                                    <div class="card-body">
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <div>
-                                                                <h5 class="card-title mb-1">
-                                                                    <i class="fas fa-lock text-warning"></i> Deposit Held
-                                                                </h5>
-                                                                <p class="text-muted mb-0">
-                                                                    <small>Amount held as store deposit</small>
-                                                                </p>
-                                                            </div>
-                                                            <div class="text-end">
-                                                                <h3 class="mb-0 text-warning">
-                                                                    <fmt:formatNumber value="${depositHeld}"
-                                                                        type="currency" currencySymbol="₫" />
-                                                                </h3>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- Escrow Amount Info -->
-                                        <div class="row mb-4">
-                                            <div class="col-12">
-                                                <div class="card border-info">
-                                                    <div class="card-body">
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <div>
-                                                                <h5 class="card-title mb-1">
-                                                                    <i class="fas fa-shield-alt text-info"></i> Escrow Amount
-                                                                </h5>
-                                                                <p class="text-muted mb-0">
-                                                                    <small>Amount held in escrow for ongoing transactions</small>
-                                                                </p>
-                                                            </div>
-                                                            <div class="text-end">
-                                                                <h3 class="mb-0 text-info">
-                                                                    <fmt:formatNumber value="${escrowHeld}"
-                                                                        type="currency" currencySymbol="₫" />
-                                                                </h3>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </c:if>
-
                                     <!-- Thao tác -->
                                     <div class="row mb-4">
                                         <div class="col-12">
@@ -145,14 +92,15 @@
                                                             </a>
                                                         </div>
 
-                                                        <c:if test="${isSeller}">
+                                                        <sec:authorize
+                                                            access="isAuthenticated() and hasRole('SELLER') and !hasRole('ADMIN')">
                                                             <div class="col-md-4 mb-3">
-                                                                <a href="/wallet/withdraw" class="btn btn-warning w-100">
+                                                                <a href="/seller/withdrawals" class="btn btn-warning w-100">
                                                                     <i class="fas fa-minus-circle"></i><br>
                                                                     Withdraw
                                                                 </a>
                                                             </div>
-                                                        </c:if>
+                                                        </sec:authorize>
 
                                                         <div class="col-md-4 mb-3">
                                                             <a href="/wallet/transactions" class="btn btn-info w-100">

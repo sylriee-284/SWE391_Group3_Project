@@ -167,6 +167,9 @@
                                                             <i class="fas fa-check-circle"></i> Kích hoạt cửa hàng (Thanh toán ký quỹ)
                                                         </button>
                                                     </form>
+                                                    <button type="button" class="btn btn-outline-secondary" onclick="goToEditStore()">
+                                                        <i class="fas fa-edit"></i> Sửa thông tin cửa hàng
+                                                    </button>
                                                     <a href="${pageContext.request.contextPath}/wallet/deposit" class="btn btn-outline-primary">
                                                         <i class="fas fa-wallet"></i> Nạp tiền trước
                                                     </a>
@@ -402,6 +405,14 @@
                             console.error('Setup polling failed', err);
                         }
                     })();
+                    
+                    // Function to go to edit store and open modal
+                    function goToEditStore() {
+                        // Set a flag in sessionStorage to auto-open modal
+                        sessionStorage.setItem('openEditModal', 'true');
+                        // Redirect to seller register page
+                        window.location.href = '${pageContext.request.contextPath}/seller/register';
+                    }
                 </script>
             </body>
 
