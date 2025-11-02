@@ -39,7 +39,8 @@
                                         </div>
                                     </div>
                                     <div class="col-md-4 text-md-right">
-                                        <a href="/chat?sellerId=${store.owner.id}" class="btn btn-primary btn-chat">
+                                        <a href="/chat?chat-to=${store.owner.username}"
+                                            class="btn btn-primary btn-chat">
                                             <i class="fas fa-comment-dots"></i> Chat ngay
                                         </a>
                                     </div>

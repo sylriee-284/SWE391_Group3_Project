@@ -53,8 +53,6 @@ public class StoreController {
             @RequestParam(value = "hotSort", required = false, defaultValue = "best_seller") String hotSort,
             Model model) {
 
-        long startTime = System.currentTimeMillis();
-
         // ===== 1. VALIDATE STORE =====
         SellerStore store = storeRepo.findById(id).orElse(null);
         if (store == null) {
@@ -96,8 +94,6 @@ public class StoreController {
             minP = productRepo.findMinPriceByStore(id);
             maxP = productRepo.findMaxPriceByStore(id);
 
-            System.out
-                    .println("=== KPIs Loaded (page 0) - Time: " + (System.currentTimeMillis() - startTime) + "ms ===");
         }
 
         // ===== 2.5. LOAD PARENT CATEGORIES & SUBCATEGORIES FOR FILTER =====
@@ -166,8 +162,6 @@ public class StoreController {
                 sortObj);
         org.springframework.data.domain.Page<Product> productsPage = productService.search(id, q, ProductStatus.ACTIVE,
                 categoryId, null, null, null, minPriceDec, maxPriceDec, null, null, pr);
-
-        System.out.println("=== Products Loaded - Time: " + (System.currentTimeMillis() - startTime) + "ms ===");
 
         // ===== 6. COLLECTIONS (ONLY ON FIRST PAGE) =====
         List<Product> newestProducts = java.util.Collections.emptyList();
@@ -238,8 +232,6 @@ public class StoreController {
                 hotMaxPriceDec,
                 hotPr);
 
-        System.out.println("=== Hot Products Loaded - Time: " + (System.currentTimeMillis() - startTime) + "ms ===");
-
         // ===== 8. ADD TO MODEL =====
         model.addAttribute("store", store);
         model.addAttribute("storeRating", storeRating);
@@ -273,9 +265,6 @@ public class StoreController {
         model.addAttribute("filterPriceMax", priceMax);
         model.addAttribute("filterInStock", inStock);
         model.addAttribute("filterRatingGte", ratingGte);
-
-        long totalTime = System.currentTimeMillis() - startTime;
-        System.out.println("=== TOTAL PAGE LOAD TIME: " + totalTime + "ms ===");
 
         return "store/info";
     }
