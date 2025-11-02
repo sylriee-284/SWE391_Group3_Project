@@ -72,3 +72,8 @@
     <!-- SockJS and STOMP for WebSocket -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <!-- Withdrawals CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/withdrawals-create.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/withdrawals-detail.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/withdrawals-edit.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/withdrawals-list.css">

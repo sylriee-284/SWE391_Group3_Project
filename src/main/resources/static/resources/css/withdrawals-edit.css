@@ -1,0 +1,64 @@
+ 
+                    .balance-card {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        border-radius: 10px;
+                        padding: 20px;
+                        margin-bottom: 20px;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                    }
+
+                    .balance-amount {
+                        font-size: 2rem;
+                        font-weight: bold;
+                    }
+
+                    .form-card {
+                        border: none;
+                        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+                        border-radius: 10px;
+                        height: 100%;
+                    }
+
+                    .form-card .card-body {
+                        padding: 1.5rem;
+                        height: 100%;
+                    }
+
+                    /* Ensure equal height columns */
+                    .row {
+                        display: flex;
+                    }
+
+                    .row > [class*="col-"] {
+                        display: flex;
+                        flex-direction: column;
+                    }
+
+                    .currency-input {
+                        position: relative;
+                    }
+
+                    .currency-input::after {
+                        content: '₫';
+                        position: absolute;
+                        right: 15px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        color: #6c757d;
+                        font-weight: bold;
+                    }
+
+                    .form-control.amount-input {
+                        padding-right: 30px;
+                    }
+
+                    .warning-box {
+                        background-color: #fff3cd;
+                        border-left: 4px solid #ffc107;
+                        padding: 15px;
+                        margin-bottom: 20px;
+                    }
+               

@@ -60,4 +60,10 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
      */
     long countByUserAndPaymentStatus(User user, WalletTransactionStatus status);
 
+    
+    /**
+     * Kiểm tra xem user có giao dịch với loại và trạng thái cụ thể không
+     */
+    boolean existsByUserAndTypeAndPaymentStatus(User user, WalletTransactionType type, WalletTransactionStatus status);
+
 }
