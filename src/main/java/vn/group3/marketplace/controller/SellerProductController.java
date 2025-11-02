@@ -609,7 +609,7 @@ public class SellerProductController {
             // Product not found or doesn't belong to this store
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Không tìm thấy sản phẩm hoặc sản phẩm không thuộc cửa hàng của bạn.");
-            return "redirect:/seller/dashboard";
+            return "redirect:/seller/products";
         }
     }
 

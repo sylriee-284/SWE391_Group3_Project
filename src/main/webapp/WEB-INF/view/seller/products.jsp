@@ -144,7 +144,6 @@
                                         }
                                     }
                                 </script>
-
                                 <div class="col-md-2">
                                     <button class="btn btn-outline-secondary w-100" type="submit">Lọc</button>
                                 </div>
