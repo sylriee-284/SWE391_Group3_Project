@@ -35,24 +35,6 @@
                                                 <span
                                                     class="badge badge-status badge-${fn:toLowerCase(store.status)}">${store.status}</span>
                                                 <span class="meta-divider">|</span>
-                                                <span class="meta-item">
-                                                    <i class="fas fa-star text-warning"></i>
-                                                    <strong>
-                                                        <fmt:formatNumber
-                                                            value="${storeRating != null ? storeRating : 0}"
-                                                            maxFractionDigits="1" minFractionDigits="1" />
-                                                    </strong>
-                                                    <span class="text-muted">
-                                                        <c:choose>
-                                                            <c:when test="${ratingCount > 0}">
-                                                                (${ratingCount} đánh giá)
-                                                            </c:when>
-                                                            <c:otherwise>
-                                                                (Chưa có đánh giá)
-                                                            </c:otherwise>
-                                                        </c:choose>
-                                                    </span>
-                                                </span>
                                             </div>
                                         </div>
                                     </div>

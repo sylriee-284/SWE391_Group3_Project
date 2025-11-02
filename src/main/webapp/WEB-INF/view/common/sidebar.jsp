@@ -7,11 +7,6 @@
                 <ul class="menu">
                     <li><a href="/homepage">🏠 Trang chủ</a></li>
 
-                    <!-- Link đến trang Chat -->
-                    <sec:authorize access="isAuthenticated()">
-                        <li><a href="/chat">💬 Tin nhắn</a></li>
-                    </sec:authorize>
-
                     <c:if test="${pageContext.request.userPrincipal == null}">
                         <li><a href="/register">📝 Đăng ký ngay</a></li>
                     </c:if>
