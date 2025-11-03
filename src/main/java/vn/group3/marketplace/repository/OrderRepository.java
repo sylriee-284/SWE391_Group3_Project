@@ -172,4 +172,41 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                         @Param("startDate") java.time.LocalDateTime startDate,
                         @Param("endDate") java.time.LocalDateTime endDate,
                         @Param("limit") int limit);
+
+        // Dashboard: Revenue over time (grouped by date)
+        @Query("SELECT DATE(o.createdAt), SUM(o.totalAmount) " +
+                        "FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND (:status IS NULL OR o.status = :status) " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate " +
+                        "GROUP BY DATE(o.createdAt) " +
+                        "ORDER BY DATE(o.createdAt)")
+        List<Object[]> findRevenueByDateRange(@Param("storeId") Long storeId,
+                        @Param("status") OrderStatus status,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        // Dashboard: Orders by status count
+        @Query("SELECT o.status, COUNT(o), SUM(o.totalAmount) " +
+                        "FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate " +
+                        "GROUP BY o.status")
+        List<Object[]> countOrdersByStatusAndDateRange(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        // Dashboard: Detailed orders for Sales screen
+        @Query("SELECT o FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND (:status IS NULL OR o.status = :status) " +
+                        "AND (:productId IS NULL OR o.product.id = :productId) " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate " +
+                        "ORDER BY o.createdAt DESC")
+        Page<Order> findOrdersForDashboard(@Param("storeId") Long storeId,
+                        @Param("status") OrderStatus status,
+                        @Param("productId") Long productId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate,
+                        Pageable pageable);
 }
