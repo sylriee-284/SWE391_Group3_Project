@@ -320,7 +320,7 @@
                         });
 
                         // Product Table Pagination (5 items per page)
-                        document.addEventListener('DOMContentLoaded', function() {
+                        document.addEventListener('DOMContentLoaded', function () {
                             const itemsPerPage = 5;
                             const tableBody = document.querySelector('.table tbody');
                             const rows = Array.from(tableBody.querySelectorAll('tr')).filter(row => !row.querySelector('td[colspan]'));
@@ -370,7 +370,7 @@
 
                                 // Add click handlers
                                 ul.querySelectorAll('a.page-link').forEach(link => {
-                                    link.addEventListener('click', function(e) {
+                                    link.addEventListener('click', function (e) {
                                         e.preventDefault();
                                         const newPage = parseInt(this.getAttribute('data-page'));
                                         if (newPage >= 1 && newPage <= totalPages) {

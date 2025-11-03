@@ -50,31 +50,31 @@ public class SellerDashboardController {
             // Determine which category ID to use for filtering
             // If child category is selected, use it; otherwise use parent category
             Long finalCategoryId = categoryId != null ? categoryId : parentCategoryId;
-            
+
             DashboardOverviewDTO dashboardData = dashboardService.getOverview(
                     timeFilter, startDate, endDate, productId, finalCategoryId);
 
             model.addAttribute("dashboard", dashboardData);
-            
+
             // Add parent categories (danh mục lớn) for filter
             model.addAttribute("parentCategories", categoryRepository.findByParentIsNullAndIsDeletedFalse());
-            
+
             // Load child categories if parent is selected
             if (parentCategoryId != null) {
-                model.addAttribute("childCategories", 
-                    categoryRepository.findByParentIdAndIsDeletedFalse(parentCategoryId));
+                model.addAttribute("childCategories",
+                        categoryRepository.findByParentIdAndIsDeletedFalse(parentCategoryId));
                 model.addAttribute("selectedParentId", parentCategoryId);
             } else if (categoryId != null) {
                 // If only child category is selected (from URL), load parent info
                 var selectedCategory = categoryRepository.findByIdAndIsDeletedFalse(categoryId);
                 if (selectedCategory.isPresent() && selectedCategory.get().getParent() != null) {
                     Long parentId = selectedCategory.get().getParent().getId();
-                    model.addAttribute("childCategories", 
-                        categoryRepository.findByParentIdAndIsDeletedFalse(parentId));
+                    model.addAttribute("childCategories",
+                            categoryRepository.findByParentIdAndIsDeletedFalse(parentId));
                     model.addAttribute("selectedParentId", parentId);
                 }
             }
-            
+
             return "seller/dashboard-overview";
         } catch (Exception e) {
             log.error("Error loading dashboard overview", e);
@@ -105,7 +105,7 @@ public class SellerDashboardController {
             SalesAnalyticsDTO salesData = dashboardService.getSalesAnalytics(
                     timeFilter, startDate, endDate, orderStatus, productId, page, size);
 
-            log.info("Sales data loaded successfully: {} orders, escrowSummary={}", 
+            log.info("Sales data loaded successfully: {} orders, escrowSummary={}",
                     salesData.getOrders().getTotalElements(),
                     salesData.getEscrowSummary() != null ? "present" : "null");
 
@@ -113,10 +113,10 @@ public class SellerDashboardController {
             return "seller/dashboard-sales";
         } catch (Exception e) {
             log.error("Error loading sales analytics: {}", e.getMessage(), e);
-            
+
             // Return to page with error message instead of error/500
             model.addAttribute("errorMessage", "Có lỗi khi tải dữ liệu: " + e.getMessage());
-            
+
             // Create empty DTO to prevent null pointer
             SalesAnalyticsDTO emptyData = SalesAnalyticsDTO.builder()
                     .orders(Page.empty())
@@ -140,7 +140,7 @@ public class SellerDashboardController {
                     .timeFilter(timeFilter)
                     .orderStatus(orderStatus)
                     .build();
-            
+
             model.addAttribute("sales", emptyData);
             return "seller/dashboard-sales";
         }
@@ -190,8 +190,9 @@ public class SellerDashboardController {
             @RequestParam(required = false) Long productId,
             HttpServletResponse response) throws Exception {
 
-        log.info("Exporting sales data to PDF with filters - timeFilter: {}, startDate: {}, endDate: {}, orderStatus: {}", 
-                 timeFilter, startDate, endDate, orderStatus);
+        log.info(
+                "Exporting sales data to PDF with filters - timeFilter: {}, startDate: {}, endDate: {}, orderStatus: {}",
+                timeFilter, startDate, endDate, orderStatus);
 
         try {
             // Set response headers BEFORE getting output stream
@@ -214,31 +215,37 @@ public class SellerDashboardController {
             log.info("Exporting {} orders to PDF", salesData.getOrders().getContent().size());
 
             // Create PDF document
-            com.itextpdf.kernel.pdf.PdfWriter writer = new com.itextpdf.kernel.pdf.PdfWriter(response.getOutputStream());
+            com.itextpdf.kernel.pdf.PdfWriter writer = new com.itextpdf.kernel.pdf.PdfWriter(
+                    response.getOutputStream());
             com.itextpdf.kernel.pdf.PdfDocument pdfDoc = new com.itextpdf.kernel.pdf.PdfDocument(writer);
-            com.itextpdf.layout.Document document = new com.itextpdf.layout.Document(pdfDoc, com.itextpdf.kernel.geom.PageSize.A4.rotate());
+            com.itextpdf.layout.Document document = new com.itextpdf.layout.Document(pdfDoc,
+                    com.itextpdf.kernel.geom.PageSize.A4.rotate());
 
-        // Add title
-        com.itextpdf.layout.element.Paragraph title = new com.itextpdf.layout.element.Paragraph("Báo cáo Bán hàng & Ký quỹ")
-                .setFontSize(18)
-                .setBold()
-                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER);
-        document.add(title);
+            // Add title
+            com.itextpdf.layout.element.Paragraph title = new com.itextpdf.layout.element.Paragraph(
+                    "Báo cáo Bán hàng & Ký quỹ")
+                    .setFontSize(18)
+                    .setBold()
+                    .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER);
+            document.add(title);
 
-        // Add generated date
-        com.itextpdf.layout.element.Paragraph date = new com.itextpdf.layout.element.Paragraph("Ngày tạo: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")))
-                .setFontSize(10)
-                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
-                .setMarginBottom(20);
-        document.add(date);
+            // Add generated date
+            com.itextpdf.layout.element.Paragraph date = new com.itextpdf.layout.element.Paragraph(
+                    "Ngày tạo: " + java.time.LocalDateTime.now()
+                            .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")))
+                    .setFontSize(10)
+                    .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
+                    .setMarginBottom(20);
+            document.add(date);
 
             // Create table
-            float[] columnWidths = {1.5f, 2f, 3f, 1f, 2f, 1.5f, 2f, 2f, 2f, 2f};
+            float[] columnWidths = { 1.5f, 2f, 3f, 1f, 2f, 1.5f, 2f, 2f, 2f, 2f };
             com.itextpdf.layout.element.Table table = new com.itextpdf.layout.element.Table(columnWidths);
             table.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
 
             // Add headers
-            String[] headers = {"Mã đơn", "Ngày", "Sản phẩm", "SL", "Tổng tiền", "Trạng thái", "Người mua", "Đang giữ", "Đã giải ngân", "Giữ đến"};
+            String[] headers = { "Mã đơn", "Ngày", "Sản phẩm", "SL", "Tổng tiền", "Trạng thái", "Người mua", "Đang giữ",
+                    "Đã giải ngân", "Giữ đến" };
             for (String header : headers) {
                 com.itextpdf.layout.element.Cell cell = new com.itextpdf.layout.element.Cell()
                         .add(new com.itextpdf.layout.element.Paragraph(header))
@@ -252,64 +259,81 @@ public class SellerDashboardController {
             // Add data rows
             salesData.getOrders().getContent().forEach(order -> {
                 try {
-                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(order.getOrderCode() != null ? order.getOrderCode() : "N/A").setFontSize(8)));
-                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(order.getOrderDate() != null ? order.getOrderDate().toString().substring(0, 10) : "").setFontSize(8)));
-                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(order.getProductName() != null ? order.getProductName() : "N/A").setFontSize(8)));
-                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(String.valueOf(order.getQuantity())).setFontSize(8)));
-                    
+                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(
+                            order.getOrderCode() != null ? order.getOrderCode() : "N/A").setFontSize(8)));
+                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(
+                            order.getOrderDate() != null ? order.getOrderDate().toString().substring(0, 10) : "")
+                            .setFontSize(8)));
+                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(
+                            order.getProductName() != null ? order.getProductName() : "N/A").setFontSize(8)));
+                    table.addCell(new com.itextpdf.layout.element.Cell()
+                            .add(new com.itextpdf.layout.element.Paragraph(String.valueOf(order.getQuantity()))
+                                    .setFontSize(8)));
+
                     // Safe BigDecimal formatting
                     String totalAmountStr = "0 VND";
                     if (order.getTotalAmount() != null) {
                         totalAmountStr = String.format("%,.0f VND", order.getTotalAmount().doubleValue());
                     }
-                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(totalAmountStr).setFontSize(8)));
-                    
-                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(order.getStatus() != null ? order.getStatus().name() : "N/A").setFontSize(8)));
-                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(order.getBuyerName() != null ? order.getBuyerName() : "N/A").setFontSize(8)));
-                    
+                    table.addCell(new com.itextpdf.layout.element.Cell()
+                            .add(new com.itextpdf.layout.element.Paragraph(totalAmountStr).setFontSize(8)));
+
+                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(
+                            order.getStatus() != null ? order.getStatus().name() : "N/A").setFontSize(8)));
+                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(
+                            order.getBuyerName() != null ? order.getBuyerName() : "N/A").setFontSize(8)));
+
                     // Safe escrow formatting
                     String escrowHeldStr = "0 VND";
                     if (order.getEscrowHeld() != null) {
                         escrowHeldStr = String.format("%,.0f VND", order.getEscrowHeld().doubleValue());
                     }
-                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(escrowHeldStr).setFontSize(8)));
-                    
+                    table.addCell(new com.itextpdf.layout.element.Cell()
+                            .add(new com.itextpdf.layout.element.Paragraph(escrowHeldStr).setFontSize(8)));
+
                     String escrowReleasedStr = "0 VND";
                     if (order.getEscrowReleased() != null) {
                         escrowReleasedStr = String.format("%,.0f VND", order.getEscrowReleased().doubleValue());
                     }
-                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(escrowReleasedStr).setFontSize(8)));
-                    
-                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(order.getEscrowHoldUntil() != null ? order.getEscrowHoldUntil().toString().substring(0, 10) : "N/A").setFontSize(8)));
+                    table.addCell(new com.itextpdf.layout.element.Cell()
+                            .add(new com.itextpdf.layout.element.Paragraph(escrowReleasedStr).setFontSize(8)));
+
+                    table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(
+                            order.getEscrowHoldUntil() != null ? order.getEscrowHoldUntil().toString().substring(0, 10)
+                                    : "N/A")
+                            .setFontSize(8)));
                 } catch (Exception e) {
-                    log.error("Error adding order row to PDF: orderId={}, error={}", order.getOrderId(), e.getMessage());
+                    log.error("Error adding order row to PDF: orderId={}, error={}", order.getOrderId(),
+                            e.getMessage());
                     // Add empty cells to maintain table structure
                     for (int i = 0; i < 10; i++) {
-                        table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph("ERROR").setFontSize(8)));
+                        table.addCell(new com.itextpdf.layout.element.Cell()
+                                .add(new com.itextpdf.layout.element.Paragraph("ERROR").setFontSize(8)));
                     }
                 }
             });
 
             document.add(table);
             document.close();
-            
+
             // Flush and close the output stream
             response.getOutputStream().flush();
-            
+
             log.info("Successfully exported sales PDF");
-            
+
         } catch (Exception e) {
             log.error("Error exporting sales PDF", e);
             e.printStackTrace();
-            
+
             String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
             if (e.getCause() != null && e.getCause().getMessage() != null) {
                 errorMsg += " - " + e.getCause().getMessage();
             }
-            
+
             response.reset();
             response.setContentType("text/html; charset=UTF-8");
-            response.getWriter().write("<script>alert('Lỗi khi xuất PDF: " + errorMsg + "\\n\\nVui lòng kiểm tra console log để biết chi tiết.'); window.history.back();</script>");
+            response.getWriter().write("<script>alert('Lỗi khi xuất PDF: " + errorMsg
+                    + "\\n\\nVui lòng kiểm tra console log để biết chi tiết.'); window.history.back();</script>");
         }
     }
 
@@ -337,60 +361,83 @@ public class SellerDashboardController {
         ProductInventoryDTO productData = dashboardService.getProductInventory(
                 timeFilter, startDate, endDate, categoryId, sortBy, 0, 10000);
 
-            // Create PDF document
-            com.itextpdf.kernel.pdf.PdfWriter writer = new com.itextpdf.kernel.pdf.PdfWriter(response.getOutputStream());
-            com.itextpdf.kernel.pdf.PdfDocument pdfDoc = new com.itextpdf.kernel.pdf.PdfDocument(writer);
-            com.itextpdf.layout.Document document = new com.itextpdf.layout.Document(pdfDoc, com.itextpdf.kernel.geom.PageSize.A4.rotate());
+        // Create PDF document
+        com.itextpdf.kernel.pdf.PdfWriter writer = new com.itextpdf.kernel.pdf.PdfWriter(response.getOutputStream());
+        com.itextpdf.kernel.pdf.PdfDocument pdfDoc = new com.itextpdf.kernel.pdf.PdfDocument(writer);
+        com.itextpdf.layout.Document document = new com.itextpdf.layout.Document(pdfDoc,
+                com.itextpdf.kernel.geom.PageSize.A4.rotate());
 
-            // Add title
-            com.itextpdf.layout.element.Paragraph title = new com.itextpdf.layout.element.Paragraph("Báo cáo Hiệu suất Sản phẩm")
-                    .setFontSize(18)
+        // Add title
+        com.itextpdf.layout.element.Paragraph title = new com.itextpdf.layout.element.Paragraph(
+                "Báo cáo Hiệu suất Sản phẩm")
+                .setFontSize(18)
+                .setBold()
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER);
+        document.add(title);
+
+        // Add generated date
+        com.itextpdf.layout.element.Paragraph date = new com.itextpdf.layout.element.Paragraph(
+                "Ngày tạo: " + java.time.LocalDateTime.now()
+                        .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")))
+                .setFontSize(10)
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
+                .setMarginBottom(20);
+        document.add(date);
+
+        // Create table
+        float[] columnWidths = { 3f, 2f, 1.5f, 1.5f, 2f, 1.5f, 1.5f, 1.5f, 1.5f, 1.5f };
+        com.itextpdf.layout.element.Table table = new com.itextpdf.layout.element.Table(columnWidths);
+        table.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
+
+        // Add headers
+        String[] headers = { "Tên sản phẩm", "Danh mục", "Giá", "Đã bán", "Doanh thu", "Tỷ lệ bán", "Còn hàng",
+                "Đã giao", "Hết hạn", "Sắp hết hạn" };
+        for (String header : headers) {
+            com.itextpdf.layout.element.Cell cell = new com.itextpdf.layout.element.Cell()
+                    .add(new com.itextpdf.layout.element.Paragraph(header))
+                    .setBackgroundColor(com.itextpdf.kernel.colors.ColorConstants.LIGHT_GRAY)
                     .setBold()
-                    .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER);
-            document.add(title);
-
-            // Add generated date
-            com.itextpdf.layout.element.Paragraph date = new com.itextpdf.layout.element.Paragraph("Ngày tạo: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")))
-                    .setFontSize(10)
                     .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
-                    .setMarginBottom(20);
-            document.add(date);
+                    .setFontSize(9);
+            table.addHeaderCell(cell);
+        }
 
-            // Create table
-            float[] columnWidths = {3f, 2f, 1.5f, 1.5f, 2f, 1.5f, 1.5f, 1.5f, 1.5f, 1.5f};
-            com.itextpdf.layout.element.Table table = new com.itextpdf.layout.element.Table(columnWidths);
-            table.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
+        // Add data rows
+        productData.getProducts().getContent().forEach(product -> {
+            table.addCell(new com.itextpdf.layout.element.Cell()
+                    .add(new com.itextpdf.layout.element.Paragraph(product.getProductName()).setFontSize(8)));
+            table.addCell(new com.itextpdf.layout.element.Cell()
+                    .add(new com.itextpdf.layout.element.Paragraph(product.getCategoryName()).setFontSize(8)));
+            table.addCell(new com.itextpdf.layout.element.Cell()
+                    .add(new com.itextpdf.layout.element.Paragraph(String.format("%,.0f VND", product.getPrice()))
+                            .setFontSize(8)));
+            table.addCell(new com.itextpdf.layout.element.Cell()
+                    .add(new com.itextpdf.layout.element.Paragraph(String.valueOf(product.getSoldQuantity()))
+                            .setFontSize(8)));
+            table.addCell(new com.itextpdf.layout.element.Cell()
+                    .add(new com.itextpdf.layout.element.Paragraph(String.format("%,.0f VND", product.getRevenue()))
+                            .setFontSize(8)));
+            table.addCell(new com.itextpdf.layout.element.Cell().add(
+                    new com.itextpdf.layout.element.Paragraph(String.format("%.2f%%", product.getSellThroughRate()))
+                            .setFontSize(8)));
+            table.addCell(new com.itextpdf.layout.element.Cell()
+                    .add(new com.itextpdf.layout.element.Paragraph(String.valueOf(product.getAvailableCount()))
+                            .setFontSize(8)));
+            table.addCell(new com.itextpdf.layout.element.Cell()
+                    .add(new com.itextpdf.layout.element.Paragraph(String.valueOf(product.getDeliveredCount()))
+                            .setFontSize(8)));
+            table.addCell(new com.itextpdf.layout.element.Cell()
+                    .add(new com.itextpdf.layout.element.Paragraph(String.valueOf(product.getExpiredCount()))
+                            .setFontSize(8)));
+            table.addCell(new com.itextpdf.layout.element.Cell()
+                    .add(new com.itextpdf.layout.element.Paragraph(String.valueOf(product.getExpiringSoonCount()))
+                            .setFontSize(8)));
+        });
 
-            // Add headers
-            String[] headers = {"Tên sản phẩm", "Danh mục", "Giá", "Đã bán", "Doanh thu", "Tỷ lệ bán", "Còn hàng", "Đã giao", "Hết hạn", "Sắp hết hạn"};
-            for (String header : headers) {
-                com.itextpdf.layout.element.Cell cell = new com.itextpdf.layout.element.Cell()
-                        .add(new com.itextpdf.layout.element.Paragraph(header))
-                        .setBackgroundColor(com.itextpdf.kernel.colors.ColorConstants.LIGHT_GRAY)
-                        .setBold()
-                        .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
-                        .setFontSize(9);
-                table.addHeaderCell(cell);
-            }
+        document.add(table);
+        document.close();
 
-            // Add data rows
-            productData.getProducts().getContent().forEach(product -> {
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(product.getProductName()).setFontSize(8)));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(product.getCategoryName()).setFontSize(8)));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(String.format("%,.0f VND", product.getPrice())).setFontSize(8)));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(String.valueOf(product.getSoldQuantity())).setFontSize(8)));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(String.format("%,.0f VND", product.getRevenue())).setFontSize(8)));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(String.format("%.2f%%", product.getSellThroughRate())).setFontSize(8)));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(String.valueOf(product.getAvailableCount())).setFontSize(8)));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(String.valueOf(product.getDeliveredCount())).setFontSize(8)));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(String.valueOf(product.getExpiredCount())).setFontSize(8)));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new com.itextpdf.layout.element.Paragraph(String.valueOf(product.getExpiringSoonCount())).setFontSize(8)));
-            });
-
-            document.add(table);
-            document.close();
-            
-            // Flush and close the output stream
-            response.getOutputStream().flush();
+        // Flush and close the output stream
+        response.getOutputStream().flush();
     }
 }

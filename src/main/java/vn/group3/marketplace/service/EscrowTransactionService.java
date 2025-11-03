@@ -144,23 +144,23 @@ public class EscrowTransactionService {
      * Calculate escrow hold period based on order value (Value-based escrow)
      * 
      * Tiered hold periods:
-     * - < 50,000 VND ($2):     3 days (72 hours)
-     * - 50,000-500,000 VND ($2-$20):  5 days (120 hours)
-     * - 500,000-2,500,000 VND ($20-$100):  7 days (168 hours)
-     * - > 2,500,000 VND ($100+):   14 days (336 hours)
+     * - < 50,000 VND ($2): 3 days (72 hours)
+     * - 50,000-500,000 VND ($2-$20): 5 days (120 hours)
+     * - 500,000-2,500,000 VND ($20-$100): 7 days (168 hours)
+     * - > 2,500,000 VND ($100+): 14 days (336 hours)
      * 
      * @param orderAmount Order total amount in VND
      * @return Hold period in hours
      */
     private double calculateEscrowHoldHours(BigDecimal orderAmount) {
         // Thresholds in VND
-        BigDecimal tier1 = new BigDecimal("50000");     // ~$2 - 3 days
-        BigDecimal tier2 = new BigDecimal("500000");    // ~$20 - 5 days
-        BigDecimal tier3 = new BigDecimal("2500000");   // ~$100 - 7 days
-        
+        BigDecimal tier1 = new BigDecimal("50000"); // ~$2 - 3 days
+        BigDecimal tier2 = new BigDecimal("500000"); // ~$20 - 5 days
+        BigDecimal tier3 = new BigDecimal("2500000"); // ~$100 - 7 days
+
         if (orderAmount.compareTo(tier1) < 0) {
             // < 50,000 VND: 3 days
-            return 72.0;  // 3 days * 24 hours
+            return 72.0; // 3 days * 24 hours
         } else if (orderAmount.compareTo(tier2) < 0) {
             // 50,000 - 499,999 VND: 5 days
             return 120.0; // 5 days * 24 hours

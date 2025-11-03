@@ -18,7 +18,7 @@
                     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
                     <!-- Custom Dashboard CSS -->
                     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/resources/css/dashboard.css">
-                    
+
                     <!-- Custom Alerts Style -->
                     <style>
                         /* Alerts list scrollbar */
@@ -26,45 +26,45 @@
                             scrollbar-width: thin;
                             scrollbar-color: #ccc #f8f9fa;
                         }
-                        
+
                         .alerts-list::-webkit-scrollbar {
                             width: 6px;
                         }
-                        
+
                         .alerts-list::-webkit-scrollbar-track {
                             background: #f8f9fa;
                         }
-                        
+
                         .alerts-list::-webkit-scrollbar-thumb {
                             background: #ccc;
                             border-radius: 3px;
                         }
-                        
+
                         .alerts-list::-webkit-scrollbar-thumb:hover {
                             background: #aaa;
                         }
-                        
+
                         /* Alert item hover */
                         .alert-item {
                             transition: background-color 0.15s ease;
                             cursor: pointer;
                         }
-                        
+
                         .alert-item:hover {
                             background-color: #e9ecef;
                         }
-                        
+
                         /* Alert link styling */
                         .alerts-list a:hover .alert-item {
                             background-color: #e9ecef;
                         }
-                        
+
                         /* Header hover */
                         .card-header[data-bs-toggle="collapse"] {
                             user-select: none;
                             transition: opacity 0.15s ease;
                         }
-                        
+
                         .card-header[data-bs-toggle="collapse"]:hover {
                             opacity: 0.9;
                         }
@@ -364,16 +364,14 @@
                             <div class="row mb-4">
                                 <div class="col-12">
                                     <div class="card">
-                                        <div class="card-header bg-light" 
-                                             style="cursor: pointer;" 
-                                             data-bs-toggle="collapse" 
-                                             data-bs-target="#alertsCollapse" 
-                                             aria-expanded="false" 
-                                             aria-controls="alertsCollapse">
+                                        <div class="card-header bg-light" style="cursor: pointer;"
+                                            data-bs-toggle="collapse" data-bs-target="#alertsCollapse"
+                                            aria-expanded="false" aria-controls="alertsCollapse">
                                             <h5 class="mb-0">
                                                 <i class="fas fa-bell"></i> Cảnh báo & Thông báo
                                                 <c:if test="${!empty dashboard.alerts}">
-                                                    <span class="badge bg-secondary ms-2">${dashboard.alerts.size()}</span>
+                                                    <span
+                                                        class="badge bg-secondary ms-2">${dashboard.alerts.size()}</span>
                                                 </c:if>
                                                 <i class="fas fa-chevron-down float-end" id="alertsChevron"></i>
                                             </h5>
@@ -385,39 +383,52 @@
                                                 </c:if>
                                                 <c:if test="${!empty dashboard.alerts}">
                                                     <!-- Scrollable alerts list with max-height for 5 items -->
-                                                    <div class="alerts-list" style="max-height: 400px; overflow-y: auto;">
-                                                        <c:forEach var="alert" items="${dashboard.alerts}" varStatus="status">
-                                                            <a href="${pageContext.request.contextPath}/seller/products<c:if test='${alert.productId != null}'>?highlightProduct=${alert.productId}</c:if>" 
-                                                               class="text-decoration-none text-reset d-block">
-                                                                <div class="alert-item border-bottom p-3 ${!status.last ? '' : 'border-bottom-0'}">
+                                                    <div class="alerts-list"
+                                                        style="max-height: 400px; overflow-y: auto;">
+                                                        <c:forEach var="alert" items="${dashboard.alerts}"
+                                                            varStatus="status">
+                                                            <a href="${pageContext.request.contextPath}/seller/products<c:if test='${alert.productId != null}'>?highlightProduct=${alert.productId}</c:if>"
+                                                                class="text-decoration-none text-reset d-block">
+                                                                <div
+                                                                    class="alert-item border-bottom p-3 ${!status.last ? '' : 'border-bottom-0'}">
                                                                     <div class="d-flex align-items-start">
                                                                         <div class="flex-shrink-0">
-                                                                            <i class="fas fa-${alert.type == 'low-stock' ? 'box-open' : 
+                                                                            <i
+                                                                                class="fas fa-${alert.type == 'low-stock' ? 'box-open' : 
                                                                                                (alert.type == 'expired-soon' ? 'clock' : 
                                                                                                 'info-circle')} fa-lg text-secondary"></i>
                                                                         </div>
                                                                         <div class="flex-grow-1 ms-3">
                                                                             <h6 class="mb-1">
-                                                                                ${alert.type == 'low-stock' ? 'Hàng tồn kho thấp' : 
-                                                                                  (alert.type == 'expired-soon' ? 'Sắp hết hạn' : 
-                                                                                   'Thông báo')}
+                                                                                ${alert.type == 'low-stock' ? 'Hàng tồn
+                                                                                kho thấp' :
+                                                                                (alert.type == 'expired-soon' ? 'Sắp hết
+                                                                                hạn' :
+                                                                                'Thông báo')}
                                                                             </h6>
-                                                                            <p class="mb-1 text-muted">${alert.message}</p>
+                                                                            <p class="mb-1 text-muted">${alert.message}
+                                                                            </p>
                                                                             <small class="text-muted">
-                                                                                Mức độ: 
-                                                                                <span class="badge bg-${alert.severity == 'high' ? 'danger' : 
+                                                                                Mức độ:
+                                                                                <span
+                                                                                    class="badge bg-${alert.severity == 'high' ? 'danger' : 
                                                                                                           (alert.severity == 'medium' ? 'warning' : 
                                                                                                            'secondary')}">
-                                                                                    ${alert.severity == 'high' ? 'Cao' : 
-                                                                                      (alert.severity == 'medium' ? 'Trung bình' : 'Thấp')}
+                                                                                    ${alert.severity == 'high' ? 'Cao' :
+                                                                                    (alert.severity == 'medium' ? 'Trung
+                                                                                    bình' : 'Thấp')}
                                                                                 </span>
                                                                                 <span class="text-muted ms-2">
-                                                                                    <i class="fas fa-arrow-right"></i> ${alert.productId != null ? 'Chỉnh sửa sản phẩm' : 'Đến danh sách sản phẩm'}
+                                                                                    <i class="fas fa-arrow-right"></i>
+                                                                                    ${alert.productId != null ? 'Chỉnh
+                                                                                    sửa sản phẩm' : 'Đến danh sách sản
+                                                                                    phẩm'}
                                                                                 </span>
                                                                             </small>
                                                                         </div>
                                                                         <div class="flex-shrink-0 ms-2">
-                                                                            <i class="fas fa-chevron-right text-muted"></i>
+                                                                            <i
+                                                                                class="fas fa-chevron-right text-muted"></i>
                                                                         </div>
                                                                     </div>
                                                                 </div>

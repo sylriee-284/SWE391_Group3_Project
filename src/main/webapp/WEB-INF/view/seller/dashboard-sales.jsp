@@ -18,7 +18,7 @@
                     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
                     <!-- Custom Dashboard CSS -->
                     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/resources/css/dashboard.css">
-                    
+
                     <!-- Performance optimization styles -->
                     <style>
                         /* Optimize table rendering */
@@ -27,17 +27,17 @@
                             -webkit-overflow-scrolling: touch;
                             will-change: scroll-position;
                         }
-                        
+
                         /* Optimize chart containers */
                         canvas {
                             will-change: transform;
                         }
-                        
+
                         /* Reduce reflow on pagination */
                         .pagination {
                             contain: layout;
                         }
-                        
+
                         /* Smooth transitions */
                         .card {
                             backface-visibility: hidden;
@@ -67,7 +67,8 @@
                             <c:if test="${not empty errorMessage}">
                                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                                     <i class="fas fa-exclamation-triangle"></i> <strong>Lỗi!</strong> ${errorMessage}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                        aria-label="Close"></button>
                                 </div>
                             </c:if>
 
@@ -98,28 +99,37 @@
                                     <h5 class="mb-0"><i class="fas fa-filter"></i> Bộ lọc</h5>
                                 </div>
                                 <div class="card-body">
-                                    <form method="get" action="${pageContext.request.contextPath}/seller/dashboard/sales">
+                                    <form method="get"
+                                        action="${pageContext.request.contextPath}/seller/dashboard/sales">
                                         <div class="row g-3">
                                             <!-- Time Filter -->
                                             <div class="col-md-3">
                                                 <label class="form-label">Thời gian</label>
                                                 <select class="form-select" name="timeFilter" id="timeFilter">
-                                                    <option value="today" ${sales.timeFilter=='today' ? 'selected' : ''}>Hôm nay</option>
-                                                    <option value="7days" ${sales.timeFilter=='7days' ? 'selected' : ''}>7 ngày qua</option>
-                                                    <option value="30days" ${sales.timeFilter=='30days' ? 'selected' : ''}>30 ngày qua</option>
-                                                    <option value="custom" ${sales.timeFilter=='custom' ? 'selected' : ''}>Tùy chỉnh</option>
+                                                    <option value="today" ${sales.timeFilter=='today' ? 'selected' : ''
+                                                        }>Hôm nay</option>
+                                                    <option value="7days" ${sales.timeFilter=='7days' ? 'selected' : ''
+                                                        }>7 ngày qua</option>
+                                                    <option value="30days" ${sales.timeFilter=='30days' ? 'selected'
+                                                        : '' }>30 ngày qua</option>
+                                                    <option value="custom" ${sales.timeFilter=='custom' ? 'selected'
+                                                        : '' }>Tùy chỉnh</option>
                                                 </select>
                                             </div>
 
                                             <!-- Custom Date Range -->
-                                            <div class="col-md-3" id="customDateRange" <c:if test="${sales.timeFilter == 'custom'}">style="display: block;"</c:if>
-                                                <c:if test="${sales.timeFilter != 'custom'}">style="display: none;"</c:if>>
+                                            <div class="col-md-3" id="customDateRange" <c:if
+                                                test="${sales.timeFilter == 'custom'}">style="display: block;"</c:if>
+                                                <c:if test="${sales.timeFilter != 'custom'}">style="display: none;"
+                                                </c:if>>
                                                 <label class="form-label">Từ ngày</label>
                                                 <input type="date" class="form-control" name="startDate"
                                                     value="${sales.startDate}">
                                             </div>
-                                            <div class="col-md-3" id="customDateRangeEnd" <c:if test="${sales.timeFilter == 'custom'}">style="display: block;"</c:if>
-                                                <c:if test="${sales.timeFilter != 'custom'}">style="display: none;"</c:if>>
+                                            <div class="col-md-3" id="customDateRangeEnd" <c:if
+                                                test="${sales.timeFilter == 'custom'}">style="display: block;"</c:if>
+                                                <c:if test="${sales.timeFilter != 'custom'}">style="display: none;"
+                                                </c:if>>
                                                 <label class="form-label">Đến ngày</label>
                                                 <input type="date" class="form-control" name="endDate"
                                                     value="${sales.endDate}">
@@ -130,11 +140,16 @@
                                                 <label class="form-label">Trạng thái đơn hàng</label>
                                                 <select class="form-select" name="orderStatus">
                                                     <option value="">Tất cả trạng thái</option>
-                                                    <option value="PENDING" ${sales.orderStatus=='PENDING' ? 'selected' : ''}>Chờ xử lý</option>
-                                                    <option value="PAID" ${sales.orderStatus=='PAID' ? 'selected' : ''}>Đã thanh toán</option>
-                                                    <option value="COMPLETED" ${sales.orderStatus=='COMPLETED' ? 'selected' : ''}>Hoàn thành</option>
-                                                    <option value="CANCELLED" ${sales.orderStatus=='CANCELLED' ? 'selected' : ''}>Đã hủy</option>
-                                                    <option value="REFUNDED" ${sales.orderStatus=='REFUNDED' ? 'selected' : ''}>Đã hoàn tiền</option>
+                                                    <option value="PENDING" ${sales.orderStatus=='PENDING' ? 'selected'
+                                                        : '' }>Chờ xử lý</option>
+                                                    <option value="PAID" ${sales.orderStatus=='PAID' ? 'selected' : ''
+                                                        }>Đã thanh toán</option>
+                                                    <option value="COMPLETED" ${sales.orderStatus=='COMPLETED'
+                                                        ? 'selected' : '' }>Hoàn thành</option>
+                                                    <option value="CANCELLED" ${sales.orderStatus=='CANCELLED'
+                                                        ? 'selected' : '' }>Đã hủy</option>
+                                                    <option value="REFUNDED" ${sales.orderStatus=='REFUNDED'
+                                                        ? 'selected' : '' }>Đã hoàn tiền</option>
                                                 </select>
                                             </div>
 
@@ -159,7 +174,7 @@
 
                             <script>
                                 // Toggle custom date range visibility
-                                document.addEventListener('DOMContentLoaded', function() {
+                                document.addEventListener('DOMContentLoaded', function () {
                                     const timeFilter = document.getElementById('timeFilter');
                                     const customDateRange = document.getElementById('customDateRange');
                                     const customDateRangeEnd = document.getElementById('customDateRangeEnd');
@@ -191,15 +206,16 @@
                                             <h3>
                                                 <c:choose>
                                                     <c:when test="${not empty sales.escrowSummary}">
-                                                        <fmt:formatNumber value="${sales.escrowSummary.totalHeld}" type="number"
-                                                            groupingUsed="true" /> VND
+                                                        <fmt:formatNumber value="${sales.escrowSummary.totalHeld}"
+                                                            type="number" groupingUsed="true" /> VND
                                                     </c:when>
                                                     <c:otherwise>0 VND</c:otherwise>
                                                 </c:choose>
                                             </h3>
                                             <small class="text-muted">
                                                 <c:choose>
-                                                    <c:when test="${not empty sales.escrowSummary}">${sales.escrowSummary.heldCount}</c:when>
+                                                    <c:when test="${not empty sales.escrowSummary}">
+                                                        ${sales.escrowSummary.heldCount}</c:when>
                                                     <c:otherwise>0</c:otherwise>
                                                 </c:choose> đơn hàng
                                             </small>
@@ -221,7 +237,8 @@
                                             </h3>
                                             <small class="text-muted">
                                                 <c:choose>
-                                                    <c:when test="${not empty sales.escrowSummary}">${sales.escrowSummary.releasedCount}</c:when>
+                                                    <c:when test="${not empty sales.escrowSummary}">
+                                                        ${sales.escrowSummary.releasedCount}</c:when>
                                                     <c:otherwise>0</c:otherwise>
                                                 </c:choose> đơn hàng
                                             </small>
@@ -243,7 +260,8 @@
                                             </h3>
                                             <small class="text-muted">
                                                 <c:choose>
-                                                    <c:when test="${not empty sales.escrowSummary}">${sales.escrowSummary.refundedCount}</c:when>
+                                                    <c:when test="${not empty sales.escrowSummary}">
+                                                        ${sales.escrowSummary.refundedCount}</c:when>
                                                     <c:otherwise>0</c:otherwise>
                                                 </c:choose> đơn hàng
                                             </small>
@@ -257,7 +275,8 @@
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-header">
-                                            <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Lịch giải ngân sắp tới</h5>
+                                            <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Lịch giải ngân sắp tới
+                                            </h5>
                                         </div>
                                         <div class="card-body">
                                             <c:if test="${empty sales.escrowSummary.upcomingReleases}">
@@ -279,7 +298,8 @@
                                                                 <tr>
                                                                     <td>
                                                                         <c:if test="${not empty release.releaseDate}">
-                                                                            ${release.releaseDate.toString().substring(0, 10).replace('-', '/')}
+                                                                            ${release.releaseDate.toString().substring(0,
+                                                                            10).replace('-', '/')}
                                                                         </c:if>
                                                                     </td>
                                                                     <td>
@@ -303,7 +323,8 @@
                                 <div class="col-md-6">
                                     <div class="card">
                                         <div class="card-header">
-                                            <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Doanh thu theo trạng thái</h5>
+                                            <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Doanh thu theo trạng thái
+                                            </h5>
                                         </div>
                                         <div class="card-body position-relative">
                                             <div class="chart-loading text-center py-5" id="revenueChartLoading">
@@ -311,7 +332,8 @@
                                                     <span class="visually-hidden">Đang tải...</span>
                                                 </div>
                                             </div>
-                                            <canvas id="revenueByStatusChart" height="200" style="display:none;"></canvas>
+                                            <canvas id="revenueByStatusChart" height="200"
+                                                style="display:none;"></canvas>
                                         </div>
                                     </div>
                                 </div>
@@ -326,7 +348,8 @@
                                                     <span class="visually-hidden">Đang tải...</span>
                                                 </div>
                                             </div>
-                                            <canvas id="escrowTimelineChart" height="200" style="display:none;"></canvas>
+                                            <canvas id="escrowTimelineChart" height="200"
+                                                style="display:none;"></canvas>
                                         </div>
                                     </div>
                                 </div>
@@ -368,7 +391,9 @@
                                                         <td>${order.orderCode}</td>
                                                         <td>
                                                             <c:if test="${not empty order.orderDate}">
-                                                                ${order.orderDate.toString().substring(0, 10).replace('-', '/')} ${order.orderDate.toString().substring(11, 16)}
+                                                                ${order.orderDate.toString().substring(0,
+                                                                10).replace('-', '/')}
+                                                                ${order.orderDate.toString().substring(11, 16)}
                                                             </c:if>
                                                         </td>
                                                         <td>${order.productName}</td>
@@ -394,7 +419,8 @@
                                                         </td>
                                                         <td>
                                                             <c:if test="${not empty order.escrowHoldUntil}">
-                                                                ${order.escrowHoldUntil.toString().substring(0, 10).replace('-', '/')}
+                                                                ${order.escrowHoldUntil.toString().substring(0,
+                                                                10).replace('-', '/')}
                                                             </c:if>
                                                         </td>
                                                     </tr>
@@ -409,50 +435,61 @@
                                             <ul class="pagination justify-content-center">
                                                 <!-- Previous Button -->
                                                 <li class="page-item ${sales.orders.number == 0 ? 'disabled' : ''}">
-                                                    <a class="page-link" href="?page=${sales.orders.number - 1}&timeFilter=${sales.timeFilter}&orderStatus=${sales.orderStatus}">
+                                                    <a class="page-link"
+                                                        href="?page=${sales.orders.number - 1}&timeFilter=${sales.timeFilter}&orderStatus=${sales.orderStatus}">
                                                         <i class="fas fa-chevron-left"></i>
                                                     </a>
                                                 </li>
-                                                
+
                                                 <!-- Page Numbers (max 5 visible) -->
                                                 <c:set var="currentPage" value="${sales.orders.number}" />
                                                 <c:set var="totalPages" value="${sales.orders.totalPages}" />
-                                                <c:set var="startPage" value="${currentPage - 2 < 0 ? 0 : currentPage - 2}" />
-                                                <c:set var="endPage" value="${startPage + 4 >= totalPages ? totalPages - 1 : startPage + 4}" />
-                                                <c:set var="startPage" value="${endPage - startPage < 4 ? (endPage - 4 < 0 ? 0 : endPage - 4) : startPage}" />
-                                                
+                                                <c:set var="startPage"
+                                                    value="${currentPage - 2 < 0 ? 0 : currentPage - 2}" />
+                                                <c:set var="endPage"
+                                                    value="${startPage + 4 >= totalPages ? totalPages - 1 : startPage + 4}" />
+                                                <c:set var="startPage"
+                                                    value="${endPage - startPage < 4 ? (endPage - 4 < 0 ? 0 : endPage - 4) : startPage}" />
+
                                                 <!-- First page if not in range -->
                                                 <c:if test="${startPage > 0}">
                                                     <li class="page-item">
-                                                        <a class="page-link" href="?page=0&timeFilter=${sales.timeFilter}&orderStatus=${sales.orderStatus}">1</a>
+                                                        <a class="page-link"
+                                                            href="?page=0&timeFilter=${sales.timeFilter}&orderStatus=${sales.orderStatus}">1</a>
                                                     </li>
                                                     <c:if test="${startPage > 1}">
-                                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                        <li class="page-item disabled"><span
+                                                                class="page-link">...</span></li>
                                                     </c:if>
                                                 </c:if>
-                                                
+
                                                 <!-- Page range -->
                                                 <c:forEach begin="${startPage}" end="${endPage}" var="i">
                                                     <li class="page-item ${i == currentPage ? 'active' : ''}">
-                                                        <a class="page-link" href="?page=${i}&timeFilter=${sales.timeFilter}&orderStatus=${sales.orderStatus}">
+                                                        <a class="page-link"
+                                                            href="?page=${i}&timeFilter=${sales.timeFilter}&orderStatus=${sales.orderStatus}">
                                                             ${i + 1}
                                                         </a>
                                                     </li>
                                                 </c:forEach>
-                                                
+
                                                 <!-- Last page if not in range -->
                                                 <c:if test="${endPage < totalPages - 1}">
                                                     <c:if test="${endPage < totalPages - 2}">
-                                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                        <li class="page-item disabled"><span
+                                                                class="page-link">...</span></li>
                                                     </c:if>
                                                     <li class="page-item">
-                                                        <a class="page-link" href="?page=${totalPages - 1}&timeFilter=${sales.timeFilter}&orderStatus=${sales.orderStatus}">${totalPages}</a>
+                                                        <a class="page-link"
+                                                            href="?page=${totalPages - 1}&timeFilter=${sales.timeFilter}&orderStatus=${sales.orderStatus}">${totalPages}</a>
                                                     </li>
                                                 </c:if>
-                                                
+
                                                 <!-- Next Button -->
-                                                <li class="page-item ${sales.orders.number == totalPages - 1 ? 'disabled' : ''}">
-                                                    <a class="page-link" href="?page=${sales.orders.number + 1}&timeFilter=${sales.timeFilter}&orderStatus=${sales.orderStatus}">
+                                                <li
+                                                    class="page-item ${sales.orders.number == totalPages - 1 ? 'disabled' : ''}">
+                                                    <a class="page-link"
+                                                        href="?page=${sales.orders.number + 1}&timeFilter=${sales.timeFilter}&orderStatus=${sales.orderStatus}">
                                                         <i class="fas fa-chevron-right"></i>
                                                     </a>
                                                 </li>
@@ -514,9 +551,9 @@
                         }
 
                         // Defer chart loading to improve page load speed
-                        document.addEventListener('DOMContentLoaded', function() {
+                        document.addEventListener('DOMContentLoaded', function () {
                             // Use setTimeout to defer chart rendering
-                            setTimeout(function() {
+                            setTimeout(function () {
                                 try {
                                     // Load chart data from JSON
                                     const revenueByStatusData = JSON.parse(document.getElementById('revenueByStatusData').textContent);
