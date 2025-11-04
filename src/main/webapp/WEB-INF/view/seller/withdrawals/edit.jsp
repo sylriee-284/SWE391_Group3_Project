@@ -44,9 +44,14 @@
                             </div>
 
                             <!-- Warning -->
-                            <div class="warning-box">
-                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                <strong>Lưu ý:</strong> Bạn chỉ có thể sửa yêu cầu khi đang ở trạng thái "Chờ duyệt"
+                            <div class="alert alert-warning" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <strong>Lưu ý quan trọng:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Bạn chỉ có thể sửa yêu cầu khi đang ở trạng thái "Chờ duyệt"</li>
+                                    <li><strong>Số tiền rút KHÔNG thể thay đổi</strong> sau khi tạo yêu cầu (tiền đã được trừ)</li>
+                                    <li>Bạn chỉ có thể cập nhật thông tin ngân hàng nhận tiền</li>
+                                </ul>
                             </div>
 
                             <!-- Two columns with equal width -->
@@ -80,25 +85,25 @@
                                                 <input type="hidden" name="${_csrf.parameterName}"
                                                     value="${_csrf.token}" />
 
-                                                <!-- Amount -->
+                                                <!-- Amount (Readonly - Cannot Edit) -->
                                                 <div class="mb-4">
                                                     <label for="amount" class="form-label fw-bold">
                                                         Số tiền rút <span class="text-danger">*</span>
                                                     </label>
                                                     <div class="currency-input">
                                                         <input type="text" class="form-control form-control-lg amount-input"
-                                                            id="amountDisplay" placeholder="Nhập số tiền muốn rút"
-                                                            required>
+                                                            id="amountDisplay" 
+                                                            value="<fmt:formatNumber value='${withdrawal.amount}' type='currency' currencySymbol='' />₫"
+                                                            readonly
+                                                            style="background-color: #e9ecef; cursor: not-allowed;">
                                                         <input type="hidden" name="amount" id="amountValue"
                                                             value="${withdrawal.amount}">
                                                     </div>
-                                                    <div class="form-text">
-                                                        Số tiền tối thiểu: 100,000₫ | Số tiền hiện tại: <strong>
-                                                            <fmt:formatNumber value="${withdrawal.amount}"
-                                                                type="currency" currencySymbol="" />₫
-                                                        </strong>
+                                                    <div class="form-text text-warning">
+                                                        <i class="bi bi-lock-fill me-1"></i>
+                                                        <strong>Lưu ý:</strong> Số tiền rút không thể thay đổi sau khi tạo yêu cầu. 
+                                                        Bạn chỉ có thể cập nhật thông tin ngân hàng.
                                                     </div>
-                                                    <div class="invalid-feedback" id="amountError"></div>
                                                 </div>
 
                                                 <!-- Bank Name -->
@@ -196,56 +201,28 @@
                             </div>
                         </div>
                         </main>
-                    </div>
+                    </div> <!-- End container-fluid -->
+                </div> <!-- End content -->
 
-                    <!-- Include Footer -->
-                    <jsp:include page="../../common/footer.jsp" />
-                </div>
+                <!-- Include Footer -->
+                <jsp:include page="../../common/footer.jsp" />
 
                 <script>
                     const userBalance = ${currentUser.balance};
                     const originalAmount = ${withdrawal.amount};
-                    const MIN_AMOUNT = 100000;
 
                     $(document).ready(function () {
-                        // Initialize with current amount
-                        $('#amountDisplay').val(formatCurrency(originalAmount));
-                        initCurrencyInput();
+                        // Amount is now readonly, no need to initialize currency input
                         initFormValidation();
                     });
 
-                    function initCurrencyInput() {
-                        $('#amountDisplay').on('input', function () {
-                            let value = $(this).val().replace(/[^0-9]/g, '');
-                            $('#amountValue').val(value);
-
-                            if (value) {
-                                $(this).val(formatCurrency(value));
-                            }
-                        });
-                    }
-
                     function initFormValidation() {
                         $('#editForm').on('submit', function (e) {
-                            e.preventDefault();
-
-                            const amount = parseFloat($('#amountValue').val()) || 0;
-
-                            // Validate amount
-                            if (amount < MIN_AMOUNT) {
-                                showError('amountDisplay', 'Số tiền rút tối thiểu là ' + formatCurrency(MIN_AMOUNT) + '₫');
-                                return false;
-                            }
-
-                            // Calculate available balance (current balance + original withdrawal amount)
-                            const maxAllowed = userBalance + originalAmount;
-                            if (amount > maxAllowed) {
-                                showError('amountDisplay', 'Số tiền rút vượt quá số dư khả dụng');
-                                return false;
-                            }
-
-                            // If validation passes, submit form
-                            this.submit();
+                            // Amount cannot be changed, so no validation needed
+                            // Just validate bank info fields (browser built-in validation handles this)
+                            
+                            // Form will submit normally with original amount value
+                            return true;
                         });
                     }
 

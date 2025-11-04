@@ -172,11 +172,11 @@
                                 </div>
                             </div>
                         </main>
-                    </div>
+                    </div> <!-- End container-fluid -->
+                </div> <!-- End content -->
 
-                    <!-- Include Footer -->
-                    <jsp:include page="../../common/footer.jsp" />
-                </div>
+                <!-- Include Footer -->
+                <jsp:include page="../../common/footer.jsp" />
 
                 <!-- Cancel Confirmation Form (Hidden) -->
                 <form id="cancelForm" method="POST" action="/seller/withdrawals/${withdrawal.id}/cancel"

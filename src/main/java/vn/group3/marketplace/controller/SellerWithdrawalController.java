@@ -12,17 +12,23 @@ import vn.group3.marketplace.domain.entity.WalletTransaction;
 import vn.group3.marketplace.domain.enums.WalletTransactionStatus;
 import vn.group3.marketplace.security.CustomUserDetails;
 import vn.group3.marketplace.service.WithdrawalRequestService;
+import vn.group3.marketplace.service.AuthenticationRefreshService;
 
 import java.math.BigDecimal;
+import java.util.concurrent.Future;
 
 @Controller
 @RequestMapping("/seller/withdrawals")
 public class SellerWithdrawalController {
 
     private final WithdrawalRequestService withdrawalRequestService;
+    private final AuthenticationRefreshService authenticationRefreshService;
 
-    public SellerWithdrawalController(WithdrawalRequestService withdrawalRequestService) {
+    public SellerWithdrawalController(
+            WithdrawalRequestService withdrawalRequestService,
+            AuthenticationRefreshService authenticationRefreshService) {
         this.withdrawalRequestService = withdrawalRequestService;
+        this.authenticationRefreshService = authenticationRefreshService;
     }
 
     /**
@@ -71,7 +77,13 @@ public class SellerWithdrawalController {
     }
 
     /**
-     * Xử lý tạo yêu cầu rút tiền
+     * Xử lý tạo yêu cầu rút tiền - Sử dụng PerUserSerialExecutor queue
+     * 
+     * Flow:
+     * 1. Submit task vào queue của seller
+     * 2. Queue sẽ check pending withdrawal trước khi xử lý
+     * 3. Nếu pass validation -> trừ tiền và tạo giao dịch PENDING
+     * 4. Return kết quả hoặc error message
      */
     @PostMapping("/create")
     public String createWithdrawal(
@@ -85,22 +97,59 @@ public class SellerWithdrawalController {
         try {
             User user = currentUser.getUser();
             
-            // Kiểm tra lại trước khi tạo
-            if (withdrawalRequestService.hasPendingWithdrawal(user)) {
-                redirectAttributes.addFlashAttribute("error", 
-                        "Bạn đã có yêu cầu rút tiền đang chờ duyệt. Vui lòng chờ admin xử lý trước khi tạo yêu cầu mới.");
-                return "redirect:/seller/withdrawals";
-            }
-            
-            WalletTransaction withdrawal = withdrawalRequestService.createWithdrawalRequest(
+            // Gửi vào queue để xử lý async - đảm bảo xử lý tuần tự cho mỗi seller
+            Future<WalletTransaction> future = withdrawalRequestService.createWithdrawalRequestAsync(
                     user, amount, bankName, bankAccountNumber, bankAccountName);
+            
+            // Đợi kết quả từ queue (với timeout 10s)
+            WalletTransaction withdrawal = future.get(10, java.util.concurrent.TimeUnit.SECONDS);
+
+            // Refresh authentication context để cập nhật số dư trong session
+            authenticationRefreshService.refreshAuthenticationContext();
 
             redirectAttributes.addFlashAttribute("success", 
-                    "Tạo yêu cầu rút tiền thành công! Mã yêu cầu: #" + withdrawal.getId());
+                    String.format("✅ Tạo yêu cầu rút tiền thành công! Mã yêu cầu: #%d - Số tiền: %s VNĐ", 
+                                 withdrawal.getId(), withdrawal.getAmount()));
             return "redirect:/seller/withdrawals";
 
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        } catch (IllegalArgumentException e) {
+            // Validation error (amount <= 0, etc.)
+            redirectAttributes.addFlashAttribute("error", "❌ " + e.getMessage());
+            return "redirect:/seller/withdrawals/create";
+            
+        } catch (IllegalStateException e) {
+            // Business logic error (đã có pending, không đủ tiền, etc.)
+            redirectAttributes.addFlashAttribute("error", "❌ " + e.getMessage());
+            return "redirect:/seller/withdrawals/create";
+            
+        } catch (java.util.concurrent.TimeoutException e) {
+            // Timeout khi chờ queue xử lý
+            redirectAttributes.addFlashAttribute("warning", 
+                    "⏱️ Yêu cầu đang được xử lý, vui lòng kiểm tra lại danh sách sau ít phút");
+            return "redirect:/seller/withdrawals";
+            
+        } catch (java.util.concurrent.RejectedExecutionException e) {
+            // Queue đầy
+            redirectAttributes.addFlashAttribute("error", 
+                    "❌ Hệ thống đang bận, vui lòng thử lại sau");
+            return "redirect:/seller/withdrawals/create";
+            
+        } catch (java.util.concurrent.ExecutionException e) {
+            // Exception từ task trong queue
+            Throwable cause = e.getCause();
+            String message;
+            if (cause instanceof IllegalArgumentException || cause instanceof IllegalStateException) {
+                message = cause.getMessage();
+            } else {
+                message = "Có lỗi xảy ra khi xử lý yêu cầu";
+            }
+            redirectAttributes.addFlashAttribute("error", "❌ " + message);
+            return "redirect:/seller/withdrawals/create";
+            
+        } catch (Exception e) {
+            // Unexpected error
+            redirectAttributes.addFlashAttribute("error", 
+                    "❌ Có lỗi không mong muốn: " + e.getMessage());
             return "redirect:/seller/withdrawals/create";
         }
     }
@@ -143,12 +192,16 @@ public class SellerWithdrawalController {
 
     /**
      * Xử lý cập nhật yêu cầu rút tiền
+     * 
+     * Quy tắc:
+     * - CHỈ cho phép sửa thông tin ngân hàng (bankName, bankAccountNumber, bankAccountName)
+     * - KHÔNG cho phép sửa số tiền (amount đã được lock)
+     * - Yêu cầu phải ở trạng thái PENDING (chưa được chấp nhận)
      */
     @PostMapping("/{id}/update")
     public String updateWithdrawal(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @PathVariable Long id,
-            @RequestParam BigDecimal amount,
             @RequestParam String bankName,
             @RequestParam String bankAccountNumber,
             @RequestParam String bankAccountName,
@@ -157,19 +210,33 @@ public class SellerWithdrawalController {
         try {
             User user = currentUser.getUser();
             withdrawalRequestService.updateWithdrawalRequest(
-                    id, amount, bankName, bankAccountNumber, bankAccountName, user);
+                    id, bankName, bankAccountNumber, bankAccountName, user);
 
-            redirectAttributes.addFlashAttribute("success", "Cập nhật yêu cầu rút tiền thành công!");
+            redirectAttributes.addFlashAttribute("success", 
+                    "✅ Cập nhật thông tin ngân hàng thành công!");
             return "redirect:/seller/withdrawals";
 
-        } catch (IllegalArgumentException | IllegalStateException | SecurityException e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", "❌ " + e.getMessage());
             return "redirect:/seller/withdrawals/" + id + "/edit";
+            
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("error", "❌ " + e.getMessage());
+            return "redirect:/seller/withdrawals/" + id + "/edit";
+            
+        } catch (SecurityException e) {
+            redirectAttributes.addFlashAttribute("error", "❌ " + e.getMessage());
+            return "redirect:/seller/withdrawals";
         }
     }
 
     /**
-     * Hủy yêu cầu rút tiền
+     * Hủy yêu cầu rút tiền - Sử dụng queue để xử lý
+     * 
+     * Flow:
+     * 1. Submit vào queue của seller
+     * 2. Trong queue: check status CANCELLED và PENDING
+     * 3. Hoàn tiền và cập nhật status
      */
     @PostMapping("/{id}/cancel")
     public String cancelWithdrawal(
@@ -179,13 +246,65 @@ public class SellerWithdrawalController {
 
         try {
             User user = currentUser.getUser();
-            withdrawalRequestService.cancelWithdrawalRequest(id, user);
+            
+            // Gửi vào queue để xử lý async
+            Future<Void> future = withdrawalRequestService.cancelWithdrawalRequestAsync(id, user);
+            
+            // Đợi kết quả từ queue (với timeout 10s)
+            future.get(10, java.util.concurrent.TimeUnit.SECONDS);
 
-            redirectAttributes.addFlashAttribute("success", "Đã hủy yêu cầu rút tiền");
+            // Refresh authentication context để cập nhật số dư trong session (đã hoàn tiền)
+            authenticationRefreshService.refreshAuthenticationContext();
+
+            redirectAttributes.addFlashAttribute("success", 
+                    "✅ Đã hủy yêu cầu rút tiền và hoàn tiền thành công!");
             return "redirect:/seller/withdrawals";
 
-        } catch (IllegalArgumentException | IllegalStateException | SecurityException e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        } catch (IllegalArgumentException e) {
+            // Not found
+            redirectAttributes.addFlashAttribute("error", "❌ " + e.getMessage());
+            return "redirect:/seller/withdrawals";
+            
+        } catch (IllegalStateException e) {
+            // Already cancelled or wrong status
+            redirectAttributes.addFlashAttribute("error", "❌ " + e.getMessage());
+            return "redirect:/seller/withdrawals";
+            
+        } catch (SecurityException e) {
+            // Wrong user
+            redirectAttributes.addFlashAttribute("error", "❌ " + e.getMessage());
+            return "redirect:/seller/withdrawals";
+            
+        } catch (java.util.concurrent.TimeoutException e) {
+            // Timeout
+            redirectAttributes.addFlashAttribute("warning", 
+                    "⏱️ Yêu cầu hủy đang được xử lý, vui lòng kiểm tra lại sau");
+            return "redirect:/seller/withdrawals";
+            
+        } catch (java.util.concurrent.RejectedExecutionException e) {
+            // Queue full
+            redirectAttributes.addFlashAttribute("error", 
+                    "❌ Hệ thống đang bận, vui lòng thử lại sau");
+            return "redirect:/seller/withdrawals";
+            
+        } catch (java.util.concurrent.ExecutionException e) {
+            // Exception from queue task
+            Throwable cause = e.getCause();
+            String message;
+            if (cause instanceof IllegalArgumentException || 
+                cause instanceof IllegalStateException || 
+                cause instanceof SecurityException) {
+                message = cause.getMessage();
+            } else {
+                message = "Có lỗi xảy ra khi hủy yêu cầu";
+            }
+            redirectAttributes.addFlashAttribute("error", "❌ " + message);
+            return "redirect:/seller/withdrawals";
+            
+        } catch (Exception e) {
+            // Unexpected error
+            redirectAttributes.addFlashAttribute("error", 
+                    "❌ Có lỗi không mong muốn: " + e.getMessage());
             return "redirect:/seller/withdrawals";
         }
     }
