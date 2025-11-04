@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import vn.group3.marketplace.domain.entity.SellerStore;
+import vn.group3.marketplace.domain.entity.User;
 import java.util.Optional;
 import java.math.BigDecimal;
 import org.springframework.data.jpa.repository.Query;
@@ -15,6 +16,8 @@ public interface SellerStoreRepository extends JpaRepository<SellerStore, Long> 
 
     @Query("SELECT s FROM SellerStore s WHERE s.id = :id")
     Optional<SellerStore> findById(@Param("id") Long id);
+
+    Optional<SellerStore> findByOwner(User owner);
 
     @Modifying
     @Query("UPDATE SellerStore s SET s.escrowAmount = CASE WHEN :isAdd = true THEN s.escrowAmount + :amount ELSE s.escrowAmount - :amount END WHERE s.id = :sellerStoreId")
