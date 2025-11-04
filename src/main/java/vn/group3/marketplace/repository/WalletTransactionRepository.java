@@ -6,6 +6,8 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import vn.group3.marketplace.domain.entity.User;
@@ -65,5 +67,32 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
      * Kiểm tra xem user có giao dịch với loại và trạng thái cụ thể không
      */
     boolean existsByUserAndTypeAndPaymentStatus(User user, WalletTransactionType type, WalletTransactionStatus status);
+
+    /**
+     * Tìm tất cả giao dịch theo loại (cho admin)
+     */
+    Page<WalletTransaction> findByTypeOrderByIdDesc(WalletTransactionType type, Pageable pageable);
+
+    /**
+     * Tìm giao dịch theo loại và trạng thái (cho admin)
+     */
+    Page<WalletTransaction> findByTypeAndPaymentStatusOrderByIdDesc(WalletTransactionType type, 
+                                                                   WalletTransactionStatus status, 
+                                                                   Pageable pageable);
+
+    /**
+     * Tìm tất cả giao dịch theo loại với JOIN FETCH user (cho admin)
+     */
+    @Query("SELECT w FROM WalletTransaction w JOIN FETCH w.user WHERE w.type = :type ORDER BY w.id DESC")
+    Page<WalletTransaction> findByTypeWithUserOrderByIdDesc(@Param("type") WalletTransactionType type, Pageable pageable);
+
+    /**
+     * Tìm giao dịch theo loại và trạng thái với JOIN FETCH user (cho admin)
+     */
+    @Query("SELECT w FROM WalletTransaction w JOIN FETCH w.user WHERE w.type = :type AND w.paymentStatus = :status ORDER BY w.id DESC")
+    Page<WalletTransaction> findByTypeAndPaymentStatusWithUserOrderByIdDesc(
+        @Param("type") WalletTransactionType type,
+        @Param("status") WalletTransactionStatus status,
+        Pageable pageable);
 
 }

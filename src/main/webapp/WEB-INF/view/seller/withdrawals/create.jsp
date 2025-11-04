@@ -34,135 +34,126 @@
                 <div class="content" id="content">
                     <div class="container-fluid mt-4">
                         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-3">
-                                <h1 class="h2">
-                                    <i class="bi bi-plus-circle me-2"></i>Tạo yêu cầu rút tiền
-                                </h1>
-                                <a href="/seller/withdrawals" class="btn btn-outline-secondary">
-                                    <i class="bi bi-arrow-left me-2"></i>Quay lại
-                                </a>
-                            </div>
+                            <h1 class="h2">
+                                <i class="bi bi-plus-circle me-2"></i>Tạo yêu cầu rút tiền
+                            </h1>
+                            <a href="/seller/withdrawals" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Quay lại
+                            </a>
+                        </div>
 
-                            <!-- Two columns with equal width -->
-                            <div class="row">
-                                <!-- Left Column - Balance Info -->
-                                <div class="col-md-6">
-                                    <div class="balance-card">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <p class="mb-1">Số dư khả dụng</p>
-                                                <div class="balance-amount">
-                                                    <fmt:formatNumber value="${currentUser.balance}" type="currency"
-                                                        currencySymbol="" /> ₫
-                                                </div>
+                        <!-- Two columns with equal width -->
+                        <div class="row">
+                            <!-- Left Column - Balance Info -->
+                            <div class="col-md-6">
+                                <div class="balance-card">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <p class="mb-1">Số dư khả dụng</p>
+                                            <div class="balance-amount">
+                                                <fmt:formatNumber value="${currentUser.balance}" type="currency"
+                                                    currencySymbol="" /> ₫
                                             </div>
-                                            <div>
-                                                <i class="bi bi-wallet2" style="font-size: 3rem; opacity: 0.3;"></i>
-                                            </div>
+                                        </div>
+                                        <div>
+                                            <i class="bi bi-wallet2" style="font-size: 3rem; opacity: 0.3;"></i>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <!-- Right Column - Create Form -->
-                                <div class="col-md-6">
-                                    <div class="card form-card">
-                                        <div class="card-body p-4">
-                                            <h4 class="card-title mb-3">Thông tin yêu cầu rút tiền</h4>
+                            <!-- Right Column - Create Form -->
+                            <div class="col-md-6">
+                                <div class="card form-card">
+                                    <div class="card-body p-4">
+                                        <h4 class="card-title mb-3">Thông tin yêu cầu rút tiền</h4>
 
-                                            <form method="POST" action="/seller/withdrawals/create" id="createForm">
-                                                <input type="hidden" name="${_csrf.parameterName}"
-                                                    value="${_csrf.token}" />
+                                        <form method="POST" action="/seller/withdrawals/create" id="createForm">
+                                            <input type="hidden" name="${_csrf.parameterName}"
+                                                value="${_csrf.token}" />
 
-                                                <div class="row">
-                                                    <!-- Amount -->
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="amount" class="form-label fw-bold">
-                                                            Số tiền rút <span class="text-danger">*</span>
-                                                        </label>
-                                                        <div class="currency-input">
-                                                            <input type="text" class="form-control amount-input"
-                                                                id="amountDisplay" placeholder="Nhập số tiền muốn rút"
-                                                                required>
-                                                            <input type="hidden" name="amount" id="amountValue">
-                                                        </div>
-                                                        <div class="form-text">Số tiền tối thiểu: 100,000₫</div>
-                                                    </div>
-
-                                                    <!-- Bank Name -->
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="bankName" class="form-label fw-bold">
-                                                            Ngân hàng <span class="text-danger">*</span>
-                                                        </label>
-                                                        <select class="form-select" id="bankName"
-                                                            name="bankName" required>
-                                                        <option value="">-- Chọn ngân hàng --</option>
-                                                        <option value="Vietcombank">Vietcombank</option>
-                                                        <option value="BIDV">BIDV</option>
-                                                        <option value="VietinBank">VietinBank</option>
-                                                        <option value="Agribank">Agribank</option>
-                                                        <option value="Techcombank">Techcombank</option>
-                                                        <option value="ACB">ACB</option>
-                                                        <option value="MB Bank">MB Bank</option>
-                                                        <option value="VPBank">VPBank</option>
-                                                        <option value="Sacombank">Sacombank</option>
-                                                        <option value="TPBank">TPBank</option>
-                                                    </select>
-                                                </div>
-
-                                                <!-- Account Number -->
-                                                <div class="mb-4">
-                                                    <label for="bankAccountNumber" class="form-label fw-bold">
-                                                        Số tài khoản <span class="text-danger">*</span>
+                                            <div class="row">
+                                                <!-- Amount -->
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="amount" class="form-label fw-bold">
+                                                        Số tiền rút <span class="text-danger">*</span>
                                                     </label>
-                                                    <input type="text" class="form-control form-control-lg"
-                                                        id="bankAccountNumber" name="bankAccountNumber"
-                                                        placeholder="Nhập số tài khoản" required pattern="[0-9]+">
-                                                    <div class="invalid-feedback">
-                                                        Số tài khoản chỉ được chứa số
+                                                    <div class="currency-input">
+                                                        <input type="text" class="form-control amount-input"
+                                                            id="amountDisplay" placeholder="Nhập số tiền muốn rút"
+                                                            required>
+                                                        <input type="hidden" name="amount" id="amountValue">
                                                     </div>
+                                                    <div class="form-text">Số tiền tối thiểu: 100,000₫</div>
                                                 </div>
 
-                                                <!-- Account Name -->
-                                                <div class="mb-4">
-                                                    <label for="bankAccountName" class="form-label fw-bold">
-                                                        Tên chủ tài khoản <span class="text-danger">*</span>
+                                                <!-- Bank Name -->
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="bankName" class="form-label fw-bold">
+                                                        Ngân hàng <span class="text-danger">*</span>
                                                     </label>
-                                                    <input type="text" class="form-control form-control-lg"
-                                                        id="bankAccountName" name="bankAccountName"
-                                                        placeholder="Nhập tên chủ tài khoản" required>
-                                                    <div class="form-text">
-                                                        Tên chủ tài khoản phải khớp với tài khoản ngân hàng
-                                                    </div>
-                                                </div>
-
-                                                <!-- Note -->
-                                                <div class="mb-4">
-                                                    <label for="description" class="form-label fw-bold">
-                                                        Ghi chú (không bắt buộc)
-                                                    </label>
-                                                    <textarea class="form-control" id="description" name="description"
-                                                        rows="3" placeholder="Ghi chú thêm (nếu có)"></textarea>
-                                                </div>
-
-                                                <!-- Submit Buttons -->
-                                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                                    <a href="/seller/withdrawals" class="btn btn-outline-secondary btn-lg">
-                                                        Hủy bỏ
-                                                    </a>
-                                                    <button type="submit" class="btn btn-primary btn-lg">
-                                                        <i class="bi bi-send me-2"></i>Gửi yêu cầu
-                                                    </button>
-                                                </div>
-                                            </form>
+                                                    <select class="form-select" id="bankName"
+                                                        name="bankName" required>
+                                                    <option value="">-- Chọn ngân hàng --</option>
+                                                    <option value="Vietcombank">Vietcombank</option>
+                                                    <option value="BIDV">BIDV</option>
+                                                    <option value="VietinBank">VietinBank</option>
+                                                    <option value="Agribank">Agribank</option>
+                                                    <option value="Techcombank">Techcombank</option>
+                                                    <option value="ACB">ACB</option>
+                                                    <option value="MB Bank">MB Bank</option>
+                                                    <option value="VPBank">VPBank</option>
+                                                    <option value="Sacombank">Sacombank</option>
+                                                    <option value="TPBank">TPBank</option>
+                                            </select>
                                         </div>
                                     </div>
-                                </div> <!-- End col-md-6 -->
-                            </div> <!-- End row -->
+
+                                    <!-- Account Number -->
+                                    <div class="mb-4">
+                                        <label for="bankAccountNumber" class="form-label fw-bold">
+                                            Số tài khoản <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control form-control-lg"
+                                            id="bankAccountNumber" name="bankAccountNumber"
+                                            placeholder="Nhập số tài khoản" required pattern="[0-9]+">
+                                        <div class="invalid-feedback">
+                                            Số tài khoản chỉ được chứa số
+                                        </div>
+                                    </div>
+
+                                    <!-- Account Name -->
+                                    <div class="mb-4">
+                                        <label for="bankAccountName" class="form-label fw-bold">
+                                            Tên chủ tài khoản <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control form-control-lg"
+                                            id="bankAccountName" name="bankAccountName"
+                                            placeholder="Nhập tên chủ tài khoản" required>
+                                        <div class="form-text">
+                                            Tên chủ tài khoản phải khớp với tài khoản ngân hàng
+                                        </div>
+                                    </div>
+
+                                    <!-- Submit Buttons -->
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <a href="/seller/withdrawals" class="btn btn-outline-secondary btn-lg">
+                                            Hủy bỏ
+                                        </a>
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="bi bi-send me-2"></i>Gửi yêu cầu
+                                        </button>
+                                    </div>
+                                </form>
+                        </div>
                     </div>
+                </div> <!-- End col-md-6 -->
+            </div> <!-- End row -->
+        </div> <!-- End container-fluid -->
+    </div> <!-- End content -->
 
-                    <!-- Include Footer -->
-                    <jsp:include page="../../common/footer.jsp" />
-                </div>
-
+    <!-- Include Footer -->
+    <jsp:include page="../../common/footer.jsp" />
                 <script>
                     const userBalance = ${currentUser.balance};
                     const MIN_AMOUNT = 100000;

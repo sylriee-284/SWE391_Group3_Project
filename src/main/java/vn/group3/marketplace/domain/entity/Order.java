@@ -56,6 +56,9 @@ public class Order extends BaseEntity {
     @Column(name = "rating")
     private Integer rating;
 
+    @Column(name = "review_comment", columnDefinition = "TEXT")
+    private String reviewComment;
+
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "order")
     @Builder.Default
     private List<ProductStorage> productStorages = new ArrayList<>();

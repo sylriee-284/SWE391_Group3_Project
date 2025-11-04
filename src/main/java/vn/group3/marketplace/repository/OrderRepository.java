@@ -66,4 +66,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // Lấy order kèm productStorages (fetch join)
     @Query("SELECT o FROM Order o LEFT JOIN FETCH o.productStorages WHERE o.id = :id")
     java.util.Optional<Order> findByIdWithProductStorages(@Param("id") Long id);
+
+    // Tìm đơn hàng đã đánh giá theo sản phẩm và trạng thái
+    List<Order> findByProductIdAndStatusAndRatingIsNotNull(Long productId, OrderStatus status);
 }
