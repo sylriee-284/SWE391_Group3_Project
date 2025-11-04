@@ -32,6 +32,8 @@
                         <a href="#" class="btn btn-outline-light btn-sm me-2">Share</a>
                         <a href="#" class="btn btn-outline-light btn-sm me-2">Tools</a>
                         <a href="#" class="btn btn-outline-light btn-sm me-2">FAQs</a>
+
+                        <a href="/blog/list" class="btn btn-outline-light btn-sm me-2">Blog</a>
                     </div>
 
                     <div class="d-flex align-items-center ms-auto">
