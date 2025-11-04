@@ -24,7 +24,7 @@ import java.util.Optional;
 public class WithdrawalRequestService {
 
     private static final Logger logger = LoggerFactory.getLogger(WithdrawalRequestService.class);
-    
+
     private final WalletTransactionRepository walletTransactionRepository;
     private final UserRepository userRepository;
 
@@ -38,8 +38,8 @@ public class WithdrawalRequestService {
     /**
      * Tạo yêu cầu rút tiền mới (trạng thái PENDING)
      */
-    public WalletTransaction createWithdrawalRequest(User user, BigDecimal amount, String bankName, 
-                                                      String bankAccountNumber, String bankAccountName) {
+    public WalletTransaction createWithdrawalRequest(User user, BigDecimal amount, String bankName,
+            String bankAccountNumber, String bankAccountName) {
         logger.info("Creating withdrawal request for user: {}, amount: {}", user.getId(), amount);
 
         // Validate amount
@@ -70,9 +70,9 @@ public class WithdrawalRequestService {
     /**
      * Cập nhật yêu cầu rút tiền (chỉ khi còn PENDING)
      */
-    public WalletTransaction updateWithdrawalRequest(Long withdrawalId, BigDecimal newAmount, 
-                                                      String bankName, String bankAccountNumber, 
-                                                      String bankAccountName, User user) {
+    public WalletTransaction updateWithdrawalRequest(Long withdrawalId, BigDecimal newAmount,
+            String bankName, String bankAccountNumber,
+            String bankAccountName, User user) {
         logger.info("Updating withdrawal request: {}", withdrawalId);
 
         WalletTransaction withdrawal = walletTransactionRepository.findById(withdrawalId)
@@ -101,19 +101,20 @@ public class WithdrawalRequestService {
 
         // Update withdrawal details
         withdrawal.setAmount(newAmount);
-        withdrawal.setNote(String.format("Yêu cầu rút tiền - %s - %s - %s", bankName, bankAccountNumber, bankAccountName));
+        withdrawal.setNote(
+                String.format("Yêu cầu rút tiền - %s - %s - %s", bankName, bankAccountNumber, bankAccountName));
 
         // Lưu thay đổi
         walletTransactionRepository.save(withdrawal);
-        
+
         // Đọc lại từ DB để verify status chưa đổi (tránh race condition)
         WalletTransaction verified = walletTransactionRepository.findById(withdrawalId)
                 .orElseThrow(() -> new IllegalStateException("Lỗi khi lưu yêu cầu"));
-        
+
         if (verified.getPaymentStatus() != WalletTransactionStatus.PENDING) {
             throw new IllegalStateException("Yêu cầu đã được admin xử lý, không thể cập nhật");
         }
-        
+
         return verified;
     }
 
@@ -123,26 +124,8 @@ public class WithdrawalRequestService {
     @Transactional(readOnly = true)
     public Page<WalletTransaction> getWithdrawalRequestsByUser(User user, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return walletTransactionRepository.findByUserAndTypeOrderByIdDesc(user, WalletTransactionType.WITHDRAWAL, pageable);
-    }
-
-    /**
-     * Lấy danh sách tất cả yêu cầu rút tiền (cho admin)
-     */
-    @Transactional(readOnly = true)
-    public Page<WalletTransaction> getAllWithdrawalRequests(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return walletTransactionRepository.findByTypeOrderByIdDesc(WalletTransactionType.WITHDRAWAL, pageable);
-    }
-
-    /**
-     * Lấy danh sách yêu cầu rút tiền theo trạng thái (cho admin)
-     */
-    @Transactional(readOnly = true)
-    public Page<WalletTransaction> getWithdrawalRequestsByStatus(WalletTransactionStatus status, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return walletTransactionRepository.findByTypeAndPaymentStatusOrderByIdDesc(
-                WalletTransactionType.WITHDRAWAL, status, pageable);
+        return walletTransactionRepository.findByUserAndTypeOrderByIdDesc(user, WalletTransactionType.WITHDRAWAL,
+                pageable);
     }
 
     /**
@@ -172,9 +155,9 @@ public class WithdrawalRequestService {
         // Update status to SUCCESS NGAY để lock
         withdrawal.setPaymentStatus(WalletTransactionStatus.SUCCESS);
         withdrawal.setNote(withdrawal.getNote() + " - Đã duyệt bởi admin #" + admin.getId());
-        
+
         WalletTransaction saved = walletTransactionRepository.save(withdrawal);
-        
+
         // Flush để đảm bảo DB được update ngay
         walletTransactionRepository.flush();
 
@@ -199,9 +182,9 @@ public class WithdrawalRequestService {
         // Update status to FAILED NGAY để lock
         withdrawal.setPaymentStatus(WalletTransactionStatus.FAILED);
         withdrawal.setNote(reason); // Lưu lý do từ chối vào note
-        
+
         WalletTransaction saved = walletTransactionRepository.save(withdrawal);
-        
+
         // Flush để đảm bảo DB được update ngay
         walletTransactionRepository.flush();
 
@@ -245,9 +228,10 @@ public class WithdrawalRequestService {
      */
     @Transactional(readOnly = true)
     public boolean canUserAccessWithdrawal(WalletTransaction withdrawal, User user) {
-        if (withdrawal == null || user == null) return false;
-        return withdrawal.getUser() != null && 
-               withdrawal.getUser().getId().equals(user.getId());
+        if (withdrawal == null || user == null)
+            return false;
+        return withdrawal.getUser() != null &&
+                withdrawal.getUser().getId().equals(user.getId());
     }
 
     /**
