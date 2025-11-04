@@ -18,5 +18,13 @@ public interface SellerStoreRepository extends JpaRepository<SellerStore, Long> 
 
     @Modifying
     @Query("UPDATE SellerStore s SET s.escrowAmount = CASE WHEN :isAdd = true THEN s.escrowAmount + :amount ELSE s.escrowAmount - :amount END WHERE s.id = :sellerStoreId")
-    void updateEscrowAmount(@Param("sellerStoreId") Long sellerStoreId, @Param("amount") BigDecimal amount, @Param("isAdd") boolean isAdd);
+    void updateEscrowAmount(@Param("sellerStoreId") Long sellerStoreId, @Param("amount") BigDecimal amount,
+            @Param("isAdd") boolean isAdd);
+
+    // Admin dashboard queries
+    @Query("SELECT COUNT(s) FROM SellerStore s")
+    long countTotalStores();
+
+    @Query("SELECT COUNT(s) FROM SellerStore s WHERE s.status = 'ACTIVE'")
+    long countActiveStores();
 }

@@ -139,4 +139,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         @Param("keyword") String keyword,
                         Pageable pageable);
 
+        // Admin dashboard queries
+        @Query("SELECT COUNT(p) FROM Product p WHERE p.isDeleted = false")
+        long countTotalProducts();
+
+        @Query("SELECT COUNT(p) FROM Product p WHERE p.status = :status AND p.isDeleted = false")
+        long countProductsByStatus(@Param("status") ProductStatus status);
+
+        @Query("SELECT p.category.name, COUNT(p) FROM Product p WHERE p.isDeleted = false GROUP BY p.category.name ORDER BY COUNT(p) DESC")
+        java.util.List<Object[]> getProductCountByCategory();
+
 }

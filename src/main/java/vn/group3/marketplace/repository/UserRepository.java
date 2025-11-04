@@ -55,4 +55,15 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
         @Query(value = "UPDATE users SET balance = balance - :amount WHERE id = :id AND balance >= :amount", nativeQuery = true)
         int decrementIfEnough(@Param("id") Long id, @Param("amount") BigDecimal amount);
 
+        // Admin dashboard queries
+        @Query("SELECT COUNT(u) FROM User u WHERE u.status = 'ACTIVE'")
+        long countActiveUsers();
+
+        @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt >= :startOfMonth AND u.createdAt < :endOfMonth")
+        long countNewUsersThisMonth(@Param("startOfMonth") java.time.LocalDateTime startOfMonth,
+                        @Param("endOfMonth") java.time.LocalDateTime endOfMonth);
+
+        @Query("SELECT COUNT(u), MONTH(u.createdAt), YEAR(u.createdAt) FROM User u WHERE u.createdAt >= :startDate GROUP BY YEAR(u.createdAt), MONTH(u.createdAt) ORDER BY YEAR(u.createdAt), MONTH(u.createdAt)")
+        java.util.List<Object[]> getUserGrowthByMonth(@Param("startDate") java.time.LocalDateTime startDate);
+
 }

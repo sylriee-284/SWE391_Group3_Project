@@ -3,13 +3,13 @@
         <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 
             <!DOCTYPE html>
-            <html lang="en">
+            <html lang="vi">
 
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>
-                    <c:if test="${not empty pageTitle}">${pageTitle} - </c:if>MMO Market System
+                    <c:if test="${not empty pageTitle}">${pageTitle} - </c:if>Bảng Điều Khiển Admin - MMO Market
                 </title>
 
                 <!-- Include common head with all CSS and JS -->
@@ -80,11 +80,11 @@
                         <!-- Page Header -->
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <div>
-                                <h2 class="fw-bold text-dark mb-1">Admin Dashboard</h2>
+                                <h2 class="fw-bold text-dark mb-1">Bảng Điều Khiển Admin</h2>
                             </div>
                             <div class="d-flex align-items-center">
                                 <button class="btn btn-outline-primary me-2" onclick="location.reload()">
-                                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
                                 </button>
                                 <span class="text-muted small">
                                     <i class="bi bi-clock me-1"></i>
@@ -106,10 +106,10 @@
                                                 <div class="fs-3 fw-bold text-primary">
                                                     <span id="totalUsers">0</span>
                                                 </div>
-                                                <div class="text-muted small mb-1">Total Users</div>
+                                                <div class="text-muted small mb-1">Tổng Người Dùng</div>
                                                 <div class="text-success small">
                                                     <i class="bi bi-arrow-up me-1"></i>
-                                                    <span id="newUsersThisMonth">0</span> this month
+                                                    <span id="newUsersThisMonth">0</span> tháng này
                                                 </div>
                                             </div>
                                         </div>
@@ -128,10 +128,10 @@
                                                 <div class="fs-3 fw-bold text-success">
                                                     <span id="totalOrders">0</span>
                                                 </div>
-                                                <div class="text-muted small mb-1">Total Orders</div>
+                                                <div class="text-muted small mb-1">Tổng Đơn Hàng</div>
                                                 <div class="text-warning small">
                                                     <i class="bi bi-clock me-1"></i>
-                                                    <span id="pendingOrders">0</span> pending
+                                                    <span id="pendingOrders">0</span> chờ xử lý
                                                 </div>
                                             </div>
                                         </div>
@@ -150,10 +150,10 @@
                                                 <div class="fs-3 fw-bold text-info">
                                                     <span id="totalProducts">0</span>
                                                 </div>
-                                                <div class="text-muted small mb-1">Total Products</div>
+                                                <div class="text-muted small mb-1">Tổng Sản Phẩm</div>
                                                 <div class="text-primary small">
                                                     <i class="bi bi-graph-up me-1"></i>
-                                                    <span id="activeProducts">0</span> active
+                                                    <span id="activeProducts">0</span> hoạt động
                                                 </div>
                                             </div>
                                         </div>
@@ -172,10 +172,10 @@
                                                 <div class="fs-3 fw-bold text-warning">
                                                     <span id="totalStores">0</span>
                                                 </div>
-                                                <div class="text-muted small mb-1">Seller Stores</div>
+                                                <div class="text-muted small mb-1">Cửa Hàng</div>
                                                 <div class="text-success small">
                                                     <i class="bi bi-check-circle me-1"></i>
-                                                    <span id="activeStores">0</span> active
+                                                    <span id="activeStores">0</span> hoạt động
                                                 </div>
                                             </div>
                                         </div>
@@ -186,22 +186,8 @@
 
                         <!-- Charts Row -->
                         <div class="row mb-4">
-                            <!-- User Growth Chart -->
-                            <div class="col-lg-6 mb-4">
-                                <div class="card dashboard-card h-100">
-                                    <div class="card-header bg-white">
-                                        <h6 class="card-title mb-0 fw-bold">
-                                            <i class="bi bi-graph-up me-2 text-primary"></i>Tăng trưởng người dùng
-                                        </h6>
-                                    </div>
-                                    <div class="card-body chart-container" style="height: 300px;">
-                                        <canvas id="userGrowthChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- Order Statistics Chart -->
-                            <div class="col-lg-6 mb-4">
+                            <div class="col-lg-12 mb-4">
                                 <div class="card dashboard-card h-100">
                                     <div class="card-header bg-white">
                                         <h6 class="card-title mb-0 fw-bold">
@@ -215,37 +201,6 @@
                             </div>
                         </div>
 
-                        <!-- Revenue and Category Charts Row -->
-                        <div class="row mb-4">
-                            <!-- Revenue Chart -->
-                            <div class="col-lg-8 mb-4">
-                                <div class="card dashboard-card h-100">
-                                    <div class="card-header bg-white">
-                                        <h6 class="card-title mb-0 fw-bold">
-                                            <i class="bi bi-bar-chart me-2 text-info"></i>Doanh thu theo tháng
-                                        </h6>
-                                    </div>
-                                    <div class="card-body chart-container" style="height: 400px;">
-                                        <canvas id="revenueChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Category Distribution Chart -->
-                            <div class="col-lg-4 mb-4">
-                                <div class="card dashboard-card h-100">
-                                    <div class="card-header bg-white">
-                                        <h6 class="card-title mb-0 fw-bold">
-                                            <i class="bi bi-diagram-3 me-2 text-warning"></i>Danh mục sản phẩm
-                                        </h6>
-                                    </div>
-                                    <div class="card-body chart-container" style="height: 300px;">
-                                        <canvas id="categoryChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Quick Actions & System Status Row -->
                         <div class="row mb-4">
                             <!-- Quick Actions -->
@@ -253,22 +208,22 @@
                                 <div class="card dashboard-card h-100">
                                     <div class="card-header bg-white d-flex justify-content-between align-items-center">
                                         <h6 class="card-title mb-0 fw-bold">
-                                            <i class="bi bi-lightning-charge me-2 text-primary"></i>Quick Actions
+                                            <i class="bi bi-lightning-charge me-2 text-primary"></i>Thao Tác Nhanh
                                         </h6>
                                     </div>
                                     <div class="card-body">
                                         <div class="d-grid gap-2">
                                             <a href="/admin/users/add" class="btn btn-outline-primary btn-sm">
-                                                <i class="bi bi-person-plus me-2"></i>Add New User
+                                                <i class="bi bi-person-plus me-2"></i>Thêm Người Dùng
                                             </a>
                                             <a href="/admin/categories/add" class="btn btn-outline-success btn-sm">
-                                                <i class="bi bi-plus-circle me-2"></i>Add Category
+                                                <i class="bi bi-plus-circle me-2"></i>Thêm Danh Mục
                                             </a>
                                             <a href="/admin/system-config" class="btn btn-outline-info btn-sm">
-                                                <i class="bi bi-gear me-2"></i>System Settings
+                                                <i class="bi bi-gear me-2"></i>Cài Đặt Hệ Thống
                                             </a>
                                             <a href="/admin/users" class="btn btn-outline-warning btn-sm">
-                                                <i class="bi bi-people me-2"></i>Manage Users
+                                                <i class="bi bi-people me-2"></i>Quản Lý Người Dùng
                                             </a>
                                         </div>
                                     </div>
@@ -280,9 +235,9 @@
                                 <div class="card dashboard-card h-100">
                                     <div class="card-header bg-white d-flex justify-content-between align-items-center">
                                         <h6 class="card-title mb-0 fw-bold">
-                                            <i class="bi bi-speedometer2 me-2 text-success"></i>System Status
+                                            <i class="bi bi-speedometer2 me-2 text-success"></i>Trạng Thái Hệ Thống
                                         </h6>
-                                        <span class="badge bg-success">Online</span>
+                                        <span class="badge bg-success">Hoạt Động</span>
                                     </div>
                                     <div class="card-body">
                                         <div class="row">
@@ -290,16 +245,16 @@
                                                 <div class="d-flex align-items-center mb-3">
                                                     <i class="bi bi-server me-3 text-success fs-5"></i>
                                                     <div>
-                                                        <div class="fw-medium">Database Status</div>
-                                                        <div class="text-success small">Connected</div>
+                                                        <div class="fw-medium">Trạng Thái Database</div>
+                                                        <div class="text-success small">Đã Kết Nối</div>
                                                     </div>
                                                 </div>
                                                 <div class="d-flex align-items-center mb-3">
                                                     <i class="bi bi-people me-3 text-primary fs-5"></i>
                                                     <div>
-                                                        <div class="fw-medium">Active Users</div>
+                                                        <div class="fw-medium">Người Dùng Hoạt Động</div>
                                                         <div class="text-primary small"><span
-                                                                id="activeUsersNow">0</span> online</div>
+                                                                id="activeUsersNow">0</span> trực tuyến</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -307,14 +262,14 @@
                                                 <div class="d-flex align-items-center mb-3">
                                                     <i class="bi bi-clock me-3 text-warning fs-5"></i>
                                                     <div>
-                                                        <div class="fw-medium">System Uptime</div>
-                                                        <div class="text-muted small">Running smoothly</div>
+                                                        <div class="fw-medium">Thời Gian Hoạt Động</div>
+                                                        <div class="text-muted small">Đang chạy ổn định</div>
                                                     </div>
                                                 </div>
                                                 <div class="d-flex align-items-center mb-3">
                                                     <i class="bi bi-calendar me-3 text-info fs-5"></i>
                                                     <div>
-                                                        <div class="fw-medium">Last Updated</div>
+                                                        <div class="fw-medium">Cập Nhật Lần Cuối</div>
                                                         <div class="text-muted small">
                                                             <script>document.write(new Date().toLocaleString('vi-VN'))</script>
                                                         </div>
@@ -333,7 +288,7 @@
                                 <div class="card dashboard-card">
                                     <div class="card-header bg-white">
                                         <h6 class="card-title mb-0 fw-bold">
-                                            <i class="bi bi-grid me-2 text-primary"></i>Management Modules
+                                            <i class="bi bi-grid me-2 text-primary"></i>Các Mô-đun Quản Lý
                                         </h6>
                                     </div>
                                     <div class="card-body">
@@ -346,8 +301,10 @@
                                                                 <i class="bi bi-people"></i>
                                                             </div>
                                                             <div>
-                                                                <div class="fw-medium text-dark">User Management</div>
-                                                                <div class="text-muted small">Manage users & roles</div>
+                                                                <div class="fw-medium text-dark">Quản Lý Người Dùng
+                                                                </div>
+                                                                <div class="text-muted small">Quản lý users & vai trò
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -361,8 +318,8 @@
                                                                 <i class="bi bi-tags"></i>
                                                             </div>
                                                             <div>
-                                                                <div class="fw-medium text-dark">Categories</div>
-                                                                <div class="text-muted small">Product categories</div>
+                                                                <div class="fw-medium text-dark">Danh Mục</div>
+                                                                <div class="text-muted small">Danh mục sản phẩm</div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -376,8 +333,8 @@
                                                                 <i class="bi bi-gear"></i>
                                                             </div>
                                                             <div>
-                                                                <div class="fw-medium text-dark">System Config</div>
-                                                                <div class="text-muted small">Platform settings</div>
+                                                                <div class="fw-medium text-dark">Cấu Hình Hệ Thống</div>
+                                                                <div class="text-muted small">Cài đặt nền tảng</div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -390,8 +347,8 @@
                                                             <i class="bi bi-graph-up"></i>
                                                         </div>
                                                         <div>
-                                                            <div class="fw-medium text-muted">Reports</div>
-                                                            <div class="text-muted small">Coming soon</div>
+                                                            <div class="fw-medium text-muted">Báo Cáo</div>
+                                                            <div class="text-muted small">Sắp có</div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -510,32 +467,19 @@
 
                         // Load data and initialize charts
                         Promise.all([
-                            fetch('/admin/api/user-growth-data').then(res => res.json()).catch(() => getDefaultUserGrowthData()),
-                            fetch('/admin/api/order-stats-data').then(res => res.json()).catch(() => getDefaultOrderStatsData()),
-                            fetch('/admin/api/revenue-data').then(res => res.json()).catch(() => getDefaultRevenueData()),
-                            fetch('/admin/api/category-data').then(res => res.json()).catch(() => getDefaultCategoryData())
-                        ]).then(([userGrowthData, orderStatsData, revenueData, categoryData]) => {
-                            initializeCharts(userGrowthData, orderStatsData, revenueData, categoryData);
+                            fetch('/admin/api/order-stats-data').then(res => res.json()).catch(() => getDefaultOrderStatsData())
+                        ]).then(([orderStatsData]) => {
+                            initializeCharts(orderStatsData);
                         }).catch(error => {
                             console.error('Error loading chart data:', error);
                             // Use default data if API fails
                             initializeCharts(
-                                getDefaultUserGrowthData(),
-                                getDefaultOrderStatsData(),
-                                getDefaultRevenueData(),
-                                getDefaultCategoryData()
+                                getDefaultOrderStatsData()
                             );
                         });
                     }
 
                     // Default data functions (fallback)
-                    function getDefaultUserGrowthData() {
-                        return {
-                            labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6'],
-                            data: [45, 78, 95, 120, 145, 178]
-                        };
-                    }
-
                     function getDefaultOrderStatsData() {
                         return {
                             labels: ['Hoàn thành', 'Đang xử lý', 'Đã hủy', 'Chờ thanh toán'],
@@ -543,72 +487,8 @@
                         };
                     }
 
-                    function getDefaultRevenueData() {
-                        return {
-                            labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
-                            data: [25000000, 32000000, 28000000, 35000000, 42000000, 38000000, 45000000, 48000000, 52000000, 47000000, 55000000, 60000000]
-                        };
-                    }
-
-                    function getDefaultCategoryData() {
-                        return {
-                            labels: ['Phần mềm', 'Tài khoản', 'Dịch vụ', 'Khác'],
-                            data: [35, 25, 30, 10]
-                        };
-                    }
-
-                    // Initialize all charts with data
-                    function initializeCharts(userGrowthData, orderStatsData, revenueData, categoryData) {
-                        // User Growth Chart (Line Chart)
-                        const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
-                        new Chart(userGrowthCtx, {
-                            type: 'line',
-                            data: {
-                                labels: userGrowthData.labels,
-                                datasets: [{
-                                    label: 'Người dùng mới',
-                                    data: userGrowthData.data,
-                                    borderColor: '#0d6efd',
-                                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                                    borderWidth: 3,
-                                    fill: true,
-                                    tension: 0.4
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                resizeDelay: 200,
-                                layout: {
-                                    padding: {
-                                        top: 10,
-                                        bottom: 10,
-                                        left: 10,
-                                        right: 10
-                                    }
-                                },
-                                scales: {
-                                    y: {
-                                        beginAtZero: true,
-                                        grid: {
-                                            color: 'rgba(0,0,0,0.1)'
-                                        }
-                                    },
-                                    x: {
-                                        grid: {
-                                            color: 'rgba(0,0,0,0.1)'
-                                        }
-                                    }
-                                },
-                                plugins: {
-                                    legend: {
-                                        display: true,
-                                        position: 'top'
-                                    }
-                                }
-                            }
-                        });
-
+                    // Initialize charts with data
+                    function initializeCharts(orderStatsData) {
                         // Order Statistics Chart (Doughnut Chart)
                         const orderStatsCtx = document.getElementById('orderStatsChart').getContext('2d');
                         new Chart(orderStatsCtx, {
@@ -646,101 +526,6 @@
                                             padding: 15,
                                             usePointStyle: true,
                                             boxWidth: 12
-                                        }
-                                    }
-                                }
-                            }
-                        });
-
-                        // Revenue Chart (Bar Chart)
-                        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-                        new Chart(revenueCtx, {
-                            type: 'bar',
-                            data: {
-                                labels: revenueData.labels,
-                                datasets: [{
-                                    label: 'Doanh thu (VNĐ)',
-                                    data: revenueData.data,
-                                    backgroundColor: 'rgba(13, 202, 240, 0.8)',
-                                    borderColor: '#0dcaf0',
-                                    borderWidth: 2,
-                                    borderRadius: 5
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                scales: {
-                                    y: {
-                                        beginAtZero: true,
-                                        ticks: {
-                                            callback: function (value) {
-                                                return new Intl.NumberFormat('vi-VN').format(value) + 'đ';
-                                            }
-                                        },
-                                        grid: {
-                                            color: 'rgba(0,0,0,0.1)'
-                                        }
-                                    },
-                                    x: {
-                                        grid: {
-                                            color: 'rgba(0,0,0,0.1)'
-                                        }
-                                    }
-                                },
-                                plugins: {
-                                    legend: {
-                                        display: true,
-                                        position: 'top'
-                                    },
-                                    tooltip: {
-                                        callbacks: {
-                                            label: function (context) {
-                                                return 'Doanh thu: ' + new Intl.NumberFormat('vi-VN').format(context.parsed.y) + 'đ';
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        });
-
-                        // Category Distribution Chart (Pie Chart)
-                        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-                        new Chart(categoryCtx, {
-                            type: 'pie',
-                            data: {
-                                labels: categoryData.labels,
-                                datasets: [{
-                                    data: categoryData.data,
-                                    backgroundColor: [
-                                        '#0d6efd',
-                                        '#198754',
-                                        '#ffc107',
-                                        '#6c757d'
-                                    ],
-                                    borderWidth: 2,
-                                    borderColor: '#fff'
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        position: 'bottom',
-                                        labels: {
-                                            padding: 15,
-                                            usePointStyle: true,
-                                            font: {
-                                                size: 12
-                                            }
-                                        }
-                                    },
-                                    tooltip: {
-                                        callbacks: {
-                                            label: function (context) {
-                                                return context.label + ': ' + context.parsed + '%';
-                                            }
                                         }
                                     }
                                 }

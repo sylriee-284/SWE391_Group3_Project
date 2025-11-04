@@ -1,9 +1,7 @@
 package vn.group3.marketplace.controller;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,8 +10,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import vn.group3.marketplace.domain.entity.User;
 import vn.group3.marketplace.domain.enums.StoreStatus;
 import vn.group3.marketplace.service.UserService;
@@ -22,12 +18,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 
-import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import vn.group3.marketplace.domain.entity.SellerStore;
 import vn.group3.marketplace.domain.entity.SystemSetting;
 import vn.group3.marketplace.service.SellerStoreService;
 import vn.group3.marketplace.service.SystemSettingService;
+import vn.group3.marketplace.repository.UserRepository;
+import vn.group3.marketplace.repository.OrderRepository;
+import vn.group3.marketplace.repository.ProductRepository;
+import vn.group3.marketplace.repository.SellerStoreRepository;
+import vn.group3.marketplace.domain.enums.OrderStatus;
+import vn.group3.marketplace.domain.enums.ProductStatus;
+import java.time.LocalDateTime;
 
 @Controller
 @RequestMapping("/admin")
@@ -38,13 +40,25 @@ public class AdminController {
     private final UserService userService;
     private final SystemSettingService systemSettingService;
     private final SellerStoreService sellerStoreService;
+    private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
+    private final ProductRepository productRepository;
+    private final SellerStoreRepository sellerStoreRepository;
 
     public AdminController(UserService userService,
             SystemSettingService systemSettingService,
-            SellerStoreService sellerStoreService) {
+            SellerStoreService sellerStoreService,
+            UserRepository userRepository,
+            OrderRepository orderRepository,
+            ProductRepository productRepository,
+            SellerStoreRepository sellerStoreRepository) {
         this.userService = userService;
         this.systemSettingService = systemSettingService;
         this.sellerStoreService = sellerStoreService;
+        this.userRepository = userRepository;
+        this.orderRepository = orderRepository;
+        this.productRepository = productRepository;
+        this.sellerStoreRepository = sellerStoreRepository;
     }
 
     private static final String SUCCESS_MESSAGE = "successMessage";
@@ -60,72 +74,108 @@ public class AdminController {
     }
 
     // API endpoints for chart data
-    @GetMapping("/api/user-growth-data")
-    @ResponseBody
-    public java.util.Map<String, Object> getUserGrowthData() {
-        // TODO: Replace with actual database queries
-        java.util.Map<String, Object> data = new java.util.HashMap<>();
-        data.put("labels", java.util.Arrays.asList("Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6"));
-        data.put("data", java.util.Arrays.asList(45, 78, 95, 120, 145, 178));
-        return data;
-    }
-
     @GetMapping("/api/order-stats-data")
     @ResponseBody
     public java.util.Map<String, Object> getOrderStatsData() {
-        // TODO: Replace with actual database queries from Order entity
         java.util.Map<String, Object> data = new java.util.HashMap<>();
-        data.put("labels", java.util.Arrays.asList("Hoàn thành", "Đang xử lý", "Đã hủy", "Chờ thanh toán"));
-        data.put("data", java.util.Arrays.asList(65, 20, 10, 5));
-        return data;
-    }
 
-    @GetMapping("/api/revenue-data")
-    @ResponseBody
-    public java.util.Map<String, Object> getRevenueData() {
-        // TODO: Replace with actual database queries from WalletTransaction entity
-        java.util.Map<String, Object> data = new java.util.HashMap<>();
-        data.put("labels",
-                java.util.Arrays.asList("T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"));
-        data.put("data", java.util.Arrays.asList(25000000, 32000000, 28000000, 35000000, 42000000, 38000000, 45000000,
-                48000000, 52000000, 47000000, 55000000, 60000000));
-        return data;
-    }
+        try {
+            List<Object[]> statsData = orderRepository.getOrderStatusStats();
 
-    @GetMapping("/api/category-data")
-    @ResponseBody
-    public java.util.Map<String, Object> getCategoryData() {
-        // TODO: Replace with actual database queries from Category/Product entities
-        java.util.Map<String, Object> data = new java.util.HashMap<>();
-        data.put("labels", java.util.Arrays.asList("Phần mềm", "Tài khoản", "Dịch vụ", "Khác"));
-        data.put("data", java.util.Arrays.asList(35, 25, 30, 10));
+            java.util.List<String> labels = new java.util.ArrayList<>();
+            java.util.List<Long> counts = new java.util.ArrayList<>();
+
+            // Map order status to Vietnamese labels
+            java.util.Map<String, String> statusLabels = new java.util.HashMap<>();
+            statusLabels.put("COMPLETED", "Hoàn thành");
+            statusLabels.put("PENDING", "Chờ xử lý");
+            statusLabels.put("PROCESSING", "Đang xử lý");
+            statusLabels.put("CANCELLED", "Đã hủy");
+            statusLabels.put("REFUNDED", "Đã hoàn tiền");
+            statusLabels.put("FAILED", "Thất bại");
+
+            for (Object[] row : statsData) {
+                OrderStatus status = (OrderStatus) row[0];
+                Long count = (Long) row[1];
+
+                String label = statusLabels.getOrDefault(status.name(), status.name());
+                labels.add(label);
+                counts.add(count);
+            }
+
+            // If no data, provide default structure
+            if (labels.isEmpty()) {
+                labels = java.util.Arrays.asList("Chờ xử lý", "Đang xử lý", "Hoàn thành", "Đã hủy");
+                counts = java.util.Arrays.asList(0L, 0L, 0L, 0L);
+            }
+
+            data.put("labels", labels);
+            data.put("data", counts);
+        } catch (Exception e) {
+            log.error("Error fetching order stats data", e);
+            data.put("labels", java.util.Arrays.asList("Chờ xử lý", "Đang xử lý", "Hoàn thành", "Đã hủy"));
+            data.put("data", java.util.Arrays.asList(0, 0, 0, 0));
+        }
+
         return data;
     }
 
     @GetMapping("/api/kpi-data")
     @ResponseBody
     public java.util.Map<String, Object> getKpiData() {
-        // TODO: Replace with actual database queries
         java.util.Map<String, Object> data = new java.util.HashMap<>();
 
-        // Total users count (from User entity)
-        data.put("totalUsers", 1234);
-        data.put("newUsersThisMonth", 56);
+        try {
+            // Total users count (from User entity)
+            long totalUsers = userRepository.countActiveUsers();
+            data.put("totalUsers", totalUsers);
 
-        // Total orders count (from Order entity)
-        data.put("totalOrders", 2847);
-        data.put("pendingOrders", 23);
+            // New users this month
+            LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+            LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
+            long newUsersThisMonth = userRepository.countNewUsersThisMonth(startOfMonth, endOfMonth);
+            data.put("newUsersThisMonth", newUsersThisMonth);
 
-        // Total products count (from Product entity)
-        data.put("totalProducts", 456);
-        data.put("activeProducts", 398);
+            // Total orders count (from Order entity)
+            long totalOrders = orderRepository.countTotalOrders();
+            data.put("totalOrders", totalOrders);
 
-        // Total stores count (from SellerStore entity)
-        data.put("totalStores", 89);
-        data.put("activeStores", 76);
+            // Pending orders
+            long pendingOrders = orderRepository.countOrdersByStatus(OrderStatus.PENDING);
+            data.put("pendingOrders", pendingOrders);
 
-        // Active users now (could be from sessions or recent activity)
-        data.put("activeUsersNow", 45);
+            // Total products count (from Product entity)
+            long totalProducts = productRepository.countTotalProducts();
+            data.put("totalProducts", totalProducts);
+
+            // Active products
+            long activeProducts = productRepository.countProductsByStatus(ProductStatus.ACTIVE);
+            data.put("activeProducts", activeProducts);
+
+            // Total stores count (from SellerStore entity)
+            long totalStores = sellerStoreRepository.countTotalStores();
+            data.put("totalStores", totalStores);
+
+            // Active stores
+            long activeStores = sellerStoreRepository.countActiveStores();
+            data.put("activeStores", activeStores);
+
+            // Active users now (estimation based on recent registrations)
+            data.put("activeUsersNow", Math.min(totalUsers, newUsersThisMonth * 2 + 10));
+
+        } catch (Exception e) {
+            log.error("Error fetching KPI data", e);
+            // Fallback data in case of error
+            data.put("totalUsers", 0);
+            data.put("newUsersThisMonth", 0);
+            data.put("totalOrders", 0);
+            data.put("pendingOrders", 0);
+            data.put("totalProducts", 0);
+            data.put("activeProducts", 0);
+            data.put("totalStores", 0);
+            data.put("activeStores", 0);
+            data.put("activeUsersNow", 0);
+        }
 
         return data;
     }

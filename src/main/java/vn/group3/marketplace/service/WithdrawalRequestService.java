@@ -16,7 +16,6 @@ import vn.group3.marketplace.repository.WalletTransactionRepository;
 import vn.group3.marketplace.repository.UserRepository;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -242,4 +241,5 @@ public class WithdrawalRequestService {
         return walletTransactionRepository.existsByUserAndTypeAndPaymentStatus(
                 user, WalletTransactionType.WITHDRAWAL, WalletTransactionStatus.PENDING);
     }
+
 }
