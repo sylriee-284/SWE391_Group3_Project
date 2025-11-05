@@ -30,4 +30,22 @@ public interface SellerStoreRepository extends JpaRepository<SellerStore, Long> 
 
     @Query("SELECT COUNT(s) FROM SellerStore s WHERE s.status = 'ACTIVE'")
     long countActiveStores();
+
+    /**
+     * Cửa hàng theo trạng thái
+     */
+    @Query("SELECT s.status, COUNT(s) FROM SellerStore s GROUP BY s.status")
+    java.util.List<Object[]> getStoreCountByStatus();
+
+    /**
+     * Tăng trưởng cửa hàng theo tháng
+     */
+    @Query("SELECT COUNT(s), MONTH(s.createdAt), YEAR(s.createdAt) FROM SellerStore s WHERE s.createdAt >= :startDate GROUP BY YEAR(s.createdAt), MONTH(s.createdAt) ORDER BY YEAR(s.createdAt), MONTH(s.createdAt)")
+    java.util.List<Object[]> getStoreGrowthByMonth(@Param("startDate") java.time.LocalDateTime startDate);
+
+    /**
+     * Top cửa hàng theo doanh thu
+     */
+    @Query("SELECT s.id, s.storeName, SUM(o.totalAmount) as revenue FROM SellerStore s JOIN Order o ON o.sellerStore.id = s.id WHERE o.status = 'COMPLETED' GROUP BY s.id, s.storeName ORDER BY revenue DESC")
+    java.util.List<Object[]> getTopStoresByRevenue(org.springframework.data.domain.Pageable pageable);
 }

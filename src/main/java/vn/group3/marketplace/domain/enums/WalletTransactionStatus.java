@@ -8,5 +8,6 @@ public enum WalletTransactionStatus {
     CANCELLED,
     REFUNDED,
     RELEASED,
-    HELD
+    HELD,
+    REJECTED
 }

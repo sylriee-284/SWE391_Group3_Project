@@ -186,6 +186,27 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         @Query("SELECT o.status, COUNT(o) FROM Order o GROUP BY o.status")
         java.util.List<Object[]> getOrderStatusStats();
 
+        /**
+         * Doanh thu theo tháng
+         */
         @Query("SELECT SUM(o.totalAmount), MONTH(o.createdAt), YEAR(o.createdAt) FROM Order o WHERE o.status = 'COMPLETED' AND o.createdAt >= :startDate GROUP BY YEAR(o.createdAt), MONTH(o.createdAt) ORDER BY YEAR(o.createdAt), MONTH(o.createdAt)")
         java.util.List<Object[]> getMonthlyRevenue(@Param("startDate") java.time.LocalDateTime startDate);
+
+        /**
+         * Đơn hàng theo giờ trong ngày (pattern hoạt động)
+         */
+        @Query("SELECT HOUR(o.createdAt) as hour, COUNT(o) FROM Order o WHERE o.createdAt >= :startDate GROUP BY HOUR(o.createdAt) ORDER BY hour")
+        java.util.List<Object[]> getOrdersByHour(@Param("startDate") java.time.LocalDateTime startDate);
+
+        /**
+         * Giá trị đơn hàng trung bình theo tháng
+         */
+        @Query("SELECT AVG(o.totalAmount), MONTH(o.createdAt), YEAR(o.createdAt) FROM Order o WHERE o.status = 'COMPLETED' AND o.createdAt >= :startDate GROUP BY YEAR(o.createdAt), MONTH(o.createdAt) ORDER BY YEAR(o.createdAt), MONTH(o.createdAt)")
+        java.util.List<Object[]> getAverageOrderValueByMonth(@Param("startDate") java.time.LocalDateTime startDate);
+
+        /**
+         * Phân tích conversion rate (% đơn thành công)
+         */
+        @Query("SELECT COUNT(CASE WHEN o.status = 'COMPLETED' THEN 1 END) * 100.0 / COUNT(*) as conversionRate, MONTH(o.createdAt), YEAR(o.createdAt) FROM Order o WHERE o.createdAt >= :startDate GROUP BY YEAR(o.createdAt), MONTH(o.createdAt) ORDER BY YEAR(o.createdAt), MONTH(o.createdAt)")
+        java.util.List<Object[]> getConversionRateByMonth(@Param("startDate") java.time.LocalDateTime startDate);
 }

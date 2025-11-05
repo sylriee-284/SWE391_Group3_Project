@@ -37,19 +37,30 @@ public class AdminWithdrawalController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate,
             Model model) {
 
         Page<WalletTransaction> withdrawals;
         String selectedStatus = "";
 
-        if (status != null && !status.trim().isEmpty()) {
-            try {
-                WalletTransactionStatus statusEnum = WalletTransactionStatus.valueOf(status.toUpperCase());
-                withdrawals = withdrawalRequestService.getWithdrawalRequestsByStatus(statusEnum, page, size);
-                selectedStatus = status.toUpperCase();
-            } catch (IllegalArgumentException e) {
-                withdrawals = withdrawalRequestService.getAllWithdrawalRequests(page, size);
+        // Get withdrawals with filters
+        if ((status != null && !status.trim().isEmpty()) ||
+                (fromDate != null && !fromDate.trim().isEmpty()) ||
+                (toDate != null && !toDate.trim().isEmpty())) {
+
+            WalletTransactionStatus statusEnum = null;
+            if (status != null && !status.trim().isEmpty()) {
+                try {
+                    statusEnum = WalletTransactionStatus.valueOf(status.toUpperCase());
+                    selectedStatus = status.toUpperCase();
+                } catch (IllegalArgumentException e) {
+                    // Invalid status, ignore
+                }
             }
+
+            withdrawals = withdrawalRequestService.getWithdrawalRequestsWithFilters(
+                    statusEnum, fromDate, toDate, page, size);
         } else {
             withdrawals = withdrawalRequestService.getAllWithdrawalRequests(page, size);
         }

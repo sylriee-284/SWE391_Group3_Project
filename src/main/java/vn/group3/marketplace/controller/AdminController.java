@@ -27,6 +27,7 @@ import vn.group3.marketplace.repository.UserRepository;
 import vn.group3.marketplace.repository.OrderRepository;
 import vn.group3.marketplace.repository.ProductRepository;
 import vn.group3.marketplace.repository.SellerStoreRepository;
+import vn.group3.marketplace.repository.WalletTransactionRepository;
 import vn.group3.marketplace.domain.enums.OrderStatus;
 import vn.group3.marketplace.domain.enums.ProductStatus;
 import java.time.LocalDateTime;
@@ -44,6 +45,7 @@ public class AdminController {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final SellerStoreRepository sellerStoreRepository;
+    private final WalletTransactionRepository walletTransactionRepository;
 
     public AdminController(UserService userService,
             SystemSettingService systemSettingService,
@@ -51,7 +53,8 @@ public class AdminController {
             UserRepository userRepository,
             OrderRepository orderRepository,
             ProductRepository productRepository,
-            SellerStoreRepository sellerStoreRepository) {
+            SellerStoreRepository sellerStoreRepository,
+            WalletTransactionRepository walletTransactionRepository) {
         this.userService = userService;
         this.systemSettingService = systemSettingService;
         this.sellerStoreService = sellerStoreService;
@@ -59,6 +62,7 @@ public class AdminController {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.sellerStoreRepository = sellerStoreRepository;
+        this.walletTransactionRepository = walletTransactionRepository;
     }
 
     private static final String SUCCESS_MESSAGE = "successMessage";
@@ -175,6 +179,123 @@ public class AdminController {
             data.put("totalStores", 0);
             data.put("activeStores", 0);
             data.put("activeUsersNow", 0);
+        }
+
+        return data;
+    }
+
+    // New analytics API endpoints
+    @GetMapping("/api/wallet-transaction-data")
+    @ResponseBody
+    public java.util.Map<String, Object> getWalletTransactionData() {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+
+        try {
+            List<Object[]> typeData = walletTransactionRepository.getTransactionCountByType();
+
+            java.util.List<String> labels = new java.util.ArrayList<>();
+            java.util.List<Long> counts = new java.util.ArrayList<>();
+
+            for (Object[] row : typeData) {
+                String type = row[0].toString();
+                Long count = (Long) row[1];
+
+                // Translate enum to Vietnamese
+                String vietnameseLabel = switch (type) {
+                    case "DEPOSIT" -> "Nạp tiền";
+                    case "WITHDRAWAL" -> "Rút tiền";
+                    case "PAYMENT" -> "Thanh toán";
+                    case "REFUND" -> "Hoàn tiền";
+                    case "ORDER_RELEASE" -> "Giải phóng đơn hàng";
+                    case "ADMIN_COMMISSION_FEE" -> "Phí hoa hồng";
+                    case "SELLER_PAYOUT" -> "Thanh toán cho seller";
+                    default -> type;
+                };
+
+                labels.add(vietnameseLabel);
+                counts.add(count);
+            }
+
+            data.put("labels", labels);
+            data.put("data", counts);
+        } catch (Exception e) {
+            log.error("Error fetching wallet transaction data", e);
+            data.put("labels", java.util.Arrays.asList("Nạp tiền", "Rút tiền", "Thanh toán"));
+            data.put("data", java.util.Arrays.asList(0, 0, 0));
+        }
+
+        return data;
+    }
+
+    @GetMapping("/api/top-products-data")
+    @ResponseBody
+    public java.util.Map<String, Object> getTopProductsData() {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+
+        try {
+            PageRequest pageRequest = PageRequest.of(0, 10);
+            List<Object[]> topProducts = productRepository.getTopSellingProducts(pageRequest);
+
+            java.util.List<String> labels = new java.util.ArrayList<>();
+            java.util.List<Long> counts = new java.util.ArrayList<>();
+
+            for (Object[] row : topProducts) {
+                String productName = (String) row[1];
+                Long totalSold = (Long) row[2];
+
+                labels.add(productName);
+                counts.add(totalSold);
+            }
+
+            if (labels.isEmpty()) {
+                labels.add("Chưa có dữ liệu");
+                counts.add(0L);
+            }
+
+            data.put("labels", labels);
+            data.put("data", counts);
+        } catch (Exception e) {
+            log.error("Error fetching top products data", e);
+            data.put("labels", java.util.Arrays.asList("Chưa có dữ liệu"));
+            data.put("data", java.util.Arrays.asList(0));
+        }
+
+        return data;
+    }
+
+    @GetMapping("/api/revenue-data")
+    @ResponseBody
+    public java.util.Map<String, Object> getRevenueData() {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+
+        try {
+            LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
+            List<Object[]> revenueData = orderRepository.getMonthlyRevenue(sixMonthsAgo);
+
+            java.util.List<String> labels = new java.util.ArrayList<>();
+            java.util.List<java.math.BigDecimal> amounts = new java.util.ArrayList<>();
+
+            for (Object[] row : revenueData) {
+                java.math.BigDecimal totalAmount = (java.math.BigDecimal) row[0];
+                Integer month = (Integer) row[1];
+                Integer year = (Integer) row[2];
+
+                String label = "Tháng " + month + "/" + year;
+                labels.add(label);
+                amounts.add(totalAmount != null ? totalAmount : java.math.BigDecimal.ZERO);
+            }
+
+            if (labels.isEmpty()) {
+                labels = java.util.Arrays.asList("T1", "T2", "T3", "T4", "T5", "T6");
+                amounts = java.util.Collections.nCopies(6, java.math.BigDecimal.ZERO);
+            }
+
+            data.put("labels", labels);
+            data.put("data", amounts);
+        } catch (Exception e) {
+            log.error("Error fetching revenue data", e);
+            data.put("labels", java.util.Arrays.asList("T1", "T2", "T3", "T4", "T5", "T6"));
+            data.put("data", java.util.Collections.nCopies(6, 0));
         }
 
         return data;

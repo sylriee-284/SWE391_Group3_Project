@@ -235,6 +235,17 @@ public class WithdrawalRequestService {
     }
 
     /**
+     * Lấy yêu cầu rút tiền với các bộ lọc (cho admin)
+     */
+    @Transactional(readOnly = true)
+    public Page<WalletTransaction> getWithdrawalRequestsWithFilters(
+            WalletTransactionStatus status, String fromDate, String toDate, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return walletTransactionRepository.findWithdrawalsByFilters(
+                WalletTransactionType.WITHDRAWAL, status, fromDate, toDate, pageable);
+    }
+
+    /**
      * Admin duyệt yêu cầu rút tiền
      */
     @Transactional
@@ -285,8 +296,8 @@ public class WithdrawalRequestService {
             throw new IllegalStateException("Yêu cầu không ở trạng thái chờ duyệt");
         }
 
-        // Update status to FAILED NGAY để lock
-        withdrawal.setPaymentStatus(WalletTransactionStatus.FAILED);
+        // Update status to CANCELLED NGAY để lock
+        withdrawal.setPaymentStatus(WalletTransactionStatus.CANCELLED);
         withdrawal.setNote(reason); // Lưu lý do từ chối vào note
 
         WalletTransaction saved = walletTransactionRepository.save(withdrawal);
@@ -391,7 +402,7 @@ public class WithdrawalRequestService {
             }
 
             // Check nếu đã bị từ chối
-            if (withdrawal.getPaymentStatus() == WalletTransactionStatus.FAILED) {
+            if (withdrawal.getPaymentStatus() == WalletTransactionStatus.CANCELLED) {
                 logger.warn("Cannot approve withdrawal {} - already rejected", withdrawalId);
                 throw new IllegalStateException("Không thể duyệt yêu cầu đã bị từ chối");
             }
@@ -460,7 +471,7 @@ public class WithdrawalRequestService {
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu rút tiền"));
 
             // Check nếu đã bị từ chối trước đó
-            if (withdrawal.getPaymentStatus() == WalletTransactionStatus.FAILED) {
+            if (withdrawal.getPaymentStatus() == WalletTransactionStatus.CANCELLED) {
                 logger.warn("Cannot reject withdrawal {} - already rejected", withdrawalId);
                 throw new IllegalStateException("Yêu cầu này đã bị từ chối trước đó");
             }
@@ -492,7 +503,7 @@ public class WithdrawalRequestService {
                 throw new IllegalStateException("Không thể hoàn tiền");
             }
 
-            withdrawal.setPaymentStatus(WalletTransactionStatus.FAILED);
+            withdrawal.setPaymentStatus(WalletTransactionStatus.CANCELLED);
             withdrawal.setNote(withdrawal.getNote() + " - Từ chối: " + reason + " - Admin #" + admin.getId());
 
             WalletTransaction saved = walletTransactionRepository.save(withdrawal);
