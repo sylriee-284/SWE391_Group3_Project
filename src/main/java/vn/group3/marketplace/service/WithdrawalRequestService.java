@@ -101,6 +101,13 @@ public class WithdrawalRequestService {
                 logger.error("Invalid withdrawal amount: {}", amount);
                 throw new IllegalArgumentException("Số tiền rút phải lớn hơn 0");
             }
+            
+            // Validate minimum amount (100,000 VNĐ)
+            BigDecimal MIN_WITHDRAWAL_AMOUNT = new BigDecimal("100000");
+            if (amount.compareTo(MIN_WITHDRAWAL_AMOUNT) < 0) {
+                logger.error("Withdrawal amount {} is below minimum {}", amount, MIN_WITHDRAWAL_AMOUNT);
+                throw new IllegalArgumentException("Số tiền rút tối thiểu là 100,000 VNĐ");
+            }
 
             // 2. Check xem đã có yêu cầu PENDING nào chưa (trong queue đảm bảo thread-safe)
             boolean hasPending = walletTransactionRepository.existsByUserAndTypeAndPaymentStatus(

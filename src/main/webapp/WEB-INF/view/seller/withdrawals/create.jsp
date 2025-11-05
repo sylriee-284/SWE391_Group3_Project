@@ -78,12 +78,9 @@
                                                     <label for="amount" class="form-label fw-bold">
                                                         Số tiền rút <span class="text-danger">*</span>
                                                     </label>
-                                                    <div class="currency-input">
-                                                        <input type="text" class="form-control amount-input"
-                                                            id="amountDisplay" placeholder="Nhập số tiền muốn rút"
-                                                            required>
-                                                        <input type="hidden" name="amount" id="amountValue">
-                                                    </div>
+                                                    <input type="number" class="form-control" id="amount" 
+                                                        name="amount" placeholder="Nhập số tiền muốn rút" 
+                                                        min="100000" required>
                                                     <div class="form-text">Số tiền tối thiểu: 100,000₫</div>
                                                 </div>
 
@@ -116,10 +113,7 @@
                                         </label>
                                         <input type="text" class="form-control form-control-lg"
                                             id="bankAccountNumber" name="bankAccountNumber"
-                                            placeholder="Nhập số tài khoản" required pattern="[0-9]+">
-                                        <div class="invalid-feedback">
-                                            Số tài khoản chỉ được chứa số
-                                        </div>
+                                            placeholder="Nhập số tài khoản" required>
                                     </div>
 
                                     <!-- Account Name -->
@@ -155,62 +149,9 @@
     <!-- Include Footer -->
     <jsp:include page="../../common/footer.jsp" />
                 <script>
-                    const userBalance = ${currentUser.balance};
-                    const MIN_AMOUNT = 100000;
-
                     $(document).ready(function () {
-                        initCurrencyInput();
-                        initFormValidation();
+                        // No frontend validation - backend will handle everything
                     });
-
-                    function initCurrencyInput() {
-                        $('#amountDisplay').on('input', function () {
-                            let value = $(this).val().replace(/[^0-9]/g, '');
-                            $('#amountValue').val(value);
-
-                            if (value) {
-                                $(this).val(formatCurrency(value));
-                            }
-                        });
-                    }
-
-                    function initFormValidation() {
-                        $('#createForm').on('submit', function (e) {
-                            e.preventDefault();
-
-                            const amount = parseFloat($('#amountValue').val()) || 0;
-
-                            // Validate amount
-                            if (amount < MIN_AMOUNT) {
-                                showError('amountDisplay', 'Số tiền rút tối thiểu là ' + formatCurrency(MIN_AMOUNT) + '₫');
-                                return false;
-                            }
-
-                            if (amount > userBalance) {
-                                showError('amountDisplay', 'Số tiền rút vượt quá số dư khả dụng');
-                                return false;
-                            }
-
-                            // If validation passes, submit form
-                            this.submit();
-                        });
-                    }
-
-                    function formatCurrency(value) {
-                        return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                    }
-
-                    function showError(fieldId, message) {
-                        const field = $('#' + fieldId);
-                        field.addClass('is-invalid');
-                        $('#amountError').text(message).show();
-
-                        iziToast.error({
-                            title: 'Lỗi',
-                            message: message,
-                            position: 'topRight'
-                        });
-                    }
 
                     // Show flash messages
                     <c:if test="${not empty error}">

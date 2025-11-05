@@ -482,6 +482,31 @@
                         .star-icon.hover {
                             color: #ffc107;
                         }
+
+                        /* Fix nút Rate không bị che */
+                        .table-responsive {
+                            overflow-x: auto;
+                            overflow-y: visible;
+                        }
+
+                        /* Action column - hiển thị nút theo chiều dọc */
+                        #resizableTable th:last-child,
+                        #resizableTable td:last-child {
+                            min-width: 100px;
+                            max-width: 120px;
+                            white-space: normal; /* Cho phép xuống dòng */
+                        }
+
+                        /* Buttons hiển thị block (theo chiều dọc) */
+                        #resizableTable td:last-child .btn {
+                            display: block;
+                            width: 100%;
+                            margin-bottom: 4px;
+                        }
+
+                        #resizableTable td:last-child .btn:last-child {
+                            margin-bottom: 0;
+                        }
                     </style>
 
                     <script>

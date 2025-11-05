@@ -141,7 +141,7 @@
                                             </div>
 
                                             <!-- Admin Response (if rejected) -->
-                                            <c:if test="${withdrawal.paymentStatus == 'FAILED'}">
+                                            <c:if test="${withdrawal.paymentStatus == 'REJECTED'}">
                                                 <div class="alert alert-danger mt-4">
                                                     <h6 class="alert-heading">
                                                         <i class="bi bi-exclamation-triangle me-2"></i>Lý do từ chối
