@@ -1,0 +1,176 @@
+﻿/* Close Store Result Page CSS */
+
+.result-card {
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    text-align: center;
+    margin: 50px auto;
+    max-width: 700px;
+}
+
+/* Diagnostic / safety: ensure result card is visible above overlays but below navbar */
+.result-card {
+    position: relative;
+    z-index: 999;
+    outline: 2px dashed rgba(0, 0, 0, 0.03);
+    /* subtle outline to help debugging layout */
+}
+
+.result-icon {
+    font-size: 5rem;
+    color: #6c757d;
+    margin-bottom: 20px;
+    animation: fadeInDown 0.5s ease-in-out;
+}
+
+.result-badge {
+    display: inline-block;
+    background: #6c757d;
+    color: white;
+    padding: 10px 25px;
+    border-radius: 30px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.result-title {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #212529;
+}
+
+.result-description {
+    color: #6c757d;
+    margin-bottom: 30px;
+    font-size: 1.1rem;
+}
+
+.info-box {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 25px;
+    margin: 30px 0;
+    text-align: left;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-label i {
+    color: #0d6efd;
+    font-size: 1.1rem;
+}
+
+.info-value {
+    font-weight: bold;
+    color: #212529;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.info-item.highlight-refund {
+    background: #d1e7dd;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 10px -10px;
+    border-bottom: none;
+}
+
+.refund-highlight {
+    color: #198754;
+    font-size: 1.3rem;
+}
+
+.action-buttons {
+    margin-top: 30px;
+}
+
+.action-buttons .btn {
+    margin: 0 10px;
+    padding: 12px 30px;
+    font-size: 1rem;
+}
+
+.alert-info-custom {
+    background: #cfe2ff;
+    border: 1px solid #9ec5fe;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+    color: #084298;
+    text-align: left;
+}
+
+.alert-info-custom ul {
+    margin-bottom: 0;
+}
+
+.alert-info-custom li {
+    margin-bottom: 5px;
+}
+
+/* Animations */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .result-card {
+        padding: 25px;
+        margin: 20px;
+    }
+
+    .result-icon {
+        font-size: 3.5rem;
+    }
+
+    .result-title {
+        font-size: 1.5rem;
+    }
+
+    .action-buttons .btn {
+        display: block;
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    .info-item {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .refund-highlight {
+        font-size: 1.2rem;
+    }
+}

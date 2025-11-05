@@ -34,6 +34,7 @@ public class SellerController {
     private final vn.group3.marketplace.service.WalletService walletService;
     private final SystemSettingService systemSettingService;
     private final SellerStoreRepository sellerStoreRepository;
+    private final vn.group3.marketplace.service.CloseStoreService closeStoreService;
 
     /**
      * Display seller registration form
@@ -44,9 +45,9 @@ public class SellerController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = userService.getFreshUserByUsername(auth.getName());
 
-        // If user has an active store, redirect to dashboard
+        // If user has an active store, redirect to products page
         if (sellerStoreService.hasActiveStore(currentUser)) {
-            return "redirect:/seller/dashboard";
+            return "redirect:/seller/products";
         }
 
         // Find any existing non-active store (PENDING or INACTIVE)
@@ -61,26 +62,28 @@ public class SellerController {
         model.addAttribute("user", currentUser);
         model.addAttribute("userBalance", currentUser.getBalance());
 
-    // Add system settings to model
-    model.addAttribute("minDepositAmount", sellerStoreService.getMinDepositAmount());
-    model.addAttribute("maxListingPriceRate", sellerStoreService.getMaxListingPriceRate());
+        // Add system settings to model
+        model.addAttribute("minDepositAmount", sellerStoreService.getMinDepositAmount());
+        model.addAttribute("maxListingPriceRate", sellerStoreService.getMaxListingPriceRate());
 
-    // Add fee settings from SystemSetting (percentage fee and fixed fee for small orders)
-    Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
-    Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
-    model.addAttribute("percentageFee", percentageFee);
-    model.addAttribute("fixedFee", fixedFee);
+        // Add fee settings from SystemSetting (percentage fee and fixed fee for small
+        // orders)
+        Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
+        Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
+        model.addAttribute("percentageFee", percentageFee);
+        model.addAttribute("fixedFee", fixedFee);
 
-    // Add refund rate settings from SystemSetting
-    Integer maxRefundRateMinDuration = systemSettingService.getIntValue("store.max_refund_rate_min_duration_months", 12);
-    Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate", 100.0);
-    Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate", 70.0);
-    Double noFeeRefundRate = systemSettingService.getDoubleValue("store.no_fee_refund_rate", 50.0);
-    
-    model.addAttribute("maxRefundRateMinDuration", maxRefundRateMinDuration);
-    model.addAttribute("percentageMaxRefundRate", percentageMaxRefundRate);
-    model.addAttribute("percentageMinRefundRate", percentageMinRefundRate);
-    model.addAttribute("noFeeRefundRate", noFeeRefundRate);
+        // Add refund rate settings from SystemSetting
+        Integer maxRefundRateMinDuration = systemSettingService.getIntValue("store.max_refund_rate_min_duration_months",
+                12);
+        Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate", 100.0);
+        Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate", 70.0);
+        Double noFeeRefundRate = systemSettingService.getDoubleValue("store.no_fee_refund_rate", 50.0);
+
+        model.addAttribute("maxRefundRateMinDuration", maxRefundRateMinDuration);
+        model.addAttribute("percentageMaxRefundRate", percentageMaxRefundRate);
+        model.addAttribute("percentageMinRefundRate", percentageMinRefundRate);
+        model.addAttribute("noFeeRefundRate", noFeeRefundRate);
 
         return "seller/seller-register";
     }
@@ -115,11 +118,14 @@ public class SellerController {
             model.addAttribute("fixedFee", fixedFee);
 
             // Add refund rate settings for validation errors
-            Integer maxRefundRateMinDuration = systemSettingService.getIntValue("store.max_refund_rate_min_duration_months", 12);
-            Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate", 100.0);
-            Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate", 70.0);
+            Integer maxRefundRateMinDuration = systemSettingService
+                    .getIntValue("store.max_refund_rate_min_duration_months", 12);
+            Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate",
+                    100.0);
+            Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate",
+                    70.0);
             Double noFeeRefundRate = systemSettingService.getDoubleValue("store.no_fee_refund_rate", 50.0);
-            
+
             model.addAttribute("maxRefundRateMinDuration", maxRefundRateMinDuration);
             model.addAttribute("percentageMaxRefundRate", percentageMaxRefundRate);
             model.addAttribute("percentageMinRefundRate", percentageMinRefundRate);
@@ -234,7 +240,7 @@ public class SellerController {
         // Get store details
         SellerStore store = sellerStoreService.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy cửa hàng"));
-        
+
         // For PENDING stores, show activation prompt
         if (store.getStatus() == StoreStatus.PENDING) {
             model.addAttribute("pendingActivation", true);
@@ -243,22 +249,23 @@ public class SellerController {
         // Add data to model
         model.addAttribute("user", currentUser);
         model.addAttribute("store", store);
-    // Add fee settings so the success page can show contract values
-    Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
-    Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
-    model.addAttribute("percentageFee", percentageFee);
-    model.addAttribute("fixedFee", fixedFee);
+        // Add fee settings so the success page can show contract values
+        Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
+        Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
+        model.addAttribute("percentageFee", percentageFee);
+        model.addAttribute("fixedFee", fixedFee);
 
-    // Add refund rate settings so the success page can show refund policy
-    Integer maxRefundRateMinDuration = systemSettingService.getIntValue("store.max_refund_rate_min_duration_months", 12);
-    Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate", 100.0);
-    Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate", 70.0);
-    Double noFeeRefundRate = systemSettingService.getDoubleValue("store.no_fee_refund_rate", 50.0);
-    
-    model.addAttribute("maxRefundRateMinDuration", maxRefundRateMinDuration);
-    model.addAttribute("percentageMaxRefundRate", percentageMaxRefundRate);
-    model.addAttribute("percentageMinRefundRate", percentageMinRefundRate);
-    model.addAttribute("noFeeRefundRate", noFeeRefundRate);
+        // Add refund rate settings so the success page can show refund policy
+        Integer maxRefundRateMinDuration = systemSettingService.getIntValue("store.max_refund_rate_min_duration_months",
+                12);
+        Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate", 100.0);
+        Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate", 70.0);
+        Double noFeeRefundRate = systemSettingService.getDoubleValue("store.no_fee_refund_rate", 50.0);
+
+        model.addAttribute("maxRefundRateMinDuration", maxRefundRateMinDuration);
+        model.addAttribute("percentageMaxRefundRate", percentageMaxRefundRate);
+        model.addAttribute("percentageMinRefundRate", percentageMinRefundRate);
+        model.addAttribute("noFeeRefundRate", noFeeRefundRate);
 
         return "seller/register-success";
     }
@@ -292,22 +299,21 @@ public class SellerController {
             // Check balance before attempting payment
             if (currentUser.getBalance().compareTo(store.getDepositAmount()) < 0) {
                 BigDecimal needed = store.getDepositAmount().subtract(currentUser.getBalance());
-                redirectAttributes.addFlashAttribute("paymentError", 
-                    "Số dư không đủ để kích hoạt cửa hàng. Bạn cần nạp thêm " + 
-                    String.format("%,.0f", needed) + " VNĐ");
+                redirectAttributes.addFlashAttribute("paymentError",
+                        "Số dư không đủ để kích hoạt cửa hàng. Bạn cần nạp thêm " +
+                                String.format("%,.0f", needed) + " VNĐ");
                 return "redirect:/seller/register-success?storeId=" + storeId;
             }
 
             // Enqueue payment with same ref
             String paymentRef = "createdShop" + storeId;
             walletTransactionQueueService.enqueuePurchasePayment(
-                currentUser.getId(), 
-                store.getDepositAmount(),
-                paymentRef
-            );
+                    currentUser.getId(),
+                    store.getDepositAmount(),
+                    paymentRef);
 
-            redirectAttributes.addFlashAttribute("success", 
-                "Yêu cầu thanh toán đã được gửi. Vui lòng chờ trong khi chúng tôi xử lý khoản tiền ký quỹ.");
+            redirectAttributes.addFlashAttribute("success",
+                    "Yêu cầu thanh toán đã được gửi. Vui lòng chờ trong khi chúng tôi xử lý khoản tiền ký quỹ.");
             return "redirect:/seller/register-success?storeId=" + storeId;
 
         } catch (Exception e) {
@@ -344,7 +350,8 @@ public class SellerController {
      */
     @GetMapping("/status/{storeId}")
     @ResponseBody
-    public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> getStoreStatus(@PathVariable Long storeId) {
+    public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> getStoreStatus(
+            @PathVariable Long storeId) {
         java.util.Map<String, Object> resp = new java.util.HashMap<>();
         try {
             SellerStore store = sellerStoreService.findById(storeId)
@@ -355,7 +362,195 @@ public class SellerController {
             return org.springframework.http.ResponseEntity.ok(resp);
         } catch (Exception e) {
             resp.put("error", e.getMessage());
-            return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(resp);
+            return org.springframework.http.ResponseEntity
+                    .status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(resp);
+        }
+    }
+
+    // ==================== CLOSE STORE ENDPOINTS ====================
+
+    /**
+     * GET /seller/store/settings
+     * Show store settings page (including close store option)
+     */
+    @GetMapping("/store/settings")
+    public String showStoreSettings(Model model) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            User currentUser = userService.getFreshUserByUsername(auth.getName());
+
+            SellerStore store = currentUser.getSellerStore();
+            if (store == null) {
+                model.addAttribute("error", "You don't have a store yet");
+                return "redirect:/seller/register";
+            }
+
+            model.addAttribute("store", store);
+            model.addAttribute("currentUser", currentUser);
+
+            return "seller/store-settings";
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            e.printStackTrace();
+            return "error";
+        }
+    }
+
+    /**
+     * GET /seller/store/{storeId}/close/preview
+     * Get preview data before closing store
+     */
+    @GetMapping("/store/{storeId}/close/preview")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<?> getClosePreview(@PathVariable Long storeId) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            User currentUser = userService.getFreshUserByUsername(auth.getName());
+
+            vn.group3.marketplace.dto.CloseStorePreviewDTO preview = closeStoreService.getClosePreview(storeId,
+                    currentUser);
+
+            return org.springframework.http.ResponseEntity.ok(preview);
+        } catch (Exception e) {
+            java.util.Map<String, String> error = new java.util.HashMap<>();
+            error.put("error", e.getMessage());
+            return org.springframework.http.ResponseEntity
+                    .status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                    .body(error);
+        }
+    }
+
+    /**
+     * POST /seller/store/{storeId}/close/validate
+     * Validate if store can be closed
+     */
+    @PostMapping("/store/{storeId}/close/validate")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<vn.group3.marketplace.dto.CloseStoreValidationDTO> validateClose(
+            @PathVariable Long storeId,
+            @RequestBody(required = false) java.util.Map<String, Object> body) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            User currentUser = userService.getFreshUserByUsername(auth.getName());
+
+            vn.group3.marketplace.dto.CloseStoreValidationDTO validation = closeStoreService.validateClose(storeId,
+                    currentUser);
+
+            if (!validation.isOk()) {
+                return org.springframework.http.ResponseEntity
+                        .status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                        .body(validation);
+            }
+
+            return org.springframework.http.ResponseEntity.ok(validation);
+        } catch (Exception e) {
+            vn.group3.marketplace.dto.CloseStoreValidationDTO errorDto = vn.group3.marketplace.dto.CloseStoreValidationDTO
+                    .builder()
+                    .ok(false)
+                    .errors(java.util.Collections.singletonList(
+                            vn.group3.marketplace.dto.CloseStoreValidationDTO.ValidationError.builder()
+                                    .code("INTERNAL_ERROR")
+                                    .message(e.getMessage())
+                                    .link("/seller/dashboard")
+                                    .build()))
+                    .build();
+            return org.springframework.http.ResponseEntity
+                    .status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(errorDto);
+        }
+    }
+
+    /**
+     * POST /seller/store/{storeId}/close/confirm
+     * Confirm and close the store
+     */
+    @PostMapping("/store/{storeId}/close/confirm")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<vn.group3.marketplace.dto.CloseStoreResultDTO> confirmClose(
+            @PathVariable Long storeId,
+            @RequestBody vn.group3.marketplace.dto.CloseStoreConfirmRequestDTO request) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            User currentUser = userService.getFreshUserByUsername(auth.getName());
+
+            vn.group3.marketplace.dto.CloseStoreResultDTO result = closeStoreService.confirmClose(storeId, currentUser,
+                    request);
+
+            return org.springframework.http.ResponseEntity.ok(result);
+        } catch (Exception e) {
+            vn.group3.marketplace.dto.CloseStoreResultDTO errorDto = vn.group3.marketplace.dto.CloseStoreResultDTO
+                    .builder()
+                    .ok(false)
+                    .status("ERROR")
+                    .depositRefund(BigDecimal.ZERO)
+                    .walletBalanceAfter(BigDecimal.ZERO)
+                    .build();
+            return org.springframework.http.ResponseEntity
+                    .status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                    .body(errorDto);
+        }
+    }
+
+    /**
+     * GET /seller/store/{storeId}/close/result
+     * Show close result page
+     */
+    @GetMapping("/store/{storeId}/close/result")
+    public String showCloseResult(@PathVariable Long storeId, Model model) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            User currentUser = userService.getFreshUserByUsername(auth.getName());
+
+            vn.group3.marketplace.dto.CloseStoreResultDTO result = closeStoreService.getCloseResult(storeId,
+                    currentUser);
+
+            SellerStore store = sellerStoreService.findById(storeId)
+                    .orElseThrow(() -> new RuntimeException("Store not found"));
+
+            // Tính toán thời gian hoạt động
+            if (store.getCreatedAt() != null && store.getUpdatedAt() != null) {
+                long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(
+                        store.getCreatedAt(), store.getUpdatedAt());
+                long monthsBetween = java.time.temporal.ChronoUnit.MONTHS.between(
+                        store.getCreatedAt(), store.getUpdatedAt());
+
+                model.addAttribute("operatingDays", daysBetween);
+                model.addAttribute("operatingMonths", monthsBetween);
+
+                // Format dates cho JSP
+                java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter
+                        .ofPattern("dd/MM/yyyy HH:mm");
+                model.addAttribute("createdAtFormatted", store.getCreatedAt().format(formatter));
+                model.addAttribute("updatedAtFormatted", store.getUpdatedAt().format(formatter));
+            }
+
+            model.addAttribute("store", store);
+            model.addAttribute("result", result);
+            model.addAttribute("currentUser", currentUser);
+
+            // Tính toán số tiền hoàn cuối cùng (áp dụng refundPercentageRate nếu có)
+            try {
+                java.math.BigDecimal finalRefund = null;
+                if (store.getRefundPercentageRate() != null
+                        && store.getRefundPercentageRate().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                    // refundPercentageRate được lưu là phần trăm của tiền cọc (ví dụ 50 = 50%)
+                    finalRefund = store.getDepositAmount()
+                            .multiply(store.getRefundPercentageRate())
+                            .divide(new java.math.BigDecimal("100"));
+                } else {
+                    finalRefund = result.getDepositRefund();
+                }
+                model.addAttribute("finalRefund", finalRefund);
+            } catch (Exception ex) {
+                // Nếu có lỗi tính toán, fallback về giá trị trả về bởi service
+                model.addAttribute("finalRefund", result.getDepositRefund());
+            }
+
+            return "seller/close-store-result";
+        } catch (Exception e) {
+            e.printStackTrace(); // Log để debug
+            model.addAttribute("error", e.getMessage());
+            return "error";
         }
     }
 }

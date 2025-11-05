@@ -7,5 +7,6 @@ public enum WalletTransactionType {
     REFUND,
     ORDER_RELEASE,
     ADMIN_COMMISSION_FEE,
-    SELLER_PAYOUT
+    SELLER_PAYOUT,
+    DEPOSIT_REFUND
 }

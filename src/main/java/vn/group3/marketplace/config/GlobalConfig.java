@@ -11,12 +11,10 @@ public class GlobalConfig {
     // Base URL
     public static final String BASE_URL = "http://localhost:8080";
 
-    // Escrow scan interval hours
+    // Escrow scan interval - 1 minute (60 seconds)
     @Bean
     public Long escrowScanIntervalHours(SystemSettingService systemSettingService) {
-        String hoursStr = systemSettingService.getSettingValue("escrow.default_scan_hours", "0.02");
-        // Parse as double and convert to milliseconds
-        double hours = Double.parseDouble(hoursStr);
-        return (long) (hours * 60 * 60 * 1000);
+        // Fixed at 1 minute (60000 milliseconds) for automatic escrow release
+        return 60000L; // 1 minute = 60 seconds = 60000 milliseconds
     }
 }

@@ -34,11 +34,32 @@
                         <div class="container mt-4">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h4>Danh sách sản phẩm</h4>
-                                <c:url var="newUrl" value="/seller/products/new">
-                                    <c:param name="storeId" value="${storeId}" />
-                                </c:url>
-                                <a class="btn btn-primary" href="${newUrl}">Thêm sản phẩm</a>
+                                <c:choose>
+                                    <c:when test="${storeStatus == 'INACTIVE'}">
+                                        <button class="btn btn-secondary" disabled
+                                            title="Không thể thêm sản phẩm khi cửa hàng đã đóng">
+                                            <i class="fas fa-lock"></i> Cửa Hàng Đã Đóng
+                                        </button>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:url var="newUrl" value="/seller/products/new">
+                                            <c:param name="storeId" value="${storeId}" />
+                                        </c:url>
+                                        <a class="btn btn-primary" href="${newUrl}">
+                                            <i class="fas fa-plus"></i> Thêm sản phẩm
+                                        </a>
+                                    </c:otherwise>
+                                </c:choose>
                             </div>
+
+                            <!-- Hiển thị thông báo lỗi nếu có -->
+                            <c:if test="${not empty error}">
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-exclamation-circle"></i> ${error}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                        aria-label="Close"></button>
+                                </div>
+                            </c:if>
 
                             <!-- Filter form -->
                             <form id="filterForm" method="get" action="<c:url value='/seller/products'/>"
@@ -144,7 +165,6 @@
                                         }
                                     }
                                 </script>
-
                                 <div class="col-md-2">
                                     <button class="btn btn-outline-secondary w-100" type="submit">Lọc</button>
                                 </div>
@@ -193,7 +213,7 @@
                                         </c:if>
 
                                         <c:forEach var="p" items="${page.content}">
-                                            <tr>
+                                            <tr data-product-id="${p.id}">
                                                 <td>#${p.id}</td>
                                                 <td>
                                                     <div class="d-flex gap-2 align-items-center">
@@ -1009,7 +1029,116 @@
                                 toggleSidebar();
                             }
                         });
+
+                        // ========== Highlight Product from Alert ==========
+                        (function () {
+                            // Get highlightProduct parameter from URL
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const highlightProductId = urlParams.get('highlightProduct');
+                            const source = urlParams.get('source'); // Get source parameter
+
+                            if (highlightProductId) {
+                                // Find the product row
+                                const productRow = document.querySelector('tr[data-product-id="' + highlightProductId + '"]');
+
+                                if (productRow) {
+                                    // Wait for page to fully load
+                                    setTimeout(function () {
+                                        // Scroll to the product smoothly
+                                        productRow.scrollIntoView({
+                                            behavior: 'smooth',
+                                            block: 'center'
+                                        });
+
+                                        // Add permanent highlight class
+                                        productRow.classList.add('product-highlight');
+
+                                        // Add pulsing animation 5 times to draw attention
+                                        productRow.style.animation = 'pulse 1s ease-in-out 5';
+
+                                        // Remove animation after it completes but keep highlight
+                                        setTimeout(function () {
+                                            productRow.style.animation = '';
+                                        }, 5000);
+
+                                        // Add close button to the first cell
+                                        const firstCell = productRow.querySelector('td:first-child');
+                                        const closeBtn = document.createElement('button');
+                                        closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                                        closeBtn.className = 'btn btn-sm btn-outline-warning ms-2';
+                                        closeBtn.title = 'Bỏ đánh dấu';
+                                        closeBtn.style.cssText = 'padding: 2px 6px; font-size: 10px;';
+                                        closeBtn.onclick = function (e) {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            productRow.classList.remove('product-highlight');
+                                            closeBtn.remove();
+
+                                            // Remove parameters from URL
+                                            const newUrl = new URL(window.location);
+                                            newUrl.searchParams.delete('highlightProduct');
+                                            newUrl.searchParams.delete('source');
+                                            window.history.replaceState({}, '', newUrl);
+                                        };
+                                        firstCell.appendChild(closeBtn);
+
+                                        // Show toast notification based on source
+                                        if (typeof iziToast !== 'undefined') {
+                                            let message = 'Sản phẩm này cần nhập thêm hàng. Click nút X để bỏ đánh dấu.';
+                                            let title = '';
+
+                                            // Change message if coming from dashboard
+                                            if (source === 'dashboard') {
+                                                message = 'Sản phẩm cần kiểm tra. Click nút X để bỏ đánh dấu.';
+                                                title = '';
+                                            }
+
+                                            iziToast.warning({
+                                                title: title,
+                                                message: message,
+                                                position: 'topRight',
+                                                timeout: 5000,
+                                                progressBar: true
+                                            });
+                                        }
+                                    }, 500);
+                                }
+                            }
+                        })();
                     </script>
+
+                    <!-- CSS for highlighting -->
+                    <style>
+                        .product-highlight {
+                            background-color: #fff3cd !important;
+                            border-left: 5px solid #ffc107 !important;
+                            box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+                            transition: all 0.3s ease;
+                        }
+
+                        .product-highlight td {
+                            font-weight: 500;
+                        }
+
+                        .product-highlight:hover {
+                            background-color: #ffe69c !important;
+                            box-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
+                        }
+
+                        @keyframes pulse {
+
+                            0%,
+                            100% {
+                                transform: scale(1);
+                                box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+                            }
+
+                            50% {
+                                transform: scale(1.02);
+                                box-shadow: 0 0 20px rgba(255, 193, 7, 0.6);
+                            }
+                        }
+                    </style>
                 </body>
 
                 </html>
