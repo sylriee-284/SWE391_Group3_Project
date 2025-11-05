@@ -19,9 +19,18 @@ import vn.group3.marketplace.domain.entity.SellerStore;
 @Repository
 public interface EscrowTransactionRepository extends JpaRepository<EscrowTransaction, Long> {
 
-    Optional<EscrowTransaction> findByOrder(Order order);
+        Optional<EscrowTransaction> findByOrder(Order order);
 
-    @Query("SELECT e FROM EscrowTransaction e WHERE e.status = :status AND e.holdUntil <= :currentTime")
-    List<EscrowTransaction> findByStatusAndHoldUntilBefore(@Param("status") EscrowStatus status,
-            @Param("currentTime") LocalDateTime currentTime);
+        // Dashboard queries
+        @Query("SELECT " +
+                        "SUM(CASE WHEN et.status = 'HELD' THEN et.totalAmount ELSE 0 END), " +
+                        "SUM(CASE WHEN et.status = 'RELEASED' THEN et.totalAmount ELSE 0 END), " +
+                        "SUM(CASE WHEN et.status = 'REFUNDED' THEN et.totalAmount ELSE 0 END) " +
+                        "FROM EscrowTransaction et " +
+                        "WHERE et.order.sellerStore.id = :storeId")
+        List<Object[]> findEscrowSummaryByStore(@Param("storeId") Long storeId);
+
+        @Query("SELECT e FROM EscrowTransaction e WHERE e.status = :status AND e.holdUntil <= :currentTime")
+        List<EscrowTransaction> findByStatusAndHoldUntilBefore(@Param("status") EscrowStatus status,
+                        @Param("currentTime") LocalDateTime currentTime);
 }

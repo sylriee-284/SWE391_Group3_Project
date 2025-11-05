@@ -25,7 +25,7 @@ import java.util.concurrent.Future;
 public class WithdrawalRequestService {
 
     private static final Logger logger = LoggerFactory.getLogger(WithdrawalRequestService.class);
-    
+
     private final WalletTransactionRepository walletTransactionRepository;
     private final UserRepository userRepository;
     private final PerUserSerialExecutor perUserSerialExecutor;
@@ -41,7 +41,7 @@ public class WithdrawalRequestService {
         this.perUserSerialExecutor = perUserSerialExecutor;
         this.applicationContext = applicationContext;
     }
-    
+
     // Lazy getter để tránh circular dependency
     private WithdrawalRequestService getSelf() {
         return applicationContext.getBean(WithdrawalRequestService.class);
@@ -53,27 +53,28 @@ public class WithdrawalRequestService {
      * Quy trình:
      * 1. Đưa yêu cầu vào queue của seller theo userId
      * 2. Trong queue sẽ thực hiện tuần tự:
-     *    a. Kiểm tra xem đã có yêu cầu PENDING nào chưa
-     *    b. Nếu có -> throw error "Đang có 1 yêu cầu trước đó, vui lòng đợi"
-     *    c. Nếu chưa -> Trừ tiền và lưu giao dịch PENDING
+     * a. Kiểm tra xem đã có yêu cầu PENDING nào chưa
+     * b. Nếu có -> throw error "Đang có 1 yêu cầu trước đó, vui lòng đợi"
+     * c. Nếu chưa -> Trừ tiền và lưu giao dịch PENDING
      * 
-     * @param user Seller tạo yêu cầu
-     * @param amount Số tiền rút
-     * @param bankName Tên ngân hàng
+     * @param user              Seller tạo yêu cầu
+     * @param amount            Số tiền rút
+     * @param bankName          Tên ngân hàng
      * @param bankAccountNumber Số tài khoản
-     * @param bankAccountName Tên chủ tài khoản
+     * @param bankAccountName   Tên chủ tài khoản
      * @return Future chứa WalletTransaction đã tạo
      * @throws RejectedExecutionException nếu queue đầy
      */
     public Future<WalletTransaction> createWithdrawalRequestAsync(
-            User user, BigDecimal amount, String bankName, 
+            User user, BigDecimal amount, String bankName,
             String bankAccountNumber, String bankAccountName) {
-        
+
         logger.info("Enqueueing withdrawal request for user: {}, amount: {}", user.getId(), amount);
-        
+
         // Submit vào queue - PHẢI gọi qua getSelf() để trigger @Transactional proxy
         return perUserSerialExecutor.submit(user.getId(), () -> {
-            return getSelf().doCreateWithdrawalInTransaction(user, amount, bankName, bankAccountNumber, bankAccountName);
+            return getSelf().doCreateWithdrawalInTransaction(user, amount, bankName, bankAccountNumber,
+                    bankAccountName);
         });
     }
 
@@ -90,11 +91,11 @@ public class WithdrawalRequestService {
      */
     @Transactional
     public WalletTransaction doCreateWithdrawalInTransaction(
-            User user, BigDecimal amount, String bankName, 
+            User user, BigDecimal amount, String bankName,
             String bankAccountNumber, String bankAccountName) {
-        
+
         logger.info("Processing withdrawal request in queue for user: {}, amount: {}", user.getId(), amount);
-        
+
         try {
             // 1. Validate amount
             if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
@@ -112,10 +113,11 @@ public class WithdrawalRequestService {
             // 2. Check xem đã có yêu cầu PENDING nào chưa (trong queue đảm bảo thread-safe)
             boolean hasPending = walletTransactionRepository.existsByUserAndTypeAndPaymentStatus(
                     user, WalletTransactionType.WITHDRAWAL, WalletTransactionStatus.PENDING);
-            
+
             if (hasPending) {
                 logger.warn("User {} already has a pending withdrawal request", user.getId());
-                throw new IllegalStateException("Đang có 1 yêu cầu rút tiền trước đó đang chờ xử lý, vui lòng đợi yêu cầu được duyệt hoặc từ chối");
+                throw new IllegalStateException(
+                        "Đang có 1 yêu cầu rút tiền trước đó đang chờ xử lý, vui lòng đợi yêu cầu được duyệt hoặc từ chối");
             }
 
             // 3. Refresh user để có balance mới nhất
@@ -125,17 +127,18 @@ public class WithdrawalRequestService {
             // 4. Check balance
             BigDecimal currentBalance = refreshedUser.getBalance();
             if (currentBalance.compareTo(amount) < 0) {
-                logger.error("Insufficient balance for user {}: balance={}, requested={}", 
-                            refreshedUser.getId(), currentBalance, amount);
+                logger.error("Insufficient balance for user {}: balance={}, requested={}",
+                        refreshedUser.getId(), currentBalance, amount);
                 throw new IllegalStateException(
-                    String.format("Số dư không đủ để rút tiền. Số dư hiện tại: %s, số tiền yêu cầu: %s", 
-                                 currentBalance, amount));
+                        String.format("Số dư không đủ để rút tiền. Số dư hiện tại: %s, số tiền yêu cầu: %s",
+                                currentBalance, amount));
             }
 
             // 5. Trừ tiền ngay (atomic operation) - đảm bảo không race condition
             int updatedRows = userRepository.decrementBalance(refreshedUser.getId(), amount);
             if (updatedRows != 1) {
-                logger.error("Failed to decrement balance for user {}: updatedRows={}", refreshedUser.getId(), updatedRows);
+                logger.error("Failed to decrement balance for user {}: updatedRows={}", refreshedUser.getId(),
+                        updatedRows);
                 throw new IllegalStateException("Không thể trừ tiền - có thể số dư đã thay đổi. Vui lòng thử lại");
             }
 
@@ -146,17 +149,18 @@ public class WithdrawalRequestService {
                     .amount(amount)
                     .paymentStatus(WalletTransactionStatus.PENDING)
                     .paymentMethod("BANK_TRANSFER")
-                    .note(String.format("Yêu cầu rút tiền - %s - %s - %s", bankName, bankAccountNumber, bankAccountName))
+                    .note(String.format("Yêu cầu rút tiền - %s - %s - %s", bankName, bankAccountNumber,
+                            bankAccountName))
                     .paymentRef("WD-" + System.currentTimeMillis() + "-" + refreshedUser.getId())
                     .build();
 
             WalletTransaction savedWithdrawal = walletTransactionRepository.save(withdrawal);
-            
-            logger.info("✅ Withdrawal request created successfully: ID={}, User={}, Amount={}, NewBalance={}", 
-                       savedWithdrawal.getId(), refreshedUser.getId(), amount, currentBalance.subtract(amount));
-            
+
+            logger.info("✅ Withdrawal request created successfully: ID={}, User={}, Amount={}, NewBalance={}",
+                    savedWithdrawal.getId(), refreshedUser.getId(), amount, currentBalance.subtract(amount));
+
             return savedWithdrawal;
-            
+
         } catch (Exception e) {
             logger.error("❌ Error creating withdrawal request for user {}: {}", user.getId(), e.getMessage(), e);
             throw e;
@@ -164,17 +168,19 @@ public class WithdrawalRequestService {
     }
 
     /**
-     * Cập nhật yêu cầu rút tiền - CHỈ cho phép cập nhật thông tin khác, KHÔNG cho sửa số tiền
+     * Cập nhật yêu cầu rút tiền - CHỈ cho phép cập nhật thông tin khác, KHÔNG cho
+     * sửa số tiền
      * Yêu cầu phải chưa được chấp nhận (PENDING)
      * 
      * Các quy tắc:
-     * - CHỈ cho phép sửa thông tin ngân hàng (bankName, bankAccountNumber, bankAccountName)
+     * - CHỈ cho phép sửa thông tin ngân hàng (bankName, bankAccountNumber,
+     * bankAccountName)
      * - KHÔNG cho phép sửa trường amount (số tiền)
      * - Yêu cầu phải ở trạng thái PENDING (chưa được chấp nhận)
      */
     @Transactional
-    public WalletTransaction updateWithdrawalRequest(Long withdrawalId, String bankName, 
-                                                      String bankAccountNumber, String bankAccountName, User user) {
+    public WalletTransaction updateWithdrawalRequest(Long withdrawalId, String bankName,
+            String bankAccountNumber, String bankAccountName, User user) {
         logger.info("Updating withdrawal request: {} by user: {}", withdrawalId, user.getId());
 
         WalletTransaction withdrawal = walletTransactionRepository.findById(withdrawalId)
@@ -182,8 +188,8 @@ public class WithdrawalRequestService {
 
         // Verify ownership
         if (!withdrawal.getUser().getId().equals(user.getId())) {
-            logger.warn("User {} attempted to update withdrawal {} owned by user {}", 
-                       user.getId(), withdrawalId, withdrawal.getUser().getId());
+            logger.warn("User {} attempted to update withdrawal {} owned by user {}",
+                    user.getId(), withdrawalId, withdrawal.getUser().getId());
             throw new SecurityException("Bạn không có quyền sửa yêu cầu này");
         }
 
@@ -195,13 +201,14 @@ public class WithdrawalRequestService {
 
         // Cập nhật CHỈ thông tin ngân hàng - KHÔNG cho sửa amount
         // Amount đã được lock khi tạo yêu cầu và đã trừ tiền
-        String updatedNote = String.format("Yêu cầu rút tiền - %s - %s - %s", bankName, bankAccountNumber, bankAccountName);
+        String updatedNote = String.format("Yêu cầu rút tiền - %s - %s - %s", bankName, bankAccountNumber,
+                bankAccountName);
         withdrawal.setNote(updatedNote);
 
         WalletTransaction saved = walletTransactionRepository.save(withdrawal);
-        
-        logger.info("Withdrawal request updated successfully: ID={}, NewBankInfo: {} - {} - {}", 
-                   withdrawalId, bankName, bankAccountNumber, bankAccountName);
+
+        logger.info("Withdrawal request updated successfully: ID={}, NewBankInfo: {} - {} - {}",
+                withdrawalId, bankName, bankAccountNumber, bankAccountName);
         return saved;
     }
 
@@ -211,7 +218,8 @@ public class WithdrawalRequestService {
     @Transactional(readOnly = true)
     public Page<WalletTransaction> getWithdrawalRequestsByUser(User user, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return walletTransactionRepository.findByUserAndTypeOrderByIdDesc(user, WalletTransactionType.WITHDRAWAL, pageable);
+        return walletTransactionRepository.findByUserAndTypeOrderByIdDesc(user, WalletTransactionType.WITHDRAWAL,
+                pageable);
     }
 
     /**
@@ -234,6 +242,104 @@ public class WithdrawalRequestService {
     }
 
     /**
+     * Lấy yêu cầu rút tiền với các bộ lọc (cho admin)
+     */
+    @Transactional(readOnly = true)
+    public Page<WalletTransaction> getWithdrawalRequestsWithFilters(
+            WalletTransactionStatus status, String fromDate, String toDate, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return walletTransactionRepository.findWithdrawalsByFilters(
+                WalletTransactionType.WITHDRAWAL, status, fromDate, toDate, pageable);
+    }
+
+    /**
+     * Admin duyệt yêu cầu rút tiền
+     */
+    @Transactional
+    public WalletTransaction approveWithdrawal(Long withdrawalId, User admin) {
+        logger.info("Admin {} approving withdrawal: {}", admin.getId(), withdrawalId);
+
+        WalletTransaction withdrawal = walletTransactionRepository.findById(withdrawalId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu rút tiền"));
+
+        // Kiểm tra status - nếu không còn PENDING thì có thể seller đang sửa
+        if (withdrawal.getPaymentStatus() != WalletTransactionStatus.PENDING) {
+            throw new IllegalStateException("Yêu cầu không ở trạng thái chờ duyệt");
+        }
+
+        User user = withdrawal.getUser();
+        BigDecimal amount = withdrawal.getAmount();
+
+        // Trừ tiền từ tài khoản user
+        int rows = userRepository.decrementBalance(user.getId(), amount);
+        if (rows != 1) {
+            throw new IllegalStateException("Không đủ số dư để thực hiện rút tiền");
+        }
+
+        // Update status to SUCCESS NGAY để lock
+        withdrawal.setPaymentStatus(WalletTransactionStatus.SUCCESS);
+        withdrawal.setNote(withdrawal.getNote() + " - Đã duyệt bởi admin #" + admin.getId());
+
+        WalletTransaction saved = walletTransactionRepository.save(withdrawal);
+
+        // Flush để đảm bảo DB được update ngay
+        walletTransactionRepository.flush();
+
+        return saved;
+    }
+
+    /**
+     * Admin từ chối yêu cầu rút tiền
+     */
+    @Transactional
+    public WalletTransaction rejectWithdrawal(Long withdrawalId, String reason, User admin) {
+        logger.info("Admin {} rejecting withdrawal: {}", admin.getId(), withdrawalId);
+
+        WalletTransaction withdrawal = walletTransactionRepository.findById(withdrawalId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu rút tiền"));
+
+        // Kiểm tra status - nếu không còn PENDING thì có thể seller đang sửa
+        if (withdrawal.getPaymentStatus() != WalletTransactionStatus.PENDING) {
+            throw new IllegalStateException("Yêu cầu không ở trạng thái chờ duyệt");
+        }
+
+        // Update status to CANCELLED NGAY để lock
+        withdrawal.setPaymentStatus(WalletTransactionStatus.CANCELLED);
+        withdrawal.setNote(reason); // Lưu lý do từ chối vào note
+
+        WalletTransaction saved = walletTransactionRepository.save(withdrawal);
+
+        // Flush để đảm bảo DB được update ngay
+        walletTransactionRepository.flush();
+
+        return saved;
+    }
+
+    /**
+     * Seller hủy yêu cầu rút tiền (chỉ khi còn PENDING)
+     */
+    public void cancelWithdrawalRequest(Long withdrawalId, User user) {
+        logger.info("User {} cancelling withdrawal: {}", user.getId(), withdrawalId);
+
+        WalletTransaction withdrawal = walletTransactionRepository.findById(withdrawalId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu rút tiền"));
+
+        // Verify ownership
+        if (!withdrawal.getUser().getId().equals(user.getId())) {
+            throw new SecurityException("Bạn không có quyền hủy yêu cầu này");
+        }
+
+        if (withdrawal.getPaymentStatus() != WalletTransactionStatus.PENDING) {
+            throw new IllegalStateException("Chỉ có thể hủy yêu cầu đang chờ duyệt");
+        }
+
+        withdrawal.setPaymentStatus(WalletTransactionStatus.CANCELLED);
+        withdrawal.setNote(withdrawal.getNote() + " - Đã hủy bởi người dùng");
+
+        walletTransactionRepository.save(withdrawal);
+    }
+
+    /**
      * Lấy chi tiết yêu cầu rút tiền
      */
     @Transactional(readOnly = true)
@@ -246,9 +352,10 @@ public class WithdrawalRequestService {
      */
     @Transactional(readOnly = true)
     public boolean canUserAccessWithdrawal(WalletTransaction withdrawal, User user) {
-        if (withdrawal == null || user == null) return false;
-        return withdrawal.getUser() != null && 
-               withdrawal.getUser().getId().equals(user.getId());
+        if (withdrawal == null || user == null)
+            return false;
+        return withdrawal.getUser() != null &&
+                withdrawal.getUser().getId().equals(user.getId());
     }
 
     /**
@@ -266,13 +373,13 @@ public class WithdrawalRequestService {
      */
     public Future<WalletTransaction> approveWithdrawalAsync(Long withdrawalId, User admin) {
         logger.info("Enqueueing approve withdrawal request: {} by admin: {}", withdrawalId, admin.getId());
-        
+
         // Lấy withdrawal để biết userId cho queue
         WalletTransaction withdrawal = walletTransactionRepository.findById(withdrawalId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu rút tiền"));
-        
+
         Long userId = withdrawal.getUser().getId();
-        
+
         return perUserSerialExecutor.submit(userId, () -> {
             return getSelf().doApproveWithdrawalInTransaction(withdrawalId, admin);
         });
@@ -302,7 +409,7 @@ public class WithdrawalRequestService {
             }
 
             // Check nếu đã bị từ chối
-            if (withdrawal.getPaymentStatus() == WalletTransactionStatus.FAILED) {
+            if (withdrawal.getPaymentStatus() == WalletTransactionStatus.CANCELLED) {
                 logger.warn("Cannot approve withdrawal {} - already rejected", withdrawalId);
                 throw new IllegalStateException("Không thể duyệt yêu cầu đã bị từ chối");
             }
@@ -315,19 +422,20 @@ public class WithdrawalRequestService {
 
             // Chỉ cho phép duyệt khi đang PENDING
             if (withdrawal.getPaymentStatus() != WalletTransactionStatus.PENDING) {
-                logger.warn("Cannot approve withdrawal {} - invalid status: {}", withdrawalId, withdrawal.getPaymentStatus());
+                logger.warn("Cannot approve withdrawal {} - invalid status: {}", withdrawalId,
+                        withdrawal.getPaymentStatus());
                 throw new IllegalStateException("Yêu cầu không ở trạng thái chờ duyệt");
             }
 
             // Chỉ cần cập nhật trạng thái (tiền đã được trừ khi tạo yêu cầu)
             withdrawal.setPaymentStatus(WalletTransactionStatus.SUCCESS);
             withdrawal.setNote(withdrawal.getNote() + " - Đã duyệt bởi admin #" + admin.getId());
-            
+
             WalletTransaction saved = walletTransactionRepository.save(withdrawal);
             logger.info("✅ Withdrawal approved: ID={}, Admin={}", withdrawalId, admin.getId());
-            
+
             return saved;
-            
+
         } catch (Exception e) {
             logger.error("❌ Error approving withdrawal {}: {}", withdrawalId, e.getMessage(), e);
             throw e;
@@ -340,13 +448,13 @@ public class WithdrawalRequestService {
      */
     public Future<WalletTransaction> rejectWithdrawalAsync(Long withdrawalId, String reason, User admin) {
         logger.info("Enqueueing reject withdrawal request: {} by admin: {}", withdrawalId, admin.getId());
-        
+
         // Lấy withdrawal để biết userId cho queue
         WalletTransaction withdrawal = walletTransactionRepository.findById(withdrawalId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu rút tiền"));
-        
+
         Long userId = withdrawal.getUser().getId();
-        
+
         return perUserSerialExecutor.submit(userId, () -> {
             return getSelf().doRejectWithdrawalInTransaction(withdrawalId, reason, admin);
         });
@@ -370,7 +478,7 @@ public class WithdrawalRequestService {
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu rút tiền"));
 
             // Check nếu đã bị từ chối trước đó
-            if (withdrawal.getPaymentStatus() == WalletTransactionStatus.FAILED) {
+            if (withdrawal.getPaymentStatus() == WalletTransactionStatus.CANCELLED) {
                 logger.warn("Cannot reject withdrawal {} - already rejected", withdrawalId);
                 throw new IllegalStateException("Yêu cầu này đã bị từ chối trước đó");
             }
@@ -389,7 +497,8 @@ public class WithdrawalRequestService {
 
             // Chỉ cho phép từ chối khi đang PENDING
             if (withdrawal.getPaymentStatus() != WalletTransactionStatus.PENDING) {
-                logger.warn("Cannot reject withdrawal {} - invalid status: {}", withdrawalId, withdrawal.getPaymentStatus());
+                logger.warn("Cannot reject withdrawal {} - invalid status: {}", withdrawalId,
+                        withdrawal.getPaymentStatus());
                 throw new IllegalStateException("Yêu cầu không ở trạng thái chờ duyệt");
             }
 
@@ -401,15 +510,15 @@ public class WithdrawalRequestService {
                 throw new IllegalStateException("Không thể hoàn tiền");
             }
 
-            withdrawal.setPaymentStatus(WalletTransactionStatus.FAILED);
+            withdrawal.setPaymentStatus(WalletTransactionStatus.CANCELLED);
             withdrawal.setNote(withdrawal.getNote() + " - Từ chối: " + reason + " - Admin #" + admin.getId());
-            
+
             WalletTransaction saved = walletTransactionRepository.save(withdrawal);
-            logger.info("✅ Withdrawal rejected and refunded: ID={}, Amount={}, Admin={}", 
-                       withdrawalId, amount, admin.getId());
-            
+            logger.info("✅ Withdrawal rejected and refunded: ID={}, Amount={}, Admin={}",
+                    withdrawalId, amount, admin.getId());
+
             return saved;
-            
+
         } catch (Exception e) {
             logger.error("❌ Error rejecting withdrawal {}: {}", withdrawalId, e.getMessage(), e);
             throw e;
@@ -422,7 +531,7 @@ public class WithdrawalRequestService {
      */
     public Future<Void> cancelWithdrawalRequestAsync(Long withdrawalId, User user) {
         logger.info("Enqueueing cancel withdrawal request: {} for user: {}", withdrawalId, user.getId());
-        
+
         return perUserSerialExecutor.submit(user.getId(), () -> {
             getSelf().doCancelWithdrawalInTransaction(withdrawalId, user);
             return null;
@@ -449,8 +558,8 @@ public class WithdrawalRequestService {
 
             // Verify ownership
             if (!withdrawal.getUser().getId().equals(user.getId())) {
-                logger.warn("User {} attempted to cancel withdrawal {} owned by user {}", 
-                           user.getId(), withdrawalId, withdrawal.getUser().getId());
+                logger.warn("User {} attempted to cancel withdrawal {} owned by user {}",
+                        user.getId(), withdrawalId, withdrawal.getUser().getId());
                 throw new SecurityException("Bạn không có quyền hủy yêu cầu này");
             }
 
@@ -470,8 +579,8 @@ public class WithdrawalRequestService {
             if (withdrawal.getPaymentStatus() != WalletTransactionStatus.PENDING) {
                 logger.warn("Cannot cancel withdrawal {} - status is {}", withdrawalId, withdrawal.getPaymentStatus());
                 throw new IllegalStateException(
-                    String.format("Chỉ có thể hủy yêu cầu đang chờ duyệt. Trạng thái hiện tại: %s", 
-                                 withdrawal.getPaymentStatus()));
+                        String.format("Chỉ có thể hủy yêu cầu đang chờ duyệt. Trạng thái hiện tại: %s",
+                                withdrawal.getPaymentStatus()));
             }
 
             // Hoàn tiền vào tài khoản user
@@ -486,9 +595,9 @@ public class WithdrawalRequestService {
             withdrawal.setNote(withdrawal.getNote() + " - Đã hủy bởi người dùng");
 
             walletTransactionRepository.save(withdrawal);
-            logger.info("✅ Withdrawal cancelled and refunded: ID={}, User={}, Amount={}", 
-                       withdrawalId, user.getId(), amount);
-                       
+            logger.info("✅ Withdrawal cancelled and refunded: ID={}, User={}, Amount={}",
+                    withdrawalId, user.getId(), amount);
+
         } catch (Exception e) {
             logger.error("❌ Error cancelling withdrawal {}: {}", withdrawalId, e.getMessage(), e);
             throw e;

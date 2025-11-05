@@ -15,6 +15,57 @@
 
                     <!-- Include common head with all CSS and JS -->
                     <jsp:include page="../common/head.jsp" />
+                    <!-- Page-specific styles to enlarge product images and modal -->
+                    <style>
+                        /* Main product image: fill its column, keep aspect ratio, limit height */
+                        .product-image {
+                            width: 100%;
+                            height: auto;
+                            object-fit: contain;
+                            max-height: 700px;
+                            /* allow larger display on wide screens */
+                            display: inline-block;
+                        }
+
+                        /* Make the product/info row stretch so image height matches info card */
+                        .product-detail-row {
+                            display: flex;
+                            align-items: stretch;
+                        }
+
+                        .product-detail-row>[class*="col-"] {
+                            display: flex;
+                            flex-direction: column;
+                        }
+
+                        /* Ensure the left column centers the image and lets it grow */
+                        .product-detail-row .col-lg-7 {
+                            justify-content: center;
+                        }
+
+                        /* Let the image take full column height (keeps aspect via object-fit) */
+                        .product-detail-row .product-image {
+                            height: 100%;
+                            max-height: none;
+                            object-fit: contain;
+                        }
+
+                        /* Modal product image */
+                        #product-modal-image {
+                            width: 100%;
+                            height: auto;
+                            object-fit: contain;
+                            max-height: 480px;
+                        }
+
+                        /* Make modal dialog wider on larger screens */
+                        @media (min-width: 768px) {
+                            .modal-dialog.modal-dialog-centered {
+                                max-width: 900px;
+                                width: 90%;
+                            }
+                        }
+                    </style>
                 </head>
 
                 <body>
@@ -49,9 +100,9 @@
                                 </ol>
                             </nav>
 
-                            <div class="row">
+                            <div class="row product-detail-row">
                                 <!-- Product Image -->
-                                <div class="col-lg-6 mb-4">
+                                <div class="col-lg-7 mb-4">
                                     <div class="text-center">
                                         <img id="product-main-image"
                                             src="<c:url value='/images/products/${product.id}.png'/>"
@@ -62,7 +113,7 @@
                                 </div>
 
                                 <!-- Product Info -->
-                                <div class="col-lg-6">
+                                <div class="col-lg-5">
                                     <div class="info-card">
                                         <!-- Product Name -->
                                         <h1 class="mb-3">${product.name}</h1>
@@ -103,16 +154,11 @@
 
                                         <!-- Shop Information -->
                                         <div class="mb-4 shop-info">
-
                                             <div class="d-flex align-items-center">
-
                                                 <div class="flex-grow-1">
-
                                                     <h6 class="mb-1 text-dark">Người bán:
-                                                        <a href="<c:url value='/store/${shop.id}/infor'/>"
-                                                            class="text-decoration-none text-dark">
-                                                            ${shop.storeName}
-                                                        </a>
+                                                        <a href="<c:url value='/store/${shop.id}'/>"
+                                                            class="text-decoration-none text-primary fw-bold">${shop.storeName}</a>
                                                     </h6>
                                                 </div>
                                             </div>
@@ -372,7 +418,7 @@
                     <div class="modal fade" id="buyNowModal" tabindex="-1" aria-labelledby="buyNowModalLabel"
                         aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered"
-                            style="min-width: 600px; max-width: 600px; min-height: 400px;">
+                            style="min-width: 650px; max-width: 900px; min-height: 400px;">
                             <div class="modal-content">
                                 <div class="modal-header">
                                     <h5 class="modal-title" id="buyNowModalLabel">
@@ -383,14 +429,14 @@
                                 </div>
                                 <div class="modal-body" style="min-height: 280px;">
                                     <div class="row">
-                                        <div class="col-md-4">
+                                        <div class="col-md-5">
                                             <img id="product-modal-image"
                                                 src="<c:url value='/images/products/${product.id}.jpg'/>"
                                                 data-fallback-url="<c:out value='${product.productUrl}'/>"
                                                 alt="${product.name}" class="img-fluid rounded"
                                                 onerror="handleImgError(this)" />
                                         </div>
-                                        <div class="col-md-8">
+                                        <div class="col-md-7">
                                             <h6 class="fw-bold">${product.name}</h6>
                                             <p class="text-muted small">${product.category.name}</p>
                                             <div class="d-flex justify-content-between align-items-center">
