@@ -379,10 +379,21 @@
                                                                 groupingUsed="true" /> VND
                                                         </td>
                                                         <td>
-                                                            <span
-                                                                class="badge bg-${order.status == 'COMPLETED' ? 'success' : (order.status == 'CANCELLED' || order.status == 'REFUNDED' ? 'danger' : 'warning')}">
-                                                                ${order.statusText}
-                                                            </span>
+                                                            <c:choose>
+                                                                <c:when test="${order.escrowHeld > 0}">
+                                                                    <!-- Tiền đang giữ ký quỹ, chưa giải ngân -->
+                                                                    <span class="badge bg-warning">
+                                                                        Chờ xử lý
+                                                                    </span>
+                                                                </c:when>
+                                                                <c:otherwise>
+                                                                    <!-- Hiển thị trạng thái thực tế của đơn hàng -->
+                                                                    <span
+                                                                        class="badge bg-${order.status == 'COMPLETED' ? 'success' : (order.status == 'CANCELLED' || order.status == 'REFUNDED' ? 'danger' : 'warning')}">
+                                                                        ${order.statusText}
+                                                                    </span>
+                                                                </c:otherwise>
+                                                            </c:choose>
                                                         </td>
                                                         <td>
                                                             <c:choose>

@@ -89,7 +89,7 @@
                                 <c:otherwise>
                                     <!-- Danger Zone - Active Store -->
                                     <div class="danger-zone">
-                                        <h4><i class="fas fa-exclamation-triangle"></i> Vùng Nguy Hiểm</h4>
+                                        <h4><i class="fas fa-exclamation-triangle"></i> Đóng cửa hàng</h4>
                                         <p class="mb-3">Khi đóng cửa hàng, bạn không thể mở lại. Tất cả sản phẩm sẽ bị
                                             ẩn khỏi khách hàng.</p>
                                         <button id="btnCloseStore" class="btn btn-danger">
@@ -182,7 +182,41 @@
                         </div>
                     </div>
 
+                    <!-- Footer -->
+                    <jsp:include page="../common/footer.jsp" />
+
                     <script>
+                        // ========== Sidebar Toggle Function (Global Scope) ==========
+                        function toggleSidebar() {
+                            var sidebar = document.getElementById('sidebar');
+                            var content = document.getElementById('content');
+                            var overlay = document.getElementById('sidebarOverlay');
+
+                            if (sidebar && content) {
+                                sidebar.classList.toggle('active');
+                                content.classList.toggle('shifted');
+
+                                // Toggle overlay for mobile
+                                if (overlay) {
+                                    overlay.classList.toggle('active');
+                                }
+                            }
+                        }
+
+                        // Close sidebar when clicking outside on mobile
+                        document.addEventListener('click', function (event) {
+                            var sidebar = document.getElementById('sidebar');
+                            var overlay = document.getElementById('sidebarOverlay');
+                            var menuToggle = document.querySelector('.menu-toggle');
+
+                            if (sidebar && sidebar.classList.contains('active') &&
+                                !sidebar.contains(event.target) &&
+                                menuToggle && !menuToggle.contains(event.target)) {
+                                toggleSidebar();
+                            }
+                        });
+
+                        // ========== Store Settings Specific Scripts ==========
                         var storeId = <c:out value="${store.id}" default="0" />;
                         var previewData = null;
 
@@ -452,9 +486,6 @@
                             return parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
                         }
                     </script>
-
-                    <!-- Footer -->
-                    <jsp:include page="../common/footer.jsp" />
                 </body>
 
                 </html>
