@@ -579,6 +579,10 @@ public class SellerController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi xảy ra khi cập nhật: " + e.getMessage());
             return "redirect:/seller/profile";
+        }
+    }
+
+    /**
      * GET /seller/store/{storeId}/close/preview
      * Get preview data before closing store
      */
