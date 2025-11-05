@@ -21,6 +21,7 @@ public class OrderSummaryDTO {
     private Integer quantity;
     private BigDecimal totalAmount;
     private OrderStatus status;
+    private String statusText; // Vietnamese translation of status
     private String buyerName;
 
     // Escrow info

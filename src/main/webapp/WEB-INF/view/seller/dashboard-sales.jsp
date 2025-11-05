@@ -199,7 +199,7 @@
 
                             <!-- Escrow Summary Cards -->
                             <div class="row mb-4">
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="card border-left-warning">
                                         <div class="card-body">
                                             <h6 class="text-warning">Đang giữ ký quỹ</h6>
@@ -222,7 +222,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="card border-left-success">
                                         <div class="card-body">
                                             <h6 class="text-success">Đã giải ngân</h6>
@@ -239,29 +239,6 @@
                                                 <c:choose>
                                                     <c:when test="${not empty sales.escrowSummary}">
                                                         ${sales.escrowSummary.releasedCount}</c:when>
-                                                    <c:otherwise>0</c:otherwise>
-                                                </c:choose> đơn hàng
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card border-left-danger">
-                                        <div class="card-body">
-                                            <h6 class="text-danger">Đã hoàn tiền ký quỹ</h6>
-                                            <h3>
-                                                <c:choose>
-                                                    <c:when test="${not empty sales.escrowSummary}">
-                                                        <fmt:formatNumber value="${sales.escrowSummary.totalRefunded}"
-                                                            type="number" groupingUsed="true" /> VND
-                                                    </c:when>
-                                                    <c:otherwise>0 VND</c:otherwise>
-                                                </c:choose>
-                                            </h3>
-                                            <small class="text-muted">
-                                                <c:choose>
-                                                    <c:when test="${not empty sales.escrowSummary}">
-                                                        ${sales.escrowSummary.refundedCount}</c:when>
                                                     <c:otherwise>0</c:otherwise>
                                                 </c:choose> đơn hàng
                                             </small>
@@ -374,13 +351,12 @@
                                                     <th>Người mua</th>
                                                     <th>Đang giữ ký quỹ</th>
                                                     <th>Đã giải ngân</th>
-                                                    <th>Giữ đến</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <c:if test="${empty sales.orders.content}">
                                                     <tr>
-                                                        <td colspan="10" class="text-center text-muted py-4">
+                                                        <td colspan="9" class="text-center text-muted py-4">
                                                             <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
                                                             Không tìm thấy đơn hàng nào
                                                         </td>
@@ -405,10 +381,19 @@
                                                         <td>
                                                             <span
                                                                 class="badge bg-${order.status == 'COMPLETED' ? 'success' : (order.status == 'CANCELLED' || order.status == 'REFUNDED' ? 'danger' : 'warning')}">
-                                                                ${order.status}
+                                                                ${order.statusText}
                                                             </span>
                                                         </td>
-                                                        <td>${order.buyerName}</td>
+                                                        <td>
+                                                            <c:choose>
+                                                                <c:when test="${not empty order.buyerName}">
+                                                                    ${order.buyerName}
+                                                                </c:when>
+                                                                <c:otherwise>
+                                                                    <span class="text-muted">N/A</span>
+                                                                </c:otherwise>
+                                                            </c:choose>
+                                                        </td>
                                                         <td>
                                                             <fmt:formatNumber value="${order.escrowHeld}" type="number"
                                                                 groupingUsed="true" />
@@ -416,12 +401,6 @@
                                                         <td>
                                                             <fmt:formatNumber value="${order.escrowReleased}"
                                                                 type="number" groupingUsed="true" />
-                                                        </td>
-                                                        <td>
-                                                            <c:if test="${not empty order.escrowHoldUntil}">
-                                                                ${order.escrowHoldUntil.toString().substring(0,
-                                                                10).replace('-', '/')}
-                                                            </c:if>
                                                         </td>
                                                     </tr>
                                                 </c:forEach>

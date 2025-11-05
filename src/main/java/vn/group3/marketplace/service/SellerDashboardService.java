@@ -232,8 +232,8 @@ public class SellerDashboardService {
                 BigDecimal changePercent = calculateChangePercent(currentRevenue, prevRevenue);
                 String direction = changePercent.compareTo(BigDecimal.ZERO) >= 0 ? "up" : "down";
 
-                return createKPICard("Revenue", currentRevenue, "VND", changePercent, direction,
-                                "Total completed orders");
+                return createKPICard("Doanh thu", currentRevenue, "VND", changePercent, direction,
+                                "Tổng đơn hàng hoàn thành");
         }
 
         private KPICardDTO calculateOrderCountKPI(Long storeId, LocalDateTime start, LocalDateTime end,
@@ -245,8 +245,8 @@ public class SellerDashboardService {
                                 BigDecimal.valueOf(currentCount), BigDecimal.valueOf(prevCount));
                 String direction = changePercent.compareTo(BigDecimal.ZERO) >= 0 ? "up" : "down";
 
-                return createKPICard("Total Orders", BigDecimal.valueOf(currentCount), "orders",
-                                changePercent, direction, "All order statuses");
+                return createKPICard("Tổng đơn hàng", BigDecimal.valueOf(currentCount), "đơn",
+                                changePercent, direction, "Tất cả trạng thái đơn hàng");
         }
 
         private KPICardDTO calculateAOVKPI(Long storeId, LocalDateTime start, LocalDateTime end,
@@ -266,8 +266,8 @@ public class SellerDashboardService {
                 BigDecimal changePercent = calculateChangePercent(currentAOV, prevAOV);
                 String direction = changePercent.compareTo(BigDecimal.ZERO) >= 0 ? "up" : "down";
 
-                return createKPICard("Average Order Value", currentAOV, "VND/order", changePercent, direction,
-                                "Revenue per order");
+                return createKPICard("Giá trị đơn hàng trung bình", currentAOV, "VND/đơn", changePercent, direction,
+                                "Doanh thu mỗi đơn hàng");
         }
 
         private KPICardDTO calculateShopRatingKPI(Long storeId) {
@@ -410,12 +410,12 @@ public class SellerDashboardService {
                 for (Object[] row : data) {
                         OrderStatus status = (OrderStatus) row[0];
                         BigDecimal revenue = row[2] != null ? (BigDecimal) row[2] : BigDecimal.ZERO;
-                        labels.add(status.name());
+                        labels.add(translateOrderStatus(status));
                         values.add(revenue);
                 }
 
                 DatasetDTO dataset = DatasetDTO.builder()
-                                .label("Revenue by Status")
+                                .label("Doanh thu theo trạng thái")
                                 .data(values)
                                 .backgroundColor("rgba(255, 99, 132, 0.5)")
                                 .borderColor("rgba(255, 99, 132, 1)")
@@ -464,15 +464,15 @@ public class SellerDashboardService {
                 return ChartDataDTO.builder()
                                 .labels(allDates)
                                 .datasets(List.of(
-                                                DatasetDTO.builder().label("Held").data(heldData)
+                                                DatasetDTO.builder().label("Đang giữ").data(heldData)
                                                                 .backgroundColor("rgba(255, 206, 86, 0.5)")
                                                                 .borderColor("rgba(255, 206, 86, 1)")
                                                                 .borderWidth(2).build(),
-                                                DatasetDTO.builder().label("Released").data(releasedData)
+                                                DatasetDTO.builder().label("Đã giải ngân").data(releasedData)
                                                                 .backgroundColor("rgba(75, 192, 192, 0.5)")
                                                                 .borderColor("rgba(75, 192, 192, 1)")
                                                                 .borderWidth(2).build(),
-                                                DatasetDTO.builder().label("Refunded").data(refundedData)
+                                                DatasetDTO.builder().label("Đã hoàn tiền").data(refundedData)
                                                                 .backgroundColor("rgba(255, 99, 132, 0.5)")
                                                                 .borderColor("rgba(255, 99, 132, 1)")
                                                                 .borderWidth(2).build()))
@@ -493,7 +493,7 @@ public class SellerDashboardService {
                 }
 
                 DatasetDTO dataset = DatasetDTO.builder()
-                                .label("Revenue by Product")
+                                .label("Doanh thu theo sản phẩm")
                                 .data(values)
                                 .backgroundColor("rgba(153, 102, 255, 0.5)")
                                 .borderColor("rgba(153, 102, 255, 1)")
@@ -520,14 +520,14 @@ public class SellerDashboardService {
                         statusCounts.put(status.name(), statusCounts.getOrDefault(status.name(), 0L) + count);
                 }
 
-                List<String> labels = List.of("Available", "Delivered", "Expired");
+                List<String> labels = List.of("Còn hàng", "Đã giao", "Hết hạn");
                 List<Object> values = List.of(
                                 statusCounts.get("AVAILABLE"),
                                 statusCounts.get("DELIVERED"),
                                 statusCounts.get("EXPIRED"));
 
                 DatasetDTO dataset = DatasetDTO.builder()
-                                .label("Inventory Status")
+                                .label("Trạng thái kho hàng")
                                 .data(values)
                                 .backgroundColor("rgba(255, 159, 64, 0.5)")
                                 .borderColor("rgba(255, 159, 64, 1)")
@@ -553,8 +553,8 @@ public class SellerDashboardService {
                         alerts.add(AlertDTO.builder()
                                         .type("low-stock")
                                         .severity("high")
-                                        .title("Low Stock Alert")
-                                        .message(productName + " has only " + stock + " items left")
+                                        .title("Cảnh báo tồn kho thấp")
+                                        .message(productName + " chỉ còn " + stock + " sản phẩm")
                                         .productId(productId)
                                         .timestamp(LocalDateTime.now())
                                         .build());
@@ -569,8 +569,8 @@ public class SellerDashboardService {
                         alerts.add(AlertDTO.builder()
                                         .type("expired-soon")
                                         .severity("medium")
-                                        .title("Expiring Stock Alert")
-                                        .message(productName + " will expire on " + expiryDate.toLocalDate())
+                                        .title("Cảnh báo sản phẩm sắp hết hạn")
+                                        .message(productName + " sẽ hết hạn vào ngày " + expiryDate.toLocalDate())
                                         .productId(productId)
                                         .timestamp(LocalDateTime.now())
                                         .build());
@@ -582,6 +582,12 @@ public class SellerDashboardService {
         private OrderSummaryDTO convertToOrderSummaryDTO(Order order) {
                 EscrowTransaction escrow = escrowRepository.findByOrder(order).orElse(null);
 
+                // Get buyer name safely - handle null case
+                String buyerName = null;
+                if (order.getBuyer() != null) {
+                        buyerName = order.getBuyer().getFullName();
+                }
+
                 return OrderSummaryDTO.builder()
                                 .orderId(order.getId())
                                 .orderCode("ORD-" + order.getId())
@@ -590,7 +596,8 @@ public class SellerDashboardService {
                                 .quantity(order.getQuantity())
                                 .totalAmount(order.getTotalAmount())
                                 .status(order.getStatus())
-                                .buyerName(order.getBuyer().getFullName())
+                                .statusText(translateOrderStatus(order.getStatus()))
+                                .buyerName(buyerName)
                                 .escrowHeld(escrow != null && escrow.getStatus() == EscrowStatus.HELD
                                                 ? escrow.getTotalAmount()
                                                 : BigDecimal.ZERO)
@@ -657,5 +664,19 @@ public class SellerDashboardService {
                                 .expiredCount(expiredCount)
                                 .expiringSoonCount(expiringSoonCount.intValue())
                                 .build();
+        }
+
+        /**
+         * Helper method to translate OrderStatus to Vietnamese
+         */
+        private String translateOrderStatus(OrderStatus status) {
+                return switch (status) {
+                        case PENDING -> "Chờ xử lý";
+                        case PAID -> "Đã thanh toán";
+                        case COMPLETED -> "Hoàn thành";
+                        case CANCELLED -> "Đã hủy";
+                        case REFUNDED -> "Đã hoàn tiền";
+                        default -> status.name();
+                };
         }
 }

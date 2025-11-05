@@ -57,12 +57,12 @@ public class EscrowTransactionService {
     @Transactional
     public void createEscrowTransaction(Order order) {
         try {
-            // Calculate hold hours based on order value (Value-based escrow)
-            double holdHours = calculateEscrowHoldHours(order.getTotalAmount());
-            int holdDays = (int) (holdHours / 24);
+            // Fixed escrow hold period: 1 minute (60 seconds)
+            // System will automatically scan and release after 1 minute
+            long holdSeconds = 60; // 1 minute
 
-            logger.info("Creating escrow for order {} with value {} VND - Hold period: {} days ({} hours)",
-                    order.getId(), order.getTotalAmount(), holdDays, holdHours);
+            logger.info("Creating escrow for order {} with value {} VND - Hold period: 1 minute (60 seconds)",
+                    order.getId(), order.getTotalAmount());
 
             SellerStore sellerStore = order.getSellerStore();
             if (sellerStore.getFeeModel().equals(SellerStoresType.PERCENTAGE)) {
@@ -83,7 +83,7 @@ public class EscrowTransactionService {
                         .sellerAmount(sellerAmount) // Amount for seller
                         .adminAmount(feeAmount) // Amount for admin
                         .status(EscrowStatus.HELD)
-                        .holdUntil(LocalDateTime.now().plusSeconds((long) (holdHours * 3600)))
+                        .holdUntil(LocalDateTime.now().plusSeconds(holdSeconds))
                         .build();
                 escrowTransaction.setCreatedBy(0L);
                 escrowTransactionRepository.save(escrowTransaction);
@@ -107,7 +107,7 @@ public class EscrowTransactionService {
                         .sellerAmount(order.getTotalAmount()) // Full amount goes to seller
                         .adminAmount(BigDecimal.ZERO) // No admin fee
                         .status(EscrowStatus.HELD)
-                        .holdUntil(LocalDateTime.now().plusSeconds((long) (holdHours * 3600)))
+                        .holdUntil(LocalDateTime.now().plusSeconds(holdSeconds))
                         .build();
                 escrowTransaction.setCreatedBy(0L);
                 escrowTransactionRepository.save(escrowTransaction);
@@ -140,46 +140,13 @@ public class EscrowTransactionService {
         }
     }
 
-    /**
-     * Calculate escrow hold period based on order value (Value-based escrow)
-     * 
-     * Tiered hold periods:
-     * - < 50,000 VND ($2): 3 days (72 hours)
-     * - 50,000-500,000 VND ($2-$20): 5 days (120 hours)
-     * - 500,000-2,500,000 VND ($20-$100): 7 days (168 hours)
-     * - > 2,500,000 VND ($100+): 14 days (336 hours)
-     * 
-     * @param orderAmount Order total amount in VND
-     * @return Hold period in hours
-     */
-    private double calculateEscrowHoldHours(BigDecimal orderAmount) {
-        // Thresholds in VND
-        BigDecimal tier1 = new BigDecimal("50000"); // ~$2 - 3 days
-        BigDecimal tier2 = new BigDecimal("500000"); // ~$20 - 5 days
-        BigDecimal tier3 = new BigDecimal("2500000"); // ~$100 - 7 days
-
-        if (orderAmount.compareTo(tier1) < 0) {
-            // < 50,000 VND: 3 days
-            return 72.0; // 3 days * 24 hours
-        } else if (orderAmount.compareTo(tier2) < 0) {
-            // 50,000 - 499,999 VND: 5 days
-            return 120.0; // 5 days * 24 hours
-        } else if (orderAmount.compareTo(tier3) < 0) {
-            // 500,000 - 2,499,999 VND: 7 days
-            return 168.0; // 7 days * 24 hours
-        } else {
-            // >= 2,500,000 VND: 14 days
-            return 336.0; // 14 days * 24 hours
-        }
-    }
-
     @Scheduled(fixedDelayString = "#{@escrowScanIntervalHours}")
     @Transactional
     public void scheduleEscrowTransactionRelease() {
         try {
-            logger.info("Starting scheduled escrow transaction scan...");
+            logger.info("Starting scheduled escrow transaction scan (runs every 1 minute)...");
 
-            // Get all escrow transactions that are ready to be released
+            // Get all escrow transactions that are ready to be released (held for 1 minute)
             List<EscrowTransaction> transactionsToRelease = escrowTransactionRepository
                     .findByStatusAndHoldUntilBefore(EscrowStatus.HELD, LocalDateTime.now());
 
@@ -188,13 +155,14 @@ public class EscrowTransactionService {
                 return;
             }
 
-            logger.info("Found {} escrow transaction(s) ready for release", transactionsToRelease.size());
+            logger.info("Found {} escrow transaction(s) ready for release (after 1 minute hold)",
+                    transactionsToRelease.size());
 
             // Release each transaction
             for (EscrowTransaction escrowTransaction : transactionsToRelease) {
                 try {
                     Order order = escrowTransaction.getOrder();
-                    logger.info("Releasing escrow for order: {}", order.getId());
+                    logger.info("Auto-releasing escrow for order: {} (held for 1 minute)", order.getId());
                     self.releasePaymentFromEscrow(order).get();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -315,11 +283,12 @@ public class EscrowTransactionService {
         try {
             logger.info("Processing escrow transaction asynchronously for order: {}", order.getId());
 
-            // Create escrow transaction
+            // Create escrow transaction with 1 minute hold
             self.createEscrowTransaction(order);
 
-            // Payment release will be handled automatically by the scheduled task
-            logger.info("Escrow transaction created for order: {}. Release will be handled by scheduled task.",
+            // Payment will be automatically released after 1 minute by the scheduled task
+            logger.info(
+                    "Escrow transaction created for order: {}. Will be auto-released after 1 minute by scheduled task.",
                     order.getId());
 
             logger.info("Escrow transaction processing completed for order: {}", order.getId());

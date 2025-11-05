@@ -103,7 +103,8 @@
                                                         </div>
                                                         <div class="card-body">
                                                             <c:choose>
-                                                                <c:when test="${store.feeModel == 'PERCENTAGE'}">
+                                                                <c:when
+                                                                    test="${store.feeModel != null && store.feeModel.name() == 'PERCENTAGE'}">
                                                                     <!-- Percentage Fee Model Contract -->
                                                                     <div class="mb-3">
                                                                         <h6 class="text-primary">

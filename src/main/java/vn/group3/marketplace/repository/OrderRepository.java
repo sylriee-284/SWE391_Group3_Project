@@ -114,6 +114,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         @Query("SELECT COUNT(o) FROM Order o WHERE o.sellerStore.id = :storeId AND o.status = :status")
         Long countByStoreAndStatus(@Param("storeId") Long storeId, @Param("status") OrderStatus status);
 
+        // Count orders by store and multiple statuses (for Close Store validation)
+        @Query("SELECT COUNT(o) FROM Order o WHERE o.sellerStore.id = :storeId AND o.status IN :statuses")
+        Long countBySellerStoreIdAndStatusIn(@Param("storeId") Long storeId,
+                        @Param("statuses") List<OrderStatus> statuses);
+
         // Calculate average rating from orders (returns 0.0 if no ratings)
         @Query("SELECT COALESCE(AVG(CAST(o.rating AS double)), 0.0) FROM Order o " +
                         "WHERE o.sellerStore.id = :storeId AND o.rating IS NOT NULL")

@@ -34,11 +34,32 @@
                         <div class="container mt-4">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h4>Danh sách sản phẩm</h4>
-                                <c:url var="newUrl" value="/seller/products/new">
-                                    <c:param name="storeId" value="${storeId}" />
-                                </c:url>
-                                <a class="btn btn-primary" href="${newUrl}">Thêm sản phẩm</a>
+                                <c:choose>
+                                    <c:when test="${storeStatus == 'INACTIVE'}">
+                                        <button class="btn btn-secondary" disabled
+                                            title="Không thể thêm sản phẩm khi cửa hàng đã đóng">
+                                            <i class="fas fa-lock"></i> Cửa Hàng Đã Đóng
+                                        </button>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:url var="newUrl" value="/seller/products/new">
+                                            <c:param name="storeId" value="${storeId}" />
+                                        </c:url>
+                                        <a class="btn btn-primary" href="${newUrl}">
+                                            <i class="fas fa-plus"></i> Thêm sản phẩm
+                                        </a>
+                                    </c:otherwise>
+                                </c:choose>
                             </div>
+
+                            <!-- Hiển thị thông báo lỗi nếu có -->
+                            <c:if test="${not empty error}">
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-exclamation-circle"></i> ${error}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                        aria-label="Close"></button>
+                                </div>
+                            </c:if>
 
                             <!-- Filter form -->
                             <form id="filterForm" method="get" action="<c:url value='/seller/products'/>"

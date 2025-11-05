@@ -40,6 +40,11 @@ public interface EscrowTransactionRepository extends JpaRepository<EscrowTransac
                         "AND et.status = :status")
         Long countByStoreAndStatus(@Param("storeId") Long storeId, @Param("status") EscrowStatus status);
 
+        // Sum total amount held in escrow for a store (for Close Store validation)
+        @Query("SELECT COALESCE(SUM(et.totalAmount), 0) FROM EscrowTransaction et " +
+                        "WHERE et.order.sellerStore.id = :storeId AND et.status = 'HELD'")
+        Optional<BigDecimal> sumHeldAmountByStore(@Param("storeId") Long storeId);
+
         // Dashboard: Upcoming release schedule
         @Query("SELECT DATE(et.holdUntil), SUM(et.sellerAmount), COUNT(et) " +
                         "FROM EscrowTransaction et " +

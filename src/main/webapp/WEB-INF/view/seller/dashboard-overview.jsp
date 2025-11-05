@@ -293,46 +293,6 @@
                                 </div>
                             </div>
 
-                            <!-- Escrow KPIs Row -->
-                            <div class="row mb-4">
-                                <div class="col-xl-4 col-md-4 mb-3">
-                                    <div class="card kpi-card border-left-warning">
-                                        <div class="card-body">
-                                            <div class="kpi-title">${dashboard.escrowHeld.title}</div>
-                                            <div class="kpi-value">
-                                                <fmt:formatNumber value="${dashboard.escrowHeld.value}" type="number"
-                                                    groupingUsed="true" /> VND
-                                            </div>
-                                            <small class="text-muted">${dashboard.escrowHeld.description}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-xl-4 col-md-4 mb-3">
-                                    <div class="card kpi-card border-left-success">
-                                        <div class="card-body">
-                                            <div class="kpi-title">${dashboard.escrowReleased.title}</div>
-                                            <div class="kpi-value">
-                                                <fmt:formatNumber value="${dashboard.escrowReleased.value}"
-                                                    type="number" groupingUsed="true" /> VND
-                                            </div>
-                                            <small class="text-muted">${dashboard.escrowReleased.description}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-xl-4 col-md-4 mb-3">
-                                    <div class="card kpi-card border-left-danger">
-                                        <div class="card-body">
-                                            <div class="kpi-title">${dashboard.escrowRefunded.title}</div>
-                                            <div class="kpi-value">
-                                                <fmt:formatNumber value="${dashboard.escrowRefunded.value}"
-                                                    type="number" groupingUsed="true" /> VND
-                                            </div>
-                                            <small class="text-muted">${dashboard.escrowRefunded.description}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- Charts Row -->
                             <div class="row mb-4">
                                 <!-- Revenue Chart -->
@@ -355,88 +315,6 @@
                                         </div>
                                         <div class="card-body">
                                             <canvas id="topProductsChart" height="200"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Alerts Section - Collapsible -->
-                            <div class="row mb-4">
-                                <div class="col-12">
-                                    <div class="card">
-                                        <div class="card-header bg-light" style="cursor: pointer;"
-                                            data-bs-toggle="collapse" data-bs-target="#alertsCollapse"
-                                            aria-expanded="false" aria-controls="alertsCollapse">
-                                            <h5 class="mb-0">
-                                                <i class="fas fa-bell"></i> Cảnh báo & Thông báo
-                                                <c:if test="${!empty dashboard.alerts}">
-                                                    <span
-                                                        class="badge bg-secondary ms-2">${dashboard.alerts.size()}</span>
-                                                </c:if>
-                                                <i class="fas fa-chevron-down float-end" id="alertsChevron"></i>
-                                            </h5>
-                                        </div>
-                                        <div class="collapse" id="alertsCollapse">
-                                            <div class="card-body p-0">
-                                                <c:if test="${empty dashboard.alerts}">
-                                                    <p class="text-muted p-3 mb-0">Không có cảnh báo nào.</p>
-                                                </c:if>
-                                                <c:if test="${!empty dashboard.alerts}">
-                                                    <!-- Scrollable alerts list with max-height for 5 items -->
-                                                    <div class="alerts-list"
-                                                        style="max-height: 400px; overflow-y: auto;">
-                                                        <c:forEach var="alert" items="${dashboard.alerts}"
-                                                            varStatus="status">
-                                                            <a href="${pageContext.request.contextPath}/seller/products<c:if test='${alert.productId != null}'>?highlightProduct=${alert.productId}</c:if>"
-                                                                class="text-decoration-none text-reset d-block">
-                                                                <div
-                                                                    class="alert-item border-bottom p-3 ${!status.last ? '' : 'border-bottom-0'}">
-                                                                    <div class="d-flex align-items-start">
-                                                                        <div class="flex-shrink-0">
-                                                                            <i
-                                                                                class="fas fa-${alert.type == 'low-stock' ? 'box-open' : 
-                                                                                               (alert.type == 'expired-soon' ? 'clock' : 
-                                                                                                'info-circle')} fa-lg text-secondary"></i>
-                                                                        </div>
-                                                                        <div class="flex-grow-1 ms-3">
-                                                                            <h6 class="mb-1">
-                                                                                ${alert.type == 'low-stock' ? 'Hàng tồn
-                                                                                kho thấp' :
-                                                                                (alert.type == 'expired-soon' ? 'Sắp hết
-                                                                                hạn' :
-                                                                                'Thông báo')}
-                                                                            </h6>
-                                                                            <p class="mb-1 text-muted">${alert.message}
-                                                                            </p>
-                                                                            <small class="text-muted">
-                                                                                Mức độ:
-                                                                                <span
-                                                                                    class="badge bg-${alert.severity == 'high' ? 'danger' : 
-                                                                                                          (alert.severity == 'medium' ? 'warning' : 
-                                                                                                           'secondary')}">
-                                                                                    ${alert.severity == 'high' ? 'Cao' :
-                                                                                    (alert.severity == 'medium' ? 'Trung
-                                                                                    bình' : 'Thấp')}
-                                                                                </span>
-                                                                                <span class="text-muted ms-2">
-                                                                                    <i class="fas fa-arrow-right"></i>
-                                                                                    ${alert.productId != null ? 'Chỉnh
-                                                                                    sửa sản phẩm' : 'Đến danh sách sản
-                                                                                    phẩm'}
-                                                                                </span>
-                                                                            </small>
-                                                                        </div>
-                                                                        <div class="flex-shrink-0 ms-2">
-                                                                            <i
-                                                                                class="fas fa-chevron-right text-muted"></i>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </a>
-                                                        </c:forEach>
-                                                    </div>
-                                                </c:if>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -516,25 +394,7 @@
                                     }
                                 });
                             }
-
-                            // ========== Alerts Collapse Handler ==========
-                            const alertsCollapse = document.getElementById('alertsCollapse');
-                            const alertsChevron = document.getElementById('alertsChevron');
-
-                            if (alertsCollapse && alertsChevron) {
-                                alertsCollapse.addEventListener('show.bs.collapse', function () {
-                                    alertsChevron.classList.remove('fa-chevron-down');
-                                    alertsChevron.classList.add('fa-chevron-up');
-                                });
-
-                                alertsCollapse.addEventListener('hide.bs.collapse', function () {
-                                    alertsChevron.classList.remove('fa-chevron-up');
-                                    alertsChevron.classList.add('fa-chevron-down');
-                                });
-                            }
-                        });
-
-                        // Prepare chart data from server
+                        });                        // Prepare chart data from server
                         const revenueChartData = {
                             labels: [<c:forEach var="label" items="${dashboard.revenueChart.labels}" varStatus="status">'${label}'${!status.last ? ',' : ''}</c:forEach>],
                             values: [<c:forEach var="value" items="${dashboard.revenueChart.datasets[0].data}" varStatus="status">${value}${!status.last ? ',' : ''}</c:forEach>]
@@ -552,7 +412,7 @@
                             data: {
                                 labels: revenueChartData.labels,
                                 datasets: [{
-                                    label: 'Revenue',
+                                    label: 'Doanh thu',
                                     data: revenueChartData.values,
                                     backgroundColor: 'rgba(54, 162, 235, 0.5)',
                                     borderColor: 'rgba(54, 162, 235, 1)',
@@ -590,7 +450,7 @@
                             data: {
                                 labels: topProductsChartData.labels,
                                 datasets: [{
-                                    label: 'Revenue (VND)',
+                                    label: 'Doanh thu (VND)',
                                     data: topProductsChartData.values,
                                     backgroundColor: 'rgba(75, 192, 192, 0.5)',
                                     borderColor: 'rgba(75, 192, 192, 1)',

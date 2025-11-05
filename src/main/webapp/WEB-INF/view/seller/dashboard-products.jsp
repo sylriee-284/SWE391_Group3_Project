@@ -158,15 +158,12 @@
                                                     <th>Doanh thu</th>
                                                     <th>Tỷ lệ bán</th>
                                                     <th>Còn hàng</th>
-                                                    <th>Đã giao</th>
-                                                    <th>Hết hạn</th>
-                                                    <th>Sắp hết hạn</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <c:if test="${empty products.products.content}">
                                                     <tr>
-                                                        <td colspan="10" class="text-center text-muted">Không tìm thấy
+                                                        <td colspan="7" class="text-center text-muted">Không tìm thấy
                                                             sản phẩm nào.</td>
                                                     </tr>
                                                 </c:if>
@@ -195,19 +192,6 @@
                                                         <td>
                                                             <span
                                                                 class="badge bg-primary">${product.availableCount}</span>
-                                                        </td>
-                                                        <td>
-                                                            <span
-                                                                class="badge bg-success">${product.deliveredCount}</span>
-                                                        </td>
-                                                        <td>
-                                                            <span class="badge bg-danger">${product.expiredCount}</span>
-                                                        </td>
-                                                        <td>
-                                                            <c:if test="${product.expiringSoonCount > 0}">
-                                                                <span
-                                                                    class="badge bg-warning">${product.expiringSoonCount}</span>
-                                                            </c:if>
                                                         </td>
                                                     </tr>
                                                 </c:forEach>

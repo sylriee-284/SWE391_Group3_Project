@@ -62,23 +62,41 @@
                     </sec:authorize>
 
                     <sec:authorize access="isAuthenticated() and hasRole('SELLER')">
-                        <!-- Cửa hàng của tôi -->
-                        <li class="mt-2">
-                            <a class="d-flex justify-content-between align-items-center text-decoration-none text-white"
-                                data-bs-toggle="collapse" href="#sellerMenu" role="button" aria-expanded="false"
-                                aria-controls="sellerMenu">
-                                🏪 Cửa hàng của tôi
-                                <i class="fas fa-chevron-down"></i>
-                            </a>
-                            <ul class="collapse list-unstyled ms-3 mt-2" id="sellerMenu">
-                                <li><a href="/seller/dashboard" class="text-white text-decoration-none">📊 Bảng điều
-                                        khiển người bán</a></li>
-                                <li><a href="/seller/profile" class="text-white text-decoration-none">🏪 Thông tin
-                                        cửa hàng</a></li>
-                                <li><a href="/seller/products" class="text-white text-decoration-none">📦 Quản lý sản
-                                        phẩm</a></li>
-                            </ul>
-                        </li>
+                        <c:choose>
+                            <c:when test="${userStore.status == 'INACTIVE'}">
+                                <!-- Nếu cửa hàng đã đóng, chỉ hiển thị link Quản lý cửa hàng -->
+                                <li class="mt-2">
+                                    <a href="/seller/store/settings" class="text-white text-decoration-none">⚙️ Quản lý
+                                        cửa hàng</a>
+                                </li>
+                            </c:when>
+                            <c:otherwise>
+                                <!-- Nếu cửa hàng đang hoạt động, hiển thị đầy đủ menu -->
+                                <li class="mt-2">
+                                    <a class="d-flex justify-content-between align-items-center text-decoration-none text-white"
+                                        data-bs-toggle="collapse" href="#sellerMenu" role="button" aria-expanded="false"
+                                        aria-controls="sellerMenu">
+                                        🏪 Cửa hàng của tôi
+                                        <i class="fas fa-chevron-down"></i>
+                                    </a>
+                                    <ul class="collapse list-unstyled ms-3 mt-2" id="sellerMenu">
+                                        <li><a href="/seller/dashboard" class="text-white text-decoration-none">📊 Bảng
+                                                điều
+                                                khiển người bán</a></li>
+                                        <li><a href="/seller/profile" class="text-white text-decoration-none">🏪 Thông
+                                                tin
+                                                cửa hàng</a></li>
+                                        <li><a href="/seller/store/settings" class="text-white text-decoration-none">⚙️
+                                                Quản lý
+                                                cửa
+                                                hàng</a></li>
+                                        <li><a href="/seller/products" class="text-white text-decoration-none">📦 Quản
+                                                lý sản
+                                                phẩm</a></li>
+                                    </ul>
+                                </li>
+                            </c:otherwise>
+                        </c:choose>
                     </sec:authorize>
 
                     <!-- Quản lý Admin -->
