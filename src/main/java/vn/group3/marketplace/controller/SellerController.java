@@ -5,22 +5,20 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import lombok.RequiredArgsConstructor;
-import vn.group3.marketplace.service.WalletTransactionQueueService;
-import vn.group3.marketplace.domain.entity.User;
-import vn.group3.marketplace.domain.entity.SellerStore;
-import vn.group3.marketplace.domain.enums.StoreStatus;
 
-import vn.group3.marketplace.domain.entity.SellerStore;
+import lombok.RequiredArgsConstructor;
 import vn.group3.marketplace.domain.entity.User;
+import vn.group3.marketplace.domain.entity.SellerStore;
 import vn.group3.marketplace.domain.enums.StoreStatus;
 import vn.group3.marketplace.domain.enums.SellerStoresType;
 import vn.group3.marketplace.service.SellerStoreService;
 import vn.group3.marketplace.service.UserService;
 import vn.group3.marketplace.service.SystemSettingService;
+import vn.group3.marketplace.service.WalletTransactionQueueService;
+import vn.group3.marketplace.service.WalletService;
 import vn.group3.marketplace.repository.SellerStoreRepository;
 
 @Controller
@@ -31,7 +29,7 @@ public class SellerController {
     private final UserService userService;
     private final SellerStoreService sellerStoreService;
     private final WalletTransactionQueueService walletTransactionQueueService;
-    private final vn.group3.marketplace.service.WalletService walletService;
+    private final WalletService walletService;
     private final SystemSettingService systemSettingService;
     private final SellerStoreRepository sellerStoreRepository;
     private final vn.group3.marketplace.service.CloseStoreService closeStoreService;
@@ -521,6 +519,9 @@ public class SellerController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
             return "redirect:/";
+        }
+    }
+
     // ==================== CLOSE STORE ENDPOINTS ====================
 
     /**
