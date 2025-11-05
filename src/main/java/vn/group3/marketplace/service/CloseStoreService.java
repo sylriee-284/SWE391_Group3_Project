@@ -190,11 +190,18 @@ public class CloseStoreService {
 
         BigDecimal refund = validation.getDepositRefund();
 
-        // Update user wallet balance
-        owner.setBalance(owner.getBalance().add(refund));
-        userRepository.save(owner);
+        // Update user wallet balance using atomic increment to avoid race condition
+        int updatedRows = userRepository.incrementBalance(owner.getId(), refund);
+        if (updatedRows == 0) {
+            throw new RuntimeException("Failed to update wallet balance for user: " + owner.getId());
+        }
 
-        logger.info("Updated wallet balance for user {}. New balance: {}", owner.getId(), owner.getBalance());
+        // Refresh owner entity to get updated balance
+        owner = userRepository.findById(owner.getId())
+                .orElseThrow(() -> new RuntimeException("User not found after balance update"));
+
+        logger.info("Updated wallet balance for user {} using atomic increment. New balance: {}",
+                owner.getId(), owner.getBalance());
 
         // Create wallet transaction log
         WalletTransaction walletTx = WalletTransaction.builder()
