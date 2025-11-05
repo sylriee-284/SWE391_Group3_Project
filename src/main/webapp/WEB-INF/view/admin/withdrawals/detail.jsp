@@ -49,6 +49,11 @@
                             color: #41464b;
                         }
 
+                        .status-REJECTED {
+                            background-color: #f8d7da;
+                            color: #842029;
+                        }
+
                         .amount-display {
                             font-size: 2.5rem;
                             font-weight: bold;
@@ -122,7 +127,7 @@
                                                             <c:when test="${withdrawal.paymentStatus == 'SUCCESS'}">
                                                                 <i class="bi bi-check-circle me-1"></i>Đã duyệt
                                                             </c:when>
-                                                            <c:when test="${withdrawal.paymentStatus == 'CANCELLED'}">
+                                                            <c:when test="${withdrawal.paymentStatus == 'REJECTED'}">
                                                                 <i class="bi bi-x-circle me-1"></i>Từ chối
                                                             </c:when>
                                                             <c:when test="${withdrawal.paymentStatus == 'CANCELLED'}">

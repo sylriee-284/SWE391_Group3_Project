@@ -32,6 +32,11 @@
                         color: #383d41;
                     }
 
+                    .status-REJECTED {
+                        background-color: #f8d7da;
+                        color: #721c24;
+                    }
+
                     .info-row {
                         padding: 15px 0;
                         border-bottom: 1px solid #e9ecef;

@@ -67,7 +67,7 @@
                                                             <c:when test="${withdrawal.paymentStatus == 'SUCCESS'}">
                                                                 <i class="bi bi-check-circle me-1"></i>Đã duyệt
                                                             </c:when>
-                                                            <c:when test="${withdrawal.paymentStatus == 'FAILED'}">
+                                                            <c:when test="${withdrawal.paymentStatus == 'REJECTED'}">
                                                                 <i class="bi bi-x-circle me-1"></i>Từ chối
                                                             </c:when>
                                                             <c:when test="${withdrawal.paymentStatus == 'CANCELLED'}">
