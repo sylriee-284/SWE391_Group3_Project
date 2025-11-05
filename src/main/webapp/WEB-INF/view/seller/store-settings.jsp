@@ -63,14 +63,6 @@
                                     <span class="info-label">Số Tháng Hoạt Động:</span>
                                     <span class="info-value" id="openMonths">-</span>
                                 </div>
-                                <div class="info-row">
-                                    <span class="info-label">Đơn Hàng Chờ Xử Lý:</span>
-                                    <span class="info-value" id="pendingOrders">-</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Số Tiền Ký Quỹ:</span>
-                                    <span class="info-value" id="escrowHeld">-</span>
-                                </div>
                             </div>
 
                             <!-- Danger Zone or Already Closed Message -->
@@ -123,14 +115,10 @@
                             <div class="form-check mt-3">
                                 <input type="checkbox" class="form-check-input" id="agreeCheck">
                                 <label class="form-check-label" for="agreeCheck">
-                                    Tôi hiểu rằng đóng cửa hàng là vĩnh viễn và tôi không có đơn hàng đang chờ hoặc tiền
+                                    Tôi hiểu rằng đóng cửa hàng là điều không mong muốn và tôi không có đơn hàng đang
+                                    chờ hoặc tiền
                                     ký quỹ.
                                 </label>
-                            </div>
-
-                            <div id="errorList" class="mt-3" style="display:none;">
-                                <h5>Vui lòng giải quyết các vấn đề sau:</h5>
-                                <ul id="errorListItems" class="error-list"></ul>
                             </div>
 
                             <div class="mt-4">
@@ -364,15 +352,11 @@
                             $('#feeModel').text(data.feeModel);
                             $('#depositAmount').text(formatMoney(data.depositAmount) + ' VND');
                             $('#openMonths').text(data.openMonths + ' months');
-                            $('#pendingOrders').text(data.pendingOrders).css('color', data.pendingOrders > 0 ? 'red' : 'green');
-                            $('#escrowHeld').text(formatMoney(data.escrowHeld) + ' VND').css('color',
-                                parseFloat(data.escrowHeld) > 0 ? 'red' : 'green');
                         }
 
                         // Open Modal 1
                         $('#btnCloseStore').click(function () {
                             $('#modalConfirmClose').fadeIn();
-                            $('#errorList').hide();
                             $('#agreeCheck').prop('checked', false);
                         });
 
@@ -404,32 +388,34 @@
                                 data: JSON.stringify({ agree: true }),
                                 success: function (resp) {
                                     if (!resp.ok) {
-                                        // Show errors
-                                        displayErrors(resp.errors);
+                                        // Check if there are errors and determine the message
+                                        let errorMessage = 'Không thể đóng cửa hàng. ';
+
+                                        if (resp.errors && resp.errors.length > 0) {
+                                            // Check for specific error types
+                                            let hasEscrowError = resp.errors.some(err => err.code === 'ESCROW_HELD');
+                                            let hasPendingOrders = resp.errors.some(err => err.code === 'PENDING_ORDERS');
+
+                                            if (hasEscrowError) {
+                                                errorMessage = 'Vui lòng chờ hệ thống giải ngân ký quỹ và thử lại sau.';
+                                            } else if (hasPendingOrders) {
+                                                errorMessage = 'Bạn còn đơn hàng đang chờ xử lý. Vui lòng hoàn thành trước khi đóng cửa hàng.';
+                                            } else {
+                                                errorMessage += 'Vui lòng kiểm tra lại đơn hàng và ký quỹ.';
+                                            }
+                                        }
+
+                                        alert(errorMessage);
                                     } else {
                                         // Show refund quote modal
                                         showRefundQuote(resp);
                                     }
                                 },
                                 error: function (xhr) {
-                                    if (xhr.status === 400 && xhr.responseJSON) {
-                                        displayErrors(xhr.responseJSON.errors);
-                                    } else {
-                                        alert('Xác thực thất bại: ' + (xhr.responseJSON?.error || 'Lỗi không xác định'));
-                                    }
+                                    alert('Xác thực thất bại: ' + (xhr.responseJSON?.error || 'Vui lòng kiểm tra lại đơn hàng và ký quỹ'));
                                 }
                             });
                         });
-
-                        function displayErrors(errors) {
-                            let html = '';
-                            errors.forEach(function (err) {
-                                html += '<li class="error-item">' + err.message +
-                                    ' <a href="' + err.link + '" target="_blank">Khắc phục</a></li>';
-                            });
-                            $('#errorListItems').html(html);
-                            $('#errorList').fadeIn();
-                        }
 
                         function showRefundQuote(data) {
                             $('#modalConfirmClose').fadeOut();
@@ -476,7 +462,7 @@
                                     }
                                 },
                                 error: function (xhr) {
-                                    alert('Lỗi: ' + (xhr.responseJSON?.error || 'Lỗi không xác định'));
+                                    alert('Lỗi: ' + (xhr.responseJSON?.error || 'Vui lòng chờ giải ngân'));
                                     $('#btnFinalConfirm').prop('disabled', false).html('<i class="fas fa-check-circle"></i> Xác Nhận & Đóng Cửa Hàng');
                                 }
                             });
