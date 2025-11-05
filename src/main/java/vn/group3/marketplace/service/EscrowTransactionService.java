@@ -57,8 +57,12 @@ public class EscrowTransactionService {
     @Transactional
     public void createEscrowTransaction(Order order) {
         try {
-            String holdHoursStr = systemSettingService.getSettingValue("escrow.default_hold_hours", "1");
-            double holdHours = Double.parseDouble(holdHoursStr);
+            // Fixed escrow hold period: 1 minute (60 seconds)
+            // System will automatically scan and release after 1 minute
+            long holdSeconds = 60; // 1 minute
+
+            logger.info("Creating escrow for order {} with value {} VND - Hold period: 1 minute (60 seconds)",
+                    order.getId(), order.getTotalAmount());
 
             SellerStore sellerStore = order.getSellerStore();
             if (sellerStore.getFeeModel().equals(SellerStoresType.PERCENTAGE)) {
@@ -79,7 +83,7 @@ public class EscrowTransactionService {
                         .sellerAmount(sellerAmount) // Amount for seller
                         .adminAmount(feeAmount) // Amount for admin
                         .status(EscrowStatus.HELD)
-                        .holdUntil(LocalDateTime.now().plusSeconds((long) (holdHours * 3600)))
+                        .holdUntil(LocalDateTime.now().plusSeconds(holdSeconds))
                         .build();
                 escrowTransaction.setCreatedBy(0L);
                 escrowTransactionRepository.save(escrowTransaction);
@@ -103,7 +107,7 @@ public class EscrowTransactionService {
                         .sellerAmount(order.getTotalAmount()) // Full amount goes to seller
                         .adminAmount(BigDecimal.ZERO) // No admin fee
                         .status(EscrowStatus.HELD)
-                        .holdUntil(LocalDateTime.now().plusSeconds((long) (holdHours * 3600)))
+                        .holdUntil(LocalDateTime.now().plusSeconds(holdSeconds))
                         .build();
                 escrowTransaction.setCreatedBy(0L);
                 escrowTransactionRepository.save(escrowTransaction);
@@ -140,9 +144,9 @@ public class EscrowTransactionService {
     @Transactional
     public void scheduleEscrowTransactionRelease() {
         try {
-            logger.info("Starting scheduled escrow transaction scan...");
+            logger.info("Starting scheduled escrow transaction scan (runs every 1 minute)...");
 
-            // Get all escrow transactions that are ready to be released
+            // Get all escrow transactions that are ready to be released (held for 1 minute)
             List<EscrowTransaction> transactionsToRelease = escrowTransactionRepository
                     .findByStatusAndHoldUntilBefore(EscrowStatus.HELD, LocalDateTime.now());
 
@@ -151,13 +155,14 @@ public class EscrowTransactionService {
                 return;
             }
 
-            logger.info("Found {} escrow transaction(s) ready for release", transactionsToRelease.size());
+            logger.info("Found {} escrow transaction(s) ready for release (after 1 minute hold)",
+                    transactionsToRelease.size());
 
             // Release each transaction
             for (EscrowTransaction escrowTransaction : transactionsToRelease) {
                 try {
                     Order order = escrowTransaction.getOrder();
-                    logger.info("Releasing escrow for order: {}", order.getId());
+                    logger.info("Auto-releasing escrow for order: {} (held for 1 minute)", order.getId());
                     self.releasePaymentFromEscrow(order).get();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -278,11 +283,12 @@ public class EscrowTransactionService {
         try {
             logger.info("Processing escrow transaction asynchronously for order: {}", order.getId());
 
-            // Create escrow transaction
+            // Create escrow transaction with 1 minute hold
             self.createEscrowTransaction(order);
 
-            // Payment release will be handled automatically by the scheduled task
-            logger.info("Escrow transaction created for order: {}. Release will be handled by scheduled task.",
+            // Payment will be automatically released after 1 minute by the scheduled task
+            logger.info(
+                    "Escrow transaction created for order: {}. Will be auto-released after 1 minute by scheduled task.",
                     order.getId());
 
             logger.info("Escrow transaction processing completed for order: {}", order.getId());

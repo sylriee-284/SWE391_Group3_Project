@@ -114,6 +114,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         @Query("SELECT COUNT(o) FROM Order o WHERE o.sellerStore.id = :storeId AND o.status = :status")
         Long countByStoreAndStatus(@Param("storeId") Long storeId, @Param("status") OrderStatus status);
 
+        // Count orders by store and multiple statuses (for Close Store validation)
+        @Query("SELECT COUNT(o) FROM Order o WHERE o.sellerStore.id = :storeId AND o.status IN :statuses")
+        Long countBySellerStoreIdAndStatusIn(@Param("storeId") Long storeId,
+                        @Param("statuses") List<OrderStatus> statuses);
+
         // Calculate average rating from orders (returns 0.0 if no ratings)
         @Query("SELECT COALESCE(AVG(CAST(o.rating AS double)), 0.0) FROM Order o " +
                         "WHERE o.sellerStore.id = :storeId AND o.rating IS NOT NULL")
@@ -173,6 +178,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                         @Param("endDate") java.time.LocalDateTime endDate,
                         @Param("limit") int limit);
 
+
         // Tìm đơn hàng đã đánh giá theo sản phẩm và trạng thái
         List<Order> findByProductIdAndStatusAndRatingIsNotNull(Long productId, OrderStatus status);
 
@@ -209,4 +215,41 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
          */
         @Query("SELECT COUNT(CASE WHEN o.status = 'COMPLETED' THEN 1 END) * 100.0 / COUNT(*) as conversionRate, MONTH(o.createdAt), YEAR(o.createdAt) FROM Order o WHERE o.createdAt >= :startDate GROUP BY YEAR(o.createdAt), MONTH(o.createdAt) ORDER BY YEAR(o.createdAt), MONTH(o.createdAt)")
         java.util.List<Object[]> getConversionRateByMonth(@Param("startDate") java.time.LocalDateTime startDate);
+
+        // Dashboard: Revenue over time (grouped by date)
+        @Query("SELECT DATE(o.createdAt), SUM(o.totalAmount) " +
+                        "FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND (:status IS NULL OR o.status = :status) " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate " +
+                        "GROUP BY DATE(o.createdAt) " +
+                        "ORDER BY DATE(o.createdAt)")
+        List<Object[]> findRevenueByDateRange(@Param("storeId") Long storeId,
+                        @Param("status") OrderStatus status,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        // Dashboard: Orders by status count
+        @Query("SELECT o.status, COUNT(o), SUM(o.totalAmount) " +
+                        "FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate " +
+                        "GROUP BY o.status")
+        List<Object[]> countOrdersByStatusAndDateRange(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        // Dashboard: Detailed orders for Sales screen
+        @Query("SELECT o FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND (:status IS NULL OR o.status = :status) " +
+                        "AND (:productId IS NULL OR o.product.id = :productId) " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate " +
+                        "ORDER BY o.createdAt DESC")
+        Page<Order> findOrdersForDashboard(@Param("storeId") Long storeId,
+                        @Param("status") OrderStatus status,
+                        @Param("productId") Long productId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate,
+                        Pageable pageable);
 }

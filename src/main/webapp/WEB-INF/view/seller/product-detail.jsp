@@ -18,7 +18,7 @@
                 <div class="container mt-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4>Chi tiết sản phẩm #${product.id}</h4>
-                        <a class="btn btn-outline-secondary" href="/seller/dashboard">
+                        <a class="btn btn-outline-secondary" href="/seller/products">
                             <i class="fas fa-arrow-left"></i> Quay lại
                         </a>
                     </div>

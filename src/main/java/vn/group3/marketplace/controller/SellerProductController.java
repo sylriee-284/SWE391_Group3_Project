@@ -310,15 +310,36 @@ public class SellerProductController {
         // CUNG CẤP max price cho trang danh sách (để modal Sửa áp giới hạn)
         model.addAttribute("storeMaxListingPrice", getStoreMaxPrice(sid));
 
+        // Truyền thông tin trạng thái cửa hàng để kiểm tra có cho phép thêm sản phẩm
+        // không
+        storeRepo.findById(sid).ifPresent(store -> {
+            model.addAttribute("storeStatus", store.getStatus());
+        });
+
         return "seller/products";
     }
 
     // ============ NEW FORM ============
     @GetMapping("/new")
-    public String createForm(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
+    public String createForm(@AuthenticationPrincipal CustomUserDetails currentUser,
+            Model model,
+            RedirectAttributes redirectAttributes) {
         Long sid = getCurrentSellerStoreId(currentUser);
         if (sid == null) {
             return "redirect:/login?error=not_authenticated";
+        }
+
+        // Kiểm tra trạng thái cửa hàng
+        Optional<SellerStore> storeOpt = storeRepo.findById(sid);
+        if (storeOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy cửa hàng");
+            return "redirect:/seller/products?storeId=" + sid;
+        }
+
+        SellerStore sellerStore = storeOpt.get();
+        if ("INACTIVE".equals(sellerStore.getStatus().name())) {
+            redirectAttributes.addFlashAttribute("error", "Không thể thêm sản phẩm mới khi cửa hàng đã đóng");
+            return "redirect:/seller/products?storeId=" + sid;
         }
 
         Product form = new Product();
@@ -609,7 +630,7 @@ public class SellerProductController {
             // Product not found or doesn't belong to this store
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Không tìm thấy sản phẩm hoặc sản phẩm không thuộc cửa hàng của bạn.");
-            return "redirect:/seller/dashboard";
+            return "redirect:/seller/products";
         }
     }
 
