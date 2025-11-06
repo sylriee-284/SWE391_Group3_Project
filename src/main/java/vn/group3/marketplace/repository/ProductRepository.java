@@ -190,4 +190,26 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         @Param("maxPrice") java.math.BigDecimal maxPrice,
                         Pageable pageable);
 
+        // Dashboard: Product performance for dashboard screen 3
+        @Query("SELECT p.id, p.name, c.name, p.price, p.soldQuantity, " +
+                        "p.rating, p.ratingCount, p.stock " +
+                        "FROM Product p " +
+                        "JOIN p.category c " +
+                        "WHERE p.sellerStore.id = :storeId " +
+                        "AND (:categoryId IS NULL OR c.id = :categoryId) " +
+                        "AND p.status = 'ACTIVE' " +
+                        "AND p.isDeleted = false")
+        Page<Object[]> findProductPerformanceByStore(@Param("storeId") Long storeId,
+                        @Param("categoryId") Long categoryId,
+                        Pageable pageable);
+
+        /**
+         * Update all products' status to INACTIVE for a specific store
+         * Used when closing a store
+         */
+        @Modifying
+        @Transactional
+        @Query("UPDATE Product p SET p.status = 'INACTIVE', p.updatedAt = CURRENT_TIMESTAMP WHERE p.sellerStore.id = :storeId AND p.isDeleted = false")
+        int deactivateAllProductsByStore(@Param("storeId") Long storeId);
+
 }

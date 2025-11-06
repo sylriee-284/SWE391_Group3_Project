@@ -644,7 +644,7 @@
 
                         if (sidebar && sidebar.classList.contains('active') &&
                             !sidebar.contains(event.target) &&
-                            !menuToggle.contains(event.target)) {
+                            menuToggle && !menuToggle.contains(event.target)) {
                             toggleSidebar();
                         }
                     });

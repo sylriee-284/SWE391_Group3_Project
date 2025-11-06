@@ -226,10 +226,12 @@
                                                     </span>
                                                     <span class="info-value">
                                                         <c:choose>
-                                                            <c:when test="${store.feeModel == 'PERCENTAGE'}">
+                                                            <c:when
+                                                                test="${store.feeModel != null && store.feeModel.name() == 'PERCENTAGE'}">
                                                                 <span class="badge bg-info">PERCENTAGE</span>
                                                             </c:when>
-                                                            <c:when test="${store.feeModel == 'NO_FEE'}">
+                                                            <c:when
+                                                                test="${store.feeModel != null && store.feeModel.name() == 'NO_FEE'}">
                                                                 <span class="badge bg-success">NO FEE</span>
                                                             </c:when>
                                                             <c:otherwise>
@@ -241,7 +243,8 @@
                                                 </div>
 
                                                 <!-- Show fee percentage only if fee model is PERCENTAGE -->
-                                                <c:if test="${store.feeModel == 'PERCENTAGE'}">
+                                                <c:if
+                                                    test="${store.feeModel != null && store.feeModel.name() == 'PERCENTAGE'}">
                                                     <div class="info-row">
                                                         <span class="info-label">
                                                             <i class="fas fa-percent me-2"></i>Tỷ lệ phí:
@@ -309,7 +312,8 @@
                                                 </c:if>
 
                                                 <!-- Show NO_FEE policy -->
-                                                <c:if test="${store.feeModel == 'NO_FEE'}">
+                                                <c:if
+                                                    test="${store.feeModel != null && store.feeModel.name() == 'NO_FEE'}">
                                                     <div class="fee-info bg-light-success">
                                                         <h6 class="fw-bold mb-2 text-success">
                                                             <i class="fas fa-check-circle me-1"></i>Ưu đãi đặc biệt -

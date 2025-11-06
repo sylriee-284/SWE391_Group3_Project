@@ -33,4 +33,38 @@ public interface EscrowTransactionRepository extends JpaRepository<EscrowTransac
         @Query("SELECT e FROM EscrowTransaction e WHERE e.status = :status AND e.holdUntil <= :currentTime")
         List<EscrowTransaction> findByStatusAndHoldUntilBefore(@Param("status") EscrowStatus status,
                         @Param("currentTime") LocalDateTime currentTime);
+
+        // Dashboard: Count escrow by status and store
+        @Query("SELECT COUNT(et) FROM EscrowTransaction et " +
+                        "WHERE et.order.sellerStore.id = :storeId " +
+                        "AND et.status = :status")
+        Long countByStoreAndStatus(@Param("storeId") Long storeId, @Param("status") EscrowStatus status);
+
+        // Sum total amount held in escrow for a store (for Close Store validation)
+        @Query("SELECT COALESCE(SUM(et.totalAmount), 0) FROM EscrowTransaction et " +
+                        "WHERE et.order.sellerStore.id = :storeId AND et.status = 'HELD'")
+        Optional<BigDecimal> sumHeldAmountByStore(@Param("storeId") Long storeId);
+
+        // Dashboard: Upcoming release schedule
+        @Query("SELECT DATE(et.holdUntil), SUM(et.sellerAmount), COUNT(et) " +
+                        "FROM EscrowTransaction et " +
+                        "WHERE et.order.sellerStore.id = :storeId " +
+                        "AND et.status = 'HELD' " +
+                        "AND et.holdUntil BETWEEN :startDate AND :endDate " +
+                        "GROUP BY DATE(et.holdUntil) " +
+                        "ORDER BY DATE(et.holdUntil)")
+        List<Object[]> findUpcomingReleaseSchedule(@Param("storeId") Long storeId,
+                        @Param("startDate") LocalDateTime startDate,
+                        @Param("endDate") LocalDateTime endDate);
+
+        // Dashboard: Escrow timeline (grouped by date)
+        @Query("SELECT DATE(et.createdAt), et.status, SUM(et.totalAmount) " +
+                        "FROM EscrowTransaction et " +
+                        "WHERE et.order.sellerStore.id = :storeId " +
+                        "AND et.createdAt BETWEEN :startDate AND :endDate " +
+                        "GROUP BY DATE(et.createdAt), et.status " +
+                        "ORDER BY DATE(et.createdAt)")
+        List<Object[]> findEscrowTimelineByDateRange(@Param("storeId") Long storeId,
+                        @Param("startDate") LocalDateTime startDate,
+                        @Param("endDate") LocalDateTime endDate);
 }
