@@ -33,6 +33,7 @@ public class SellerController {
     private final SystemSettingService systemSettingService;
     private final SellerStoreRepository sellerStoreRepository;
     private final vn.group3.marketplace.service.CloseStoreService closeStoreService;
+    private final vn.group3.marketplace.service.AuthenticationRefreshService authenticationRefreshService;
 
     /**
      * Display seller registration form
@@ -276,7 +277,7 @@ public class SellerController {
     }
 
     /**
-     * Retry store deposit payment
+     * Retry store deposit payment (for PENDING or INACTIVE stores)
      */
     @PostMapping("/retry-deposit/{storeId}")
     public String retryStoreDeposit(@PathVariable Long storeId, RedirectAttributes redirectAttributes) {
@@ -295,9 +296,14 @@ public class SellerController {
                 return "redirect:/seller/register-success?storeId=" + storeId;
             }
 
-            // Verify store status
+            // Verify store status - allow PENDING and INACTIVE
             if (store.getStatus() == StoreStatus.ACTIVE) {
                 redirectAttributes.addFlashAttribute("info", "Shop đã được kích hoạt thành công");
+                return "redirect:/seller/register-success?storeId=" + storeId;
+            }
+
+            if (store.getStatus() != StoreStatus.PENDING && store.getStatus() != StoreStatus.INACTIVE) {
+                redirectAttributes.addFlashAttribute("error", "Trạng thái cửa hàng không hợp lệ để kích hoạt");
                 return "redirect:/seller/register-success?storeId=" + storeId;
             }
 
@@ -310,8 +316,16 @@ public class SellerController {
                 return "redirect:/seller/register-success?storeId=" + storeId;
             }
 
-            // Enqueue payment with same ref
-            String paymentRef = "createdShop" + storeId;
+            // Create different payment reference for INACTIVE store reactivation
+            String paymentRef;
+            if (store.getStatus() == StoreStatus.INACTIVE) {
+                // For INACTIVE stores, use timestamp to create unique payment ref
+                paymentRef = "reactivateShop" + storeId + "_" + System.currentTimeMillis();
+            } else {
+                // For PENDING stores, use original payment ref
+                paymentRef = "createdShop" + storeId;
+            }
+            
             walletTransactionQueueService.enqueuePurchasePayment(
                     currentUser.getId(),
                     store.getDepositAmount(),
@@ -363,9 +377,9 @@ public class SellerController {
                 return "redirect:/seller/register";
             }
 
-            // Verify store is PENDING
-            if (store.getStatus() != StoreStatus.PENDING) {
-                redirectAttributes.addFlashAttribute("error", "Chỉ có thể chỉnh sửa cửa hàng đang chờ kích hoạt");
+            // Verify store is PENDING or INACTIVE (allow editing for both statuses)
+            if (store.getStatus() != StoreStatus.PENDING && store.getStatus() != StoreStatus.INACTIVE) {
+                redirectAttributes.addFlashAttribute("error", "Chỉ có thể chỉnh sửa cửa hàng đang chờ kích hoạt hoặc đã đóng");
                 return "redirect:/seller/register";
             }
 
@@ -513,6 +527,23 @@ public class SellerController {
             model.addAttribute("user", currentUser);
             model.addAttribute("store", activeStore);
             model.addAttribute("pageTitle", "Thông tin Seller");
+
+            // Add fee settings from SystemSetting (percentage fee and fixed fee for small orders)
+            Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
+            Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
+            model.addAttribute("percentageFee", percentageFee);
+            model.addAttribute("fixedFee", fixedFee);
+
+            // Add refund rate settings from SystemSetting
+            Integer maxRefundRateMinDuration = systemSettingService.getIntValue("store.max_refund_rate_min_duration_months", 12);
+            Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate", 100.0);
+            Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate", 70.0);
+            Double noFeeRefundRate = systemSettingService.getDoubleValue("store.no_fee_refund_rate", 50.0);
+
+            model.addAttribute("maxRefundRateMinDuration", maxRefundRateMinDuration);
+            model.addAttribute("percentageMaxRefundRate", percentageMaxRefundRate);
+            model.addAttribute("percentageMinRefundRate", percentageMinRefundRate);
+            model.addAttribute("noFeeRefundRate", noFeeRefundRate);
 
             return "seller/profile";
 
@@ -662,6 +693,9 @@ public class SellerController {
 
             vn.group3.marketplace.dto.CloseStoreResultDTO result = closeStoreService.confirmClose(storeId, currentUser,
                     request);
+
+            // Refresh authentication context to update userStore in sidebar
+            authenticationRefreshService.refreshAuthenticationContext();
 
             return org.springframework.http.ResponseEntity.ok(result);
         } catch (Exception e) {
