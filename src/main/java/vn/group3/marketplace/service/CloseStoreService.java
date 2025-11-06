@@ -203,7 +203,7 @@ public class CloseStoreService {
         logger.info("Updated wallet balance for user {} using atomic increment. New balance: {}",
                 owner.getId(), owner.getBalance());
 
-        // Create wallet transaction log
+        // Create wallet transaction log with INTERNAL method and payment reference
         WalletTransaction walletTx = WalletTransaction.builder()
                 .user(owner)
                 .type(WalletTransactionType.DEPOSIT_REFUND)
@@ -211,6 +211,8 @@ public class CloseStoreService {
                 .note("Store deposit refund for: " + store.getStoreName() +
                         (request.getReason() != null ? " | Reason: " + request.getReason() : ""))
                 .paymentStatus(WalletTransactionStatus.SUCCESS)
+                .paymentMethod("INTERNAL")
+                .paymentRef("RefundDeactiveShop" + store.getStoreName())
                 .build();
         walletTransactionRepository.save(walletTx);
 
@@ -243,8 +245,17 @@ public class CloseStoreService {
             throw new RuntimeException("Unauthorized: You are not the owner of this store");
         }
 
-        // Find the deposit refund transaction
-        BigDecimal refundAmount = store.getDepositAmount(); // Default
+        // Find the most recent deposit refund transaction to get actual refund amount
+        BigDecimal refundAmount = BigDecimal.ZERO;
+        
+        // Get the latest DEPOSIT_REFUND transaction
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 1);
+        org.springframework.data.domain.Page<WalletTransaction> transactions = walletTransactionRepository
+                .findByUserAndTypeOrderByIdDesc(owner, WalletTransactionType.DEPOSIT_REFUND, pageable);
+        
+        if (!transactions.isEmpty()) {
+            refundAmount = transactions.getContent().get(0).getAmount();
+        }
 
         return CloseStoreResultDTO.builder()
                 .ok(true)
