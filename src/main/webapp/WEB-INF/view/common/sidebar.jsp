@@ -64,10 +64,9 @@
                     <sec:authorize access="isAuthenticated() and hasRole('SELLER')">
                         <c:choose>
                             <c:when test="${userStore.status == 'INACTIVE'}">
-                                <!-- Nếu cửa hàng đã đóng, chỉ hiển thị link Quản lý cửa hàng -->
+                                <!-- Nếu cửa hàng đã đóng (INACTIVE), hiển thị link Kích hoạt cửa hàng giống như PENDING -->
                                 <li class="mt-2">
-                                    <a href="/seller/store/settings" class="text-white text-decoration-none">⚙️ Quản lý
-                                        cửa hàng</a>
+                                    <a href="/seller/register" class="text-white text-decoration-none">🛍️ Kích hoạt cửa hàng</a>
                                 </li>
                             </c:when>
                             <c:otherwise>
