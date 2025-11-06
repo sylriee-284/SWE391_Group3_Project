@@ -90,8 +90,7 @@
                                     <!-- Danger Zone - Active Store -->
                                     <div class="danger-zone">
                                         <h4><i class="fas fa-exclamation-triangle"></i> Đóng cửa hàng</h4>
-                                        <p class="mb-3">Khi đóng cửa hàng, bạn không thể mở lại. Tất cả sản phẩm sẽ bị
-                                            ẩn khỏi khách hàng.</p>
+                                        <p class="mb-3">Khi đóng cửa hàng, tất cả sản phẩm sẽ bị ẩn khỏi khách hàng. Bạn có thể kích hoạt lại cửa hàng sau này bằng cách thanh toán lại phí kích hoạt.</p>
                                         <button id="btnCloseStore" class="btn btn-danger">
                                             <i class="fas fa-times-circle"></i> Đóng Cửa Hàng
                                         </button>
@@ -108,7 +107,7 @@
                         <div class="modal-content">
                             <span class="close-btn" id="closeModal1">&times;</span>
                             <h3><i class="fas fa-exclamation-triangle text-warning"></i> Xác Nhận Đóng Cửa Hàng</h3>
-                            <p class="mt-3">Bạn có chắc chắn muốn đóng cửa hàng? Hành động này không thể hoàn tác.</p>
+                            <p class="mt-3">Bạn có chắc chắn muốn đóng cửa hàng? Cửa hàng sẽ bị tạm ngưng và bạn có thể kích hoạt lại sau này.</p>
 
                             <div class="form-group mt-4">
                                 <label for="reasonInput">Lý Do Đóng Cửa (Tùy chọn)</label>
@@ -123,8 +122,7 @@
                             <div class="form-check mt-3">
                                 <input type="checkbox" class="form-check-input" id="agreeCheck">
                                 <label class="form-check-label" for="agreeCheck">
-                                    Tôi hiểu rằng đóng cửa hàng là vĩnh viễn và tôi không có đơn hàng đang chờ hoặc tiền
-                                    ký quỹ.
+                                    Tôi hiểu rằng sau khi đóng cửa hàng, tôi cần thanh toán lại phí kích hoạt để mở lại, và hiện tại tôi không có đơn hàng đang chờ hoặc tiền ký quỹ.
                                 </label>
                             </div>
 
