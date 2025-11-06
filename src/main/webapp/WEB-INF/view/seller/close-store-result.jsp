@@ -181,7 +181,7 @@
                                     <a href="/seller/store/settings" class="btn btn-primary">
                                         <i class="fas fa-cogs"></i> Quay Lại Cài Đặt Cửa Hàng
                                     </a>
-                                    <a href="/wallet" class="btn btn-success">
+                                    <a href="/wallet/transactions" class="btn btn-success">
                                         <i class="fas fa-wallet"></i> Xem Lịch Sử Ví
                                     </a>
                                 </div>
