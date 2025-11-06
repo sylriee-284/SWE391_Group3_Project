@@ -46,12 +46,28 @@
                                         <div class="mb-4">
                                             <!-- Hero Section -->
                                             <div class="d-flex align-items-center gap-3 mb-4">
-                                                <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center" style="width:64px;height:64px;">
-                                                    <i class="fas fa-store fa-lg"></i>
-                                                </div>
+                                                <c:choose>
+                                                    <c:when test="${inactiveStore.status == 'INACTIVE'}">
+                                                        <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center" style="width:64px;height:64px;">
+                                                            <i class="fas fa-store-slash fa-lg"></i>
+                                                        </div>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center" style="width:64px;height:64px;">
+                                                            <i class="fas fa-store fa-lg"></i>
+                                                        </div>
+                                                    </c:otherwise>
+                                                </c:choose>
                                                 <div>
                                                     <h2 class="h4 mb-1">Cửa hàng của bạn</h2>
-                                                    <p class="mb-0 text-muted">Hoàn tất thanh toán ký quỹ để kích hoạt cửa hàng</p>
+                                                    <c:choose>
+                                                        <c:when test="${inactiveStore.status == 'INACTIVE'}">
+                                                            <p class="mb-0 text-muted">Cửa hàng đang đóng. Vui lòng kích hoạt lại để tiếp tục bán hàng</p>
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <p class="mb-0 text-muted">Hoàn tất thanh toán ký quỹ để kích hoạt cửa hàng</p>
+                                                        </c:otherwise>
+                                                    </c:choose>
                                                 </div>
                                             </div>
 
@@ -59,7 +75,14 @@
                                                 <div class="card-body p-4">
                                                     <!-- Store Status Badge -->
                                                     <div class="mb-3">
-                                                        <span class="badge bg-info fs-6"><i class="fas fa-clock"></i> Chờ kích hoạt</span>
+                                                        <c:choose>
+                                                            <c:when test="${inactiveStore.status == 'INACTIVE'}">
+                                                                <span class="badge bg-danger fs-6"><i class="fas fa-times-circle"></i> Cửa hàng đã đóng</span>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <span class="badge bg-info fs-6"><i class="fas fa-clock"></i> Chờ kích hoạt</span>
+                                                            </c:otherwise>
+                                                        </c:choose>
                                                     </div>
 
                                                     <!-- Store Information Grid -->
@@ -193,14 +216,27 @@
                                                     
                                                     <!-- Action Section -->
                                                     <div class="border-top pt-4">
-                                                        <!-- PENDING store: show activate button -->
-                                                        <div class="alert alert-info border-0 d-flex align-items-center mb-3">
-                                                            <i class="fas fa-info-circle fa-2x me-3"></i>
-                                                            <div>
-                                                                <strong>Cửa hàng đang chờ kích hoạt</strong><br>
-                                                                <small>Vui lòng thanh toán ký quỹ để bắt đầu bán hàng trên nền tảng.</small>
-                                                            </div>
-                                                        </div>
+                                                        <!-- Different message based on store status -->
+                                                        <c:choose>
+                                                            <c:when test="${inactiveStore.status == 'INACTIVE'}">
+                                                                <div class="alert alert-warning border-0 d-flex align-items-center mb-3">
+                                                                    <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                                                                    <div>
+                                                                        <strong>Cửa hàng đang đóng</strong><br>
+                                                                        <small>Vui lòng kích hoạt lại cửa hàng bằng cách thanh toán ký quỹ để tiếp tục bán hàng trên nền tảng.</small>
+                                                                    </div>
+                                                                </div>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <div class="alert alert-info border-0 d-flex align-items-center mb-3">
+                                                                    <i class="fas fa-info-circle fa-2x me-3"></i>
+                                                                    <div>
+                                                                        <strong>Cửa hàng đang chờ kích hoạt</strong><br>
+                                                                        <small>Vui lòng thanh toán ký quỹ để bắt đầu bán hàng trên nền tảng.</small>
+                                                                    </div>
+                                                                </div>
+                                                            </c:otherwise>
+                                                        </c:choose>
                                                         <c:choose>
                                                             <c:when test="${userBalance.compareTo(inactiveStore.depositAmount) >= 0}">
                                                                 <div class="d-grid gap-2 d-md-flex">

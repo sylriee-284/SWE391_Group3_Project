@@ -34,14 +34,41 @@
                                 <div
                                     class="d-flex align-items-center justify-content-between mb-3 gap-3 flex-column flex-md-row success-hero">
                                     <div class="d-flex align-items-center gap-3">
-                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-                                            style="width:72px;height:72px;">
-                                            <i class="fas fa-store fa-lg"></i>
-                                        </div>
+                                        <c:choose>
+                                            <c:when test="${store.status == 'INACTIVE'}">
+                                                <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center"
+                                                    style="width:72px;height:72px;">
+                                                    <i class="fas fa-store-slash fa-lg"></i>
+                                                </div>
+                                            </c:when>
+                                            <c:when test="${store.status == 'ACTIVE'}">
+                                                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center"
+                                                    style="width:72px;height:72px;">
+                                                    <i class="fas fa-store fa-lg"></i>
+                                                </div>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                                                    style="width:72px;height:72px;">
+                                                    <i class="fas fa-store fa-lg"></i>
+                                                </div>
+                                            </c:otherwise>
+                                        </c:choose>
                                         <div>
-                                            <h2 class="h5 mb-1">Đăng ký cửa hàng đã ghi nhận</h2>
-                                            <p class="mb-0 text-muted small">Chúng tôi đã nhận yêu cầu của bạn. Trạng
-                                                thái thanh toán bên dưới.</p>
+                                            <c:choose>
+                                                <c:when test="${store.status == 'INACTIVE'}">
+                                                    <h2 class="h5 mb-1">Cửa hàng đã đóng</h2>
+                                                    <p class="mb-0 text-muted small">Vui lòng kích hoạt lại để tiếp tục bán hàng.</p>
+                                                </c:when>
+                                                <c:when test="${store.status == 'ACTIVE'}">
+                                                    <h2 class="h5 mb-1">Cửa hàng đã kích hoạt</h2>
+                                                    <p class="mb-0 text-muted small">Chúc mừng! Bạn đã sẵn sàng bán hàng.</p>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <h2 class="h5 mb-1">Đăng ký cửa hàng đã ghi nhận</h2>
+                                                    <p class="mb-0 text-muted small">Chúng tôi đã nhận yêu cầu của bạn. Trạng thái thanh toán bên dưới.</p>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </div>
                                     </div>
                                     <div class="w-100">
@@ -238,16 +265,27 @@
                                                     </div>
                                                 </div>
 
-                                            <!-- Show activation prompt for PENDING stores -->
-                                            <c:if test="${store.status == 'PENDING'}">
-                                                <div class="alert alert-info mt-3" id="pendingAlert">
-                                                    <i class="fas fa-info-circle"></i>
-                                                    <strong>Cửa hàng đang chờ kích hoạt.</strong> Vui lòng bấm nút bên dưới để thanh toán ký quỹ và kích hoạt cửa hàng.
-                                                </div>
+                                            <!-- Show activation prompt for PENDING or INACTIVE stores -->
+                                            <c:if test="${store.status == 'PENDING' || store.status == 'INACTIVE'}">
+                                                <c:choose>
+                                                    <c:when test="${store.status == 'INACTIVE'}">
+                                                        <div class="alert alert-warning mt-3" id="pendingAlert">
+                                                            <i class="fas fa-exclamation-triangle"></i>
+                                                            <strong>Cửa hàng đang đóng.</strong> Vui lòng kích hoạt lại cửa hàng bằng cách thanh toán ký quỹ để tiếp tục bán hàng trên nền tảng.
+                                                        </div>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <div class="alert alert-info mt-3" id="pendingAlert">
+                                                            <i class="fas fa-info-circle"></i>
+                                                            <strong>Cửa hàng đang chờ kích hoạt.</strong> Vui lòng bấm nút bên dưới để thanh toán ký quỹ và kích hoạt cửa hàng.
+                                                        </div>
+                                                    </c:otherwise>
+                                                </c:choose>
                                                 <div class="mt-3 d-grid gap-2" id="pendingActionButtons">
                                                     <form action="${pageContext.request.contextPath}/seller/retry-deposit/${store.id}" method="post">
                                                         <button type="submit" class="btn btn-success btn-lg w-100">
-                                                            <i class="fas fa-check-circle"></i> Kích hoạt cửa hàng (Thanh toán ký quỹ)
+                                                            <i class="fas fa-check-circle"></i> 
+                                                            ${store.status == 'INACTIVE' ? 'Kích hoạt lại cửa hàng' : 'Kích hoạt cửa hàng'} (Thanh toán ký quỹ)
                                                         </button>
                                                     </form>
                                                     <a href="${pageContext.request.contextPath}/wallet/deposit" class="btn btn-outline-primary">
@@ -294,6 +332,9 @@
                                                             <c:when test="${store.status == 'PENDING'}">
                                                                 <span class="badge bg-info">Chờ kích hoạt</span>
                                                             </c:when>
+                                                            <c:when test="${store.status == 'INACTIVE'}">
+                                                                <span class="badge bg-danger">Cửa hàng đã đóng</span>
+                                                            </c:when>
                                                             <c:otherwise>
                                                                 <span class="badge bg-warning">Đang xử lý</span>
                                                             </c:otherwise>
@@ -301,8 +342,8 @@
                                                     </li>
                                                 </ul>
 
-                                                <!-- Show activate button for PENDING stores -->
-                                                <c:if test="${store.status == 'PENDING'}">
+                                                <!-- Show activate button for PENDING or INACTIVE stores -->
+                                                <c:if test="${store.status == 'PENDING' || store.status == 'INACTIVE'}">
                                                     <div class="mt-3 d-grid" id="activateButtonContainer">
                                                         <form
                                                             action="${pageContext.request.contextPath}/seller/retry-deposit/${store.id}"
