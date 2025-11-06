@@ -1,5 +1,7 @@
 package vn.group3.marketplace.util;
 
+import org.springframework.stereotype.Component;
+
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -7,7 +9,10 @@ import java.util.concurrent.*;
  * Simple per-user serial executor: tasks submitted for the same key (userId)
  * will be executed sequentially on a dedicated single-thread executor.
  * Executors are created lazily and cleaned up after being idle.
+ * 
+ * Spring Component - singleton instance shared across the application
  */
+@Component
 public class PerUserSerialExecutor {
 
     private final ConcurrentHashMap<Long, UserExecutor> executors = new ConcurrentHashMap<>();

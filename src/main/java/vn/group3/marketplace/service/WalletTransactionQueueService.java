@@ -81,6 +81,7 @@ public class WalletTransactionQueueService {
 
     // Luồng trừ tiền thanh toán shop
     private static final String CREATED_SHOP_PREFIX = "createdShop";
+    private static final String REACTIVATE_SHOP_PREFIX = "reactivateShop";
 
     private void handleStoreActivation(Long storeId) {
         try {
@@ -95,17 +96,37 @@ public class WalletTransactionQueueService {
     }
 
     private boolean isStoreDepositPayment(String paymentRef) {
-        return paymentRef != null && paymentRef.startsWith(CREATED_SHOP_PREFIX);
+        return paymentRef != null && (paymentRef.startsWith(CREATED_SHOP_PREFIX) || paymentRef.startsWith(REACTIVATE_SHOP_PREFIX));
+    }
+
+    private Long extractStoreIdFromPaymentRef(String paymentRef) {
+        try {
+            if (paymentRef.startsWith(CREATED_SHOP_PREFIX)) {
+                return Long.parseLong(paymentRef.substring(CREATED_SHOP_PREFIX.length()));
+            } else if (paymentRef.startsWith(REACTIVATE_SHOP_PREFIX)) {
+                // Format: reactivateShop{storeId}_{timestamp}
+                String afterPrefix = paymentRef.substring(REACTIVATE_SHOP_PREFIX.length());
+                int underscoreIndex = afterPrefix.indexOf('_');
+                if (underscoreIndex > 0) {
+                    return Long.parseLong(afterPrefix.substring(0, underscoreIndex));
+                } else {
+                    return Long.parseLong(afterPrefix);
+                }
+            }
+        } catch (NumberFormatException e) {
+            logger.error("❌ Failed to parse storeId from paymentRef: {}. Error: {}", paymentRef, e.getMessage(), e);
+        }
+        return null;
     }
 
     private String getPaymentCheckStatus(String paymentRef) {
         if (paymentRef == null) {
             return "NULL";
         }
-        if (paymentRef.startsWith(CREATED_SHOP_PREFIX)) {
+        if (paymentRef.startsWith(CREATED_SHOP_PREFIX) || paymentRef.startsWith(REACTIVATE_SHOP_PREFIX)) {
             return "PASS";
         }
-        return "Not a createdShop";
+        return "Not a shop payment";
     }
 
     public Future<Boolean> enqueuePurchasePayment(Long userId, java.math.BigDecimal amount, String paymentRef) {
@@ -124,12 +145,11 @@ public class WalletTransactionQueueService {
                     // Process store activation if needed
                     logger.info("Payment result: {}, paymentRef: {}", result, paymentRef);
                     if (isStoreDepositPayment(paymentRef) && result) {
-                        try {
-                            Long storeId = Long.parseLong(paymentRef.substring(CREATED_SHOP_PREFIX.length()));
+                        Long storeId = extractStoreIdFromPaymentRef(paymentRef);
+                        if (storeId != null) {
                             handleStoreActivation(storeId);
-                        } catch (NumberFormatException e) {
-                            logger.error("❌ Failed to parse storeId from paymentRef: {}. Error: {}", paymentRef,
-                                    e.getMessage(), e);
+                        } else {
+                            logger.error("❌ Failed to extract storeId from paymentRef: {}", paymentRef);
                         }
                     } else {
                         logger.warn("⚠️ Store activation skipped. Result: {}, paymentRef check: {}", 

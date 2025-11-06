@@ -12,6 +12,9 @@
     <!-- iziToast CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css">
 
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- Custom Navbar CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/navbar.css">
 
@@ -71,3 +74,10 @@
     <!-- SockJS and STOMP for WebSocket -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <!-- Withdrawals CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/withdrawals-create.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/withdrawals-detail.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/withdrawals-edit.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/withdrawals-list.css">
+
+

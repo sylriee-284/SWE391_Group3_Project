@@ -209,15 +209,20 @@
                                                             </small>
                                                         </div>
                                                         <div
-                                                            class="mt-2 d-flex justify-content-between align-items-center">
-                                                            <small class="text-success">
-                                                                <i class="fas fa-tag"></i>
-                                                                ${product.category.name}
+                                                            class="mt-2 d-flex justify-content-between align-items-center flex-nowrap">
+                                                            <small
+                                                                class="text-success d-inline-flex align-items-center text-truncate me-2"
+                                                                style="max-width: 50%; white-space: nowrap;">
+                                                                <i class="fas fa-tag me-1"></i>
+                                                                <span
+                                                                    class="text-truncate">${product.category.name}</span>
                                                             </small>
-                                                            <small class="text-muted">
+                                                            <small
+                                                                class="text-muted d-inline-flex align-items-center text-truncate text-end"
+                                                                style="max-width: 50%; white-space: nowrap;">
+                                                                <i class="fas fa-store me-1"></i>
                                                                 <a href="<c:url value='/store/${product.sellerStore.id}/infor'/>"
-                                                                    class="text-decoration-none text-muted">
-                                                                    <i class="fas fa-store"></i>
+                                                                    class="text-decoration-none text-muted text-truncate">
                                                                     ${product.sellerStore.storeName}
                                                                 </a>
                                                             </small>
@@ -233,12 +238,14 @@
                                                                     <span class="text-muted"> Total review:
                                                                         ${product.ratingCount}</span>
                                                                 </small>
-                                                                <span class="ms-1 text-muted">
+                                                                <br>
+                                                                <span class="text-muted">
                                                                     Đã bán: ${product.soldQuantity != null ?
                                                                     product.soldQuantity : 0}
                                                                 </span>
                                                             </div>
                                                         </div>
+
                                                         <div class="mt-3">
                                                             <a href="<c:url value='/product/${product.slug}'/>"
                                                                 class="btn btn-success btn-sm w-100">

@@ -268,38 +268,45 @@
                                                             <i class="fas fa-chart-line me-1"></i>Hệ thống sẽ áp dụng
                                                             mức phí giao dịch dựa trên giá trị đơn hàng như sau:
                                                         </h6>
-                                                        <div class="row">
-                                                            <div class="col-md-6 mb-2">
-                                                                <i class="fas fa-arrow-right text-success me-1"></i>
+                                                        <ul class="list-unstyled mb-3">
+                                                            <li class="mb-2">
+                                                                <i class="fas fa-arrow-right text-success me-2"></i>
                                                                 Đơn hàng dưới <strong>100.000 VNĐ</strong> → Phí cố
-                                                                định: <strong class="text-danger">5.000 VNĐ</strong>
-                                                            </div>
-                                                            <div class="col-md-6 mb-2">
-                                                                <i class="fas fa-arrow-right text-primary me-1"></i>
+                                                                định: <strong class="text-danger"><fmt:formatNumber value="${fixedFee}" type="number" pattern="#,###" /> VNĐ</strong>
+                                                            </li>
+                                                            <li class="mb-2">
+                                                                <i class="fas fa-arrow-right text-primary me-2"></i>
                                                                 Đơn hàng từ <strong>100.000 VNĐ</strong> trở lên → Phí
-                                                                theo tỷ lệ: <strong class="text-danger">3%</strong> trên
-                                                                tổng giá trị đơn hàng
-                                                            </div>
-                                                        </div>
+                                                                theo tỷ lệ: <strong class="text-danger">
+                                                                    <c:choose>
+                                                                        <c:when test="${store.feePercentageRate != null}">
+                                                                            <fmt:formatNumber value="${store.feePercentageRate}" maxFractionDigits="2" />%
+                                                                        </c:when>
+                                                                        <c:otherwise>
+                                                                            <fmt:formatNumber value="${percentageFee}" maxFractionDigits="2" />%
+                                                                        </c:otherwise>
+                                                                    </c:choose>
+                                                                </strong> trên tổng giá trị đơn hàng
+                                                            </li>
+                                                        </ul>
 
-                                                        <div class="alert alert-success mt-3 mb-2">
+                                                        <div class="alert alert-success mb-2">
                                                             <h6 class="fw-bold mb-2">
-                                                                <i class="fas fa-money-check-alt me-1"></i>Chính sách
+                                                                <i class="fas fa-money-bill-wave me-2"></i>Chính sách
                                                                 hoàn phí ký quỹ:
                                                             </h6>
-                                                            <ul class="mb-0 ps-3">
-                                                                <li>Nếu cửa hàng đóng sau <strong>01 năm</strong> kể từ
-                                                                    ngày kích hoạt → hoàn <strong
-                                                                        class="text-success">100% phí ký quỹ</strong>.
+                                                            <ul class="mb-2 ps-3 small">
+                                                                <li>Nếu cửa hàng đóng <strong>sau <fmt:formatNumber value="${maxRefundRateMinDuration}" type="number" maxFractionDigits="0" /> tháng</strong> kể từ
+                                                                    ngày kích hoạt → hoàn <strong class="text-success"><fmt:formatNumber value="${percentageMaxRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong>.
                                                                 </li>
-                                                                <li>Nếu cửa hàng đóng trước <strong>01 năm</strong> →
-                                                                    hoàn <strong class="text-warning">70% phí ký
+                                                                <li>Nếu cửa hàng đóng <strong>trước <fmt:formatNumber value="${maxRefundRateMinDuration}" type="number" maxFractionDigits="0" /> tháng</strong> →
+                                                                    hoàn <strong class="text-warning"><fmt:formatNumber value="${percentageMinRefundRate}" type="number" maxFractionDigits="0" />% phí ký
                                                                         quỹ</strong>.</li>
-                                                                <li>Phí hoàn sẽ được chuyển vào ví hệ thống trong vòng
-                                                                    <strong>07 ngày làm việc</strong> sau khi xác nhận
-                                                                    đóng cửa hàng.
-                                                                </li>
                                                             </ul>
+                                                            <p class="mb-0 small fst-italic">
+                                                                <i class="fas fa-lightbulb text-warning me-1"></i>
+                                                                💡 Chính sách này đảm bảo tính công bằng, khuyến khích hoạt động lâu dài và bảo vệ quyền lợi của cả người mua và người bán.
+                                                            </p>
                                                         </div>
 
                                                         <small class="text-muted">
@@ -338,18 +345,13 @@
                                                                 sách hoàn phí ký quỹ:
                                                             </h6>
                                                             <ul class="mb-2 ps-3">
-                                                                <li><strong>Không áp dụng hoàn phí ký quỹ</strong> trong
-                                                                    mọi trường hợp.</li>
-                                                                <li>Khi cửa hàng ngừng hoạt động, phí ký quỹ sẽ
-                                                                    <strong>không được hoàn lại</strong>, kể cả khi thời
-                                                                    gian hoạt động đã vượt qua 01 năm.
-                                                                </li>
+                                                                <li>Đóng cửa hàng → hoàn <strong class="text-warning"><fmt:formatNumber value="${noFeeRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong> (không kể thời gian).</li>
                                                             </ul>
                                                             <small class="text-muted">
                                                                 <i class="fas fa-lightbulb me-1"></i>
-                                                                <strong>Phù hợp với các cửa hàng nhỏ, thử nghiệm hoặc
+                                                                💡 Phù hợp với các cửa hàng nhỏ, thử nghiệm hoặc
                                                                     hoạt động ngắn hạn, ưu tiên đơn giản và không phát
-                                                                    sinh phí giao dịch.</strong>
+                                                                    sinh phí giao dịch.
                                                             </small>
                                                         </div>
                                                     </div>

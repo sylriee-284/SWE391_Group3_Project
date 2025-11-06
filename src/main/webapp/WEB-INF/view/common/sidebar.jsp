@@ -6,6 +6,7 @@
             <div class="sidebar" id="sidebar">
                 <ul class="menu">
                     <li><a href="/homepage">🏠 Trang chủ</a></li>
+                    <li><a href="/wallet">💰 Ví của tôi</a></li>
 
                     <c:if test="${pageContext.request.userPrincipal == null}">
                         <li><a href="/register">📝 Đăng ký ngay</a></li>
@@ -30,8 +31,7 @@
 
                                 <!-- Chỉ hiển thị nếu user có role SELLER -->
                                 <sec:authorize access="hasRole('SELLER')">
-                                    <li><a href="/wallet/withdraw" class="text-white text-decoration-none">📤 Rút
-                                            tiền</a></li>
+                                    <li><a href="/seller/withdrawals" class="text-white text-decoration-none">💸 Yêu cầu rút tiền</a></li>
                                 </sec:authorize>
                             </ul>
                         </li>
@@ -64,10 +64,9 @@
                     <sec:authorize access="isAuthenticated() and hasRole('SELLER')">
                         <c:choose>
                             <c:when test="${userStore.status == 'INACTIVE'}">
-                                <!-- Nếu cửa hàng đã đóng, chỉ hiển thị link Quản lý cửa hàng -->
+                                <!-- Nếu cửa hàng đã đóng (INACTIVE), hiển thị link Kích hoạt cửa hàng giống như PENDING -->
                                 <li class="mt-2">
-                                    <a href="/seller/store/settings" class="text-white text-decoration-none">⚙️ Quản lý
-                                        cửa hàng</a>
+                                    <a href="/seller/register" class="text-white text-decoration-none">🛍️ Kích hoạt cửa hàng</a>
                                 </li>
                             </c:when>
                             <c:otherwise>
@@ -118,7 +117,7 @@
                                         hàng</a></li>
                                 <li><a href="/admin/categories" class="text-white text-decoration-none">📦 Quản lý mặt
                                         hàng</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">💳 Đơn rút tiền</a></li>
+                                <li><a href="/admin/withdrawals" class="text-white text-decoration-none">💲 Quản lý rút tiền</a></li>
                                 <li><a href="/admin/system-config" class="text-white text-decoration-none">⚙️ Cài đặt
                                         platform</a></li>
                                 <li><a href="#" class="text-white text-decoration-none">📈 Báo cáo & thống kê</a></li>

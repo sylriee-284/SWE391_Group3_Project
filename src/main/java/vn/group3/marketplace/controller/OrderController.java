@@ -9,8 +9,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import vn.group3.marketplace.domain.entity.Order;
 import vn.group3.marketplace.domain.enums.OrderStatus;
@@ -108,5 +110,24 @@ public class OrderController {
         model.addAttribute("orderStatuses", OrderStatus.values()); // Send all enum values
         model.addAttribute("selectedStatus", order.getStatus()); // Current order status
         return "order/detail";
+    }
+
+    @PostMapping("/{id}/rate")
+    public String rateProduct(
+            @PathVariable Long id,
+            @RequestParam Integer rating,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            RedirectAttributes redirectAttributes) {
+        
+        try {
+            orderService.rateOrder(id, rating, null);
+            redirectAttributes.addFlashAttribute("success", "Rating submitted successfully");
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "An error occurred while submitting the rating");
+        }
+        
+        return "redirect:/orders";
     }
 }

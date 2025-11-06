@@ -114,7 +114,7 @@
                                 <i class="fas fa-money-bill-wave"></i> Amount
                             </h5>
                             <c:set var="isPositive"
-                                value="${transaction.type.name() eq 'DEPOSIT' or transaction.type.name() eq 'REFUND' or transaction.type.name() eq 'ORDER_RELEASE' or transaction.type.name() eq 'ADMIN_COMMISSION_FEE' or transaction.paymentStatus.name() eq 'RELEASED'}" />
+                                value="${transaction.type.name() eq 'DEPOSIT' or transaction.type.name() eq 'DEPOSIT_REFUND' or transaction.type.name() eq 'REFUND' or transaction.type.name() eq 'ORDER_RELEASE' or transaction.type.name() eq 'ADMIN_COMMISSION_FEE' or transaction.paymentStatus.name() eq 'RELEASED'}" />
 
                             <div
                                 class="amount-display ${isPositive ? 'amount-positive' : 'amount-negative'}">
