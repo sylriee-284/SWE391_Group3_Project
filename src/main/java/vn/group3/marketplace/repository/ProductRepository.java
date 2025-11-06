@@ -19,189 +19,198 @@ import java.time.LocalDateTime;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    // Search with flexible filters (store, keyword, status, category, parent, date
-    // range)
-    @Query("""
-                            SELECT p FROM Product p
-                            WHERE p.sellerStore.id = :storeId
-                                    AND p.isDeleted = false
-                                    AND (:q IS NULL OR :q = ''
-                                                     OR LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%'))
-                                                     OR LOWER(p.slug) LIKE LOWER(CONCAT('%', :q, '%')))
-                                    AND (:status IS NULL OR p.status = :status)
-                                    AND (:categoryId IS NULL OR p.category.id = :categoryId)
-                                    AND (:parentCategoryId IS NULL OR (p.category.parent IS NOT NULL AND p.category.parent.id = :parentCategoryId))
-                                    AND (:createdFrom IS NULL OR p.createdAt >= :createdFrom)
-                                    AND (:createdTo   IS NULL OR p.createdAt <  :createdTo)
-                                    AND (:minPrice IS NULL OR p.price >= :minPrice)
-                                    AND (:maxPrice IS NULL OR p.price <= :maxPrice)
-                                    AND (:idFrom IS NULL OR p.id >= :idFrom)
-                                    AND (:idTo IS NULL OR p.id <= :idTo)
-            """)
-    Page<Product> search(
-            @Param("storeId") Long storeId,
-            @Param("q") String q,
-            @Param("status") ProductStatus status,
-            @Param("categoryId") Long categoryId,
-            @Param("parentCategoryId") Long parentCategoryId,
-            @Param("createdFrom") LocalDateTime createdFrom,
-            @Param("createdTo") LocalDateTime createdTo,
-            @Param("minPrice") java.math.BigDecimal minPrice,
-            @Param("maxPrice") java.math.BigDecimal maxPrice,
-            @Param("idFrom") Long idFrom,
-            @Param("idTo") Long idTo,
-            Pageable pageable);
+        // Search with flexible filters (store, keyword, status, category, parent, date
+        // range)
+        @Query("""
+                                        SELECT p FROM Product p
+                                        WHERE p.sellerStore.id = :storeId
+                                                AND p.isDeleted = false
+                                                AND (:q IS NULL OR :q = ''
+                                                                 OR LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%'))
+                                                                 OR LOWER(p.slug) LIKE LOWER(CONCAT('%', :q, '%')))
+                                                AND (:status IS NULL OR p.status = :status)
+                                                AND (:categoryId IS NULL OR p.category.id = :categoryId)
+                                                AND (:parentCategoryId IS NULL OR (p.category.parent IS NOT NULL AND p.category.parent.id = :parentCategoryId))
+                                                AND (:createdFrom IS NULL OR p.createdAt >= :createdFrom)
+                                                AND (:createdTo   IS NULL OR p.createdAt <  :createdTo)
+                                                AND (:minPrice IS NULL OR p.price >= :minPrice)
+                                                AND (:maxPrice IS NULL OR p.price <= :maxPrice)
+                                                AND (:idFrom IS NULL OR p.id >= :idFrom)
+                                                AND (:idTo IS NULL OR p.id <= :idTo)
+                        """)
+        Page<Product> search(
+                        @Param("storeId") Long storeId,
+                        @Param("q") String q,
+                        @Param("status") ProductStatus status,
+                        @Param("categoryId") Long categoryId,
+                        @Param("parentCategoryId") Long parentCategoryId,
+                        @Param("createdFrom") LocalDateTime createdFrom,
+                        @Param("createdTo") LocalDateTime createdTo,
+                        @Param("minPrice") java.math.BigDecimal minPrice,
+                        @Param("maxPrice") java.math.BigDecimal maxPrice,
+                        @Param("idFrom") Long idFrom,
+                        @Param("idTo") Long idTo,
+                        Pageable pageable);
 
-    boolean existsBySellerStore_IdAndSlugIgnoreCaseAndIsDeletedFalse(Long storeId, String slug);
+        boolean existsBySellerStore_IdAndSlugIgnoreCaseAndIsDeletedFalse(Long storeId, String slug);
 
-    boolean existsBySellerStore_IdAndSlugIgnoreCaseAndIdNotAndIsDeletedFalse(Long storeId, String slug,
-            Long excludeId);
+        boolean existsBySellerStore_IdAndSlugIgnoreCaseAndIdNotAndIsDeletedFalse(Long storeId, String slug,
+                        Long excludeId);
 
-    // Find products by parent category (including all child categories)
-    @Query("SELECT p FROM Product p WHERE p.category.parent.id = :parentCategoryId AND p.status = :status AND p.isDeleted = false")
-    Page<Product> findByParentCategoryId(@Param("parentCategoryId") Long parentCategoryId,
-            @Param("status") ProductStatus status,
-            Pageable pageable);
+        // Find products by parent category (including all child categories)
+        @Query("SELECT p FROM Product p WHERE p.category.parent.id = :parentCategoryId AND p.status = :status AND p.isDeleted = false")
+        Page<Product> findByParentCategoryId(@Param("parentCategoryId") Long parentCategoryId,
+                        @Param("status") ProductStatus status,
+                        Pageable pageable);
 
-    // Find products by parent category with search keyword
-    @Query("SELECT p FROM Product p WHERE p.category.parent.id = :parentCategoryId AND p.status = :status AND p.isDeleted = false "
-            + "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<Product> findByParentCategoryIdAndKeyword(@Param("parentCategoryId") Long parentCategoryId,
-            @Param("status") ProductStatus status,
-            @Param("keyword") String keyword,
-            Pageable pageable);
+        // Find products by parent category with search keyword
+        @Query("SELECT p FROM Product p WHERE p.category.parent.id = :parentCategoryId AND p.status = :status AND p.isDeleted = false "
+                        + "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+        Page<Product> findByParentCategoryIdAndKeyword(@Param("parentCategoryId") Long parentCategoryId,
+                        @Param("status") ProductStatus status,
+                        @Param("keyword") String keyword,
+                        Pageable pageable);
 
-    // Find products by specific child category
-    @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.status = :status AND p.isDeleted = false")
-    Page<Product> findByCategoryId(@Param("categoryId") Long categoryId,
-            @Param("status") ProductStatus status,
-            Pageable pageable);
+        // Find products by specific child category
+        @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.status = :status AND p.isDeleted = false")
+        Page<Product> findByCategoryId(@Param("categoryId") Long categoryId,
+                        @Param("status") ProductStatus status,
+                        Pageable pageable);
 
-    // Find products by child category with search keyword
-    @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.status = :status AND p.isDeleted = false "
-            + "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) ")
-    Page<Product> findByCategoryIdAndKeyword(@Param("categoryId") Long categoryId,
-            @Param("status") ProductStatus status,
-            @Param("keyword") String keyword,
-            Pageable pageable);
+        // Find products by child category with search keyword
+        @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.status = :status AND p.isDeleted = false "
+                        + "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) ")
+        Page<Product> findByCategoryIdAndKeyword(@Param("categoryId") Long categoryId,
+                        @Param("status") ProductStatus status,
+                        @Param("keyword") String keyword,
+                        Pageable pageable);
 
-    // Count products by parent category
-    @Query("SELECT COUNT(p) FROM Product p WHERE p.category.parent.id = :parentCategoryId AND p.status = :status AND p.isDeleted = false")
-    Long countByParentCategoryId(@Param("parentCategoryId") Long parentCategoryId,
-            @Param("status") ProductStatus status);
+        // Count products by parent category
+        @Query("SELECT COUNT(p) FROM Product p WHERE p.category.parent.id = :parentCategoryId AND p.status = :status AND p.isDeleted = false")
+        Long countByParentCategoryId(@Param("parentCategoryId") Long parentCategoryId,
+                        @Param("status") ProductStatus status);
 
-    // Find product by ID with eager loading of category and seller store
-    @Query("SELECT p FROM Product p " +
-            "LEFT JOIN FETCH p.category c " +
-            "LEFT JOIN FETCH c.parent " +
-            "LEFT JOIN FETCH p.sellerStore s " +
-            "LEFT JOIN FETCH s.owner " +
-            "WHERE p.id = :productId AND p.isDeleted = false")
-    Optional<Product> findByIdWithDetails(@Param("productId") Long productId);
+        // Find product by ID with eager loading of category and seller store
+        @Query("SELECT p FROM Product p " +
+                        "LEFT JOIN FETCH p.category c " +
+                        "LEFT JOIN FETCH c.parent " +
+                        "LEFT JOIN FETCH p.sellerStore s " +
+                        "LEFT JOIN FETCH s.owner " +
+                        "WHERE p.id = :productId AND p.isDeleted = false")
+        Optional<Product> findByIdWithDetails(@Param("productId") Long productId);
 
-    @Query("SELECT p FROM Product p " +
-            "LEFT JOIN FETCH p.category c " +
-            "LEFT JOIN FETCH c.parent " +
-            "LEFT JOIN FETCH p.sellerStore s " +
-            "LEFT JOIN FETCH s.owner " +
-            "WHERE p.slug = :slug AND p.isDeleted = false")
-    Optional<Product> findBySlugWithDetails(@Param("slug") String slug);
+        @Query("SELECT p FROM Product p " +
+                        "LEFT JOIN FETCH p.category c " +
+                        "LEFT JOIN FETCH c.parent " +
+                        "LEFT JOIN FETCH p.sellerStore s " +
+                        "LEFT JOIN FETCH s.owner " +
+                        "WHERE p.slug = :slug AND p.isDeleted = false")
+        Optional<Product> findBySlugWithDetails(@Param("slug") String slug);
 
-    // Distinct categories sold by a store
-    @Query("SELECT DISTINCT p.category FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = 'ACTIVE' AND p.isDeleted = false")
-    java.util.List<vn.group3.marketplace.domain.entity.Category> findDistinctCategoriesByStore(
-            @Param("storeId") Long storeId);
+        // Distinct categories sold by a store
+        @Query("SELECT DISTINCT p.category FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = 'ACTIVE' AND p.isDeleted = false")
+        java.util.List<vn.group3.marketplace.domain.entity.Category> findDistinctCategoriesByStore(
+                        @Param("storeId") Long storeId);
 
-    @Query("SELECT COALESCE(MIN(p.price), 0) FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = 'ACTIVE' AND p.isDeleted = false")
-    java.math.BigDecimal findMinPriceByStore(@Param("storeId") Long storeId);
+        @Query("SELECT COALESCE(MIN(p.price), 0) FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = 'ACTIVE' AND p.isDeleted = false")
+        java.math.BigDecimal findMinPriceByStore(@Param("storeId") Long storeId);
 
-    @Query("SELECT COALESCE(MAX(p.price), 0) FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = 'ACTIVE' AND p.isDeleted = false")
-    java.math.BigDecimal findMaxPriceByStore(@Param("storeId") Long storeId);
+        @Query("SELECT COALESCE(MAX(p.price), 0) FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = 'ACTIVE' AND p.isDeleted = false")
+        java.math.BigDecimal findMaxPriceByStore(@Param("storeId") Long storeId);
 
-    // Atomic decrement stock with condition
-    @Modifying
-    @Transactional
-    @Query(value = "UPDATE products SET stock = stock - :quantity WHERE id = :productId AND stock >= :quantity AND status = 'ACTIVE'", nativeQuery = true)
-    int decrementStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
+        // Atomic decrement stock with condition
+        @Modifying
+        @Transactional
+        @Query(value = "UPDATE products SET stock = stock - :quantity WHERE id = :productId AND stock >= :quantity AND status = 'ACTIVE'", nativeQuery = true)
+        int decrementStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
 
-    // Atomic increment stock
-    @Modifying
-    @Transactional
-    @Query(value = "UPDATE products SET stock = stock + :quantity WHERE id = :productId", nativeQuery = true)
-    int incrementStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
+        // Atomic increment stock
+        @Modifying
+        @Transactional
+        @Query(value = "UPDATE products SET stock = stock + :quantity WHERE id = :productId", nativeQuery = true)
+        int incrementStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
 
-    // Check available stock (legacy - from products table)
-    @Query("SELECT p.stock FROM Product p WHERE p.id = :productId AND p.status = 'ACTIVE'")
-    Optional<Integer> getAvailableStock(@Param("productId") Long productId);
+        // Check available stock (legacy - from products table)
+        @Query("SELECT p.stock FROM Product p WHERE p.id = :productId AND p.status = 'ACTIVE'")
+        Optional<Integer> getAvailableStock(@Param("productId") Long productId);
 
-    // Get dynamic stock from ProductStorage table
-    @Query("SELECT COUNT(ps) FROM ProductStorage ps WHERE ps.product.id = :productId AND ps.status = 'AVAILABLE' AND ps.order IS NULL")
-    long getDynamicStock(@Param("productId") Long productId);
+        // Get dynamic stock from ProductStorage table
+        @Query("SELECT COUNT(ps) FROM ProductStorage ps WHERE ps.product.id = :productId AND ps.status = 'AVAILABLE' AND ps.order IS NULL")
+        long getDynamicStock(@Param("productId") Long productId);
 
-    // Dashboard queries
-    @Query("SELECT COUNT(p) FROM Product p WHERE p.sellerStore.id = :storeId AND p.stock <= :threshold AND p.stock > 0")
-    Long countLowStockByStore(@Param("storeId") Long storeId, @Param("threshold") Integer threshold);
+        // Dashboard queries
+        @Query("SELECT COUNT(p) FROM Product p WHERE p.sellerStore.id = :storeId AND p.stock <= :threshold AND p.stock > 0")
+        Long countLowStockByStore(@Param("storeId") Long storeId, @Param("threshold") Integer threshold);
 
-    @Query("SELECT COUNT(p) FROM Product p WHERE p.sellerStore.id = :storeId AND p.stock = 0")
-    Long countOutOfStockByStore(@Param("storeId") Long storeId);
+        @Query("SELECT COUNT(p) FROM Product p WHERE p.sellerStore.id = :storeId AND p.stock = 0")
+        Long countOutOfStockByStore(@Param("storeId") Long storeId);
 
-    @Query("SELECT p.id, p.name, p.stock FROM Product p WHERE p.sellerStore.id = :storeId " +
-            "AND p.stock <= :threshold AND p.stock > 0 ORDER BY p.stock ASC")
-    java.util.List<Object[]> findLowStockProducts(@Param("storeId") Long storeId,
-            @Param("threshold") Integer threshold);
+        @Query("SELECT p.id, p.name, p.stock FROM Product p WHERE p.sellerStore.id = :storeId " +
+                        "AND p.stock <= :threshold AND p.stock > 0 ORDER BY p.stock ASC")
+        java.util.List<Object[]> findLowStockProducts(@Param("storeId") Long storeId,
+                        @Param("threshold") Integer threshold);
 
-    @Query("SELECT p.id, p.name FROM Product p WHERE p.sellerStore.id = :storeId AND p.stock = 0")
-    java.util.List<Object[]> findOutOfStockProducts(@Param("storeId") Long storeId);
+        @Query("SELECT p.id, p.name FROM Product p WHERE p.sellerStore.id = :storeId AND p.stock = 0")
+        java.util.List<Object[]> findOutOfStockProducts(@Param("storeId") Long storeId);
 
-    // Find all active products
-    @Query("SELECT p FROM Product p WHERE p.status = :status AND p.isDeleted = false")
-    Page<Product> findByStatus(@Param("status") ProductStatus status, Pageable pageable);
+        // Find all active products
+        @Query("SELECT p FROM Product p WHERE p.status = :status AND p.isDeleted = false")
+        Page<Product> findByStatus(@Param("status") ProductStatus status, Pageable pageable);
 
-    // Find all active products by keyword
-    @Query("SELECT p FROM Product p WHERE p.status = :status AND p.isDeleted = false " +
-            "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<Product> findByStatusAndKeyword(@Param("status") ProductStatus status,
-            @Param("keyword") String keyword,
-            Pageable pageable);
+        // Find all active products by keyword
+        @Query("SELECT p FROM Product p WHERE p.status = :status AND p.isDeleted = false " +
+                        "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+        Page<Product> findByStatusAndKeyword(@Param("status") ProductStatus status,
+                        @Param("keyword") String keyword,
+                        Pageable pageable);
 
-    // Count products by store and status (for performance)
-    @Query("SELECT COUNT(p) FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = :status AND p.isDeleted = false")
-    Long countBySellerStoreIdAndStatus(@Param("storeId") Long storeId, @Param("status") ProductStatus status);
+        // Count products by store and status (for performance)
+        @Query("SELECT COUNT(p) FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = :status AND p.isDeleted = false")
+        Long countBySellerStoreIdAndStatus(@Param("storeId") Long storeId, @Param("status") ProductStatus status);
 
-    // Find hot products from OTHER stores (exclude specific store)
-    @Query("""
-            SELECT p FROM Product p
-            WHERE p.sellerStore.id != :excludeStoreId
-                AND p.status = :status
-                AND p.isDeleted = false
-                AND (:keyword IS NULL OR :keyword = ''
-                    OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                    OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
-                AND (:categoryId IS NULL OR p.category.id = :categoryId)
-                AND (:minPrice IS NULL OR p.price >= :minPrice)
-                AND (:maxPrice IS NULL OR p.price <= :maxPrice)
-            """)
-    Page<Product> findHotProductsExcludingStore(
-            @Param("excludeStoreId") Long excludeStoreId,
-            @Param("status") ProductStatus status,
-            @Param("keyword") String keyword,
-            @Param("categoryId") Long categoryId,
-            @Param("minPrice") java.math.BigDecimal minPrice,
-            @Param("maxPrice") java.math.BigDecimal maxPrice,
-            Pageable pageable);
+        // Find hot products from OTHER stores (exclude specific store)
+        @Query("""
+                        SELECT p FROM Product p
+                        WHERE p.sellerStore.id != :excludeStoreId
+                            AND p.status = :status
+                            AND p.isDeleted = false
+                            AND (:keyword IS NULL OR :keyword = ''
+                                OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                                OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
+                            AND (:categoryId IS NULL OR p.category.id = :categoryId)
+                            AND (:minPrice IS NULL OR p.price >= :minPrice)
+                            AND (:maxPrice IS NULL OR p.price <= :maxPrice)
+                        """)
+        Page<Product> findHotProductsExcludingStore(
+                        @Param("excludeStoreId") Long excludeStoreId,
+                        @Param("status") ProductStatus status,
+                        @Param("keyword") String keyword,
+                        @Param("categoryId") Long categoryId,
+                        @Param("minPrice") java.math.BigDecimal minPrice,
+                        @Param("maxPrice") java.math.BigDecimal maxPrice,
+                        Pageable pageable);
 
-    // Dashboard: Product performance for dashboard screen 3
-    @Query("SELECT p.id, p.name, c.name, p.price, p.soldQuantity, " +
-            "p.rating, p.ratingCount, p.stock " +
-            "FROM Product p " +
-            "JOIN p.category c " +
-            "WHERE p.sellerStore.id = :storeId " +
-            "AND (:categoryId IS NULL OR c.id = :categoryId) " +
-            "AND p.status = 'ACTIVE' " +
-            "AND p.isDeleted = false")
-    Page<Object[]> findProductPerformanceByStore(@Param("storeId") Long storeId,
-            @Param("categoryId") Long categoryId,
-            Pageable pageable);
+        // Dashboard: Product performance for dashboard screen 3
+        @Query("SELECT p.id, p.name, c.name, p.price, p.soldQuantity, " +
+                        "p.rating, p.ratingCount, p.stock " +
+                        "FROM Product p " +
+                        "JOIN p.category c " +
+                        "WHERE p.sellerStore.id = :storeId " +
+                        "AND (:categoryId IS NULL OR c.id = :categoryId) " +
+                        "AND p.status = 'ACTIVE' " +
+                        "AND p.isDeleted = false")
+        Page<Object[]> findProductPerformanceByStore(@Param("storeId") Long storeId,
+                        @Param("categoryId") Long categoryId,
+                        Pageable pageable);
+
+        /**
+         * Update all products' status to INACTIVE for a specific store
+         * Used when closing a store
+         */
+        @Modifying
+        @Transactional
+        @Query("UPDATE Product p SET p.status = 'INACTIVE', p.updatedAt = CURRENT_TIMESTAMP WHERE p.sellerStore.id = :storeId AND p.isDeleted = false")
+        int deactivateAllProductsByStore(@Param("storeId") Long storeId);
 
     // Admin dashboard queries
     @Query("SELECT COUNT(p) FROM Product p WHERE p.isDeleted = false")

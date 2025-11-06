@@ -19,6 +19,7 @@ import vn.group3.marketplace.dto.CloseStoreResultDTO;
 import vn.group3.marketplace.dto.CloseStoreValidationDTO;
 import vn.group3.marketplace.repository.EscrowTransactionRepository;
 import vn.group3.marketplace.repository.OrderRepository;
+import vn.group3.marketplace.repository.ProductRepository;
 import vn.group3.marketplace.repository.SellerStoreRepository;
 import vn.group3.marketplace.repository.UserRepository;
 import vn.group3.marketplace.repository.WalletTransactionRepository;
@@ -50,6 +51,9 @@ public class CloseStoreService {
 
     @Autowired
     private WalletTransactionRepository walletTransactionRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
 
     /**
      * Get close store preview data
@@ -217,6 +221,10 @@ public class CloseStoreService {
         walletTransactionRepository.save(walletTx);
 
         logger.info("Created wallet transaction {} for deposit refund", walletTx.getId());
+
+        // Deactivate all products of this store
+        int deactivatedProductsCount = productRepository.deactivateAllProductsByStore(storeId);
+        logger.info("Deactivated {} products for store {}", deactivatedProductsCount, storeId);
 
         // Update store status to INACTIVE
         store.setStatus(StoreStatus.INACTIVE);
