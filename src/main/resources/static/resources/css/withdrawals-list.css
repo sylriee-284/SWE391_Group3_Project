@@ -49,6 +49,11 @@
                         color: #383d41;
                     }
 
+                    .status-REJECTED {
+                        background-color: #f8d7da;
+                        color: #721c24;
+                    }
+
                     /* Pagination Styles */
                     .pagination {
                         margin-top: 20px;

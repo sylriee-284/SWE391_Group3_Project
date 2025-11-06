@@ -143,7 +143,7 @@
                                                                             duyệt
                                                                         </c:when>
                                                                         <c:when
-                                                                            test="${withdrawal.paymentStatus == 'FAILED'}">
+                                                                            test="${withdrawal.paymentStatus == 'REJECTED'}">
                                                                             <i class="bi bi-x-circle me-1"></i>Từ chối
                                                                         </c:when>
                                                                         <c:when
@@ -307,13 +307,7 @@
                                                     </li>
                                                 </ul>
 
-                                                <!-- Page Info -->
-                                                <div class="text-center text-muted mt-2">
-                                                    <small>
-                                                        Trang ${currentPage + 1} / ${withdrawals.totalPages}
-                                                        (Tổng ${withdrawals.totalElements} yêu cầu)
-                                                    </small>
-                                            </div>
+                                               
                                         </nav>
                                     </c:if>
                                 </c:if>

@@ -41,6 +41,14 @@ public class SellerWithdrawalController {
             @RequestParam(defaultValue = "10") int size,
             Model model) {
 
+        // Validate pagination parameters
+        if (page < 0) {
+            page = 0; // Default page
+        }
+        if (size <= 0) {
+            size = 10; // Default size
+        }
+
         User user = currentUser.getUser();
         Page<WalletTransaction> withdrawals = withdrawalRequestService.getWithdrawalRequestsByUser(user, page, size);
 
@@ -88,7 +96,7 @@ public class SellerWithdrawalController {
     @PostMapping("/create")
     public String createWithdrawal(
             @AuthenticationPrincipal CustomUserDetails currentUser,
-            @RequestParam BigDecimal amount,
+            @RequestParam String amount,
             @RequestParam String bankName,
             @RequestParam String bankAccountNumber,
             @RequestParam String bankAccountName,
@@ -97,9 +105,51 @@ public class SellerWithdrawalController {
         try {
             User user = currentUser.getUser();
             
+            // Validate và convert amount từ String sang BigDecimal
+            BigDecimal amountValue;
+            try {
+                amountValue = new BigDecimal(amount);
+            } catch (NumberFormatException e) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "❌ Số tiền không hợp lệ. Vui lòng nhập số.");
+                return "redirect:/seller/withdrawals/create";
+            }
+            
+            // Validate số tài khoản ngân hàng (chỉ chứa số và chữ cái, không có ký tự đặc biệt)
+            if (bankAccountNumber == null || bankAccountNumber.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "❌ Số tài khoản ngân hàng không được để trống.");
+                return "redirect:/seller/withdrawals/create";
+            }
+            if (!bankAccountNumber.matches("^[a-zA-Z0-9]+$")) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "❌ Số tài khoản ngân hàng chỉ được chứa chữ cái và số, không có ký tự đặc biệt.");
+                return "redirect:/seller/withdrawals/create";
+            }
+            
+            // Validate tên tài khoản ngân hàng (chỉ chứa chữ cái không dấu và số, không có ký tự đặc biệt)
+            if (bankAccountName == null || bankAccountName.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "❌ Tên tài khoản ngân hàng không được để trống.");
+                return "redirect:/seller/withdrawals/create";
+            }
+            // Chỉ cho phép chữ cái A-Z (không phân biệt hoa thường), số 0-9, và khoảng trắng
+            if (!bankAccountName.matches("^[a-zA-Z0-9\\s]+$")) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "❌ Tên tài khoản ngân hàng chỉ được chứa chữ cái không dấu, số và khoảng trắng.");
+                return "redirect:/seller/withdrawals/create";
+            }
+            
+            // Validate tên ngân hàng
+            if (bankName == null || bankName.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "❌ Tên ngân hàng không được để trống.");
+                return "redirect:/seller/withdrawals/create";
+            }
+            
             // Gửi vào queue để xử lý async - đảm bảo xử lý tuần tự cho mỗi seller
             Future<WalletTransaction> future = withdrawalRequestService.createWithdrawalRequestAsync(
-                    user, amount, bankName, bankAccountNumber, bankAccountName);
+                    user, amountValue, bankName, bankAccountNumber, bankAccountName);
             
             // Đợi kết quả từ queue (với timeout 10s)
             WalletTransaction withdrawal = future.get(10, java.util.concurrent.TimeUnit.SECONDS);

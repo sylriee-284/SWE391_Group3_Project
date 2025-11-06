@@ -44,6 +44,11 @@
                             color: #41464b;
                         }
 
+                        .status-rejected {
+                            background-color: #f8d7da;
+                            color: #842029;
+                        }
+
                         .filter-section {
                             background-color: #f8f9fa;
                             padding: 1.5rem;
@@ -93,7 +98,7 @@
                                                 duyệt</option>
                                             <option value="SUCCESS" ${selectedStatus=='SUCCESS' ? 'selected' : '' }>Đã
                                                 duyệt</option>
-                                            <option value="CANCELLED" ${selectedStatus=='CANCELLED' ? 'selected' : '' }>
+                                            <option value="REJECTED" ${selectedStatus=='REJECTED' ? 'selected' : '' }>
                                                 Từ chối</option>
                                             <option value="CANCELLED" ${selectedStatus=='CANCELLED' ? 'selected' : '' }>
                                                 Đã hủy</option>
@@ -207,8 +212,8 @@
                                                                         </span>
                                                                     </c:when>
                                                                     <c:when
-                                                                        test="${withdrawal.paymentStatus == 'CANCELLED'}">
-                                                                        <span class="status-badge status-failed">
+                                                                        test="${withdrawal.paymentStatus == 'REJECTED'}">
+                                                                        <span class="status-badge status-rejected">
                                                                             <i class="bi bi-x-circle me-1"></i>Từ chối
                                                                         </span>
                                                                     </c:when>

@@ -15,6 +15,8 @@
 
                     <!-- Include common head with all CSS and JS -->
                     <jsp:include page="../common/head.jsp" />
+                        
+                <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/order_list.css">
                 </head>
 
                 <body>
@@ -468,21 +470,7 @@
                         </div>
                     </div>
 
-                    <style>
-                        .star-icon {
-                            cursor: pointer;
-                            color: #ddd;
-                            transition: color 0.2s;
-                        }
-
-                        .star-icon.active {
-                            color: #ffc107;
-                        }
-
-                        .star-icon.hover {
-                            color: #ffc107;
-                        }
-                    </style>
+                   
 
                     <script>
                         let selectedRating = 0;

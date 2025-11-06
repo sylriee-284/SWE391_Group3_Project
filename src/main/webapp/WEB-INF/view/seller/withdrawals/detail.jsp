@@ -67,7 +67,7 @@
                                                             <c:when test="${withdrawal.paymentStatus == 'SUCCESS'}">
                                                                 <i class="bi bi-check-circle me-1"></i>Đã duyệt
                                                             </c:when>
-                                                            <c:when test="${withdrawal.paymentStatus == 'FAILED'}">
+                                                            <c:when test="${withdrawal.paymentStatus == 'REJECTED'}">
                                                                 <i class="bi bi-x-circle me-1"></i>Từ chối
                                                             </c:when>
                                                             <c:when test="${withdrawal.paymentStatus == 'CANCELLED'}">
@@ -141,7 +141,7 @@
                                             </div>
 
                                             <!-- Admin Response (if rejected) -->
-                                            <c:if test="${withdrawal.paymentStatus == 'FAILED'}">
+                                            <c:if test="${withdrawal.paymentStatus == 'REJECTED'}">
                                                 <div class="alert alert-danger mt-4">
                                                     <h6 class="alert-heading">
                                                         <i class="bi bi-exclamation-triangle me-2"></i>Lý do từ chối
