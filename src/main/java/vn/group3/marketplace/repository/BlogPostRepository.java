@@ -38,28 +38,36 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, Long> {
                         Pageable pageable);
 
         /* CÓ lọc category */
+        /* CÓ lọc category – chấp nhận slug HOẶC name, không phân biệt hoa-thường */
         @Query(value = """
                         SELECT p
                         FROM BlogPost p JOIN p.categories c
                         WHERE p.isDeleted = false
                           AND p.status = :published
-                          AND c.slug = :categorySlug
-                          AND (:q IS NULL OR LOWER(p.title)   LIKE LOWER(CONCAT('%', :q, '%'))
-                                           OR LOWER(p.summary) LIKE LOWER(CONCAT('%', :q, '%')))
-                          AND (:authorId IS NULL OR p.authorUserId = :authorId)
+                          AND ( :categorySlug IS NULL
+                                OR LOWER(c.slug) = LOWER(:categorySlug)
+                                OR LOWER(c.name) = LOWER(:categorySlug) )
+                          AND ( :q IS NULL
+                                OR LOWER(p.title)   LIKE LOWER(CONCAT('%', :q, '%'))
+                                OR LOWER(p.summary) LIKE LOWER(CONCAT('%', :q, '%')) )
+                          AND ( :authorId IS NULL OR p.authorUserId = :authorId )
                         ORDER BY p.publishedAt DESC, p.id DESC
                         """, countQuery = """
                         SELECT COUNT(p)
                         FROM BlogPost p JOIN p.categories c
                         WHERE p.isDeleted = false
                           AND p.status = :published
-                          AND c.slug = :categorySlug
-                          AND (:q IS NULL OR LOWER(p.title)   LIKE LOWER(CONCAT('%', :q, '%'))
-                                           OR LOWER(p.summary) LIKE LOWER(CONCAT('%', :q, '%')))
-                          AND (:authorId IS NULL OR p.authorUserId = :authorId)
+                          AND ( :categorySlug IS NULL
+                                OR LOWER(c.slug) = LOWER(:categorySlug)
+                                OR LOWER(c.name) = LOWER(:categorySlug) )
+                          AND ( :q IS NULL
+                                OR LOWER(p.title)   LIKE LOWER(CONCAT('%', :q, '%'))
+                                OR LOWER(p.summary) LIKE LOWER(CONCAT('%', :q, '%')) )
+                          AND ( :authorId IS NULL OR p.authorUserId = :authorId )
                         """)
-        Page<BlogPost> searchPublicWithCat(@Param("q") String q,
-                        @Param("categorySlug") String categorySlug,
+        Page<BlogPost> searchPublicWithCat(
+                        @Param("q") String q,
+                        @Param("categorySlug") String categorySlug, // có thể là slug HOẶC name
                         @Param("authorId") Long authorId,
                         @Param("published") BlogStatus published,
                         Pageable pageable);
@@ -85,4 +93,15 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, Long> {
         List<BlogPost> findRelatedByCategory(@Param("postId") Long postId,
                         @Param("published") BlogStatus published,
                         Pageable pageable);
+
+        @Query("""
+                        SELECT c.name as category, COUNT(DISTINCT p.id) as count
+                        FROM BlogPost p
+                        JOIN p.categories c
+                        WHERE p.isDeleted = false
+                          AND p.status = :published
+                        GROUP BY c.name
+                        ORDER BY count DESC, c.name ASC
+                        """)
+        List<Object[]> findCategoryStatistics(@Param("published") BlogStatus published);
 }

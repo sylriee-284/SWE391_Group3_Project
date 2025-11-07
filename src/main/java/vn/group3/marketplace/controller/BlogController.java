@@ -43,6 +43,8 @@ public class BlogController {
                 qSafe, catSafe, authorSafe, PageRequest.of(Math.max(page, 0), Math.max(size, 1)));
 
         model.addAttribute("posts", posts);
+        // Add category statistics
+        model.addAttribute("categories", blogPostService.getCategoryStats());
         model.addAttribute("q", q);
         model.addAttribute("category", categorySlug);
         model.addAttribute("author", authorId);
@@ -59,6 +61,7 @@ public class BlogController {
             return "redirect:/blog/list";
         }
         model.addAttribute("post", post);
+        model.addAttribute("categories", blogPostService.getCategoryStats());
         model.addAttribute("related", blogPostService.findRelated(post.getId(), 4));
         model.addAttribute("pageTitle", post.getTitle());
         return "blog/detail";

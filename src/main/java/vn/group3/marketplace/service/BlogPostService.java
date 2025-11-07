@@ -12,6 +12,7 @@ import vn.group3.marketplace.dto.BlogPostDetailDTO;
 import vn.group3.marketplace.repository.BlogPostRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
@@ -50,6 +51,22 @@ public class BlogPostService {
         return blogPostRepository
                 .findRelatedByCategory(postId, BlogStatus.PUBLISHED, PageRequest.of(0, limit))
                 .stream().map(this::toCardDto).toList();
+    }
+
+    /**
+     * Get category statistics (name and count of posts)
+     * 
+     * @return Map of category name to post count
+     */
+    public Map<String, Long> getCategoryStats() {
+        List<Object[]> results = blogPostRepository.findCategoryStatistics(BlogStatus.PUBLISHED);
+        return results.stream()
+                .collect(Collectors.toMap(
+                        row -> (String) row[0], // category name
+                        row -> (Long) row[1], // count
+                        (a, b) -> a, // In case of duplicates, keep first one
+                        java.util.LinkedHashMap::new // Keep order
+                ));
     }
 
     private Date toDate(LocalDateTime ldt) {

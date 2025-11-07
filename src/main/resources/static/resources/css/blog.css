@@ -1,0 +1,164 @@
+/* Blog specific styles */
+.blog-content {
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+/* Table of contents */
+.table-of-contents {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.table-of-contents h4 {
+    margin-bottom: 15px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.table-of-contents ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.table-of-contents ul li {
+    margin-bottom: 10px;
+}
+
+.table-of-contents ul li a {
+    color: #6c757d;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.table-of-contents ul li a:hover {
+    color: #17a2b8;
+}
+
+/* Categories */
+.blog-categories {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 30px;
+}
+
+.blog-categories h4 {
+    margin-bottom: 15px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.blog-categories ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.blog-categories ul li {
+    margin-bottom: 10px;
+}
+
+.blog-categories ul li a {
+    display: flex;
+    align-items: center;
+    color: #6c757d;
+    text-decoration: none;
+    transition: all 0.3s;
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+
+.blog-categories ul li a:hover {
+    background-color: #e9ecef;
+    color: #17a2b8;
+}
+
+.blog-categories ul li a i {
+    margin-right: 8px;
+    width: 20px;
+    text-align: center;
+}
+
+.blog-categories .category-count {
+    margin-left: auto;
+    background: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* Blog pagination */
+.blog-pagination {
+    margin-top: 2rem;
+    margin-bottom: 3rem;
+}
+
+.blog-pagination .pagination {
+    justify-content: center;
+}
+
+.blog-pagination .page-link {
+    color: #17a2b8;
+    border: 1px solid #dee2e6;
+    margin: 0 3px;
+}
+
+.blog-pagination .page-item.active .page-link {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+.blog-pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+}
+
+/* Blog footer */
+.blog-footer {
+    margin-top: auto;
+    padding: 20px 0;
+    background-color: #fff;
+    border-top: 1px solid #dee2e6;
+}
+
+/* ========== Equal height cho Content & Thể loại (chỉ desktop) ========== */
+@media (min-width: 992px) {
+
+    /* đảm bảo 2 cột cùng hàng kéo giãn bằng nhau */
+    .post-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        /* hoặc 320px tùy ý */
+        gap: 16px;
+        align-items: stretch;
+        /* các item trong hàng có cùng chiều cao */
+    }
+
+    /* bỏ margin gây hụt/ lệch; kéo giãn full chiều cao của ô grid */
+    .post-layout .blog-content,
+    .post-layout .blog-categories {
+        margin: 0 !important;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        /* để nội dung bên trong xếp dọc */
+    }
+
+    /* nếu danh sách thể loại dài, cho nó scroll trong khung (không phá chiều cao chung) */
+    .post-layout .blog-categories ul {
+        overflow: auto;
+    }
+}
+
+/* Chỉ ẩn badge đếm ở khối thể loại của Blog */
+#blog-cats .badge,
+#blog-cats .cat-count {
+    display: none !important;
+}
