@@ -11,10 +11,12 @@ public class GlobalConfig {
     // Base URL
     public static final String BASE_URL = "http://localhost:8080";
 
-    // Escrow scan interval - 1 minute (60 seconds)
+    // Escrow scan interval (lấy từ database, đơn vị: giờ)
     @Bean
     public Long escrowScanIntervalHours(SystemSettingService systemSettingService) {
-        // Fixed at 1 minute (60000 milliseconds) for automatic escrow release
-        return 60000L; // 1 minute = 60 seconds = 60000 milliseconds
+        // Lấy giá trị từ database (đơn vị: giờ)
+        Double hours = systemSettingService.getDoubleValue("escrow.scan_interval_hours", 0.02);
+        // Convert từ giờ sang milliseconds
+        return Math.round(hours * 3600 * 1000);
     }
 }
