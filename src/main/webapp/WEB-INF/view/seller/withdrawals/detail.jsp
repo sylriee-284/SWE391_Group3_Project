@@ -4,37 +4,38 @@
             <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
                 <!DOCTYPE html>
-            <html lang="vi">
+                <html lang="vi">
 
-            <head>
-                <meta charset="UTF-8">
-                <c:if test="${not empty _csrf}">
-                    <meta name="_csrf" content="${_csrf.token}" />
-                    <meta name="_csrf_header" content="${_csrf.headerName}" />
-                </c:if>
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Chi tiết yêu cầu rút tiền - MMO Market System</title>
+                <head>
+                    <meta charset="UTF-8">
+                    <c:if test="${not empty _csrf}">
+                        <meta name="_csrf" content="${_csrf.token}" />
+                        <meta name="_csrf_header" content="${_csrf.headerName}" />
+                    </c:if>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Chi tiết yêu cầu rút tiền - MMO Market System</title>
 
-                <!-- Include common head -->
-                <jsp:include page="../../common/head.jsp" />
-                
-            </head>
+                    <!-- Include common head -->
+                    <jsp:include page="../../common/head.jsp" />
 
-            <body>
-                <!-- Include Navbar -->
-                <jsp:include page="../../common/navbar.jsp" />
+                </head>
 
-                <!-- Include Sidebar -->
-                <jsp:include page="../../common/sidebar.jsp" />
+                <body>
+                    <!-- Include Navbar -->
+                    <jsp:include page="../../common/navbar.jsp" />
 
-                <!-- Sidebar Overlay for Mobile -->
-                <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()" role="button"
-                    tabindex="0" onKeyPress="if(event.key === 'Enter') toggleSidebar()"></div>
+                    <!-- Include Sidebar -->
+                    <jsp:include page="../../common/sidebar.jsp" />
 
-                <!-- Main Content Area -->
-                <div class="content" id="content">
-                    <div class="container-fluid mt-4">
-                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-3">
+                    <!-- Sidebar Overlay for Mobile -->
+                    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()" role="button"
+                        tabindex="0" onKeyPress="if(event.key === 'Enter') toggleSidebar()"></div>
+
+                    <!-- Main Content Area -->
+                    <div class="content" id="content">
+                        <div class="container-fluid mt-4">
+                            <div
+                                class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-3">
                                 <h1 class="h2">
                                     <i class="bi bi-file-text me-2"></i>Chi tiết yêu cầu rút tiền
                                 </h1>
@@ -82,7 +83,8 @@
                                             <div class="text-center mb-4 py-4 bg-light rounded">
                                                 <p class="text-muted mb-2">Số tiền rút</p>
                                                 <div class="amount-display">
-                                                    -<fmt:formatNumber value="${withdrawal.amount}" type="currency"
+                                                    -
+                                                    <fmt:formatNumber value="${withdrawal.amount}" type="currency"
                                                         currencySymbol="" /> ₫
                                                 </div>
                                             </div>
@@ -147,7 +149,8 @@
                                                         <i class="bi bi-exclamation-triangle me-2"></i>Lý do từ chối
                                                     </h6>
                                                     <p class="mb-0">
-                                                        ${not empty withdrawal.note ? withdrawal.note : 'Không có lý do cụ thể'}
+                                                        ${not empty withdrawal.note ? withdrawal.note : 'Không có lý do
+                                                        cụ thể'}
                                                     </p>
                                                 </div>
                                             </c:if>
@@ -171,79 +174,85 @@
                                     </div>
                                 </div>
                             </div>
-                        </main>
-                    </div> <!-- End container-fluid -->
-                </div> <!-- End content -->
+                        </div> <!-- End container-fluid -->
+                    </div> <!-- End content -->
 
-                <!-- Include Footer -->
-                <jsp:include page="../../common/footer.jsp" />
+                    <!-- Include Footer -->
+                    <jsp:include page="../../common/footer.jsp" />
 
-                <!-- Cancel Confirmation Form (Hidden) -->
-                <form id="cancelForm" method="POST" action="/seller/withdrawals/${withdrawal.id}/cancel"
-                    style="display: none;">
-                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
-                </form>
+                    <!-- Cancel Confirmation Form (Hidden) -->
+                    <form id="cancelForm" method="POST" action="/seller/withdrawals/${withdrawal.id}/cancel"
+                        style="display: none;">
+                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+                    </form>
 
-                <script>
-                    function cancelWithdrawal() {
-                        if (confirm('Bạn có chắc chắn muốn hủy yêu cầu rút tiền này?')) {
-                            document.getElementById('cancelForm').submit();
-                        }
-                    }
-
-                    // Show flash messages
+                    <!-- Flash Messages -->
                     <c:if test="${not empty success}">
-                        iziToast.success({
-                            title: 'Thành công',
-                            message: '${success}',
-                            position: 'topRight'
-                        });
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function () {
+                                iziToast.success({
+                                    title: 'Thành công',
+                                    message: '${success}',
+                                    position: 'topRight'
+                                });
+                            });
+                        </script>
                     </c:if>
 
                     <c:if test="${not empty error}">
-                        iziToast.error({
-                            title: 'Lỗi',
-                            message: '${error}',
-                            position: 'topRight'
-                        });
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function () {
+                                iziToast.error({
+                                    title: 'Lỗi',
+                                    message: '${error}',
+                                    position: 'topRight'
+                                });
+                            });
+                        </script>
                     </c:if>
 
-                    // Toggle sidebar function
-                    function toggleSidebar() {
-                        var sidebar = document.getElementById('sidebar');
-                        var content = document.getElementById('content');
-                        var overlay = document.getElementById('sidebarOverlay');
-
-                        if (sidebar) {
-                            sidebar.classList.toggle('active');
+                    <script>
+                        function cancelWithdrawal() {
+                            if (confirm('Bạn có chắc chắn muốn hủy yêu cầu rút tiền này?')) {
+                                document.getElementById('cancelForm').submit();
+                            }
                         }
 
-                        // Toggle content shift
-                        if (content) {
-                            content.classList.toggle('shifted');
+                        // Toggle sidebar function
+                        function toggleSidebar() {
+                            var sidebar = document.getElementById('sidebar');
+                            var content = document.getElementById('content');
+                            var overlay = document.getElementById('sidebarOverlay');
+
+                            if (sidebar) {
+                                sidebar.classList.toggle('active');
+                            }
+
+                            // Toggle content shift
+                            if (content) {
+                                content.classList.toggle('shifted');
+                            }
+
+                            // Toggle overlay for mobile
+                            if (overlay) {
+                                overlay.classList.toggle('active');
+                            }
                         }
 
-                        // Toggle overlay for mobile
-                        if (overlay) {
-                            overlay.classList.toggle('active');
-                        }
-                    }
+                        // Close sidebar when clicking outside on mobile
+                        document.addEventListener('click', function (event) {
+                            var sidebar = document.getElementById('sidebar');
+                            var overlay = document.getElementById('sidebarOverlay');
+                            var menuToggle = document.querySelector('.menu-toggle');
 
-                    // Close sidebar when clicking outside on mobile
-                    document.addEventListener('click', function (event) {
-                        var sidebar = document.getElementById('sidebar');
-                        var overlay = document.getElementById('sidebarOverlay');
-                        var menuToggle = document.querySelector('.menu-toggle');
+                            if (sidebar && sidebar.classList.contains('active') &&
+                                !sidebar.contains(event.target) &&
+                                menuToggle && !menuToggle.contains(event.target)) {
+                                toggleSidebar();
+                            }
+                        });
+                    </script>
 
-                        if (sidebar && sidebar.classList.contains('active') &&
-                            !sidebar.contains(event.target) &&
-                            menuToggle && !menuToggle.contains(event.target)) {
-                            toggleSidebar();
-                        }
-                    });
-                </script>
-                    </div> <!-- End container-fluid -->
-                </div> <!-- End content -->
-            </body>
+                </body>
 
-            </html>
+                </html>
