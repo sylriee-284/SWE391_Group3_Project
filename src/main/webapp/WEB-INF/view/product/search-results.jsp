@@ -245,7 +245,7 @@
                                                                 class="text-muted d-inline-flex align-items-center text-truncate text-end"
                                                                 style="max-width: 50%; white-space: nowrap;">
                                                                 <i class="fas fa-store me-1"></i>
-                                                                <a href="<c:url value='/store/${product.sellerStore.id}/infor'/>"
+                                                                <a href="<c:url value='/store/${product.sellerStore.id}'/>"
                                                                     class="text-decoration-none text-muted text-truncate">
                                                                     ${product.sellerStore.storeName}
                                                                 </a>

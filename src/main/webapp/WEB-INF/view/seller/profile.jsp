@@ -272,18 +272,25 @@
                                                             <li class="mb-2">
                                                                 <i class="fas fa-arrow-right text-success me-2"></i>
                                                                 Đơn hàng dưới <strong>100.000 VNĐ</strong> → Phí cố
-                                                                định: <strong class="text-danger"><fmt:formatNumber value="${fixedFee}" type="number" pattern="#,###" /> VNĐ</strong>
+                                                                định: <strong class="text-danger">
+                                                                    <fmt:formatNumber value="${fixedFee}" type="number"
+                                                                        pattern="#,###" /> VNĐ
+                                                                </strong>
                                                             </li>
                                                             <li class="mb-2">
                                                                 <i class="fas fa-arrow-right text-primary me-2"></i>
                                                                 Đơn hàng từ <strong>100.000 VNĐ</strong> trở lên → Phí
                                                                 theo tỷ lệ: <strong class="text-danger">
                                                                     <c:choose>
-                                                                        <c:when test="${store.feePercentageRate != null}">
-                                                                            <fmt:formatNumber value="${store.feePercentageRate}" maxFractionDigits="2" />%
+                                                                        <c:when
+                                                                            test="${store.feePercentageRate != null}">
+                                                                            <fmt:formatNumber
+                                                                                value="${store.feePercentageRate}"
+                                                                                maxFractionDigits="2" />%
                                                                         </c:when>
                                                                         <c:otherwise>
-                                                                            <fmt:formatNumber value="${percentageFee}" maxFractionDigits="2" />%
+                                                                            <fmt:formatNumber value="${percentageFee}"
+                                                                                maxFractionDigits="2" />%
                                                                         </c:otherwise>
                                                                     </c:choose>
                                                                 </strong> trên tổng giá trị đơn hàng
@@ -296,16 +303,36 @@
                                                                 hoàn phí ký quỹ:
                                                             </h6>
                                                             <ul class="mb-2 ps-3 small">
-                                                                <li>Nếu cửa hàng đóng <strong>sau <fmt:formatNumber value="${maxRefundRateMinDuration}" type="number" maxFractionDigits="0" /> tháng</strong> kể từ
-                                                                    ngày kích hoạt → hoàn <strong class="text-success"><fmt:formatNumber value="${percentageMaxRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong>.
+                                                                <li>Nếu cửa hàng đóng <strong>sau
+                                                                        <fmt:formatNumber
+                                                                            value="${maxRefundRateMinDuration}"
+                                                                            type="number" maxFractionDigits="0" /> tháng
+                                                                    </strong> kể từ
+                                                                    ngày kích hoạt → hoàn <strong class="text-success">
+                                                                        <fmt:formatNumber
+                                                                            value="${percentageMaxRefundRate}"
+                                                                            type="number" maxFractionDigits="0" />% phí
+                                                                        ký quỹ
+                                                                    </strong>.
                                                                 </li>
-                                                                <li>Nếu cửa hàng đóng <strong>trước <fmt:formatNumber value="${maxRefundRateMinDuration}" type="number" maxFractionDigits="0" /> tháng</strong> →
-                                                                    hoàn <strong class="text-warning"><fmt:formatNumber value="${percentageMinRefundRate}" type="number" maxFractionDigits="0" />% phí ký
-                                                                        quỹ</strong>.</li>
+                                                                <li>Nếu cửa hàng đóng <strong>trước
+                                                                        <fmt:formatNumber
+                                                                            value="${maxRefundRateMinDuration}"
+                                                                            type="number" maxFractionDigits="0" /> tháng
+                                                                    </strong> →
+                                                                    hoàn <strong class="text-warning">
+                                                                        <fmt:formatNumber
+                                                                            value="${percentageMinRefundRate}"
+                                                                            type="number" maxFractionDigits="0" />% phí
+                                                                        ký
+                                                                        quỹ
+                                                                    </strong>.</li>
                                                             </ul>
                                                             <p class="mb-0 small fst-italic">
                                                                 <i class="fas fa-lightbulb text-warning me-1"></i>
-                                                                💡 Chính sách này đảm bảo tính công bằng, khuyến khích hoạt động lâu dài và bảo vệ quyền lợi của cả người mua và người bán.
+                                                                💡 Chính sách này đảm bảo tính công bằng, khuyến khích
+                                                                hoạt động lâu dài và bảo vệ quyền lợi của cả người mua
+                                                                và người bán.
                                                             </p>
                                                         </div>
 
@@ -345,13 +372,17 @@
                                                                 sách hoàn phí ký quỹ:
                                                             </h6>
                                                             <ul class="mb-2 ps-3">
-                                                                <li>Đóng cửa hàng → hoàn <strong class="text-warning"><fmt:formatNumber value="${noFeeRefundRate}" type="number" maxFractionDigits="0" />% phí ký quỹ</strong> (không kể thời gian).</li>
+                                                                <li>Đóng cửa hàng → hoàn <strong class="text-warning">
+                                                                        <fmt:formatNumber value="${noFeeRefundRate}"
+                                                                            type="number" maxFractionDigits="0" />% phí
+                                                                        ký quỹ
+                                                                    </strong> (không kể thời gian).</li>
                                                             </ul>
                                                             <small class="text-muted">
                                                                 <i class="fas fa-lightbulb me-1"></i>
                                                                 💡 Phù hợp với các cửa hàng nhỏ, thử nghiệm hoặc
-                                                                    hoạt động ngắn hạn, ưu tiên đơn giản và không phát
-                                                                    sinh phí giao dịch.
+                                                                hoạt động ngắn hạn, ưu tiên đơn giản và không phát
+                                                                sinh phí giao dịch.
                                                             </small>
                                                         </div>
                                                     </div>
@@ -407,6 +438,9 @@
                                         <!-- Edit Mode Section -->
                                         <div id="editMode" style="display: none;">
                                             <form action="<c:url value='/seller/profile/update'/>" method="post">
+                                                <!-- CSRF Token -->
+                                                <sec:csrfInput />
+
                                                 <!-- Store Information Section -->
                                                 <div class="form-section">
                                                     <h4><i class="fas fa-store-alt text-success"></i> Chỉnh sửa thông
