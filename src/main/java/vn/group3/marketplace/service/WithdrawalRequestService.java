@@ -102,7 +102,7 @@ public class WithdrawalRequestService {
                 logger.error("Invalid withdrawal amount: {}", amount);
                 throw new IllegalArgumentException("Số tiền rút phải lớn hơn 0");
             }
-            
+
             // Validate minimum amount (100,000 VNĐ)
             BigDecimal MIN_WITHDRAWAL_AMOUNT = new BigDecimal("100000");
             if (amount.compareTo(MIN_WITHDRAWAL_AMOUNT) < 0) {
@@ -242,12 +242,31 @@ public class WithdrawalRequestService {
     }
 
     /**
-     * Lấy yêu cầu rút tiền với các bộ lọc (cho admin)
+     * Lấy yêu cầu rút tiền với các bộ lọc (cho admin) - không có keyword
      */
     @Transactional(readOnly = true)
     public Page<WalletTransaction> getWithdrawalRequestsWithFilters(
             WalletTransactionStatus status, String fromDate, String toDate, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
+        return walletTransactionRepository.findWithdrawalsByFilters(
+                WalletTransactionType.WITHDRAWAL, status, fromDate, toDate, pageable);
+    }
+
+    /**
+     * Lấy yêu cầu rút tiền với các bộ lọc (cho admin) - có keyword
+     */
+    @Transactional(readOnly = true)
+    public Page<WalletTransaction> getWithdrawalRequestsWithFilters(
+            WalletTransactionStatus status, String fromDate, String toDate, String keyword, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        // Nếu có keyword, chỉ tìm kiếm bằng keyword (bỏ qua status và date filters)
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            return walletTransactionRepository.findWithdrawalsByKeyword(
+                    WalletTransactionType.WITHDRAWAL, keyword, pageable);
+        }
+
+        // Nếu không có keyword, sử dụng filters thông thường
         return walletTransactionRepository.findWithdrawalsByFilters(
                 WalletTransactionType.WITHDRAWAL, status, fromDate, toDate, pageable);
     }
