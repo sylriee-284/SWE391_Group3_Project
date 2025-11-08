@@ -161,6 +161,7 @@ public class SellerDashboardController {
                                                         .heldCount(0)
                                                         .releasedCount(0)
                                                         .refundedCount(0)
+                                                        .escrowAmount(BigDecimal.ZERO)
                                                         .upcomingReleases(List.of())
                                                         .build())
                                         .revenueByStatusChart(ChartDataDTO.builder()
@@ -300,8 +301,8 @@ public class SellerDashboardController {
                         table.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
 
                         // Add headers (removed "Giữ đến")
-                        String[] headers = { "Mã đơn", "Ngày", "Sản phẩm", "SL", "Tổng tiền", "Trạng thái", "Người mua",
-                                        "Đang giữ ký quỹ", "Đã giải ngân" };
+                        String[] headers = { "Mã đơn", "Ngày", "Sản phẩm", "SL", "Tổng tiền", "Trạng thái",
+                                        "Đang giữ ký quỹ", "Đã quyết toán", "Phí hoa hồng" };
                         for (String header : headers) {
                                 com.itextpdf.layout.element.Cell cell = new com.itextpdf.layout.element.Cell()
                                                 .add(new com.itextpdf.layout.element.Paragraph(header).setFont(font))
@@ -358,13 +359,6 @@ public class SellerDashboardController {
                                                                                         : "N/A")
                                                                         .setFont(finalFont).setFontSize(8)));
 
-                                        table.addCell(new com.itextpdf.layout.element.Cell()
-                                                        .add(new com.itextpdf.layout.element.Paragraph(
-                                                                        order.getBuyerName() != null
-                                                                                        ? order.getBuyerName()
-                                                                                        : "N/A")
-                                                                        .setFont(finalFont).setFontSize(8)));
-
                                         // Safe escrow formatting
                                         String escrowHeldStr = "0 VND";
                                         if (order.getEscrowHeld() != null) {
@@ -375,14 +369,33 @@ public class SellerDashboardController {
                                                         .add(new com.itextpdf.layout.element.Paragraph(escrowHeldStr)
                                                                         .setFont(finalFont).setFontSize(8)));
 
-                                        String escrowReleasedStr = "0 VND";
-                                        if (order.getEscrowReleased() != null) {
-                                                escrowReleasedStr = String.format("%,.0f VND",
-                                                                order.getEscrowReleased().doubleValue());
+                                        // Seller amount - only show if released
+                                        String sellerAmountStr = "-";
+                                        if (order.getIsReleased() != null && order.getIsReleased()
+                                                        && order.getSellerAmount() != null) {
+                                                sellerAmountStr = String.format("%,.0f VND",
+                                                                order.getSellerAmount().doubleValue());
                                         }
                                         table.addCell(new com.itextpdf.layout.element.Cell()
                                                         .add(new com.itextpdf.layout.element.Paragraph(
-                                                                        escrowReleasedStr)
+                                                                        sellerAmountStr)
+                                                                        .setFont(finalFont).setFontSize(8)));
+
+                                        // Commission fee percentage - only show if released
+                                        String commissionPercentStr = "-";
+                                        if (order.getIsReleased() != null && order.getIsReleased()) {
+                                                // Check fee model
+                                                if (order.getFeeModel() != null
+                                                                && order.getFeeModel().name().equals("NO_FEE")) {
+                                                        commissionPercentStr = "0% (Miễn phí)";
+                                                } else if (order.getCommissionRate() != null) {
+                                                        commissionPercentStr = String.format("%.2f%%",
+                                                                        order.getCommissionRate().doubleValue());
+                                                }
+                                        }
+                                        table.addCell(new com.itextpdf.layout.element.Cell()
+                                                        .add(new com.itextpdf.layout.element.Paragraph(
+                                                                        commissionPercentStr)
                                                                         .setFont(finalFont).setFontSize(8)));
 
                                         // Removed "Giữ đến" column

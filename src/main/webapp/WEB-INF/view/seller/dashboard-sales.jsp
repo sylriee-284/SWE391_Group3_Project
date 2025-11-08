@@ -348,11 +348,11 @@
                                                     <th>Ngày</th>
                                                     <th>Sản phẩm</th>
                                                     <th>SL</th>
-                                                    <th>Tổng tiền</th>
+                                                    <th>Tổng tiền ước tính</th>
                                                     <th>Trạng thái</th>
-                                                    <th>Người mua</th>
                                                     <th>Đang giữ ký quỹ</th>
-                                                    <th>Đã giải ngân</th>
+                                                    <th>Đã quyết toán</th>
+                                                    <th>Phí hoa hồng</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -398,22 +398,44 @@
                                                             </c:choose>
                                                         </td>
                                                         <td>
-                                                            <c:choose>
-                                                                <c:when test="${not empty order.buyerName}">
-                                                                    ${order.buyerName}
-                                                                </c:when>
-                                                                <c:otherwise>
-                                                                    <span class="text-muted">N/A</span>
-                                                                </c:otherwise>
-                                                            </c:choose>
-                                                        </td>
-                                                        <td>
                                                             <fmt:formatNumber value="${order.escrowHeld}" type="number"
                                                                 groupingUsed="true" />
                                                         </td>
                                                         <td>
-                                                            <fmt:formatNumber value="${order.escrowReleased}"
-                                                                type="number" groupingUsed="true" />
+                                                            <c:choose>
+                                                                <c:when test="${order.isReleased}">
+                                                                    <fmt:formatNumber value="${order.sellerAmount}"
+                                                                        type="number" groupingUsed="true" />
+                                                                </c:when>
+                                                                <c:otherwise>
+                                                                    <span class="text-muted">-</span>
+                                                                </c:otherwise>
+                                                            </c:choose>
+                                                        </td>
+                                                        <td>
+                                                            <c:choose>
+                                                                <c:when test="${order.isReleased}">
+                                                                    <!-- Check fee model -->
+                                                                    <c:choose>
+                                                                        <c:when test="${order.feeModel == 'NO_FEE'}">
+                                                                            <span class="badge bg-success">0% (Miễn
+                                                                                phí)</span>
+                                                                        </c:when>
+                                                                        <c:otherwise>
+                                                                            <!-- Calculate commission percentage from actual amounts -->
+                                                                            <c:if test="${order.totalAmount > 0}">
+                                                                                <fmt:formatNumber
+                                                                                    value="${order.commissionRate}"
+                                                                                    type="number" maxFractionDigits="2"
+                                                                                    minFractionDigits="2" />%
+                                                                            </c:if>
+                                                                        </c:otherwise>
+                                                                    </c:choose>
+                                                                </c:when>
+                                                                <c:otherwise>
+                                                                    <span class="text-muted">-</span>
+                                                                </c:otherwise>
+                                                            </c:choose>
                                                         </td>
                                                     </tr>
                                                 </c:forEach>

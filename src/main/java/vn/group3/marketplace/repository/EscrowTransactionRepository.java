@@ -67,4 +67,22 @@ public interface EscrowTransactionRepository extends JpaRepository<EscrowTransac
         List<Object[]> findEscrowTimelineByDateRange(@Param("storeId") Long storeId,
                         @Param("startDate") LocalDateTime startDate,
                         @Param("endDate") LocalDateTime endDate);
+
+        // Sum total seller amount (đã quyết toán) for RELEASED orders in date range
+        @Query("SELECT COALESCE(SUM(et.sellerAmount), 0) FROM EscrowTransaction et " +
+                        "WHERE et.order.sellerStore.id = :storeId " +
+                        "AND et.status = 'RELEASED' " +
+                        "AND et.releasedAt BETWEEN :startDate AND :endDate")
+        BigDecimal sumSellerAmountForReleasedOrders(@Param("storeId") Long storeId,
+                        @Param("startDate") LocalDateTime startDate,
+                        @Param("endDate") LocalDateTime endDate);
+
+        // Count RELEASED orders in date range
+        @Query("SELECT COUNT(et) FROM EscrowTransaction et " +
+                        "WHERE et.order.sellerStore.id = :storeId " +
+                        "AND et.status = 'RELEASED' " +
+                        "AND et.releasedAt BETWEEN :startDate AND :endDate")
+        Long countReleasedOrdersInDateRange(@Param("storeId") Long storeId,
+                        @Param("startDate") LocalDateTime startDate,
+                        @Param("endDate") LocalDateTime endDate);
 }

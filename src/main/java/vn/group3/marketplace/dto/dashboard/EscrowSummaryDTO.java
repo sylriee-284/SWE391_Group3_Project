@@ -21,6 +21,9 @@ public class EscrowSummaryDTO {
     private Integer releasedCount;
     private Integer refundedCount;
 
+    // Escrow amount from seller_stores table (current balance in escrow account)
+    private BigDecimal escrowAmount;
+
     // Next release schedule
     private List<ReleaseScheduleDTO> upcomingReleases;
 
