@@ -101,9 +101,9 @@
                                 <div class="card-body">
                                     <form method="get"
                                         action="${pageContext.request.contextPath}/seller/dashboard/sales">
-                                        <div class="row g-3">
+                                        <div class="d-flex flex-wrap align-items-end gap-3">
                                             <!-- Time Filter -->
-                                            <div class="col-md-3">
+                                            <div class="form-group mb-0" style="min-width:200px;">
                                                 <label class="form-label">Thời gian</label>
                                                 <select class="form-select" name="timeFilter" id="timeFilter">
                                                     <option value="today" ${sales.timeFilter=='today' ? 'selected' : ''
@@ -118,25 +118,27 @@
                                             </div>
 
                                             <!-- Custom Date Range -->
-                                            <div class="col-md-3" id="customDateRange" <c:if
-                                                test="${sales.timeFilter == 'custom'}">style="display: block;"</c:if>
-                                                <c:if test="${sales.timeFilter != 'custom'}">style="display: none;"
-                                                </c:if>>
+                                            <div class="form-group mb-0" id="customDateRange" <c:if
+                                                test="${sales.timeFilter == 'custom'}">style="display: block;
+                                                min-width:180px;"</c:if>
+                                                <c:if test="${sales.timeFilter != 'custom'}">style="display: none;
+                                                    min-width:180px;"</c:if>>
                                                 <label class="form-label">Từ ngày</label>
                                                 <input type="date" class="form-control" name="startDate"
                                                     value="${sales.startDate}">
                                             </div>
-                                            <div class="col-md-3" id="customDateRangeEnd" <c:if
-                                                test="${sales.timeFilter == 'custom'}">style="display: block;"</c:if>
-                                                <c:if test="${sales.timeFilter != 'custom'}">style="display: none;"
-                                                </c:if>>
+                                            <div class="form-group mb-0" id="customDateRangeEnd" <c:if
+                                                test="${sales.timeFilter == 'custom'}">style="display: block;
+                                                min-width:180px;"</c:if>
+                                                <c:if test="${sales.timeFilter != 'custom'}">style="display: none;
+                                                    min-width:180px;"</c:if>>
                                                 <label class="form-label">Đến ngày</label>
                                                 <input type="date" class="form-control" name="endDate"
                                                     value="${sales.endDate}">
                                             </div>
 
                                             <!-- Order Status Filter -->
-                                            <div class="col-md-3">
+                                            <div class="form-group mb-0" style="min-width:220px;">
                                                 <label class="form-label">Trạng thái đơn hàng</label>
                                                 <select class="form-select" name="orderStatus">
                                                     <option value="">Tất cả trạng thái</option>
@@ -153,8 +155,8 @@
                                                 </select>
                                             </div>
 
-                                            <!-- Apply Button -->
-                                            <div class="col-md-12">
+                                            <!-- Action buttons aligned to the right -->
+                                            <div class="ms-auto d-flex gap-2">
                                                 <button type="submit" class="btn btn-primary">
                                                     <i class="fas fa-search"></i> Áp dụng
                                                 </button>
@@ -163,7 +165,7 @@
                                                     <i class="fas fa-redo"></i> Đặt lại
                                                 </a>
                                                 <a href="${pageContext.request.contextPath}/seller/dashboard/sales/export?timeFilter=${sales.timeFilter}&startDate=${sales.startDate}&endDate=${sales.endDate}&orderStatus=${sales.orderStatus}"
-                                                    class="btn btn-danger float-end">
+                                                    class="btn btn-danger">
                                                     <i class="fas fa-file-pdf"></i> Xuất PDF
                                                 </a>
                                             </div>

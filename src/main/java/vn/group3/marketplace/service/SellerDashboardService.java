@@ -105,7 +105,6 @@ public class SellerDashboardService {
                                 .startDate(startDate)
                                 .endDate(endDate)
                                 .productId(productId)
-                                .categoryId(categoryId)
                                 .build();
 
                 // KPI Cards
@@ -152,11 +151,15 @@ public class SellerDashboardService {
                 LocalDateTime[] dateRange = parseDateRange(timeFilter, startDate, endDate);
                 LocalDateTime start = dateRange[0];
                 LocalDateTime end = dateRange[1];
-
-                // Fix: Check for empty string as well as null
-                OrderStatus status = (orderStatus != null && !orderStatus.isEmpty())
-                                ? OrderStatus.valueOf(orderStatus)
-                                : null;
+                // Convert orderStatus string to OrderStatus enum
+                OrderStatus status = null;
+                if (orderStatus != null && !orderStatus.isEmpty()) {
+                        try {
+                                status = OrderStatus.valueOf(orderStatus);
+                        } catch (IllegalArgumentException e) {
+                                log.warn("Invalid order status: {}", orderStatus);
+                        }
+                }
                 Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
                 // Get orders
@@ -166,7 +169,7 @@ public class SellerDashboardService {
                 // Convert to DTOs
                 Page<OrderSummaryDTO> orderDTOs = orders.map(this::convertToOrderSummaryDTO);
 
-                // Build DTO
+                // Build DTO (omit orderStatus since filter removed)
                 return SalesAnalyticsDTO.builder()
                                 .orders(orderDTOs)
                                 .escrowSummary(getEscrowSummary(store.getId(), start, end))
@@ -175,7 +178,6 @@ public class SellerDashboardService {
                                 .timeFilter(timeFilter != null ? timeFilter : "30days")
                                 .startDate(startDate)
                                 .endDate(endDate)
-                                .orderStatus(orderStatus)
                                 .productId(productId)
                                 .build();
         }
@@ -345,15 +347,28 @@ public class SellerDashboardService {
                 List<Object[]> data = orderRepository.findRevenueByDateRange(storeId, OrderStatus.COMPLETED, start,
                                 end);
 
+                // Create a map of date -> revenue from actual data
+                Map<LocalDate, BigDecimal> revenueMap = new HashMap<>();
+                for (Object[] row : data) {
+                        LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+                        BigDecimal revenue = (BigDecimal) row[1];
+                        revenueMap.put(date, revenue);
+                }
+
+                // Fill all dates in the range with 0 for missing dates
                 List<String> labels = new ArrayList<>();
                 List<Object> values = new ArrayList<>();
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM");
 
-                for (Object[] row : data) {
-                        LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
-                        BigDecimal revenue = (BigDecimal) row[1];
-                        labels.add(date.format(formatter));
+                LocalDate currentDate = start.toLocalDate();
+                LocalDate endDate = end.toLocalDate();
+
+                while (!currentDate.isAfter(endDate)) {
+                        labels.add(currentDate.format(formatter));
+                        // Use actual revenue if exists, otherwise 0
+                        BigDecimal revenue = revenueMap.getOrDefault(currentDate, BigDecimal.ZERO);
                         values.add(revenue);
+                        currentDate = currentDate.plusDays(1);
                 }
 
                 DatasetDTO dataset = DatasetDTO.builder()
