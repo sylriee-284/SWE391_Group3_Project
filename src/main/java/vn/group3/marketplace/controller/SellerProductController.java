@@ -176,9 +176,6 @@ public class SellerProductController {
     }
 
     // Lưu nhiều file (theo thứ tự số) vào thư mục static images/products
-    // Nếu productId != null: sẽ sử dụng tên file dựa trên productId (ví dụ:
-    // {productId}.png)
-    // Nếu productId == null: sẽ tạo tên file theo số thứ tự tiếp theo
     private List<String> saveMultipleImagesToStatic(Long productId, MultipartFile[] files) throws Exception {
         if (files == null || files.length == 0) {
             return Collections.emptyList();
@@ -420,22 +417,24 @@ public class SellerProductController {
             return "seller/product-form";
         }
 
-        // Tạo sản phẩm trước để có ID
-        Product createdProduct = productService.create(form);
+        // // Tạo sản phẩm trước để có ID
+        // Product createdProduct = productService.create(form);
 
-        // Sau đó upload ảnh với tên file dựa trên productId
-        try {
-            List<String> saved = saveMultipleImagesToStatic(createdProduct.getId(), imageFiles);
-            if (!saved.isEmpty()) {
-                // Cập nhật lại product với URL ảnh
-                createdProduct.setProductUrl(saved.get(0));
-                productService.update(createdProduct, sid);
-            }
-        } catch (Exception e) {
-            // Nếu upload ảnh thất bại, sản phẩm vẫn được tạo nhưng không có ảnh
-            ra.addFlashAttribute("warningMessage", "Sản phẩm đã được tạo nhưng upload ảnh thất bại: " + e.getMessage());
-            return "redirect:/seller/products";
-        }
+        // // Sau đó upload ảnh với tên file dựa trên productId
+        // try {
+        // List<String> saved = saveMultipleImagesToStatic(createdProduct.getId(),
+        // imageFiles);
+        // if (!saved.isEmpty()) {
+        // // Cập nhật lại product với URL ảnh
+        // createdProduct.setProductUrl(saved.get(0));
+        // productService.update(createdProduct, sid);
+        // }
+        // } catch (Exception e) {
+        // // Nếu upload ảnh thất bại, sản phẩm vẫn được tạo nhưng không có ảnh
+        // ra.addFlashAttribute("warningMessage", "Sản phẩm đã được tạo nhưng upload ảnh
+        // thất bại: " + e.getMessage());
+        // return "redirect:/seller/products";
+        // }
 
         ra.addFlashAttribute("successMessage", "Thêm sản phẩm mới thành công!");
         return "redirect:/seller/products";
