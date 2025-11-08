@@ -98,7 +98,8 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
                         Pageable pageable);
 
         /**
-         * Tìm giao dịch với các bộ lọc (trạng thái và khoảng thời gian)
+         * Tìm giao dịch với các bộ lọc (trạng thái và khoảng thời gian) - không có
+         * keyword
          */
         @Query("SELECT w FROM WalletTransaction w JOIN FETCH w.user WHERE w.type = :type " +
                         "AND (:status IS NULL OR w.paymentStatus = :status) " +
@@ -110,6 +111,35 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
                         @Param("status") WalletTransactionStatus status,
                         @Param("fromDate") String fromDate,
                         @Param("toDate") String toDate,
+                        Pageable pageable);
+
+        /**
+         * Tìm giao dịch với các bộ lọc (trạng thái, khoảng thời gian và keyword)
+         */
+        @Query("SELECT w FROM WalletTransaction w JOIN FETCH w.user WHERE w.type = :type " +
+                        "AND (:status IS NULL OR w.paymentStatus = :status) " +
+                        "AND (:fromDate IS NULL OR DATE(w.createdAt) >= DATE(CAST(:fromDate AS date))) " +
+                        "AND (:toDate IS NULL OR DATE(w.createdAt) <= DATE(CAST(:toDate AS date))) " +
+                        "AND (:keyword IS NULL OR :keyword = '' OR LOWER(w.paymentRef) LIKE LOWER(CONCAT('%', :keyword, '%'))) "
+                        +
+                        "ORDER BY w.id DESC")
+        Page<WalletTransaction> findWithdrawalsByFilters(
+                        @Param("type") WalletTransactionType type,
+                        @Param("status") WalletTransactionStatus status,
+                        @Param("fromDate") String fromDate,
+                        @Param("toDate") String toDate,
+                        @Param("keyword") String keyword,
+                        Pageable pageable);
+
+        /**
+         * Tìm giao dịch chỉ bằng keyword (bỏ qua trạng thái và ngày tháng)
+         */
+        @Query("SELECT w FROM WalletTransaction w JOIN FETCH w.user WHERE w.type = :type " +
+                        "AND LOWER(w.paymentRef) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                        "ORDER BY w.id DESC")
+        Page<WalletTransaction> findWithdrawalsByKeyword(
+                        @Param("type") WalletTransactionType type,
+                        @Param("keyword") String keyword,
                         Pageable pageable);
 
         // Admin dashboard analytics queries

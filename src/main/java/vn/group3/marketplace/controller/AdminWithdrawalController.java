@@ -39,13 +39,18 @@ public class AdminWithdrawalController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate,
+            @RequestParam(required = false) String keyword,
             Model model) {
 
         Page<WalletTransaction> withdrawals;
         String selectedStatus = "";
 
         // Get withdrawals with filters
-        if ((status != null && !status.trim().isEmpty()) ||
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            // When searching by keyword, only use keyword (ignore status and date filters)
+            withdrawals = withdrawalRequestService.getWithdrawalRequestsWithFilters(
+                    null, null, null, keyword, page, size);
+        } else if ((status != null && !status.trim().isEmpty()) ||
                 (fromDate != null && !fromDate.trim().isEmpty()) ||
                 (toDate != null && !toDate.trim().isEmpty())) {
 
@@ -60,7 +65,7 @@ public class AdminWithdrawalController {
             }
 
             withdrawals = withdrawalRequestService.getWithdrawalRequestsWithFilters(
-                    statusEnum, fromDate, toDate, page, size);
+                    statusEnum, fromDate, toDate, null, page, size);
         } else {
             withdrawals = withdrawalRequestService.getAllWithdrawalRequests(page, size);
         }

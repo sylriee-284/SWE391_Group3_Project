@@ -325,7 +325,7 @@ public class SellerController {
                 // For PENDING stores, use original payment ref
                 paymentRef = "createdShop" + storeId;
             }
-            
+
             walletTransactionQueueService.enqueuePurchasePayment(
                     currentUser.getId(),
                     store.getDepositAmount(),
@@ -379,7 +379,8 @@ public class SellerController {
 
             // Verify store is PENDING or INACTIVE (allow editing for both statuses)
             if (store.getStatus() != StoreStatus.PENDING && store.getStatus() != StoreStatus.INACTIVE) {
-                redirectAttributes.addFlashAttribute("error", "Chỉ có thể chỉnh sửa cửa hàng đang chờ kích hoạt hoặc đã đóng");
+                redirectAttributes.addFlashAttribute("error",
+                        "Chỉ có thể chỉnh sửa cửa hàng đang chờ kích hoạt hoặc đã đóng");
                 return "redirect:/seller/register";
             }
 
@@ -528,16 +529,20 @@ public class SellerController {
             model.addAttribute("store", activeStore);
             model.addAttribute("pageTitle", "Thông tin Seller");
 
-            // Add fee settings from SystemSetting (percentage fee and fixed fee for small orders)
+            // Add fee settings from SystemSetting (percentage fee and fixed fee for small
+            // orders)
             Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
             Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
             model.addAttribute("percentageFee", percentageFee);
             model.addAttribute("fixedFee", fixedFee);
 
             // Add refund rate settings from SystemSetting
-            Integer maxRefundRateMinDuration = systemSettingService.getIntValue("store.max_refund_rate_min_duration_months", 12);
-            Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate", 100.0);
-            Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate", 70.0);
+            Integer maxRefundRateMinDuration = systemSettingService
+                    .getIntValue("store.max_refund_rate_min_duration_months", 12);
+            Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate",
+                    100.0);
+            Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate",
+                    70.0);
             Double noFeeRefundRate = systemSettingService.getDoubleValue("store.no_fee_refund_rate", 50.0);
 
             model.addAttribute("maxRefundRateMinDuration", maxRefundRateMinDuration);
@@ -587,8 +592,8 @@ public class SellerController {
      */
     @PostMapping("/profile/update")
     public String updateSellerProfile(
-            @RequestParam String fullName,
-            @RequestParam(required = false) String phone,
+            @RequestParam String storeName,
+            @RequestParam(required = false) String description,
             RedirectAttributes redirectAttributes) {
 
         try {
@@ -596,16 +601,21 @@ public class SellerController {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             User currentUser = userService.getFreshUserByUsername(auth.getName());
 
-            // Update user information
-            currentUser.setFullName(fullName);
-            if (phone != null && !phone.trim().isEmpty()) {
-                currentUser.setPhone(phone.trim());
+            // Get the seller's store
+            SellerStore store = currentUser.getSellerStore();
+            if (store == null) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy cửa hàng của bạn.");
+                return "redirect:/seller/profile";
             }
 
-            // Save updated user
-            userService.updateUser(currentUser);
+            // Update store information
+            store.setStoreName(storeName);
+            store.setDescription(description);
 
-            redirectAttributes.addFlashAttribute("successMessage", "Cập nhật thông tin thành công!");
+            // Save updated store
+            sellerStoreRepository.save(store);
+
+            redirectAttributes.addFlashAttribute("successMessage", "Cập nhật thông tin cửa hàng thành công!");
             return "redirect:/seller/profile";
 
         } catch (Exception e) {
