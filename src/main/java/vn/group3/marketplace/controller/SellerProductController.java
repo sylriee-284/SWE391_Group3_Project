@@ -176,6 +176,9 @@ public class SellerProductController {
     }
 
     // Lưu nhiều file (theo thứ tự số) vào thư mục static images/products
+    // Nếu productId != null: sẽ sử dụng tên file dựa trên productId (ví dụ:
+    // {productId}.png)
+    // Nếu productId == null: sẽ tạo tên file theo số thứ tự tiếp theo
     private List<String> saveMultipleImagesToStatic(Long productId, MultipartFile[] files) throws Exception {
         if (files == null || files.length == 0) {
             return Collections.emptyList();
@@ -197,19 +200,24 @@ public class SellerProductController {
         // Target directory inside project static resources
         Path staticProductsDir = Paths.get("src/main/resources/static/images/products");
 
-        // Tìm số thứ tự tiếp theo
-        int nextNumber = getNextImageNumber(staticProductsDir);
+        // Tìm số thứ tự tiếp theo (chỉ dùng khi productId == null)
+        int nextNumber = (productId == null) ? getNextImageNumber(staticProductsDir) : 0;
 
         List<String> saved = new ArrayList<>();
         for (MultipartFile f : files) {
             if (f == null || f.isEmpty() || f.getSize() == 0)
                 continue;
 
-            String filenameBase = String.valueOf(nextNumber);
+            // Nếu đang update sản phẩm (có productId), dùng productId làm tên file
+            // Nếu đang tạo mới (không có productId), dùng số thứ tự tiếp theo
+            String filenameBase = (productId != null) ? String.valueOf(productId) : String.valueOf(nextNumber);
             String url = saveSingleImageToStatic(f, staticProductsDir, filenameBase);
             if (url != null) {
                 saved.add(url);
-                nextNumber++; // Tăng số thứ tự cho file tiếp theo
+                // Chỉ tăng số thứ tự khi đang tạo mới (không có productId)
+                if (productId == null) {
+                    nextNumber++;
+                }
             }
         }
 
@@ -381,17 +389,6 @@ public class SellerProductController {
         store.setId(sid);
         form.setSellerStore(store);
 
-        // Upload ảnh (nếu có) — nhiều file theo thứ tự
-        try {
-            List<String> saved = saveMultipleImagesToStatic(null, imageFiles);
-            if (!saved.isEmpty()) {
-                // set first image as productUrl
-                form.setProductUrl(saved.get(0));
-            }
-        } catch (Exception e) {
-            binding.rejectValue("productUrl", "image.invalid", e.getMessage());
-        }
-
         // Kiểm tra giá > 0
         if (form.getPrice() == null || form.getPrice().compareTo(BigDecimal.valueOf(0.01)) < 0) {
             binding.rejectValue("price", "price.min", "Giá phải lớn hơn 0.");
@@ -423,7 +420,23 @@ public class SellerProductController {
             return "seller/product-form";
         }
 
-        productService.create(form);
+        // Tạo sản phẩm trước để có ID
+        Product createdProduct = productService.create(form);
+
+        // Sau đó upload ảnh với tên file dựa trên productId
+        try {
+            List<String> saved = saveMultipleImagesToStatic(createdProduct.getId(), imageFiles);
+            if (!saved.isEmpty()) {
+                // Cập nhật lại product với URL ảnh
+                createdProduct.setProductUrl(saved.get(0));
+                productService.update(createdProduct, sid);
+            }
+        } catch (Exception e) {
+            // Nếu upload ảnh thất bại, sản phẩm vẫn được tạo nhưng không có ảnh
+            ra.addFlashAttribute("warningMessage", "Sản phẩm đã được tạo nhưng upload ảnh thất bại: " + e.getMessage());
+            return "redirect:/seller/products";
+        }
+
         ra.addFlashAttribute("successMessage", "Thêm sản phẩm mới thành công!");
         return "redirect:/seller/products";
     }
@@ -488,6 +501,20 @@ public class SellerProductController {
 
         Product existed = productService.getOwned(id, sid);
 
+        // Lấy giá niêm yết tối đa của cửa hàng
+        BigDecimal maxPrice = getStoreMaxPrice(sid);
+
+        // Kiểm tra giá > 0
+        if (form.getPrice() == null || form.getPrice().compareTo(BigDecimal.valueOf(0.01)) < 0) {
+            binding.rejectValue("price", "price.min", "Giá phải lớn hơn 0.");
+        }
+
+        // Kiểm tra trần giá theo store (nếu có)
+        if (maxPrice != null && form.getPrice() != null && form.getPrice().compareTo(maxPrice) > 0) {
+            binding.rejectValue("price", "price.max",
+                    "Giá vượt mức tối đa cho phép của cửa hàng. Giá niêm yết tối đa là: " + maxPrice + " ₫");
+        }
+
         // Ảnh: nếu upload mới thì XÓA ảnh cũ và lưu ảnh mới; nếu không, giữ ảnh cũ
         try {
             List<String> saved = saveMultipleImagesToStatic(id, imageFiles);
@@ -503,17 +530,6 @@ public class SellerProductController {
             }
         } catch (Exception e) {
             binding.rejectValue("productUrl", "image.invalid", e.getMessage());
-        }
-
-        // Kiểm tra giá > 0
-        if (form.getPrice() == null || form.getPrice().compareTo(BigDecimal.valueOf(0.01)) < 0) {
-            binding.rejectValue("price", "price.min", "Giá phải lớn hơn 0.");
-        }
-
-        // Kiểm tra trần giá theo store (nếu có)
-        BigDecimal maxPrice = getStoreMaxPrice(sid);
-        if (maxPrice != null && form.getPrice() != null && form.getPrice().compareTo(maxPrice) > 0) {
-            binding.rejectValue("price", "price.max", "Giá vượt mức tối đa cho phép của cửa hàng.");
         }
 
         if (binding.hasErrors()) {
@@ -764,13 +780,13 @@ public class SellerProductController {
                 deleteOldImageFile(existing.getProductUrl());
             }
 
-            // Save new image
+            // Save new image with same base filename as productId
             Path staticProductsDir = Paths.get("src/main/resources/static/images/products");
             Files.createDirectories(staticProductsDir);
 
-            String extension = contentType.equals("image/png") ? "png" : "jpg";
-            String filename = id + "." + extension;
-            String imageUrl = saveSingleImageToStatic(imageFile, staticProductsDir, filename);
+            // Use productId as base filename (without extension)
+            String filenameBase = String.valueOf(id);
+            String imageUrl = saveSingleImageToStatic(imageFile, staticProductsDir, filenameBase);
 
             // Update product
             existing.setProductUrl(imageUrl);
