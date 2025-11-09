@@ -156,11 +156,13 @@ public class SellerDashboardController {
                                         .orders(Page.empty())
                                         .escrowSummary(EscrowSummaryDTO.builder()
                                                         .totalHeld(BigDecimal.ZERO)
+                                                        .totalHeldAfterFee(BigDecimal.ZERO)
                                                         .totalReleased(BigDecimal.ZERO)
                                                         .totalRefunded(BigDecimal.ZERO)
                                                         .heldCount(0)
                                                         .releasedCount(0)
                                                         .refundedCount(0)
+                                                        .escrowAmount(BigDecimal.ZERO)
                                                         .upcomingReleases(List.of())
                                                         .build())
                                         .revenueByStatusChart(ChartDataDTO.builder()
@@ -295,13 +297,15 @@ public class SellerDashboardController {
                         document.add(date);
 
                         // Create table (removed "Giữ đến" column - now 9 columns instead of 10)
-                        float[] columnWidths = { 1.5f, 2f, 3f, 1f, 2f, 1.5f, 2f, 2f, 2f };
+                        // Updated column widths: 8 columns now (removed "Đang giữ ký quỹ")
+                        float[] columnWidths = { 1.5f, 2f, 3f, 1f, 2f, 2f, 2f, 1.5f };
                         com.itextpdf.layout.element.Table table = new com.itextpdf.layout.element.Table(columnWidths);
                         table.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
 
-                        // Add headers (removed "Giữ đến")
-                        String[] headers = { "Mã đơn", "Ngày", "Sản phẩm", "SL", "Tổng tiền", "Trạng thái", "Người mua",
-                                        "Đang giữ ký quỹ", "Đã giải ngân" };
+                        // Add headers in new order: Mã đơn, Ngày, Sản phẩm, SL, Tổng tiền, Phí hoa
+                        // hồng, Số tiền nhận được, Trạng thái
+                        String[] headers = { "Mã đơn", "Ngày", "Sản phẩm", "SL", "Tổng tiền", "Phí hoa hồng",
+                                        "Số tiền nhận được", "Trạng thái" };
                         for (String header : headers) {
                                 com.itextpdf.layout.element.Cell cell = new com.itextpdf.layout.element.Cell()
                                                 .add(new com.itextpdf.layout.element.Paragraph(header).setFont(font))
@@ -317,30 +321,37 @@ public class SellerDashboardController {
                         final com.itextpdf.kernel.font.PdfFont finalFont = font;
                         salesData.getOrders().getContent().forEach(order -> {
                                 try {
+                                        // 1. Mã đơn
                                         table.addCell(new com.itextpdf.layout.element.Cell()
                                                         .add(new com.itextpdf.layout.element.Paragraph(
                                                                         order.getOrderCode() != null
                                                                                         ? order.getOrderCode()
                                                                                         : "N/A")
                                                                         .setFont(finalFont).setFontSize(8)));
+
+                                        // 2. Ngày
                                         table.addCell(new com.itextpdf.layout.element.Cell()
                                                         .add(new com.itextpdf.layout.element.Paragraph(
                                                                         order.getOrderDate() != null ? order
                                                                                         .getOrderDate().toString()
                                                                                         .substring(0, 10) : "")
                                                                         .setFont(finalFont).setFontSize(8)));
+
+                                        // 3. Sản phẩm
                                         table.addCell(new com.itextpdf.layout.element.Cell()
                                                         .add(new com.itextpdf.layout.element.Paragraph(
                                                                         order.getProductName() != null
                                                                                         ? order.getProductName()
                                                                                         : "N/A")
                                                                         .setFont(finalFont).setFontSize(8)));
+
+                                        // 4. SL
                                         table.addCell(new com.itextpdf.layout.element.Cell()
                                                         .add(new com.itextpdf.layout.element.Paragraph(
                                                                         String.valueOf(order.getQuantity()))
                                                                         .setFont(finalFont).setFontSize(8)));
 
-                                        // Safe BigDecimal formatting
+                                        // 5. Tổng tiền đơn hàng
                                         String totalAmountStr = "0 VND";
                                         if (order.getTotalAmount() != null) {
                                                 totalAmountStr = String.format("%,.0f VND",
@@ -350,7 +361,34 @@ public class SellerDashboardController {
                                                         .add(new com.itextpdf.layout.element.Paragraph(totalAmountStr)
                                                                         .setFont(finalFont).setFontSize(8)));
 
-                                        // Use statusText (Vietnamese) instead of status.name() (English)
+                                        // 6. Phí hoa hồng - Display for all orders with commission data
+                                        String commissionAmountStr = "-";
+                                        if (order.getFeeModel() != null
+                                                        && order.getFeeModel().name().equals("NO_FEE")) {
+                                                commissionAmountStr = "0 VND (Miễn phí)";
+                                        } else if (order.getCommissionAmount() != null
+                                                        && order.getCommissionAmount().compareTo(BigDecimal.ZERO) > 0) {
+                                                commissionAmountStr = String.format("%,.0f VND",
+                                                                order.getCommissionAmount().doubleValue());
+                                        }
+                                        table.addCell(new com.itextpdf.layout.element.Cell()
+                                                        .add(new com.itextpdf.layout.element.Paragraph(
+                                                                        commissionAmountStr)
+                                                                        .setFont(finalFont).setFontSize(8)));
+
+                                        // 7. Số tiền nhận được - Display for all orders with seller amount data
+                                        String sellerAmountStr = "-";
+                                        if (order.getSellerAmount() != null
+                                                        && order.getSellerAmount().compareTo(BigDecimal.ZERO) > 0) {
+                                                sellerAmountStr = String.format("%,.0f VND",
+                                                                order.getSellerAmount().doubleValue());
+                                        }
+                                        table.addCell(new com.itextpdf.layout.element.Cell()
+                                                        .add(new com.itextpdf.layout.element.Paragraph(
+                                                                        sellerAmountStr)
+                                                                        .setFont(finalFont).setFontSize(8)));
+
+                                        // 8. Trạng thái
                                         table.addCell(new com.itextpdf.layout.element.Cell()
                                                         .add(new com.itextpdf.layout.element.Paragraph(
                                                                         order.getStatusText() != null
@@ -358,40 +396,12 @@ public class SellerDashboardController {
                                                                                         : "N/A")
                                                                         .setFont(finalFont).setFontSize(8)));
 
-                                        table.addCell(new com.itextpdf.layout.element.Cell()
-                                                        .add(new com.itextpdf.layout.element.Paragraph(
-                                                                        order.getBuyerName() != null
-                                                                                        ? order.getBuyerName()
-                                                                                        : "N/A")
-                                                                        .setFont(finalFont).setFontSize(8)));
-
-                                        // Safe escrow formatting
-                                        String escrowHeldStr = "0 VND";
-                                        if (order.getEscrowHeld() != null) {
-                                                escrowHeldStr = String.format("%,.0f VND",
-                                                                order.getEscrowHeld().doubleValue());
-                                        }
-                                        table.addCell(new com.itextpdf.layout.element.Cell()
-                                                        .add(new com.itextpdf.layout.element.Paragraph(escrowHeldStr)
-                                                                        .setFont(finalFont).setFontSize(8)));
-
-                                        String escrowReleasedStr = "0 VND";
-                                        if (order.getEscrowReleased() != null) {
-                                                escrowReleasedStr = String.format("%,.0f VND",
-                                                                order.getEscrowReleased().doubleValue());
-                                        }
-                                        table.addCell(new com.itextpdf.layout.element.Cell()
-                                                        .add(new com.itextpdf.layout.element.Paragraph(
-                                                                        escrowReleasedStr)
-                                                                        .setFont(finalFont).setFontSize(8)));
-
-                                        // Removed "Giữ đến" column
                                 } catch (Exception e) {
                                         log.error("Error adding order row to PDF: orderId={}, error={}",
                                                         order.getOrderId(),
                                                         e.getMessage());
-                                        // Add empty cells to maintain table structure (9 columns now)
-                                        for (int i = 0; i < 9; i++) {
+                                        // Add empty cells to maintain table structure (8 columns now)
+                                        for (int i = 0; i < 8; i++) {
                                                 table.addCell(new com.itextpdf.layout.element.Cell()
                                                                 .add(new com.itextpdf.layout.element.Paragraph("ERROR")
                                                                                 .setFont(finalFont).setFontSize(8)));

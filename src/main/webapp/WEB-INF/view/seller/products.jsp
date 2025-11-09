@@ -458,8 +458,10 @@
 
                                         <div class="row mb-2">
                                             <div class="col-12">
-                                                <img id="d-img" src="" alt="image"
-                                                    style="max-height:160px;border-radius:10px;border:1px solid #eee;display:none">
+                                                <div class="product-detail-image-container">
+                                                    <img id="d-img" src="" alt="Product Image"
+                                                        class="product-detail-image" style="display:none">
+                                                </div>
                                             </div>
                                         </div>
 
@@ -537,6 +539,16 @@
                                                 <label class="product-form-label">Giá</label>
                                                 <input type="number" class="product-form-control form-control"
                                                     id="e-price" name="price" step="10000" min="0" required>
+                                                <c:if test="${not empty storeMaxListingPrice}">
+                                                    <div class="product-form-text text-info mt-1">
+                                                        <i class="fas fa-info-circle"></i> Giá niêm yết tối đa của cửa
+                                                        hàng bạn là:
+                                                        <strong>
+                                                            <fmt:formatNumber value="${storeMaxListingPrice}"
+                                                                pattern="#,##0" /> ₫
+                                                        </strong>
+                                                    </div>
+                                                </c:if>
                                             </div>
 
                                             <div class="product-form-group">
@@ -614,9 +626,17 @@
                                 document.getElementById('d-status').textContent = get('status');
 
                                 const imgEl = document.getElementById('d-img');
+                                const imgContainer = imgEl?.parentElement;
                                 const img = get('img');
-                                if (img) { imgEl.src = img; imgEl.style.display = 'block'; }
-                                else { imgEl.style.display = 'none'; imgEl.src = ''; }
+                                if (img) {
+                                    imgEl.src = img;
+                                    imgEl.style.display = 'block';
+                                    if (imgContainer) imgContainer.style.display = 'flex';
+                                } else {
+                                    imgEl.style.display = 'none';
+                                    imgEl.src = '';
+                                    if (imgContainer) imgContainer.style.display = 'none';
+                                }
                             });
 
                             // Function to load subcategories
@@ -708,7 +728,7 @@
                                 const img = get('img');
                                 const imgWrap = document.getElementById('e-currentImage');
                                 if (img && imgWrap) {
-                                    imgWrap.innerHTML = '<img src="' + img + '" alt="img" style="max-height:80px;border-radius:6px;border:1px solid #eee" id="e-preview-img">';
+                                    imgWrap.innerHTML = '<div class="edit-image-preview-container"><img src="' + img + '" alt="Preview" class="edit-image-preview" id="e-preview-img"></div>';
                                 } else if (imgWrap) { imgWrap.innerHTML = ''; }
 
                                 // Reset file input
@@ -755,8 +775,8 @@
                                         reader.onload = function (event) {
                                             const imgWrap = document.getElementById('e-currentImage');
                                             if (imgWrap) {
-                                                imgWrap.innerHTML = '<div class="mb-2"><small class="text-muted">Ảnh mới (chưa lưu):</small></div>' +
-                                                    '<img src="' + event.target.result + '" alt="preview" style="max-height:80px;border-radius:6px;border:1px solid #eee" id="e-preview-img">';
+                                                imgWrap.innerHTML = '<div class="mb-2"><small class="text-success fw-bold">✓ Ảnh mới (chưa lưu):</small></div>' +
+                                                    '<div class="edit-image-preview-container"><img src="' + event.target.result + '" alt="Preview" class="edit-image-preview" id="e-preview-img"></div>';
                                             }
                                         };
                                         reader.readAsDataURL(file);
@@ -878,8 +898,45 @@
                             }
                             function iso(d) { return d ? new Date(d + 'T00:00:00') : null; }
 
+                            function vDateRange() {
+                                if (!fromIn || !toIn) return true;
+                                const from = iso(fromIn.value);
+                                const to = iso(toIn.value);
+                                if (from && to && to < from) {
+                                    toIn.setCustomValidity('end-before-start');
+                                    return false;
+                                }
+                                fromIn.setCustomValidity('');
+                                toIn.setCustomValidity('');
+                                return true;
+                            }
 
+                            function vPriceRange() {
+                                const minEl = form.querySelector('[name="minPrice"]');
+                                const maxEl = form.querySelector('[name="maxPrice"]');
+                                if (!minEl || !maxEl) return true;
 
+                                const hasMin = minEl.value.trim() !== '';
+                                const hasMax = maxEl.value.trim() !== '';
+                                const minVal = hasMin ? minEl.valueAsNumber : null;
+                                const maxVal = hasMax ? maxEl.valueAsNumber : null;
+
+                                if (hasMin && Number.isNaN(minVal)) {
+                                    minEl.setCustomValidity('invalid');
+                                    return false;
+                                }
+                                if (hasMax && Number.isNaN(maxVal)) {
+                                    maxEl.setCustomValidity('invalid');
+                                    return false;
+                                }
+                                if (hasMin && hasMax && maxVal < minVal) {
+                                    maxEl.setCustomValidity('end-before-start');
+                                    return false;
+                                }
+                                minEl.setCustomValidity('');
+                                maxEl.setCustomValidity('');
+                                return true;
+                            }
 
                             function vIdRange() {
                                 const fromEl = form.querySelector('[name="idFrom"]');
