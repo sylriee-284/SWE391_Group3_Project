@@ -677,9 +677,33 @@ public class SellerProductController {
             if (slug != null)
                 existing.setSlug(slug);
             if (priceObj != null) {
+                // Try to coerce common formatted input into a clean numeric string.
+                // Users may paste values with grouping (commas/dots) or currency symbols.
+                String raw = String.valueOf(priceObj).trim();
+                // Keep digits, dot, comma and minus for initial normalization
+                String cleaned = raw.replaceAll("[^0-9,\\.\\-]", "");
+                // Remove common thousand separators (commas)
+                cleaned = cleaned.replaceAll(",", "");
+                // If there are multiple dots (e.g. 1.000.000) assume dots are thousand
+                // separators and remove them. If there's only one dot it may be a
+                // decimal separator and should be kept.
+                int dotCount = cleaned.length() - cleaned.replace(".", "").length();
+                if (dotCount > 1) {
+                    cleaned = cleaned.replaceAll("\\.", "");
+                }
+
+                if (cleaned.isEmpty() || cleaned.equals("-") || cleaned.equals(".")) {
+                    out.put("ok", false);
+                    out.put("message", "Giá không hợp lệ");
+                    return out;
+                }
+
                 try {
-                    existing.setPrice(new java.math.BigDecimal(String.valueOf(priceObj)));
-                } catch (Exception ignored) {
+                    existing.setPrice(new java.math.BigDecimal(cleaned));
+                } catch (Exception pe) {
+                    out.put("ok", false);
+                    out.put("message", "Giá không hợp lệ");
+                    return out;
                 }
             }
             if (stockObj != null) {
