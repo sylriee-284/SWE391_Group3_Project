@@ -417,27 +417,49 @@ public class SellerProductController {
             return "seller/product-form";
         }
 
-        // // Tạo sản phẩm trước để có ID
-        // Product createdProduct = productService.create(form);
+        // Tạo sản phẩm trước để có ID (ProductService.create() sẽ validate và save)
+        Product createdProduct = null;
+        try {
+            createdProduct = productService.create(form);
+        } catch (IllegalArgumentException ex) {
+            // Nếu service ném IllegalArgumentException (ví dụ: slug trùng, giá vượt trần)
+            binding.reject("create.error", ex.getMessage());
+            model.addAttribute("storeId", sid);
+            model.addAttribute("storeMaxListingPrice", maxPrice);
+            model.addAttribute("formMode", "CREATE");
+            model.addAttribute("parentCategories", top4Parents());
 
-        // // Sau đó upload ảnh với tên file dựa trên productId
-        // try {
-        // List<String> saved = saveMultipleImagesToStatic(createdProduct.getId(),
-        // imageFiles);
-        // if (!saved.isEmpty()) {
-        // // Cập nhật lại product với URL ảnh
-        // createdProduct.setProductUrl(saved.get(0));
-        // productService.update(createdProduct, sid);
-        // }
-        // } catch (Exception e) {
-        // // Nếu upload ảnh thất bại, sản phẩm vẫn được tạo nhưng không có ảnh
-        // ra.addFlashAttribute("warningMessage", "Sản phẩm đã được tạo nhưng upload ảnh
-        // thất bại: " + e.getMessage());
-        // return "redirect:/seller/products";
-        // }
+            List<Category> subCats = Collections.emptyList();
+            if (form.getCategory() != null && form.getCategory().getId() != null) {
+                Category current = categoryRepo.findById(form.getCategory().getId()).orElse(null);
+                if (current != null && current.getParent() != null) {
+                    subCats = categoryRepo.findByParentAndIsDeletedFalse(current.getParent());
+                    model.addAttribute("selectedParentId", current.getParent().getId());
+                    model.addAttribute("selectedChildId", current.getId());
+                }
+            }
+            model.addAttribute("subCategories", subCats);
+            return "seller/product-form";
+        }
+
+        // Sau khi đã có productId, thử lưu ảnh (nếu upload)
+        try {
+            List<String> saved = saveMultipleImagesToStatic(createdProduct.getId(), imageFiles);
+            if (!saved.isEmpty()) {
+                // Cập nhật lại product với URL ảnh (lưu ảnh đầu tiên làm ảnh đại diện)
+                createdProduct.setProductUrl(saved.get(0));
+                productService.update(createdProduct, sid);
+            }
+        } catch (Exception e) {
+            // Nếu upload ảnh thất bại, sản phẩm vẫn được tạo nhưng không có ảnh; hiển thị
+            // cảnh báo
+            ra.addFlashAttribute("warningMessage", "Sản phẩm đã được tạo nhưng upload ảnh thất bại: " + e.getMessage());
+            // Vẫn tiếp tục redirect về danh sách
+            return "redirect:/seller/products";
+        }
 
         ra.addFlashAttribute("successMessage", "Thêm sản phẩm mới thành công!");
-        return "redirect:/seller/products";
+        return "redirect:/seller/products?storeId=" + sid;
     }
 
     // ============ EDIT FORM ============
