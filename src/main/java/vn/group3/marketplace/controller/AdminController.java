@@ -130,16 +130,6 @@ public class AdminController {
         java.util.Map<String, Object> data = new java.util.HashMap<>();
 
         try {
-            // Total users count (from User entity)
-            long totalUsers = userRepository.countActiveUsers();
-            data.put("totalUsers", totalUsers);
-
-            // New users this month
-            LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
-            LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
-            long newUsersThisMonth = userRepository.countNewUsersThisMonth(startOfMonth, endOfMonth);
-            data.put("newUsersThisMonth", newUsersThisMonth);
-
             // Total orders count (from Order entity)
             long totalOrders = orderRepository.countTotalOrders();
             data.put("totalOrders", totalOrders);
@@ -164,21 +154,15 @@ public class AdminController {
             long activeStores = sellerStoreRepository.countActiveStores();
             data.put("activeStores", activeStores);
 
-            // Active users now (estimation based on recent registrations)
-            data.put("activeUsersNow", Math.min(totalUsers, newUsersThisMonth * 2 + 10));
-
         } catch (Exception e) {
             log.error("Error fetching KPI data", e);
             // Fallback data in case of error
-            data.put("totalUsers", 0);
-            data.put("newUsersThisMonth", 0);
             data.put("totalOrders", 0);
             data.put("pendingOrders", 0);
             data.put("totalProducts", 0);
             data.put("activeProducts", 0);
             data.put("totalStores", 0);
             data.put("activeStores", 0);
-            data.put("activeUsersNow", 0);
         }
 
         return data;
