@@ -537,6 +537,16 @@
                                                 <label class="product-form-label">Giá</label>
                                                 <input type="number" class="product-form-control form-control"
                                                     id="e-price" name="price" step="10000" min="0" required>
+                                                <c:if test="${not empty storeMaxListingPrice}">
+                                                    <div class="product-form-text text-info mt-1">
+                                                        <i class="fas fa-info-circle"></i> Giá niêm yết tối đa của cửa
+                                                        hàng bạn là:
+                                                        <strong>
+                                                            <fmt:formatNumber value="${storeMaxListingPrice}"
+                                                                pattern="#,##0" /> ₫
+                                                        </strong>
+                                                    </div>
+                                                </c:if>
                                             </div>
 
                                             <div class="product-form-group">
@@ -878,8 +888,45 @@
                             }
                             function iso(d) { return d ? new Date(d + 'T00:00:00') : null; }
 
+                            function vDateRange() {
+                                if (!fromIn || !toIn) return true;
+                                const from = iso(fromIn.value);
+                                const to = iso(toIn.value);
+                                if (from && to && to < from) {
+                                    toIn.setCustomValidity('end-before-start');
+                                    return false;
+                                }
+                                fromIn.setCustomValidity('');
+                                toIn.setCustomValidity('');
+                                return true;
+                            }
 
+                            function vPriceRange() {
+                                const minEl = form.querySelector('[name="minPrice"]');
+                                const maxEl = form.querySelector('[name="maxPrice"]');
+                                if (!minEl || !maxEl) return true;
 
+                                const hasMin = minEl.value.trim() !== '';
+                                const hasMax = maxEl.value.trim() !== '';
+                                const minVal = hasMin ? minEl.valueAsNumber : null;
+                                const maxVal = hasMax ? maxEl.valueAsNumber : null;
+
+                                if (hasMin && Number.isNaN(minVal)) {
+                                    minEl.setCustomValidity('invalid');
+                                    return false;
+                                }
+                                if (hasMax && Number.isNaN(maxVal)) {
+                                    maxEl.setCustomValidity('invalid');
+                                    return false;
+                                }
+                                if (hasMin && hasMax && maxVal < minVal) {
+                                    maxEl.setCustomValidity('end-before-start');
+                                    return false;
+                                }
+                                minEl.setCustomValidity('');
+                                maxEl.setCustomValidity('');
+                                return true;
+                            }
 
                             function vIdRange() {
                                 const fromEl = form.querySelector('[name="idFrom"]');

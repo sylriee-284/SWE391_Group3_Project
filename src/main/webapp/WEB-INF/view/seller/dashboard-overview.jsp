@@ -118,9 +118,9 @@
                                 <div class="card-body">
                                     <form method="get" action="${pageContext.request.contextPath}/seller/dashboard"
                                         id="filterForm">
-                                        <div class="row g-3">
+                                        <div class="d-flex flex-wrap align-items-end gap-3">
                                             <!-- Time Filter -->
-                                            <div class="col-md-3">
+                                            <div class="form-group mb-0" style="min-width:200px;">
                                                 <label class="form-label">Thời gian</label>
                                                 <select class="form-select" name="timeFilter" id="timeFilter">
                                                     <option value="today" ${dashboard.timeFilter=='today' ? 'selected'
@@ -135,69 +135,33 @@
                                             </div>
 
                                             <!-- Custom Date Range -->
-                                            <div class="col-md-3" id="customDateRange" <c:if
-                                                test="${dashboard.timeFilter == 'custom'}">style="display: block;"
-                                                </c:if>
-                                                <c:if test="${dashboard.timeFilter != 'custom'}">style="display: none;"
-                                                </c:if>>
+                                            <div class="form-group mb-0" id="customDateRange" <c:if
+                                                test="${dashboard.timeFilter == 'custom'}">style="display: block;
+                                                min-width:180px;"</c:if>
+                                                <c:if test="${dashboard.timeFilter != 'custom'}">style="display: none;
+                                                    min-width:180px;"</c:if>>
                                                 <label class="form-label">Từ ngày</label>
                                                 <input type="date" class="form-control" name="startDate"
                                                     value="${dashboard.startDate}">
                                             </div>
-                                            <div class="col-md-3" id="customDateRangeEnd" <c:if
-                                                test="${dashboard.timeFilter == 'custom'}">style="display: block;"
-                                                </c:if>
-                                                <c:if test="${dashboard.timeFilter != 'custom'}">style="display: none;"
-                                                </c:if>>
+                                            <div class="form-group mb-0" id="customDateRangeEnd" <c:if
+                                                test="${dashboard.timeFilter == 'custom'}">style="display: block;
+                                                min-width:180px;"</c:if>
+                                                <c:if test="${dashboard.timeFilter != 'custom'}">style="display: none;
+                                                    min-width:180px;"</c:if>>
                                                 <label class="form-label">Đến ngày</label>
                                                 <input type="date" class="form-control" name="endDate"
                                                     value="${dashboard.endDate}">
                                             </div>
 
-                                            <!-- Parent Category Filter -->
-                                            <div class="col-md-3">
-                                                <label class="form-label">Tùy chọn danh mục</label>
-                                                <select class="form-select" name="parentCategoryId"
-                                                    id="parentCategorySelect">
-                                                    <option value="">Danh mục</option>
-                                                    <c:forEach var="parent" items="${parentCategories}">
-                                                        <option value="${parent.id}" ${selectedParentId==parent.id
-                                                            ? 'selected' : '' }>
-                                                            ${parent.name}
-                                                        </option>
-                                                    </c:forEach>
-                                                </select>
-                                            </div>
-
-                                            <!-- Child Category Filter -->
-                                            <div class="col-md-3" id="childCategoryDiv" <c:if
-                                                test="${childCategories != null && !childCategories.isEmpty()}">
-                                                style="display: block;"
-                                                </c:if>
-                                                <c:if test="${childCategories == null || childCategories.isEmpty()}">
-                                                    style="display: none;"
-                                                </c:if>>
-                                                <label class="form-label">Chọn danh mục</label>
-                                                <select class="form-select" name="categoryId" id="childCategorySelect">
-                                                    <option value="">Tất cả danh mục con</option>
-                                                    <c:forEach var="child" items="${childCategories}">
-                                                        <option value="${child.id}" ${param.categoryId !=null &&
-                                                            param.categoryId==child.id.toString() ? 'selected' : '' }>
-                                                            ${child.name}
-                                                        </option>
-                                                    </c:forEach>
-                                                </select>
-                                            </div>
-
-                                            <!-- Apply Button -->
-                                            <div class="col-md-12">
+                                            <!-- Action buttons aligned to the right -->
+                                            <div class="ms-auto d-flex gap-2">
                                                 <button type="submit" class="btn btn-primary">
                                                     <i class="fas fa-search"></i> Áp dụng
                                                 </button>
                                                 <a href="${pageContext.request.contextPath}/seller/dashboard"
                                                     class="btn btn-secondary">
                                                     <i class="fas fa-redo"></i> Đặt lại
-                                                </a>
                                                 </a>
                                             </div>
                                         </div>
@@ -348,52 +312,7 @@
                                 });
                             }
 
-                            // ========== Parent Category Filter Handler ==========
-                            const parentCategorySelect = document.getElementById('parentCategorySelect');
-                            const childCategoryDiv = document.getElementById('childCategoryDiv');
-                            const childCategorySelect = document.getElementById('childCategorySelect');
-
-                            if (parentCategorySelect) {
-                                parentCategorySelect.addEventListener('change', function () {
-                                    const parentId = this.value;
-
-                                    if (parentId) {
-                                        // Show loading state
-                                        childCategoryDiv.style.display = 'block';
-                                        childCategorySelect.innerHTML = '<option value="">Đang tải...</option>';
-                                        childCategorySelect.disabled = true;
-
-                                        // Fetch child categories via AJAX
-                                        fetch('${pageContext.request.contextPath}/api/categories/' + parentId + '/children')
-                                            .then(response => response.json())
-                                            .then(data => {
-                                                childCategorySelect.innerHTML = '<option value="">Tất cả danh mục con</option>';
-
-                                                if (data && data.length > 0) {
-                                                    data.forEach(function (category) {
-                                                        const option = document.createElement('option');
-                                                        option.value = category.id;
-                                                        option.textContent = category.name;
-                                                        childCategorySelect.appendChild(option);
-                                                    });
-                                                } else {
-                                                    childCategorySelect.innerHTML = '<option value="">Không có danh mục con</option>';
-                                                }
-
-                                                childCategorySelect.disabled = false;
-                                            })
-                                            .catch(error => {
-                                                console.error('Error loading child categories:', error);
-                                                childCategorySelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
-                                                childCategorySelect.disabled = false;
-                                            });
-                                    } else {
-                                        // Hide child category selector when no parent selected
-                                        childCategoryDiv.style.display = 'none';
-                                        childCategorySelect.innerHTML = '<option value="">Tất cả danh mục con</option>';
-                                    }
-                                });
-                            }
+                            // Parent/child category JS removed (category filters not needed)
                         });                        // Prepare chart data from server
                         const revenueChartData = {
                             labels: [<c:forEach var="label" items="${dashboard.revenueChart.labels}" varStatus="status">'${label}'${!status.last ? ',' : ''}</c:forEach>],

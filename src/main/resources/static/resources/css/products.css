@@ -359,3 +359,94 @@
         transform: translateY(0)
     }
 }
+
+/* ========================================
+   MODAL CHI TIẾT SẢN PHẨM - SELLER PRODUCTS
+   Sử dụng prefix riêng để tránh bị đè CSS
+   ======================================== */
+
+/* Modal Detail Items */
+#productDetailModal .detail-item {
+    margin-bottom: 0.75rem;
+}
+
+#productDetailModal .detail-label {
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+    display: block;
+}
+
+#productDetailModal .detail-value {
+    color: #1e293b;
+    font-size: 1rem;
+    padding: 0.5rem;
+    background: #f8fafc;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+/* Ảnh sản phẩm trong modal chi tiết - SPECIFIC SELECTOR */
+#productDetailModal .product-detail-image-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 1rem auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+}
+
+#productDetailModal .product-detail-image {
+    width: 100% !important;
+    max-width: 350px !important;
+    height: auto !important;
+    aspect-ratio: 1/1 !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    border-radius: 10px !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+    transition: transform 0.3s ease !important;
+}
+
+#productDetailModal .product-detail-image:hover {
+    transform: scale(1.05) !important;
+}
+
+/* Responsive cho ảnh trong modal */
+@media (max-width: 768px) {
+    #productDetailModal .product-detail-image-container {
+        max-width: 100%;
+        padding: 0.75rem;
+    }
+
+    #productDetailModal .product-detail-image {
+        max-width: 100% !important;
+    }
+}
+
+/* Modal Edit - Image Preview */
+#productEditModal .edit-image-preview-container {
+    width: 100%;
+    max-width: 200px;
+    margin: 0.5rem 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#productEditModal .edit-image-preview {
+    max-height: 150px !important;
+    max-width: 100% !important;
+    height: auto !important;
+    width: auto !important;
+    object-fit: contain !important;
+    border-radius: 8px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}

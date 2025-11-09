@@ -27,15 +27,26 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-.product-image {
-    width: 100%;
+/* Product image container */
+.product-card .text-center {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Override product image styling from store.css */
+.product-card .product-image {
+    width: 100% !important;
+    height: auto !important;
     aspect-ratio: 1/1;
     object-fit: cover;
     object-position: center;
     transition: transform 0.3s ease;
+    max-height: 250px;
 }
 
-.product-image:hover {
+.product-card:hover .product-image {
     transform: scale(1.05);
 }
 
