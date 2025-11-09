@@ -185,16 +185,15 @@ public class VNPayService {
             List<String> fieldNames = new ArrayList<>(verifyParams.keySet());
             Collections.sort(fieldNames);
             
-            // 4. Build hash data string
+            // 4. Build hash data string (URL-encode values to match payment URL generation)
             StringBuilder hashData = new StringBuilder();
             Iterator<String> itr = fieldNames.iterator();
-            
             while (itr.hasNext()) {
                 String fieldName = itr.next();
                 String fieldValue = verifyParams.get(fieldName);
-                
                 if (fieldValue != null && !fieldValue.isEmpty()) {
-                    hashData.append(fieldName).append('=').append(fieldValue);
+                    hashData.append(fieldName).append('=')
+                        .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
                     if (itr.hasNext()) {
                         hashData.append('&');
                     }
