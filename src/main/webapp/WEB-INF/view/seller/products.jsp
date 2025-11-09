@@ -458,10 +458,8 @@
 
                                         <div class="row mb-2">
                                             <div class="col-12">
-                                                <div class="product-detail-image-container">
-                                                    <img id="d-img" src="" alt="Product Image"
-                                                        class="product-detail-image" style="display:none">
-                                                </div>
+                                                <img id="d-img" src="" alt="image"
+                                                    style="max-height:160px;border-radius:10px;border:1px solid #eee;display:none">
                                             </div>
                                         </div>
 
@@ -626,17 +624,9 @@
                                 document.getElementById('d-status').textContent = get('status');
 
                                 const imgEl = document.getElementById('d-img');
-                                const imgContainer = imgEl?.parentElement;
                                 const img = get('img');
-                                if (img) {
-                                    imgEl.src = img;
-                                    imgEl.style.display = 'block';
-                                    if (imgContainer) imgContainer.style.display = 'flex';
-                                } else {
-                                    imgEl.style.display = 'none';
-                                    imgEl.src = '';
-                                    if (imgContainer) imgContainer.style.display = 'none';
-                                }
+                                if (img) { imgEl.src = img; imgEl.style.display = 'block'; }
+                                else { imgEl.style.display = 'none'; imgEl.src = ''; }
                             });
 
                             // Function to load subcategories
@@ -728,7 +718,7 @@
                                 const img = get('img');
                                 const imgWrap = document.getElementById('e-currentImage');
                                 if (img && imgWrap) {
-                                    imgWrap.innerHTML = '<div class="edit-image-preview-container"><img src="' + img + '" alt="Preview" class="edit-image-preview" id="e-preview-img"></div>';
+                                    imgWrap.innerHTML = '<img src="' + img + '" alt="img" style="max-height:80px;border-radius:6px;border:1px solid #eee" id="e-preview-img">';
                                 } else if (imgWrap) { imgWrap.innerHTML = ''; }
 
                                 // Reset file input
@@ -775,8 +765,8 @@
                                         reader.onload = function (event) {
                                             const imgWrap = document.getElementById('e-currentImage');
                                             if (imgWrap) {
-                                                imgWrap.innerHTML = '<div class="mb-2"><small class="text-success fw-bold">✓ Ảnh mới (chưa lưu):</small></div>' +
-                                                    '<div class="edit-image-preview-container"><img src="' + event.target.result + '" alt="Preview" class="edit-image-preview" id="e-preview-img"></div>';
+                                                imgWrap.innerHTML = '<div class="mb-2"><small class="text-muted">Ảnh mới (chưa lưu):</small></div>' +
+                                                    '<img src="' + event.target.result + '" alt="preview" style="max-height:80px;border-radius:6px;border:1px solid #eee" id="e-preview-img">';
                                             }
                                         };
                                         reader.readAsDataURL(file);
