@@ -101,9 +101,9 @@
                                 <div class="card-body">
                                     <form method="get"
                                         action="${pageContext.request.contextPath}/seller/dashboard/sales">
-                                        <div class="row g-3">
+                                        <div class="d-flex flex-wrap align-items-end gap-3">
                                             <!-- Time Filter -->
-                                            <div class="col-md-3">
+                                            <div class="form-group mb-0" style="min-width:200px;">
                                                 <label class="form-label">Thời gian</label>
                                                 <select class="form-select" name="timeFilter" id="timeFilter">
                                                     <option value="today" ${sales.timeFilter=='today' ? 'selected' : ''
@@ -118,25 +118,27 @@
                                             </div>
 
                                             <!-- Custom Date Range -->
-                                            <div class="col-md-3" id="customDateRange" <c:if
-                                                test="${sales.timeFilter == 'custom'}">style="display: block;"</c:if>
-                                                <c:if test="${sales.timeFilter != 'custom'}">style="display: none;"
-                                                </c:if>>
+                                            <div class="form-group mb-0" id="customDateRange" <c:if
+                                                test="${sales.timeFilter == 'custom'}">style="display: block;
+                                                min-width:180px;"</c:if>
+                                                <c:if test="${sales.timeFilter != 'custom'}">style="display: none;
+                                                    min-width:180px;"</c:if>>
                                                 <label class="form-label">Từ ngày</label>
                                                 <input type="date" class="form-control" name="startDate"
                                                     value="${sales.startDate}">
                                             </div>
-                                            <div class="col-md-3" id="customDateRangeEnd" <c:if
-                                                test="${sales.timeFilter == 'custom'}">style="display: block;"</c:if>
-                                                <c:if test="${sales.timeFilter != 'custom'}">style="display: none;"
-                                                </c:if>>
+                                            <div class="form-group mb-0" id="customDateRangeEnd" <c:if
+                                                test="${sales.timeFilter == 'custom'}">style="display: block;
+                                                min-width:180px;"</c:if>
+                                                <c:if test="${sales.timeFilter != 'custom'}">style="display: none;
+                                                    min-width:180px;"</c:if>>
                                                 <label class="form-label">Đến ngày</label>
                                                 <input type="date" class="form-control" name="endDate"
                                                     value="${sales.endDate}">
                                             </div>
 
                                             <!-- Order Status Filter -->
-                                            <div class="col-md-3">
+                                            <div class="form-group mb-0" style="min-width:220px;">
                                                 <label class="form-label">Trạng thái đơn hàng</label>
                                                 <select class="form-select" name="orderStatus">
                                                     <option value="">Tất cả trạng thái</option>
@@ -153,8 +155,8 @@
                                                 </select>
                                             </div>
 
-                                            <!-- Apply Button -->
-                                            <div class="col-md-12">
+                                            <!-- Action buttons aligned to the right -->
+                                            <div class="ms-auto d-flex gap-2">
                                                 <button type="submit" class="btn btn-primary">
                                                     <i class="fas fa-search"></i> Áp dụng
                                                 </button>
@@ -163,7 +165,7 @@
                                                     <i class="fas fa-redo"></i> Đặt lại
                                                 </a>
                                                 <a href="${pageContext.request.contextPath}/seller/dashboard/sales/export?timeFilter=${sales.timeFilter}&startDate=${sales.startDate}&endDate=${sales.endDate}&orderStatus=${sales.orderStatus}"
-                                                    class="btn btn-danger float-end">
+                                                    class="btn btn-danger">
                                                     <i class="fas fa-file-pdf"></i> Xuất PDF
                                                 </a>
                                             </div>
@@ -206,7 +208,8 @@
                                             <h3>
                                                 <c:choose>
                                                     <c:when test="${not empty sales.escrowSummary}">
-                                                        <fmt:formatNumber value="${sales.escrowSummary.totalHeld}"
+                                                        <fmt:formatNumber
+                                                            value="${sales.escrowSummary.totalHeldAfterFee}"
                                                             type="number" groupingUsed="true" /> VND
                                                     </c:when>
                                                     <c:otherwise>0 VND</c:otherwise>
@@ -219,6 +222,12 @@
                                                     <c:otherwise>0</c:otherwise>
                                                 </c:choose> đơn hàng
                                             </small>
+                                            <!-- Show original amount if different from after-fee amount -->
+                                            <c:if
+                                                test="${not empty sales.escrowSummary 
+                                                and sales.escrowSummary.totalHeld > 0 
+                                                and sales.escrowSummary.totalHeldAfterFee < sales.escrowSummary.totalHeld}">
+                                            </c:if>
                                         </div>
                                     </div>
                                 </div>
@@ -346,17 +355,16 @@
                                                     <th>Ngày</th>
                                                     <th>Sản phẩm</th>
                                                     <th>SL</th>
-                                                    <th>Tổng tiền</th>
+                                                    <th>Tổng tiền đơn hàng</th>
+                                                    <th>Phí sàn</th>
+                                                    <th>Số tiền nhận được</th>
                                                     <th>Trạng thái</th>
-                                                    <th>Người mua</th>
-                                                    <th>Đang giữ ký quỹ</th>
-                                                    <th>Đã giải ngân</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <c:if test="${empty sales.orders.content}">
                                                     <tr>
-                                                        <td colspan="9" class="text-center text-muted py-4">
+                                                        <td colspan="8" class="text-center text-muted py-4">
                                                             <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
                                                             Không tìm thấy đơn hàng nào
                                                         </td>
@@ -379,11 +387,41 @@
                                                                 groupingUsed="true" /> VND
                                                         </td>
                                                         <td>
+                                                            <!-- Display commission amount for all orders with escrow -->
+                                                            <c:choose>
+                                                                <c:when test="${order.feeModel == 'NO_FEE'}">
+                                                                    <span class="badge bg-success">0 VND (Miễn
+                                                                        phí)</span>
+                                                                </c:when>
+                                                                <c:when
+                                                                    test="${order.commissionAmount != null && order.commissionAmount > 0}">
+                                                                    <fmt:formatNumber value="${order.commissionAmount}"
+                                                                        type="number" groupingUsed="true" /> VND
+                                                                </c:when>
+                                                                <c:otherwise>
+                                                                    <span class="text-muted">-</span>
+                                                                </c:otherwise>
+                                                            </c:choose>
+                                                        </td>
+                                                        <td>
+                                                            <!-- Display seller amount for all orders with escrow -->
+                                                            <c:choose>
+                                                                <c:when
+                                                                    test="${order.sellerAmount != null && order.sellerAmount > 0}">
+                                                                    <fmt:formatNumber value="${order.sellerAmount}"
+                                                                        type="number" groupingUsed="true" /> VND
+                                                                </c:when>
+                                                                <c:otherwise>
+                                                                    <span class="text-muted">-</span>
+                                                                </c:otherwise>
+                                                            </c:choose>
+                                                        </td>
+                                                        <td>
                                                             <c:choose>
                                                                 <c:when test="${order.escrowHeld > 0}">
                                                                     <!-- Tiền đang giữ ký quỹ, chưa giải ngân -->
                                                                     <span class="badge bg-warning">
-                                                                        Chờ xử lý
+                                                                        Đang tạm giữ
                                                                     </span>
                                                                 </c:when>
                                                                 <c:otherwise>
@@ -394,24 +432,6 @@
                                                                     </span>
                                                                 </c:otherwise>
                                                             </c:choose>
-                                                        </td>
-                                                        <td>
-                                                            <c:choose>
-                                                                <c:when test="${not empty order.buyerName}">
-                                                                    ${order.buyerName}
-                                                                </c:when>
-                                                                <c:otherwise>
-                                                                    <span class="text-muted">N/A</span>
-                                                                </c:otherwise>
-                                                            </c:choose>
-                                                        </td>
-                                                        <td>
-                                                            <fmt:formatNumber value="${order.escrowHeld}" type="number"
-                                                                groupingUsed="true" />
-                                                        </td>
-                                                        <td>
-                                                            <fmt:formatNumber value="${order.escrowReleased}"
-                                                                type="number" groupingUsed="true" />
                                                         </td>
                                                     </tr>
                                                 </c:forEach>

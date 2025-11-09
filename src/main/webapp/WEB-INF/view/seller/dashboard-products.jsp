@@ -66,8 +66,8 @@
                                 <div class="card-body">
                                     <form method="get"
                                         action="${pageContext.request.contextPath}/seller/dashboard/products">
-                                        <div class="row g-3">
-                                            <div class="col-md-3">
+                                        <div class="d-flex flex-wrap align-items-end gap-3">
+                                            <div class="form-group mb-0" style="min-width:200px;">
                                                 <label class="form-label">Thời gian</label>
                                                 <select class="form-select" name="timeFilter">
                                                     <option value="today" ${products.timeFilter=='today' ? 'selected'
@@ -80,14 +80,8 @@
                                                         : '' }>Tùy chỉnh</option>
                                                 </select>
                                             </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label">Danh mục</label>
-                                                <select class="form-select" name="categoryId">
-                                                    <option value="">Tất cả danh mục</option>
-                                                    <!-- Categories populated from backend -->
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3">
+
+                                            <div class="form-group mb-0" style="min-width:220px;">
                                                 <label class="form-label">Sắp xếp theo</label>
                                                 <select class="form-select" name="sortBy">
                                                     <option value="revenue" ${products.sortBy=='revenue' ? 'selected'
@@ -98,7 +92,8 @@
                                                         }>Đánh giá (Cao đến thấp)</option>
                                                 </select>
                                             </div>
-                                            <div class="col-md-12">
+
+                                            <div class="ms-auto d-flex gap-2">
                                                 <button type="submit" class="btn btn-primary">
                                                     <i class="fas fa-search"></i> Áp dụng
                                                 </button>
@@ -106,8 +101,8 @@
                                                     class="btn btn-secondary">
                                                     <i class="fas fa-redo"></i> Đặt lại
                                                 </a>
-                                                <a href="${pageContext.request.contextPath}/seller/dashboard/products/export?timeFilter=${products.timeFilter}&categoryId=${products.categoryId}&sortBy=${products.sortBy}"
-                                                    class="btn btn-danger float-end">
+                                                <a href="${pageContext.request.contextPath}/seller/dashboard/products/export?timeFilter=${products.timeFilter}&sortBy=${products.sortBy}"
+                                                    class="btn btn-danger">
                                                     <i class="fas fa-file-pdf"></i> Xuất PDF
                                                 </a>
                                             </div>
