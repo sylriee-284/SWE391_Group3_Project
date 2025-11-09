@@ -19,7 +19,7 @@
                             <a class="d-flex justify-content-between align-items-center text-decoration-none text-white"
                                 data-bs-toggle="collapse" href="#paymentMenu" role="button" aria-expanded="false"
                                 aria-controls="paymentMenu">
-                                💳 Quản lý thanh toán
+                                💳Quản lý thanh toán
                                 <i class="fas fa-chevron-down"></i>
                             </a>
                             <ul class="collapse list-unstyled ms-3 mt-2" id="paymentMenu">
@@ -79,13 +79,12 @@
                                     <a class="d-flex justify-content-between align-items-center text-decoration-none text-white"
                                         data-bs-toggle="collapse" href="#sellerMenu" role="button" aria-expanded="false"
                                         aria-controls="sellerMenu">
-                                        🏪 Cửa hàng của tôi
+                                        🏪Cửa hàng của tôi
                                         <i class="fas fa-chevron-down"></i>
                                     </a>
                                     <ul class="collapse list-unstyled ms-3 mt-2" id="sellerMenu">
                                         <li><a href="/seller/dashboard" class="text-white text-decoration-none">📊 Bảng
-                                                điều
-                                                khiển người bán</a></li>
+                                                điều khiển</a></li>
                                         <li><a href="/seller/profile" class="text-white text-decoration-none">🏪 Thông
                                                 tin
                                                 cửa hàng</a></li>
@@ -114,7 +113,7 @@
                             </a>
                             <ul class="collapse list-unstyled ms-3 mt-2" id="adminMenu">
                                 <li><a href="/admin/dashboard" class="text-white text-decoration-none">📊 Bảng điều
-                                        khiển Admin</a></li>
+                                        khiển</a></li>
                                 <li><a href="/admin/users" class="text-white text-decoration-none">👥 Quản lý người
                                         dùng</a></li>
                                 <li><a href="/admin/stores" class="text-white text-decoration-none">🏪 Quản lý cửa
