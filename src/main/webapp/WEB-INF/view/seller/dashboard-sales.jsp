@@ -387,19 +387,14 @@
                                                                 groupingUsed="true" /> VND
                                                         </td>
                                                         <td>
-                                                            <!-- Display commission amount for all orders with escrow -->
+                                                            <!-- Display admin_amount from escrow_transactions -->
                                                             <c:choose>
-                                                                <c:when test="${order.feeModel == 'NO_FEE'}">
-                                                                    <span class="badge bg-success">0 VND (Miễn
-                                                                        phí)</span>
-                                                                </c:when>
-                                                                <c:when
-                                                                    test="${order.commissionAmount != null && order.commissionAmount > 0}">
+                                                                <c:when test="${order.commissionAmount != null}">
                                                                     <fmt:formatNumber value="${order.commissionAmount}"
                                                                         type="number" groupingUsed="true" /> VND
                                                                 </c:when>
                                                                 <c:otherwise>
-                                                                    <span class="text-muted">-</span>
+                                                                    0 VND
                                                                 </c:otherwise>
                                                             </c:choose>
                                                         </td>

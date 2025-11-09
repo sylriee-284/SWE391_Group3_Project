@@ -686,29 +686,9 @@ public class SellerDashboardService {
                 BigDecimal sellerAmount = BigDecimal.ZERO;
 
                 if (escrow != null) {
-                        if (escrow.getStatus() == EscrowStatus.RELEASED) {
-                                // For released orders, use actual values from escrow
-                                if (feeModel == SellerStoresType.NO_FEE) {
-                                        commissionAmount = BigDecimal.ZERO;
-                                        sellerAmount = escrow.getSellerAmount();
-                                } else {
-                                        // Commission = Total - Seller Amount
-                                        commissionAmount = order.getTotalAmount().subtract(escrow.getSellerAmount());
-                                        sellerAmount = escrow.getSellerAmount();
-                                }
-                        } else if (escrow.getStatus() == EscrowStatus.HELD) {
-                                // For held orders, calculate estimated values
-                                if (feeModel == SellerStoresType.NO_FEE) {
-                                        commissionAmount = BigDecimal.ZERO;
-                                        sellerAmount = order.getTotalAmount();
-                                } else {
-                                        // Calculate commission
-                                        commissionAmount = order.getTotalAmount()
-                                                        .multiply(commissionRate)
-                                                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-                                        sellerAmount = order.getTotalAmount().subtract(commissionAmount);
-                                }
-                        }
+                        // Use admin_amount from escrow_transactions table as commission amount
+                        commissionAmount = escrow.getAdminAmount() != null ? escrow.getAdminAmount() : BigDecimal.ZERO;
+                        sellerAmount = escrow.getSellerAmount();
                 }
 
                 return OrderSummaryDTO.builder()
