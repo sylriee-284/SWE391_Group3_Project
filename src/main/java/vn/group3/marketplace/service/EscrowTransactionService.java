@@ -144,7 +144,7 @@ public class EscrowTransactionService {
     @Transactional
     public void scheduleEscrowTransactionRelease() {
         try {
-            logger.info("Starting scheduled escrow transaction scan (runs every 1 minute)...");
+            logger.info("Starting scheduled escrow transaction scan.");
 
             // Get all escrow transactions that are ready to be released (held for 1 minute)
             List<EscrowTransaction> transactionsToRelease = escrowTransactionRepository
@@ -155,7 +155,7 @@ public class EscrowTransactionService {
                 return;
             }
 
-            logger.info("Found {} escrow transaction(s) ready for release (after 1 minute hold)",
+            logger.info("Found {} escrow transaction(s) ready for release",
                     transactionsToRelease.size());
 
             // Release each transaction
