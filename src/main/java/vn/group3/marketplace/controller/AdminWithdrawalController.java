@@ -45,27 +45,30 @@ public class AdminWithdrawalController {
         Page<WalletTransaction> withdrawals;
         String selectedStatus = "";
 
-        // Get withdrawals with filters
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            // When searching by keyword, only use keyword (ignore status and date filters)
-            withdrawals = withdrawalRequestService.getWithdrawalRequestsWithFilters(
-                    null, null, null, keyword, page, size);
-        } else if ((status != null && !status.trim().isEmpty()) ||
-                (fromDate != null && !fromDate.trim().isEmpty()) ||
-                (toDate != null && !toDate.trim().isEmpty())) {
-
-            WalletTransactionStatus statusEnum = null;
-            if (status != null && !status.trim().isEmpty()) {
-                try {
-                    statusEnum = WalletTransactionStatus.valueOf(status.toUpperCase());
-                    selectedStatus = status.toUpperCase();
-                } catch (IllegalArgumentException e) {
-                    // Invalid status, ignore
-                }
+        // Process status parameter
+        WalletTransactionStatus statusEnum = null;
+        if (status != null && !status.trim().isEmpty()) {
+            try {
+                statusEnum = WalletTransactionStatus.valueOf(status.toUpperCase());
+                selectedStatus = status.toUpperCase();
+            } catch (IllegalArgumentException e) {
+                // Invalid status, ignore
             }
+        }
 
+        // Process date and keyword parameters
+        String processedFromDate = (fromDate != null && !fromDate.trim().isEmpty()) ? fromDate : null;
+        String processedToDate = (toDate != null && !toDate.trim().isEmpty()) ? toDate : null;
+        String processedKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
+
+        // Check if any filters are applied
+        boolean hasFilters = statusEnum != null || processedFromDate != null ||
+                processedToDate != null || processedKeyword != null;
+
+        // Get withdrawals with combined filters or all withdrawals
+        if (hasFilters) {
             withdrawals = withdrawalRequestService.getWithdrawalRequestsWithFilters(
-                    statusEnum, fromDate, toDate, null, page, size);
+                    statusEnum, processedFromDate, processedToDate, processedKeyword, page, size);
         } else {
             withdrawals = withdrawalRequestService.getAllWithdrawalRequests(page, size);
         }
