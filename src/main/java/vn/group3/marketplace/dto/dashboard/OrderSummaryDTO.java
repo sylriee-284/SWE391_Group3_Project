@@ -27,6 +27,7 @@ public class OrderSummaryDTO {
 
     // Escrow info
     private BigDecimal escrowHeld;
+    private BigDecimal escrowHeldAfterFee; // Amount seller will receive from held escrow (after commission deduction)
     private BigDecimal sellerAmount; // Seller amount from escrow_transactions (amount after fee deduction)
     private LocalDateTime escrowHoldUntil;
     private Boolean isReleased; // True if escrow status is RELEASED
@@ -34,4 +35,5 @@ public class OrderSummaryDTO {
     // Fee model info
     private SellerStoresType feeModel; // NO_FEE or PERCENTAGE
     private BigDecimal commissionRate; // Commission rate (e.g., 3.00 for 3%)
+    private BigDecimal commissionAmount; // Actual commission amount in VND
 }

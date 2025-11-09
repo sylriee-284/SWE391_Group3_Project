@@ -208,7 +208,8 @@
                                             <h3>
                                                 <c:choose>
                                                     <c:when test="${not empty sales.escrowSummary}">
-                                                        <fmt:formatNumber value="${sales.escrowSummary.totalHeld}"
+                                                        <fmt:formatNumber
+                                                            value="${sales.escrowSummary.totalHeldAfterFee}"
                                                             type="number" groupingUsed="true" /> VND
                                                     </c:when>
                                                     <c:otherwise>0 VND</c:otherwise>
@@ -221,6 +222,12 @@
                                                     <c:otherwise>0</c:otherwise>
                                                 </c:choose> đơn hàng
                                             </small>
+                                            <!-- Show original amount if different from after-fee amount -->
+                                            <c:if
+                                                test="${not empty sales.escrowSummary 
+                                                and sales.escrowSummary.totalHeld > 0 
+                                                and sales.escrowSummary.totalHeldAfterFee < sales.escrowSummary.totalHeld}">
+                                            </c:if>
                                         </div>
                                     </div>
                                 </div>
@@ -348,17 +355,16 @@
                                                     <th>Ngày</th>
                                                     <th>Sản phẩm</th>
                                                     <th>SL</th>
-                                                    <th>Tổng tiền ước tính</th>
+                                                    <th>Tổng tiền đơn hàng</th>
+                                                    <th>Phí sàn</th>
+                                                    <th>Số tiền nhận được</th>
                                                     <th>Trạng thái</th>
-                                                    <th>Đang giữ ký quỹ</th>
-                                                    <th>Đã quyết toán</th>
-                                                    <th>Phí hoa hồng</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <c:if test="${empty sales.orders.content}">
                                                     <tr>
-                                                        <td colspan="9" class="text-center text-muted py-4">
+                                                        <td colspan="8" class="text-center text-muted py-4">
                                                             <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
                                                             Không tìm thấy đơn hàng nào
                                                         </td>
@@ -381,11 +387,41 @@
                                                                 groupingUsed="true" /> VND
                                                         </td>
                                                         <td>
+                                                            <!-- Display commission amount for all orders with escrow -->
+                                                            <c:choose>
+                                                                <c:when test="${order.feeModel == 'NO_FEE'}">
+                                                                    <span class="badge bg-success">0 VND (Miễn
+                                                                        phí)</span>
+                                                                </c:when>
+                                                                <c:when
+                                                                    test="${order.commissionAmount != null && order.commissionAmount > 0}">
+                                                                    <fmt:formatNumber value="${order.commissionAmount}"
+                                                                        type="number" groupingUsed="true" /> VND
+                                                                </c:when>
+                                                                <c:otherwise>
+                                                                    <span class="text-muted">-</span>
+                                                                </c:otherwise>
+                                                            </c:choose>
+                                                        </td>
+                                                        <td>
+                                                            <!-- Display seller amount for all orders with escrow -->
+                                                            <c:choose>
+                                                                <c:when
+                                                                    test="${order.sellerAmount != null && order.sellerAmount > 0}">
+                                                                    <fmt:formatNumber value="${order.sellerAmount}"
+                                                                        type="number" groupingUsed="true" /> VND
+                                                                </c:when>
+                                                                <c:otherwise>
+                                                                    <span class="text-muted">-</span>
+                                                                </c:otherwise>
+                                                            </c:choose>
+                                                        </td>
+                                                        <td>
                                                             <c:choose>
                                                                 <c:when test="${order.escrowHeld > 0}">
                                                                     <!-- Tiền đang giữ ký quỹ, chưa giải ngân -->
                                                                     <span class="badge bg-warning">
-                                                                        Chờ xử lý
+                                                                        Đang tạm giữ
                                                                     </span>
                                                                 </c:when>
                                                                 <c:otherwise>
@@ -394,46 +430,6 @@
                                                                         class="badge bg-${order.status == 'COMPLETED' ? 'success' : (order.status == 'CANCELLED' || order.status == 'REFUNDED' ? 'danger' : 'warning')}">
                                                                         ${order.statusText}
                                                                     </span>
-                                                                </c:otherwise>
-                                                            </c:choose>
-                                                        </td>
-                                                        <td>
-                                                            <fmt:formatNumber value="${order.escrowHeld}" type="number"
-                                                                groupingUsed="true" />
-                                                        </td>
-                                                        <td>
-                                                            <c:choose>
-                                                                <c:when test="${order.isReleased}">
-                                                                    <fmt:formatNumber value="${order.sellerAmount}"
-                                                                        type="number" groupingUsed="true" />
-                                                                </c:when>
-                                                                <c:otherwise>
-                                                                    <span class="text-muted">-</span>
-                                                                </c:otherwise>
-                                                            </c:choose>
-                                                        </td>
-                                                        <td>
-                                                            <c:choose>
-                                                                <c:when test="${order.isReleased}">
-                                                                    <!-- Check fee model -->
-                                                                    <c:choose>
-                                                                        <c:when test="${order.feeModel == 'NO_FEE'}">
-                                                                            <span class="badge bg-success">0% (Miễn
-                                                                                phí)</span>
-                                                                        </c:when>
-                                                                        <c:otherwise>
-                                                                            <!-- Calculate commission percentage from actual amounts -->
-                                                                            <c:if test="${order.totalAmount > 0}">
-                                                                                <fmt:formatNumber
-                                                                                    value="${order.commissionRate}"
-                                                                                    type="number" maxFractionDigits="2"
-                                                                                    minFractionDigits="2" />%
-                                                                            </c:if>
-                                                                        </c:otherwise>
-                                                                    </c:choose>
-                                                                </c:when>
-                                                                <c:otherwise>
-                                                                    <span class="text-muted">-</span>
                                                                 </c:otherwise>
                                                             </c:choose>
                                                         </td>

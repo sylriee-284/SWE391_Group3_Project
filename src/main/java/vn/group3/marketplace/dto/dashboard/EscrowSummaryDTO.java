@@ -14,7 +14,8 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class EscrowSummaryDTO {
-    private BigDecimal totalHeld;
+    private BigDecimal totalHeld; // Total amount held in escrow (original amount)
+    private BigDecimal totalHeldAfterFee; // Total amount seller will receive after commission deduction
     private BigDecimal totalReleased;
     private BigDecimal totalRefunded;
     private Integer heldCount;

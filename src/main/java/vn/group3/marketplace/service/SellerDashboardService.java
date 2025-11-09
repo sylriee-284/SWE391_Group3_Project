@@ -230,14 +230,16 @@ public class SellerDashboardService {
 
         private KPICardDTO calculateRevenueKPI(Long storeId, LocalDateTime start, LocalDateTime end,
                         LocalDateTime prevStart, LocalDateTime prevEnd) {
-                BigDecimal currentRevenue = orderRepository.sumRevenueByStoreAndDateRange(storeId, start, end);
-                BigDecimal prevRevenue = orderRepository.sumRevenueByStoreAndDateRange(storeId, prevStart, prevEnd);
+                // Calculate revenue as seller_amount from RELEASED orders (after commission
+                // deduction)
+                BigDecimal currentRevenue = escrowRepository.sumSellerAmountForReleasedOrders(storeId, start, end);
+                BigDecimal prevRevenue = escrowRepository.sumSellerAmountForReleasedOrders(storeId, prevStart, prevEnd);
 
                 BigDecimal changePercent = calculateChangePercent(currentRevenue, prevRevenue);
                 String direction = changePercent.compareTo(BigDecimal.ZERO) >= 0 ? "up" : "down";
 
                 return createKPICard("Doanh thu", currentRevenue, "VND", changePercent, direction,
-                                "Tổng đơn hàng hoàn thành");
+                                "Tổng tiền nhận được sau trừ hoa hồng");
         }
 
         private KPICardDTO calculateOrderCountKPI(Long storeId, LocalDateTime start, LocalDateTime end,
@@ -325,6 +327,34 @@ public class SellerDashboardService {
                                 .map(SellerStore::getEscrowAmount)
                                 .orElse(BigDecimal.ZERO);
 
+                // Get seller store to check fee model
+                SellerStore sellerStore = sellerStoreRepository.findById(storeId).orElse(null);
+                SellerStoresType feeModel = sellerStore != null ? sellerStore.getFeeModel()
+                                : SellerStoresType.PERCENTAGE;
+                BigDecimal commissionRate = BigDecimal.ZERO;
+
+                // Set commission rate based on fee model
+                if (feeModel == SellerStoresType.PERCENTAGE) {
+                        commissionRate = sellerStore.getFeePercentageRate() != null
+                                        ? sellerStore.getFeePercentageRate()
+                                        : BigDecimal.valueOf(3.00);
+                } else if (feeModel == SellerStoresType.NO_FEE) {
+                        commissionRate = BigDecimal.ZERO;
+                }
+
+                // Calculate total held amount after fee deduction
+                BigDecimal totalHeldAfterFee = BigDecimal.ZERO;
+                if (totalHeld.compareTo(BigDecimal.ZERO) > 0) {
+                        if (feeModel == SellerStoresType.NO_FEE) {
+                                totalHeldAfterFee = totalHeld;
+                        } else {
+                                BigDecimal commissionAmount = totalHeld
+                                                .multiply(commissionRate)
+                                                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                                totalHeldAfterFee = totalHeld.subtract(commissionAmount);
+                        }
+                }
+
                 // Calculate total seller amount from RELEASED orders in the selected date range
                 BigDecimal totalSellerAmount = escrowRepository.sumSellerAmountForReleasedOrders(storeId, start, end);
                 Long releasedCount = escrowRepository.countReleasedOrdersInDateRange(storeId, start, end);
@@ -343,6 +373,7 @@ public class SellerDashboardService {
 
                 return EscrowSummaryDTO.builder()
                                 .totalHeld(totalHeld)
+                                .totalHeldAfterFee(totalHeldAfterFee)
                                 .totalReleased(totalSellerAmount != null ? totalSellerAmount : BigDecimal.ZERO)
                                 .totalRefunded(totalRefunded)
                                 .heldCount(heldCount.intValue())
@@ -354,10 +385,10 @@ public class SellerDashboardService {
         }
 
         private ChartDataDTO buildRevenueChart(Long storeId, LocalDateTime start, LocalDateTime end) {
-                List<Object[]> data = orderRepository.findRevenueByDateRange(storeId, OrderStatus.COMPLETED, start,
-                                end);
+                // Get seller_amount from RELEASED orders (revenue after commission deduction)
+                List<Object[]> data = escrowRepository.findSellerAmountByDateRange(storeId, start, end);
 
-                // Create a map of date -> revenue from actual data
+                // Create a map of date -> seller amount from actual data
                 Map<LocalDate, BigDecimal> revenueMap = new HashMap<>();
                 for (Object[] row : data) {
                         LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
@@ -375,7 +406,7 @@ public class SellerDashboardService {
 
                 while (!currentDate.isAfter(endDate)) {
                         labels.add(currentDate.format(formatter));
-                        // Use actual revenue if exists, otherwise 0
+                        // Use actual seller amount if exists, otherwise 0
                         BigDecimal revenue = revenueMap.getOrDefault(currentDate, BigDecimal.ZERO);
                         values.add(revenue);
                         currentDate = currentDate.plusDays(1);
@@ -505,7 +536,8 @@ public class SellerDashboardService {
         }
 
         private ChartDataDTO buildRevenueByProductChart(Long storeId, LocalDateTime start, LocalDateTime end) {
-                List<Object[]> data = orderRepository.findTopProductsByStore(storeId, start, end, 10);
+                // Get seller_amount from RELEASED orders (revenue after commission deduction)
+                List<Object[]> data = escrowRepository.findTopProductsBySellerAmount(storeId, start, end, 10);
 
                 List<String> labels = new ArrayList<>();
                 List<Object> values = new ArrayList<>();
@@ -629,6 +661,56 @@ public class SellerDashboardService {
                         commissionRate = BigDecimal.ZERO;
                 }
 
+                // Calculate escrow held amount after fee deduction
+                BigDecimal escrowHeldTotal = escrow != null && escrow.getStatus() == EscrowStatus.HELD
+                                ? escrow.getTotalAmount()
+                                : BigDecimal.ZERO;
+
+                BigDecimal escrowHeldAfterFee = BigDecimal.ZERO;
+                if (escrowHeldTotal.compareTo(BigDecimal.ZERO) > 0) {
+                        if (feeModel == SellerStoresType.NO_FEE) {
+                                // No fee - seller receives 100%
+                                escrowHeldAfterFee = escrowHeldTotal;
+                        } else {
+                                // Calculate after commission deduction
+                                BigDecimal commissionAmount = escrowHeldTotal
+                                                .multiply(commissionRate)
+                                                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                                escrowHeldAfterFee = escrowHeldTotal.subtract(commissionAmount);
+                        }
+                }
+
+                // Calculate commission amount and seller amount (for both HELD and RELEASED
+                // orders)
+                BigDecimal commissionAmount = BigDecimal.ZERO;
+                BigDecimal sellerAmount = BigDecimal.ZERO;
+
+                if (escrow != null) {
+                        if (escrow.getStatus() == EscrowStatus.RELEASED) {
+                                // For released orders, use actual values from escrow
+                                if (feeModel == SellerStoresType.NO_FEE) {
+                                        commissionAmount = BigDecimal.ZERO;
+                                        sellerAmount = escrow.getSellerAmount();
+                                } else {
+                                        // Commission = Total - Seller Amount
+                                        commissionAmount = order.getTotalAmount().subtract(escrow.getSellerAmount());
+                                        sellerAmount = escrow.getSellerAmount();
+                                }
+                        } else if (escrow.getStatus() == EscrowStatus.HELD) {
+                                // For held orders, calculate estimated values
+                                if (feeModel == SellerStoresType.NO_FEE) {
+                                        commissionAmount = BigDecimal.ZERO;
+                                        sellerAmount = order.getTotalAmount();
+                                } else {
+                                        // Calculate commission
+                                        commissionAmount = order.getTotalAmount()
+                                                        .multiply(commissionRate)
+                                                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                                        sellerAmount = order.getTotalAmount().subtract(commissionAmount);
+                                }
+                        }
+                }
+
                 return OrderSummaryDTO.builder()
                                 .orderId(order.getId())
                                 .orderCode("ORD-" + order.getId())
@@ -639,14 +721,14 @@ public class SellerDashboardService {
                                 .status(order.getStatus())
                                 .statusText(translateOrderStatus(order.getStatus()))
                                 .buyerName(buyerName)
-                                .escrowHeld(escrow != null && escrow.getStatus() == EscrowStatus.HELD
-                                                ? escrow.getTotalAmount()
-                                                : BigDecimal.ZERO)
-                                .sellerAmount(escrow != null ? escrow.getSellerAmount() : BigDecimal.ZERO)
+                                .escrowHeld(escrowHeldTotal)
+                                .escrowHeldAfterFee(escrowHeldAfterFee)
+                                .sellerAmount(sellerAmount)
                                 .escrowHoldUntil(escrow != null ? escrow.getHoldUntil() : null)
                                 .isReleased(escrow != null && escrow.getStatus() == EscrowStatus.RELEASED)
                                 .feeModel(feeModel)
                                 .commissionRate(commissionRate)
+                                .commissionAmount(commissionAmount)
                                 .build();
         }
 
@@ -660,7 +742,7 @@ public class SellerDashboardService {
                 Integer ratingCount = (Integer) row[6];
                 // Integer stock = (Integer) row[7]; // Not used in DTO
 
-                // Calculate revenue for the period
+                // Calculate revenue for the period (using totalAmount from COMPLETED orders)
                 BigDecimal revenue = orderRepository.sumRevenueByStoreAndStatusAndDateRange(
                                 getCurrentSellerStore().getId(), OrderStatus.COMPLETED, start, end);
 
