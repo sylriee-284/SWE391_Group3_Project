@@ -42,6 +42,15 @@ public class AdminWithdrawalController {
             @RequestParam(required = false) String keyword,
             Model model) {
 
+        // Validate pagination parameters
+        if (page < 0) {
+            page = 0; // Default to first page if negative
+        }
+
+        if (size <= 0 || size > 100) {
+            size = 10; // Default to 10 if invalid (too small or too large)
+        }
+
         Page<WalletTransaction> withdrawals;
         String selectedStatus = "";
 
@@ -73,6 +82,15 @@ public class AdminWithdrawalController {
             withdrawals = withdrawalRequestService.getAllWithdrawalRequests(page, size);
         }
 
+        // Validate page number against actual total pages
+        if (page >= withdrawals.getTotalPages() && withdrawals.getTotalPages() > 0) {
+            // Redirect to last page if current page is beyond available pages
+            int lastPage = withdrawals.getTotalPages() - 1;
+            String redirectUrl = buildRedirectUrl(lastPage, size, status, processedFromDate, processedToDate,
+                    processedKeyword);
+            return "redirect:/admin/withdrawals" + redirectUrl;
+        }
+
         model.addAttribute("withdrawals", withdrawals);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", withdrawals.getTotalPages());
@@ -80,6 +98,36 @@ public class AdminWithdrawalController {
         model.addAttribute("totalElements", withdrawals.getTotalElements());
 
         return "admin/withdrawals/list";
+    }
+
+    /**
+     * Helper method to build redirect URL with current filters
+     */
+    private String buildRedirectUrl(int page, int size, String status, String fromDate, String toDate, String keyword) {
+        StringBuilder url = new StringBuilder("?page=" + page);
+
+        if (size != 10) { // Only add size if different from default
+            url.append("&size=").append(size);
+        }
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            url.append("&keyword=")
+                    .append(java.net.URLEncoder.encode(keyword, java.nio.charset.StandardCharsets.UTF_8));
+        }
+
+        if (status != null && !status.trim().isEmpty()) {
+            url.append("&status=").append(status);
+        }
+
+        if (fromDate != null && !fromDate.trim().isEmpty()) {
+            url.append("&fromDate=").append(fromDate);
+        }
+
+        if (toDate != null && !toDate.trim().isEmpty()) {
+            url.append("&toDate=").append(toDate);
+        }
+
+        return url.toString();
     }
 
     @GetMapping("/{id}")

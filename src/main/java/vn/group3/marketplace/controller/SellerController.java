@@ -614,7 +614,8 @@ public class SellerController {
             if (description != null) {
                 description = description.trim();
                 if (description.length() > 500) {
-                    redirectAttributes.addFlashAttribute("errorMessage", "Mô tả cửa hàng không được vượt quá 500 ký tự.");
+                    redirectAttributes.addFlashAttribute("errorMessage",
+                            "Mô tả cửa hàng không được vượt quá 500 ký tự.");
                     return "redirect:/seller/profile";
                 }
             }

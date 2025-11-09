@@ -454,8 +454,9 @@
                                                         <input type="text" class="form-control" id="storeName"
                                                             name="storeName" value="${store.storeName}" required>
                                                         <div class="form-text">
-                                                            Tên cửa hàng phải là duy nhất 
-                                                            <span id="storeNameCounter" class="text-muted">(0/100 ký tự)</span>
+                                                            Tên cửa hàng phải là duy nhất
+                                                            <span id="storeNameCounter" class="text-muted">(0/100 ký
+                                                                tự)</span>
                                                         </div>
                                                     </div>
 
@@ -467,7 +468,8 @@
                                                             name="description" rows="4"
                                                             placeholder="Mô tả về cửa hàng của bạn...">${store.description}</textarea>
                                                         <div class="form-text">
-                                                            <span id="descriptionCounter" class="text-muted">(0/500 ký tự)</span>
+                                                            <span id="descriptionCounter" class="text-muted">(0/500 ký
+                                                                tự)</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -515,7 +517,7 @@
                             if (input && counter) {
                                 const length = input.value.length;
                                 counter.textContent = `(${length}/100 ký tự)`;
-                                
+
                                 if (length > 100) {
                                     counter.className = 'text-danger fw-bold';
                                     input.classList.add('is-invalid');
@@ -536,7 +538,7 @@
                             if (input && counter) {
                                 const length = input.value.length;
                                 counter.textContent = `(${length}/500 ký tự)`;
-                                
+
                                 if (length > 500) {
                                     counter.className = 'text-danger fw-bold';
                                     input.classList.add('is-invalid');
@@ -554,7 +556,7 @@
                         function validateForm() {
                             const storeName = document.getElementById('storeName').value.trim();
                             const description = document.getElementById('description').value.trim();
-                            
+
                             if (storeName.length > 100) {
                                 iziToast.error({
                                     title: 'Lỗi validation',
@@ -563,7 +565,7 @@
                                 });
                                 return false;
                             }
-                            
+
                             if (description.length > 500) {
                                 iziToast.error({
                                     title: 'Lỗi validation',
@@ -572,29 +574,29 @@
                                 });
                                 return false;
                             }
-                            
+
                             return true;
                         }
 
                         // Event listeners
-                        document.addEventListener('DOMContentLoaded', function() {
+                        document.addEventListener('DOMContentLoaded', function () {
                             const storeNameInput = document.getElementById('storeName');
                             const descriptionInput = document.getElementById('description');
-                            
+
                             if (storeNameInput) {
                                 storeNameInput.addEventListener('input', updateStoreNameCounter);
                                 updateStoreNameCounter(); // Initial count
                             }
-                            
+
                             if (descriptionInput) {
                                 descriptionInput.addEventListener('input', updateDescriptionCounter);
                                 updateDescriptionCounter(); // Initial count
                             }
-                            
+
                             // Add form validation on submit
                             const form = document.querySelector('#editMode form');
                             if (form) {
-                                form.addEventListener('submit', function(e) {
+                                form.addEventListener('submit', function (e) {
                                     if (!validateForm()) {
                                         e.preventDefault();
                                     }
