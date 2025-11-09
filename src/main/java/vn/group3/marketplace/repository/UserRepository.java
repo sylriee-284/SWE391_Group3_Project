@@ -55,4 +55,30 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
         @Query(value = "UPDATE users SET balance = balance - :amount WHERE id = :id AND balance >= :amount", nativeQuery = true)
         int decrementIfEnough(@Param("id") Long id, @Param("amount") BigDecimal amount);
 
+        // Admin dashboard queries
+        @Query("SELECT COUNT(u) FROM User u WHERE u.status = 'ACTIVE'")
+        long countActiveUsers();
+
+        @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt >= :startOfMonth AND u.createdAt < :endOfMonth")
+        long countNewUsersThisMonth(@Param("startOfMonth") java.time.LocalDateTime startOfMonth,
+                        @Param("endOfMonth") java.time.LocalDateTime endOfMonth);
+
+        /**
+         * Tăng trưởng người dùng theo tháng
+         */
+        @Query("SELECT COUNT(u), MONTH(u.createdAt), YEAR(u.createdAt) FROM User u WHERE u.createdAt >= :startDate GROUP BY YEAR(u.createdAt), MONTH(u.createdAt) ORDER BY YEAR(u.createdAt), MONTH(u.createdAt)")
+        java.util.List<Object[]> getUserGrowthByMonth(@Param("startDate") java.time.LocalDateTime startDate);
+
+        /**
+         * Phân tích độ tuổi người dùng (nếu có dateOfBirth)
+         */
+        @Query("SELECT CASE WHEN YEAR(CURRENT_DATE) - YEAR(u.dateOfBirth) < 25 THEN 'Dưới 25' WHEN YEAR(CURRENT_DATE) - YEAR(u.dateOfBirth) < 35 THEN '25-35' WHEN YEAR(CURRENT_DATE) - YEAR(u.dateOfBirth) < 50 THEN '35-50' ELSE 'Trên 50' END as ageGroup, COUNT(u) FROM User u WHERE u.dateOfBirth IS NOT NULL GROUP BY CASE WHEN YEAR(CURRENT_DATE) - YEAR(u.dateOfBirth) < 25 THEN 'Dưới 25' WHEN YEAR(CURRENT_DATE) - YEAR(u.dateOfBirth) < 35 THEN '25-35' WHEN YEAR(CURRENT_DATE) - YEAR(u.dateOfBirth) < 50 THEN '35-50' ELSE 'Trên 50' END")
+        java.util.List<Object[]> getUserCountByAgeGroup();
+
+        /**
+         * Người dùng có cửa hàng vs không có
+         */
+        @Query("SELECT CASE WHEN s.id IS NOT NULL THEN 'Có cửa hàng' ELSE 'Khách hàng' END as userType, COUNT(u) FROM User u LEFT JOIN u.sellerStore s GROUP BY CASE WHEN s.id IS NOT NULL THEN 'Có cửa hàng' ELSE 'Khách hàng' END")
+        java.util.List<Object[]> getUserCountByType();
+
 }

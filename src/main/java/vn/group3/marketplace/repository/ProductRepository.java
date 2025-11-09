@@ -212,4 +212,28 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         @Query("UPDATE Product p SET p.status = 'INACTIVE', p.updatedAt = CURRENT_TIMESTAMP WHERE p.sellerStore.id = :storeId AND p.isDeleted = false")
         int deactivateAllProductsByStore(@Param("storeId") Long storeId);
 
+    // Admin dashboard queries
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.isDeleted = false")
+    long countTotalProducts();
+
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.status = :status AND p.isDeleted = false")
+    long countProductsByStatus(@Param("status") ProductStatus status);
+
+    /**
+     * Top sản phẩm bán chạy (dựa vào Order.quantity)
+     */
+    @Query("SELECT p.id, p.name, SUM(o.quantity) as totalSold FROM Product p JOIN Order o ON o.product.id = p.id WHERE o.status = 'COMPLETED' GROUP BY p.id, p.name ORDER BY totalSold DESC")
+    java.util.List<Object[]> getTopSellingProducts(org.springframework.data.domain.Pageable pageable);
+
+    /**
+     * Phân tích giá sản phẩm theo range
+     */
+    @Query("SELECT CASE WHEN p.price < 100000 THEN 'Dưới 100k' WHEN p.price < 500000 THEN '100k-500k' WHEN p.price < 1000000 THEN '500k-1M' ELSE 'Trên 1M' END as priceRange, COUNT(p) FROM Product p WHERE p.isDeleted = false GROUP BY CASE WHEN p.price < 100000 THEN 'Dưới 100k' WHEN p.price < 500000 THEN '100k-500k' WHEN p.price < 1000000 THEN '500k-1M' ELSE 'Trên 1M' END")
+    java.util.List<Object[]> getProductCountByPriceRange();
+
+    /**
+     * Sản phẩm theo trạng thái stock
+     */
+    @Query("SELECT CASE WHEN p.stock = 0 THEN 'Hết hàng' WHEN p.stock <= 10 THEN 'Sắp hết' ELSE 'Đầy đủ' END as stockStatus, COUNT(p) FROM Product p WHERE p.isDeleted = false GROUP BY CASE WHEN p.stock = 0 THEN 'Hết hàng' WHEN p.stock <= 10 THEN 'Sắp hết' ELSE 'Đầy đủ' END")
+    java.util.List<Object[]> getProductCountByStockStatus();
 }

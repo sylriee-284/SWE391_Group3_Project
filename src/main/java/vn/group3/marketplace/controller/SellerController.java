@@ -5,22 +5,20 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import lombok.RequiredArgsConstructor;
-import vn.group3.marketplace.service.WalletTransactionQueueService;
-import vn.group3.marketplace.domain.entity.User;
-import vn.group3.marketplace.domain.entity.SellerStore;
-import vn.group3.marketplace.domain.enums.StoreStatus;
 
-import vn.group3.marketplace.domain.entity.SellerStore;
+import lombok.RequiredArgsConstructor;
 import vn.group3.marketplace.domain.entity.User;
+import vn.group3.marketplace.domain.entity.SellerStore;
 import vn.group3.marketplace.domain.enums.StoreStatus;
 import vn.group3.marketplace.domain.enums.SellerStoresType;
 import vn.group3.marketplace.service.SellerStoreService;
 import vn.group3.marketplace.service.UserService;
 import vn.group3.marketplace.service.SystemSettingService;
+import vn.group3.marketplace.service.WalletTransactionQueueService;
+import vn.group3.marketplace.service.WalletService;
 import vn.group3.marketplace.repository.SellerStoreRepository;
 
 @Controller
@@ -31,10 +29,11 @@ public class SellerController {
     private final UserService userService;
     private final SellerStoreService sellerStoreService;
     private final WalletTransactionQueueService walletTransactionQueueService;
-    private final vn.group3.marketplace.service.WalletService walletService;
+    private final WalletService walletService;
     private final SystemSettingService systemSettingService;
     private final SellerStoreRepository sellerStoreRepository;
     private final vn.group3.marketplace.service.CloseStoreService closeStoreService;
+    private final vn.group3.marketplace.service.AuthenticationRefreshService authenticationRefreshService;
 
     /**
      * Display seller registration form
@@ -232,7 +231,8 @@ public class SellerController {
      * Show registration success page with store details
      */
     @GetMapping("/register-success")
-    public String showRegistrationSuccess(@RequestParam Long storeId, Model model) {
+    public String showRegistrationSuccess(@RequestParam Long storeId, Model model,
+            RedirectAttributes redirectAttributes) {
         // Get current authenticated user
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = userService.getFreshUserByUsername(auth.getName());
@@ -240,6 +240,12 @@ public class SellerController {
         // Get store details
         SellerStore store = sellerStoreService.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy cửa hàng"));
+
+        // Verify ownership - only store owner can view this page
+        if (!store.getOwner().getId().equals(currentUser.getId())) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Bạn không có quyền xem thông tin cửa hàng này");
+            return "redirect:/";
+        }
 
         // For PENDING stores, show activation prompt
         if (store.getStatus() == StoreStatus.PENDING) {
@@ -271,7 +277,7 @@ public class SellerController {
     }
 
     /**
-     * Retry store deposit payment
+     * Retry store deposit payment (for PENDING or INACTIVE stores)
      */
     @PostMapping("/retry-deposit/{storeId}")
     public String retryStoreDeposit(@PathVariable Long storeId, RedirectAttributes redirectAttributes) {
@@ -290,9 +296,14 @@ public class SellerController {
                 return "redirect:/seller/register-success?storeId=" + storeId;
             }
 
-            // Verify store status
+            // Verify store status - allow PENDING and INACTIVE
             if (store.getStatus() == StoreStatus.ACTIVE) {
                 redirectAttributes.addFlashAttribute("info", "Shop đã được kích hoạt thành công");
+                return "redirect:/seller/register-success?storeId=" + storeId;
+            }
+
+            if (store.getStatus() != StoreStatus.PENDING && store.getStatus() != StoreStatus.INACTIVE) {
+                redirectAttributes.addFlashAttribute("error", "Trạng thái cửa hàng không hợp lệ để kích hoạt");
                 return "redirect:/seller/register-success?storeId=" + storeId;
             }
 
@@ -305,8 +316,16 @@ public class SellerController {
                 return "redirect:/seller/register-success?storeId=" + storeId;
             }
 
-            // Enqueue payment with same ref
-            String paymentRef = "createdShop" + storeId;
+            // Create different payment reference for INACTIVE store reactivation
+            String paymentRef;
+            if (store.getStatus() == StoreStatus.INACTIVE) {
+                // For INACTIVE stores, use timestamp to create unique payment ref
+                paymentRef = "reactivateShop" + storeId + "_" + System.currentTimeMillis();
+            } else {
+                // For PENDING stores, use original payment ref
+                paymentRef = "createdShop" + storeId;
+            }
+
             walletTransactionQueueService.enqueuePurchasePayment(
                     currentUser.getId(),
                     store.getDepositAmount(),
@@ -319,6 +338,115 @@ public class SellerController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
             return "redirect:/seller/register-success?storeId=" + storeId;
+        }
+    }
+
+    /**
+     * Update pending store information
+     */
+    @PostMapping("/update-pending-store/{storeId}")
+    public String updatePendingStore(
+            @PathVariable Long storeId,
+            @RequestParam String storeName,
+            @RequestParam(required = false) String storeDescription,
+            @RequestParam String depositAmount,
+            @RequestParam(required = false, defaultValue = "PERCENTAGE") String feeModel,
+            RedirectAttributes redirectAttributes) {
+
+        System.out.println("=== UPDATE PENDING STORE ===");
+        System.out.println("StoreId: " + storeId);
+        System.out.println("StoreName: " + storeName);
+        System.out.println("Description: " + storeDescription);
+        System.out.println("Deposit: " + depositAmount);
+        System.out.println("FeeModel: " + feeModel);
+
+        try {
+            // Get current authenticated user
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            User currentUser = userService.getFreshUserByUsername(auth.getName());
+
+            // Get store and verify ownership
+            SellerStore store = sellerStoreService.findById(storeId)
+                    .orElseThrow(() -> new IllegalStateException("Không tìm thấy cửa hàng"));
+
+            System.out.println("Current store name: " + store.getStoreName());
+            System.out.println("Current deposit: " + store.getDepositAmount());
+
+            if (!store.getOwner().getId().equals(currentUser.getId())) {
+                redirectAttributes.addFlashAttribute("error", "Bạn không có quyền chỉnh sửa cửa hàng này");
+                return "redirect:/seller/register";
+            }
+
+            // Verify store is PENDING or INACTIVE (allow editing for both statuses)
+            if (store.getStatus() != StoreStatus.PENDING && store.getStatus() != StoreStatus.INACTIVE) {
+                redirectAttributes.addFlashAttribute("error",
+                        "Chỉ có thể chỉnh sửa cửa hàng đang chờ kích hoạt hoặc đã đóng");
+                return "redirect:/seller/register";
+            }
+
+            // Parse and validate deposit amount
+            BigDecimal deposit;
+            try {
+                String cleanAmount = depositAmount.trim().replace(",", "").replace(".", "");
+                deposit = new BigDecimal(cleanAmount);
+
+                if (deposit.compareTo(BigDecimal.ZERO) <= 0) {
+                    redirectAttributes.addFlashAttribute("error", "Số tiền ký quỹ phải lớn hơn 0");
+                    return "redirect:/seller/register";
+                }
+
+                // Validate minimum deposit
+                BigDecimal minDeposit = sellerStoreService.getMinDepositAmount();
+                if (deposit.compareTo(minDeposit) < 0) {
+                    redirectAttributes.addFlashAttribute("error",
+                            "Số tiền ký quỹ tối thiểu là " + String.format("%,.0f", minDeposit) + " VNĐ");
+                    return "redirect:/seller/register";
+                }
+            } catch (NumberFormatException e) {
+                redirectAttributes.addFlashAttribute("error", "Số tiền ký quỹ không hợp lệ");
+                return "redirect:/seller/register";
+            }
+
+            // Check if store name changed and if new name exists
+            if (!storeName.equals(store.getStoreName()) && sellerStoreService.isStoreNameExists(storeName)) {
+                System.out.println("Store name exists: " + storeName);
+                redirectAttributes.addFlashAttribute("error", "Tên cửa hàng đã tồn tại. Vui lòng chọn tên khác.");
+                return "redirect:/seller/register";
+            }
+
+            System.out.println("Updating store...");
+
+            // Update store information
+            store.setStoreName(storeName);
+            store.setDescription(storeDescription);
+            store.setDepositAmount(deposit);
+
+            // Update fee model
+            SellerStoresType feeModelEnum;
+            try {
+                feeModelEnum = SellerStoresType.valueOf(feeModel);
+            } catch (IllegalArgumentException e) {
+                feeModelEnum = SellerStoresType.PERCENTAGE;
+            }
+            store.setFeeModel(feeModelEnum);
+
+            // Calculate new max listing price based on new deposit
+            Double maxListingPriceRateDouble = sellerStoreService.getMaxListingPriceRate();
+            BigDecimal maxListingPriceRate = BigDecimal.valueOf(maxListingPriceRateDouble);
+            BigDecimal maxListingPrice = deposit.multiply(maxListingPriceRate);
+            store.setMaxListingPrice(maxListingPrice);
+
+            // Save updated store
+            sellerStoreRepository.save(store);
+
+            System.out.println("Store updated successfully!");
+
+            redirectAttributes.addFlashAttribute("success", "Cập nhật thông tin cửa hàng thành công!");
+            return "redirect:/seller/register";
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/seller/register";
         }
     }
 
@@ -367,6 +495,69 @@ public class SellerController {
         }
     }
 
+    /**
+     * Display seller profile page
+     */
+    @GetMapping("/profile")
+    public String showSellerProfile(Model model, RedirectAttributes redirectAttributes) {
+        try {
+            // Get current authenticated user
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
+                redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để truy cập trang này");
+                return "redirect:/auth/login";
+            }
+
+            User currentUser = userService.getFreshUserByUsername(auth.getName());
+            if (currentUser == null) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy thông tin người dùng");
+                return "redirect:/auth/login";
+            }
+
+            // Check if user has an active store
+            if (!sellerStoreService.hasActiveStore(currentUser)) {
+                redirectAttributes.addFlashAttribute("error",
+                        "Bạn chưa có cửa hàng hoạt động. Vui lòng đăng ký trước.");
+                return "redirect:/seller/register";
+            }
+
+            // Get the active store
+            SellerStore activeStore = currentUser.getSellerStore();
+
+            // Add data to model
+            model.addAttribute("user", currentUser);
+            model.addAttribute("store", activeStore);
+            model.addAttribute("pageTitle", "Thông tin Seller");
+
+            // Add fee settings from SystemSetting (percentage fee and fixed fee for small
+            // orders)
+            Double percentageFee = systemSettingService.getDoubleValue("fee.percentage_fee", 3.0);
+            Integer fixedFee = systemSettingService.getIntValue("fee.fixed_fee", 5000);
+            model.addAttribute("percentageFee", percentageFee);
+            model.addAttribute("fixedFee", fixedFee);
+
+            // Add refund rate settings from SystemSetting
+            Integer maxRefundRateMinDuration = systemSettingService
+                    .getIntValue("store.max_refund_rate_min_duration_months", 12);
+            Double percentageMaxRefundRate = systemSettingService.getDoubleValue("store.percentage_max_refund_rate",
+                    100.0);
+            Double percentageMinRefundRate = systemSettingService.getDoubleValue("store.percentage_min_refund_rate",
+                    70.0);
+            Double noFeeRefundRate = systemSettingService.getDoubleValue("store.no_fee_refund_rate", 50.0);
+
+            model.addAttribute("maxRefundRateMinDuration", maxRefundRateMinDuration);
+            model.addAttribute("percentageMaxRefundRate", percentageMaxRefundRate);
+            model.addAttribute("percentageMinRefundRate", percentageMinRefundRate);
+            model.addAttribute("noFeeRefundRate", noFeeRefundRate);
+
+            return "seller/profile";
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/";
+        }
+    }
+
     // ==================== CLOSE STORE ENDPOINTS ====================
 
     /**
@@ -393,6 +584,43 @@ public class SellerController {
             model.addAttribute("error", e.getMessage());
             e.printStackTrace();
             return "error";
+        }
+    }
+
+    /**
+     * Update seller profile information
+     */
+    @PostMapping("/profile/update")
+    public String updateSellerProfile(
+            @RequestParam String storeName,
+            @RequestParam(required = false) String description,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            // Get current authenticated user
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            User currentUser = userService.getFreshUserByUsername(auth.getName());
+
+            // Get the seller's store
+            SellerStore store = currentUser.getSellerStore();
+            if (store == null) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy cửa hàng của bạn.");
+                return "redirect:/seller/profile";
+            }
+
+            // Update store information
+            store.setStoreName(storeName);
+            store.setDescription(description);
+
+            // Save updated store
+            sellerStoreRepository.save(store);
+
+            redirectAttributes.addFlashAttribute("successMessage", "Cập nhật thông tin cửa hàng thành công!");
+            return "redirect:/seller/profile";
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi xảy ra khi cập nhật: " + e.getMessage());
+            return "redirect:/seller/profile";
         }
     }
 
@@ -475,6 +703,9 @@ public class SellerController {
 
             vn.group3.marketplace.dto.CloseStoreResultDTO result = closeStoreService.confirmClose(storeId, currentUser,
                     request);
+
+            // Refresh authentication context to update userStore in sidebar
+            authenticationRefreshService.refreshAuthenticationContext();
 
             return org.springframework.http.ResponseEntity.ok(result);
         } catch (Exception e) {
