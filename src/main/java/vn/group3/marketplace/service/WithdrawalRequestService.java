@@ -168,48 +168,81 @@ public class WithdrawalRequestService {
     }
 
     /**
-     * Cập nhật yêu cầu rút tiền - CHỈ cho phép cập nhật thông tin khác, KHÔNG cho
-     * sửa số tiền
+     * Cập nhật yêu cầu rút tiền - CHỈ cho phép cập nhật thông tin khác, KHÔNG cho sửa số tiền
      * Yêu cầu phải chưa được chấp nhận (PENDING)
      * 
+     * Version ASYNC với Queue - 100% loại bỏ race condition
+     * 
      * Các quy tắc:
-     * - CHỈ cho phép sửa thông tin ngân hàng (bankName, bankAccountNumber,
-     * bankAccountName)
+     * - CHỈ cho phép sửa thông tin ngân hàng (bankName, bankAccountNumber, bankAccountName)
      * - KHÔNG cho phép sửa trường amount (số tiền)
      * - Yêu cầu phải ở trạng thái PENDING (chưa được chấp nhận)
+     * - Sử dụng queue để serialize với các operations khác (cancel, approve, reject)
      */
-    @Transactional
-    public WalletTransaction updateWithdrawalRequest(Long withdrawalId, String bankName,
+    public Future<WalletTransaction> updateWithdrawalRequestAsync(Long withdrawalId, String bankName,
             String bankAccountNumber, String bankAccountName, User user) {
-        logger.info("Updating withdrawal request: {} by user: {}", withdrawalId, user.getId());
+        logger.info("Enqueueing update withdrawal request: {} by user: {}", withdrawalId, user.getId());
 
+        // Load withdrawal để verify ownership và lấy userId cho queue
         WalletTransaction withdrawal = walletTransactionRepository.findById(withdrawalId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu rút tiền"));
 
-        // Verify ownership
+        // Verify ownership ngay từ đầu
         if (!withdrawal.getUser().getId().equals(user.getId())) {
             logger.warn("User {} attempted to update withdrawal {} owned by user {}",
                     user.getId(), withdrawalId, withdrawal.getUser().getId());
             throw new SecurityException("Bạn không có quyền sửa yêu cầu này");
         }
 
-        // Chỉ cho phép update khi PENDING (chưa được chấp nhận)
+        Long userId = withdrawal.getUser().getId();
+
+        // Submit vào queue của user - serialize với create, cancel, approve, reject
+        return perUserSerialExecutor.submit(userId, () -> {
+            return getSelf().doUpdateWithdrawalInTransaction(withdrawalId, bankName, bankAccountNumber, 
+                                                              bankAccountName, userId);
+        });
+    }
+
+    /**
+     * Thực hiện update withdrawal trong transaction (được gọi từ queue)
+     * 
+     * Logic đơn giản hơn vì queue đã đảm bảo không có race condition:
+     * - Không cần flush/clear/re-read
+     * - Chỉ cần check status một lần
+     */
+    @Transactional
+    public WalletTransaction doUpdateWithdrawalInTransaction(Long withdrawalId, String bankName,
+            String bankAccountNumber, String bankAccountName, Long userId) {
+        logger.info("Executing update withdrawal request in transaction: {} by user: {}", withdrawalId, userId);
+
+        WalletTransaction withdrawal = walletTransactionRepository.findById(withdrawalId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu rút tiền"));
+
+        // Double-check ownership (phòng trường hợp edge case)
+        if (!withdrawal.getUser().getId().equals(userId)) {
+            logger.error("Ownership mismatch in transaction: expected user {}, got {}",
+                    userId, withdrawal.getUser().getId());
+            throw new SecurityException("Bạn không có quyền sửa yêu cầu này");
+        }
+
+        // Chỉ cho phép update khi PENDING
         if (withdrawal.getPaymentStatus() != WalletTransactionStatus.PENDING) {
             logger.warn("Cannot update withdrawal {} - status is {}", withdrawalId, withdrawal.getPaymentStatus());
             throw new IllegalStateException("Chỉ có thể sửa yêu cầu đang chờ duyệt (chưa được chấp nhận)");
         }
 
-        // Cập nhật CHỈ thông tin ngân hàng - KHÔNG cho sửa amount
-        // Amount đã được lock khi tạo yêu cầu và đã trừ tiền
+        // Cập nhật thông tin ngân hàng - KHÔNG sửa amount
         String updatedNote = String.format("Yêu cầu rút tiền - %s - %s - %s", bankName, bankAccountNumber,
                 bankAccountName);
         withdrawal.setNote(updatedNote);
 
-        WalletTransaction saved = walletTransactionRepository.save(withdrawal);
+        // Save và return - Queue đã đảm bảo không có race condition
+        WalletTransaction updated = walletTransactionRepository.save(withdrawal);
 
-        logger.info("Withdrawal request updated successfully: ID={}, NewBankInfo: {} - {} - {}",
+        logger.info("✅ Withdrawal request updated successfully: ID={}, NewBankInfo: {} - {} - {}",
                 withdrawalId, bankName, bankAccountNumber, bankAccountName);
-        return saved;
+        
+        return updated;
     }
 
     /**

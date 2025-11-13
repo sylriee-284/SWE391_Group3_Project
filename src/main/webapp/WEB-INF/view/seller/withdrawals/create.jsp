@@ -113,7 +113,11 @@
                                         </label>
                                         <input type="text" class="form-control form-control-lg"
                                             id="bankAccountNumber" name="bankAccountNumber"
-                                            placeholder="Nhập số tài khoản" required>
+                                            placeholder="Nhập số tài khoản" 
+                                            required pattern="[a-zA-Z0-9]+">
+                                        <div class="invalid-feedback">
+                                            Số tài khoản chỉ được chứa chữ cái và số, không có ký tự đặc biệt
+                                        </div>
                                     </div>
 
                                     <!-- Account Name -->
@@ -123,7 +127,11 @@
                                         </label>
                                         <input type="text" class="form-control form-control-lg"
                                             id="bankAccountName" name="bankAccountName"
-                                            placeholder="Nhập tên chủ tài khoản" required>
+                                            placeholder="Nhập tên chủ tài khoản" 
+                                            required pattern="[a-zA-Z0-9\s]+">
+                                        <div class="invalid-feedback">
+                                            Tên tài khoản chỉ được chứa chữ cái không dấu, số và khoảng trắng
+                                        </div>
                                         <div class="form-text">
                                             Tên chủ tài khoản phải khớp với tài khoản ngân hàng
                                         </div>

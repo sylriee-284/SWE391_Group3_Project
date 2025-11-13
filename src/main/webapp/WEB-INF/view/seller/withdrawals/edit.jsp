@@ -157,9 +157,9 @@
                                                     <input type="text" class="form-control form-control-lg"
                                                         id="bankAccountNumber" name="bankAccountNumber"
                                                         value="${currentAccountNumber}" placeholder="Nhập số tài khoản"
-                                                        required pattern="[0-9]+">
+                                                        required pattern="[a-zA-Z0-9]+">
                                                     <div class="invalid-feedback">
-                                                        Số tài khoản chỉ được chứa số
+                                                        Số tài khoản chỉ được chứa chữ cái và số, không có ký tự đặc biệt
                                                     </div>
                                                 </div>
 
@@ -173,7 +173,11 @@
                                                     <input type="text" class="form-control form-control-lg"
                                                         id="bankAccountName" name="bankAccountName"
                                                         value="${currentAccountName}"
-                                                        placeholder="Nhập tên chủ tài khoản" required>
+                                                        placeholder="Nhập tên chủ tài khoản" 
+                                                        required pattern="[a-zA-Z0-9\s]+">
+                                                    <div class="invalid-feedback">
+                                                        Tên tài khoản chỉ được chứa chữ cái không dấu, số và khoảng trắng
+                                                    </div>
                                                 </div>
 
                                                 <!-- Note -->
