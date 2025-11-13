@@ -15,7 +15,7 @@ public class GlobalConfig {
     @Bean
     public Long escrowScanIntervalHours(SystemSettingService systemSettingService) {
         // Lấy giá trị từ database (đơn vị: giờ)
-        Double hours = systemSettingService.getDoubleValue("escrow.scan_interval_hours", 0.02);
+        Double hours = systemSettingService.getDoubleValue("escrow.default_scan_hours", 0.02);
         // Convert từ giờ sang milliseconds
         return Math.round(hours * 3600 * 1000);
     }
