@@ -83,7 +83,7 @@ public class SellerDashboardController {
 
                         model.addAttribute("dashboard", dashboardData);
 
-                        // Add parent categories (danh mục lớn) for filter
+                        // Add parent categories for filter
                         model.addAttribute("parentCategories",
                                         categoryRepository.findByParentIsNullAndIsDeletedFalse());
 

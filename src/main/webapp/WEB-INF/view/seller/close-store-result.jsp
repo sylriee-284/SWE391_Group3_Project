@@ -119,38 +119,11 @@
 
                                     <div class="info-item">
                                         <span class="info-label">
-                                            <i class="fas fa-hand-holding-usd"></i> Tiền Cọc Ban Đầu:
+                                            <i class="fas fa-hand-holding-usd"></i> Tiền Cọc :
                                         </span>
                                         <span class="info-value">
                                             <fmt:formatNumber value="${store.depositAmount}" type="number"
                                                 maxFractionDigits="0" /> VND
-                                        </span>
-                                    </div>
-
-                                    <div class="info-item highlight-refund">
-                                        <span class="info-label">
-                                            <i class="fas fa-coins"></i> Tiền Cọc Được Hoàn:
-                                        </span>
-                                        <span class="info-value refund-highlight">
-                                            <strong>
-                                                <fmt:formatNumber value="${finalRefund}" type="number"
-                                                    maxFractionDigits="0" /> VND
-                                            </strong>
-                                            <c:if test="${store.refundPercentageRate > 0}">
-                                                <span class="badge bg-warning ms-2">
-                                                    <fmt:formatNumber value="${store.refundPercentageRate}"
-                                                        maxFractionDigits="2" />% của tiền cọc
-                                                </span>
-                                                <div class="small text-muted" style="margin-top:6px;">
-                                                    <c:out value="Áp dụng tỷ lệ hoàn đã lưu: " />
-                                                    <fmt:formatNumber value="${store.refundPercentageRate}"
-                                                        maxFractionDigits="2" />%
-                                                    <c:out value=" của tiền cọc → Bạn nhận: " />
-                                                    <fmt:formatNumber value="${finalRefund}" type="number"
-                                                        maxFractionDigits="0" /> VND
-                                                </div>
-
-                                            </c:if>
                                         </span>
                                     </div>
 
