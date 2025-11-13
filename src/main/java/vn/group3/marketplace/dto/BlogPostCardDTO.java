@@ -4,8 +4,6 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Date;
-import lombok.Builder;
-import lombok.Data;
 
 @Getter
 @Setter
@@ -20,4 +18,5 @@ public class BlogPostCardDTO {
     private String thumbnailUrl;
     private Date publishedAt; // <— dùng java.util.Date
     private java.util.List<String> categories;
+    private String authorUsername;
 }

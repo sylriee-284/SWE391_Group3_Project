@@ -26,18 +26,28 @@ public class BlogPostService {
 
     private final BlogPostRepository blogPostRepository;
 
-    public Page<BlogPostCardDTO> findPublicPosts(String q, String categorySlug, Long authorId, Pageable pageable) {
+    public Page<BlogPostCardDTO> findPublicPosts(String q,
+            String categorySlug,
+            Long authorId,
+            Pageable pageable) {
         String qSafe = (q == null || q.isBlank()) ? null : q.trim();
-        String catSafe = (categorySlug == null || categorySlug.isBlank()) ? null : categorySlug.trim();
-        Long authorSafe = (authorId != null && authorId == 0L) ? null : authorId;
+        String catSafe = (categorySlug == null || categorySlug.isBlank())
+                ? null
+                : normalizeSlug(categorySlug);
+        Long authorSafe = (authorId == null || authorId == 0L) ? null : authorId;
 
-        Page<BlogPost> page;
-        if (catSafe == null) {
-            page = blogPostRepository.searchPublicNoCat(qSafe, authorSafe, BlogStatus.PUBLISHED, pageable);
-        } else {
-            page = blogPostRepository.searchPublicWithCat(qSafe, catSafe, authorSafe, BlogStatus.PUBLISHED, pageable);
-        }
+        Page<BlogPost> page = (catSafe == null)
+                ? blogPostRepository.searchPublicNoCat(qSafe, authorSafe, BlogStatus.PUBLISHED, pageable)
+                : blogPostRepository.searchPublicWithCat(qSafe, catSafe, authorSafe, BlogStatus.PUBLISHED, pageable);
+
         return page.map(this::toCardDto);
+    }
+
+    private String normalizeSlug(String raw) {
+        String s = raw.trim().toLowerCase();
+        if (s.equals("khác") || s.equals("other"))
+            return "khac";
+        return s; // facebook, tiktok, youtube, marketing, huong-dan, tin-tuc, cap-nhat...
     }
 
     public BlogPostDetailDTO findPublicBySlug(String slug) {
@@ -101,4 +111,5 @@ public class BlogPostService {
                 .categories(p.getCategories().stream().map(c -> c.getName()).toList())
                 .build();
     }
+
 }

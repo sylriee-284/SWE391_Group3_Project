@@ -34,22 +34,32 @@ public class BlogController {
             @RequestParam(required = false, name = "author") Long authorId,
             Model model) {
 
-        // null-safe cho filter (tránh lọc sai khi chuỗi rỗng)
         String qSafe = (q == null || q.isBlank()) ? null : q.trim();
-        String catSafe = (categorySlug == null || categorySlug.isBlank()) ? null : categorySlug.trim();
+        String catSafe = normalizeCategory(categorySlug); // <— dùng hàm normalize ở dưới
         Long authorSafe = (authorId != null && authorId == 0L) ? null : authorId;
 
         Page<BlogPostCardDTO> posts = blogPostService.findPublicPosts(
                 qSafe, catSafe, authorSafe, PageRequest.of(Math.max(page, 0), Math.max(size, 1)));
 
         model.addAttribute("posts", posts);
-        // Add category statistics
         model.addAttribute("categories", blogPostService.getCategoryStats());
         model.addAttribute("q", q);
         model.addAttribute("category", categorySlug);
         model.addAttribute("author", authorId);
         model.addAttribute("pageTitle", "Blog");
         return "blog/list";
+    }
+
+    /** Chuẩn hoá tham số category từ UI/sidebar thành slug trong DB */
+    private String normalizeCategory(String raw) {
+        if (raw == null || raw.isBlank())
+            return null;
+        String s = raw.trim().toLowerCase();
+        // các biến thể phổ biến cần map về 'khac'
+        if (s.equals("other") || s.equals("khác") || s.equals("khac"))
+            return "khac";
+        return s; // còn lại dùng nguyên (facebook, tiktok, youtube, marketing, huong-dan,
+                  // tin-tuc, cap-nhat, ...)
     }
 
     /** DETAIL: /blog/{slug} (loại trừ 'list' để không trùng route) */
