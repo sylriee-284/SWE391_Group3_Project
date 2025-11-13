@@ -458,8 +458,11 @@
 
                                         <div class="row mb-2">
                                             <div class="col-12">
-                                                <img id="d-img" src="" alt="image"
-                                                    style="max-height:160px;border-radius:10px;border:1px solid #eee;display:none">
+                                                <div style="width: 100%; max-width: 400px; height: 300px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden; background-color: #f8f9fa; display: none;"
+                                                    id="d-img-container">
+                                                    <img id="d-img" src="" alt="image"
+                                                        style="width: 100%; height: 100%; object-fit: contain;">
+                                                </div>
                                             </div>
                                         </div>
 
@@ -624,9 +627,15 @@
                                 document.getElementById('d-status').textContent = get('status');
 
                                 const imgEl = document.getElementById('d-img');
+                                const imgContainer = document.getElementById('d-img-container');
                                 const img = get('img');
-                                if (img) { imgEl.src = img; imgEl.style.display = 'block'; }
-                                else { imgEl.style.display = 'none'; imgEl.src = ''; }
+                                if (img) {
+                                    imgEl.src = img;
+                                    if (imgContainer) imgContainer.style.display = 'block';
+                                } else {
+                                    if (imgContainer) imgContainer.style.display = 'none';
+                                    imgEl.src = '';
+                                }
                             });
 
                             // Function to load subcategories
