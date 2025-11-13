@@ -37,7 +37,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                                                 AND (:maxPrice IS NULL OR p.price <= :maxPrice)
                                                 AND (:idFrom IS NULL OR p.id >= :idFrom)
                                                 AND (:idTo IS NULL OR p.id <= :idTo)
-                                        ORDER BY p.updatedAt DESC
                         """)
         Page<Product> search(
                         @Param("storeId") Long storeId,
@@ -108,6 +107,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         "WHERE p.slug = :slug AND p.isDeleted = false")
         Optional<Product> findBySlugWithDetails(@Param("slug") String slug);
 
+        // Distinct categories sold by a store
+        @Query("SELECT DISTINCT p.category FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = 'ACTIVE' AND p.isDeleted = false")
+        java.util.List<vn.group3.marketplace.domain.entity.Category> findDistinctCategoriesByStore(
+                        @Param("storeId") Long storeId);
+
+        @Query("SELECT COALESCE(MIN(p.price), 0) FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = 'ACTIVE' AND p.isDeleted = false")
+        java.math.BigDecimal findMinPriceByStore(@Param("storeId") Long storeId);
+
+        @Query("SELECT COALESCE(MAX(p.price), 0) FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = 'ACTIVE' AND p.isDeleted = false")
+        java.math.BigDecimal findMaxPriceByStore(@Param("storeId") Long storeId);
+
         // Atomic decrement stock with condition
         @Modifying
         @Transactional
@@ -128,6 +138,21 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         @Query("SELECT COUNT(ps) FROM ProductStorage ps WHERE ps.product.id = :productId AND ps.status = 'AVAILABLE' AND ps.order IS NULL")
         long getDynamicStock(@Param("productId") Long productId);
 
+        // Dashboard queries
+        @Query("SELECT COUNT(p) FROM Product p WHERE p.sellerStore.id = :storeId AND p.stock <= :threshold AND p.stock > 0")
+        Long countLowStockByStore(@Param("storeId") Long storeId, @Param("threshold") Integer threshold);
+
+        @Query("SELECT COUNT(p) FROM Product p WHERE p.sellerStore.id = :storeId AND p.stock = 0")
+        Long countOutOfStockByStore(@Param("storeId") Long storeId);
+
+        @Query("SELECT p.id, p.name, p.stock FROM Product p WHERE p.sellerStore.id = :storeId " +
+                        "AND p.stock <= :threshold AND p.stock > 0 ORDER BY p.stock ASC")
+        java.util.List<Object[]> findLowStockProducts(@Param("storeId") Long storeId,
+                        @Param("threshold") Integer threshold);
+
+        @Query("SELECT p.id, p.name FROM Product p WHERE p.sellerStore.id = :storeId AND p.stock = 0")
+        java.util.List<Object[]> findOutOfStockProducts(@Param("storeId") Long storeId);
+
         // Find all active products
         @Query("SELECT p FROM Product p WHERE p.status = :status AND p.isDeleted = false")
         Page<Product> findByStatus(@Param("status") ProductStatus status, Pageable pageable);
@@ -139,4 +164,76 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         @Param("keyword") String keyword,
                         Pageable pageable);
 
+        // Count products by store and status (for performance)
+        @Query("SELECT COUNT(p) FROM Product p WHERE p.sellerStore.id = :storeId AND p.status = :status AND p.isDeleted = false")
+        Long countBySellerStoreIdAndStatus(@Param("storeId") Long storeId, @Param("status") ProductStatus status);
+
+        // Find hot products from OTHER stores (exclude specific store)
+        @Query("""
+                        SELECT p FROM Product p
+                        WHERE p.sellerStore.id != :excludeStoreId
+                            AND p.status = :status
+                            AND p.isDeleted = false
+                            AND (:keyword IS NULL OR :keyword = ''
+                                OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                                OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
+                            AND (:categoryId IS NULL OR p.category.id = :categoryId)
+                            AND (:minPrice IS NULL OR p.price >= :minPrice)
+                            AND (:maxPrice IS NULL OR p.price <= :maxPrice)
+                        """)
+        Page<Product> findHotProductsExcludingStore(
+                        @Param("excludeStoreId") Long excludeStoreId,
+                        @Param("status") ProductStatus status,
+                        @Param("keyword") String keyword,
+                        @Param("categoryId") Long categoryId,
+                        @Param("minPrice") java.math.BigDecimal minPrice,
+                        @Param("maxPrice") java.math.BigDecimal maxPrice,
+                        Pageable pageable);
+
+        // Dashboard: Product performance for dashboard screen 3
+        @Query("SELECT p.id, p.name, c.name, p.price, p.soldQuantity, " +
+                        "p.rating, p.ratingCount, p.stock " +
+                        "FROM Product p " +
+                        "JOIN p.category c " +
+                        "WHERE p.sellerStore.id = :storeId " +
+                        "AND (:categoryId IS NULL OR c.id = :categoryId) " +
+                        "AND p.status = 'ACTIVE' " +
+                        "AND p.isDeleted = false")
+        Page<Object[]> findProductPerformanceByStore(@Param("storeId") Long storeId,
+                        @Param("categoryId") Long categoryId,
+                        Pageable pageable);
+
+        /**
+         * Update all products' status to INACTIVE for a specific store
+         * Used when closing a store
+         */
+        @Modifying
+        @Transactional
+        @Query("UPDATE Product p SET p.status = 'INACTIVE', p.updatedAt = CURRENT_TIMESTAMP WHERE p.sellerStore.id = :storeId AND p.isDeleted = false")
+        int deactivateAllProductsByStore(@Param("storeId") Long storeId);
+
+    // Admin dashboard queries
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.isDeleted = false")
+    long countTotalProducts();
+
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.status = :status AND p.isDeleted = false")
+    long countProductsByStatus(@Param("status") ProductStatus status);
+
+    /**
+     * Top sản phẩm bán chạy (dựa vào Order.quantity)
+     */
+    @Query("SELECT p.id, p.name, SUM(o.quantity) as totalSold FROM Product p JOIN Order o ON o.product.id = p.id WHERE o.status = 'COMPLETED' GROUP BY p.id, p.name ORDER BY totalSold DESC")
+    java.util.List<Object[]> getTopSellingProducts(org.springframework.data.domain.Pageable pageable);
+
+    /**
+     * Phân tích giá sản phẩm theo range
+     */
+    @Query("SELECT CASE WHEN p.price < 100000 THEN 'Dưới 100k' WHEN p.price < 500000 THEN '100k-500k' WHEN p.price < 1000000 THEN '500k-1M' ELSE 'Trên 1M' END as priceRange, COUNT(p) FROM Product p WHERE p.isDeleted = false GROUP BY CASE WHEN p.price < 100000 THEN 'Dưới 100k' WHEN p.price < 500000 THEN '100k-500k' WHEN p.price < 1000000 THEN '500k-1M' ELSE 'Trên 1M' END")
+    java.util.List<Object[]> getProductCountByPriceRange();
+
+    /**
+     * Sản phẩm theo trạng thái stock
+     */
+    @Query("SELECT CASE WHEN p.stock = 0 THEN 'Hết hàng' WHEN p.stock <= 10 THEN 'Sắp hết' ELSE 'Đầy đủ' END as stockStatus, COUNT(p) FROM Product p WHERE p.isDeleted = false GROUP BY CASE WHEN p.stock = 0 THEN 'Hết hàng' WHEN p.stock <= 10 THEN 'Sắp hết' ELSE 'Đầy đủ' END")
+    java.util.List<Object[]> getProductCountByStockStatus();
 }

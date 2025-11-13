@@ -18,52 +18,238 @@ import java.util.List;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    // Tìm đơn hàng theo người mua và tên sản phẩm (phân trang)
-    @Query("SELECT o FROM Order o WHERE o.buyer = :buyer AND (:status IS NULL OR o.status = :status) AND (:key IS NULL OR LOWER(o.productName) LIKE LOWER(CONCAT('%', :key, '%')))")
-    Page<Order> searchByBuyerAndProductName(@Param("buyer") User buyer, @Param("status") OrderStatus status,
-            @Param("key") String key, Pageable pageable);
+        // Tìm đơn hàng theo người mua và tên sản phẩm (phân trang)
+        @Query("SELECT o FROM Order o WHERE o.buyer = :buyer AND (:status IS NULL OR o.status = :status) AND (:key IS NULL OR LOWER(o.productName) LIKE LOWER(CONCAT('%', :key, '%')))")
+        Page<Order> searchByBuyerAndProductName(@Param("buyer") User buyer, @Param("status") OrderStatus status,
+                        @Param("key") String key, Pageable pageable);
 
-    // Tìm đơn hàng theo người bán và tên sản phẩm (phân trang)
-    @Query("SELECT o FROM Order o WHERE o.sellerStore = :sellerStore AND (:status IS NULL OR o.status = :status) AND (:key IS NULL OR LOWER(o.productName) LIKE LOWER(CONCAT('%', :key, '%')))")
-    Page<Order> searchBySellerAndProductName(@Param("sellerStore") SellerStore sellerStore,
-            @Param("status") OrderStatus status, @Param("key") String key, Pageable pageable);
+        // Tìm đơn hàng theo người bán và tên sản phẩm (phân trang)
+        @Query("SELECT o FROM Order o WHERE o.sellerStore = :sellerStore AND (:status IS NULL OR o.status = :status) AND (:key IS NULL OR LOWER(o.productName) LIKE LOWER(CONCAT('%', :key, '%')))")
+        Page<Order> searchBySellerAndProductName(@Param("sellerStore") SellerStore sellerStore,
+                        @Param("status") OrderStatus status, @Param("key") String key, Pageable pageable);
 
-    // Tìm đơn hàng cho admin theo tên sản phẩm (phân trang)
-    @Query("SELECT o FROM Order o WHERE (:status IS NULL OR o.status = :status) AND (:key IS NULL OR LOWER(o.productName) LIKE LOWER(CONCAT('%', :key, '%')))")
-    Page<Order> searchByProductName(@Param("status") OrderStatus status, @Param("key") String key, Pageable pageable);
+        // Tìm đơn hàng cho admin theo tên sản phẩm (phân trang)
+        @Query("SELECT o FROM Order o WHERE (:status IS NULL OR o.status = :status) AND (:key IS NULL OR LOWER(o.productName) LIKE LOWER(CONCAT('%', :key, '%')))")
+        Page<Order> searchByProductName(@Param("status") OrderStatus status, @Param("key") String key,
+                        Pageable pageable);
 
-    // Tìm đơn hàng theo người mua
-    Page<Order> findByBuyer(User buyer, Pageable pageable);
+        // Tìm đơn hàng theo người mua
+        Page<Order> findByBuyer(User buyer, Pageable pageable);
 
-    List<Order> findByBuyer(User buyer);
+        List<Order> findByBuyer(User buyer);
 
-    // Tìm đơn hàng theo cửa hàng bán
-    Page<Order> findBySellerStore(SellerStore sellerStore, Pageable pageable);
+        // Tìm đơn hàng theo cửa hàng bán
+        Page<Order> findBySellerStore(SellerStore sellerStore, Pageable pageable);
 
-    List<Order> findBySellerStore(SellerStore sellerStore);
+        List<Order> findBySellerStore(SellerStore sellerStore);
 
-    // Tìm đơn hàng theo trạng thái
-    Page<Order> findByStatus(OrderStatus status, Pageable pageable);
+        // Tìm đơn hàng theo trạng thái
+        Page<Order> findByStatus(OrderStatus status, Pageable pageable);
 
-    List<Order> findByStatus(OrderStatus status);
+        List<Order> findByStatus(OrderStatus status);
 
-    // Tìm đơn hàng theo người mua và trạng thái
-    Page<Order> findByBuyerAndStatus(User buyer, OrderStatus status, Pageable pageable);
+        // Tìm đơn hàng theo người mua và trạng thái
+        Page<Order> findByBuyerAndStatus(User buyer, OrderStatus status, Pageable pageable);
 
-    List<Order> findByBuyerAndStatus(User buyer, OrderStatus status);
+        List<Order> findByBuyerAndStatus(User buyer, OrderStatus status);
 
-    // Tìm đơn hàng theo cửa hàng và trạng thái
-    Page<Order> findBySellerStoreAndStatus(SellerStore sellerStore, OrderStatus status, Pageable pageable);
+        // Tìm đơn hàng theo cửa hàng và trạng thái
+        Page<Order> findBySellerStoreAndStatus(SellerStore sellerStore, OrderStatus status, Pageable pageable);
 
-    List<Order> findBySellerStoreAndStatus(SellerStore sellerStore, OrderStatus status);
+        List<Order> findBySellerStoreAndStatus(SellerStore sellerStore, OrderStatus status);
 
-    // Đếm số đơn hàng theo cửa hàng
-    Long countBySellerStore(SellerStore sellerStore);
+        // Đếm số đơn hàng theo cửa hàng
+        Long countBySellerStore(SellerStore sellerStore);
 
-    // Đếm số đơn hàng theo người mua
-    Long countByBuyer(User buyer);
+        // Đếm số đơn hàng theo người mua
+        Long countByBuyer(User buyer);
 
-    // Lấy order kèm productStorages (fetch join)
-    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.productStorages WHERE o.id = :id")
-    java.util.Optional<Order> findByIdWithProductStorages(@Param("id") Long id);
+        // Lấy order kèm productStorages (fetch join)
+        @Query("SELECT o FROM Order o LEFT JOIN FETCH o.productStorages WHERE o.id = :id")
+        java.util.Optional<Order> findByIdWithProductStorages(@Param("id") Long id);
+
+        // Aggregate total quantity sold per product for a given store
+        @Query("SELECT o.product.id, SUM(o.quantity) " +
+                        "FROM Order o WHERE o.sellerStore.id = :storeId AND (:status IS NULL OR o.status = :status) " +
+                        "GROUP BY o.product.id ORDER BY SUM(o.quantity) DESC")
+        java.util.List<Object[]> findTopSoldProductIdsByStore(@Param("storeId") Long storeId,
+                        @Param("status") vn.group3.marketplace.domain.enums.OrderStatus status, Pageable pageable);
+
+        // Aggregate total quantity sold per product excluding a specific store (for
+        // suggestions from other shops)
+        @Query("SELECT o.product.id, SUM(o.quantity) " +
+                        "FROM Order o WHERE (:excludeStoreId IS NULL OR o.sellerStore.id <> :excludeStoreId) " +
+                        "GROUP BY o.product.id ORDER BY SUM(o.quantity) DESC")
+        java.util.List<Object[]> findTopSoldProductIdsExcludingStore(@Param("excludeStoreId") Long excludeStoreId,
+                        Pageable pageable);
+
+        // Sum total quantity sold for a given store across provided statuses
+        @Query("SELECT COALESCE(SUM(o.quantity),0) FROM Order o WHERE o.sellerStore.id = :storeId " +
+                        "AND (:statuses IS NULL OR o.status IN (:statuses))")
+        Long sumQuantityByStoreAndStatuses(@Param("storeId") Long storeId,
+                        @Param("statuses") java.util.List<vn.group3.marketplace.domain.enums.OrderStatus> statuses);
+
+        // Dashboard queries
+        @Query("SELECT SUM(o.totalAmount) as grossSales, " +
+                        "SUM(CASE WHEN o.status = 'COMPLETED' THEN o.totalAmount ELSE 0 END) as netSales " +
+                        "FROM Order o WHERE o.sellerStore.id = :storeId " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate")
+        List<Object[]> findRevenueByStoreAndDateRange(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        @Query("SELECT COUNT(o) FROM Order o WHERE o.sellerStore.id = :storeId " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate")
+        Long countByStoreAndDateRange(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        @Query("SELECT COUNT(o) FROM Order o WHERE o.sellerStore.id = :storeId " +
+                        "AND o.status = :status AND o.createdAt BETWEEN :startDate AND :endDate")
+        Long countByStoreAndStatusAndDateRange(@Param("storeId") Long storeId,
+                        @Param("status") OrderStatus status,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        @Query("SELECT COUNT(o) FROM Order o WHERE o.sellerStore.id = :storeId AND o.status = :status")
+        Long countByStoreAndStatus(@Param("storeId") Long storeId, @Param("status") OrderStatus status);
+
+        // Count orders by store and multiple statuses (for Close Store validation)
+        @Query("SELECT COUNT(o) FROM Order o WHERE o.sellerStore.id = :storeId AND o.status IN :statuses")
+        Long countBySellerStoreIdAndStatusIn(@Param("storeId") Long storeId,
+                        @Param("statuses") List<OrderStatus> statuses);
+
+        // Calculate average rating from orders (returns 0.0 if no ratings)
+        @Query("SELECT COALESCE(AVG(CAST(o.rating AS double)), 0.0) FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId AND o.rating IS NOT NULL")
+        java.math.BigDecimal findStoreRating(@Param("storeId") Long storeId);
+
+        // Count total ratings for a store
+        @Query("SELECT COUNT(o) FROM Order o WHERE o.sellerStore.id = :storeId AND o.rating IS NOT NULL")
+        Long countStoreRatings(@Param("storeId") Long storeId);
+
+        @Query("SELECT COUNT(DISTINCT o.buyer.id) FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate")
+        Long countUniqueBuyers(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        @Query("SELECT o.buyer.id, COUNT(o) FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate " +
+                        "GROUP BY o.buyer.id HAVING COUNT(o) > 1")
+        List<Object[]> findRepeatBuyers(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND o.status = 'COMPLETED' " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate")
+        java.math.BigDecimal sumRevenueByStoreAndDateRange(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND o.status = :status " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate")
+        java.math.BigDecimal sumRevenueByStoreAndStatusAndDateRange(
+                        @Param("storeId") Long storeId,
+                        @Param("status") OrderStatus status,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        @Query("SELECT p.id, p.name, c.name, " +
+                        "SUM(o.totalAmount) as revenue, " +
+                        "SUM(o.quantity) as units, " +
+                        "p.stock, p.rating " +
+                        "FROM Order o " +
+                        "JOIN o.product p " +
+                        "JOIN p.category c " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND o.status = 'COMPLETED' " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate " +
+                        "GROUP BY p.id, p.name, c.name, p.stock, p.rating " +
+                        "ORDER BY revenue DESC")
+        List<Object[]> findTopProductsByStore(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate,
+                        @Param("limit") int limit);
+
+
+        // Tìm đơn hàng đã đánh giá theo sản phẩm và trạng thái
+        List<Order> findByProductIdAndStatusAndRatingIsNotNull(Long productId, OrderStatus status);
+
+        // Admin dashboard queries
+        @Query("SELECT COUNT(o) FROM Order o")
+        long countTotalOrders();
+
+        @Query("SELECT COUNT(o) FROM Order o WHERE o.status = :status")
+        long countOrdersByStatus(@Param("status") OrderStatus status);
+
+        @Query("SELECT o.status, COUNT(o) FROM Order o GROUP BY o.status")
+        java.util.List<Object[]> getOrderStatusStats();
+
+        /**
+         * Doanh thu theo tháng
+         */
+        @Query("SELECT SUM(o.totalAmount), MONTH(o.createdAt), YEAR(o.createdAt) FROM Order o WHERE o.status = 'COMPLETED' AND o.createdAt >= :startDate GROUP BY YEAR(o.createdAt), MONTH(o.createdAt) ORDER BY YEAR(o.createdAt), MONTH(o.createdAt)")
+        java.util.List<Object[]> getMonthlyRevenue(@Param("startDate") java.time.LocalDateTime startDate);
+
+        /**
+         * Đơn hàng theo giờ trong ngày (pattern hoạt động)
+         */
+        @Query("SELECT HOUR(o.createdAt) as hour, COUNT(o) FROM Order o WHERE o.createdAt >= :startDate GROUP BY HOUR(o.createdAt) ORDER BY hour")
+        java.util.List<Object[]> getOrdersByHour(@Param("startDate") java.time.LocalDateTime startDate);
+
+        /**
+         * Giá trị đơn hàng trung bình theo tháng
+         */
+        @Query("SELECT AVG(o.totalAmount), MONTH(o.createdAt), YEAR(o.createdAt) FROM Order o WHERE o.status = 'COMPLETED' AND o.createdAt >= :startDate GROUP BY YEAR(o.createdAt), MONTH(o.createdAt) ORDER BY YEAR(o.createdAt), MONTH(o.createdAt)")
+        java.util.List<Object[]> getAverageOrderValueByMonth(@Param("startDate") java.time.LocalDateTime startDate);
+
+        /**
+         * Phân tích conversion rate (% đơn thành công)
+         */
+        @Query("SELECT COUNT(CASE WHEN o.status = 'COMPLETED' THEN 1 END) * 100.0 / COUNT(*) as conversionRate, MONTH(o.createdAt), YEAR(o.createdAt) FROM Order o WHERE o.createdAt >= :startDate GROUP BY YEAR(o.createdAt), MONTH(o.createdAt) ORDER BY YEAR(o.createdAt), MONTH(o.createdAt)")
+        java.util.List<Object[]> getConversionRateByMonth(@Param("startDate") java.time.LocalDateTime startDate);
+
+        // Dashboard: Revenue over time (grouped by date)
+        @Query("SELECT DATE(o.createdAt), SUM(o.totalAmount) " +
+                        "FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND (:status IS NULL OR o.status = :status) " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate " +
+                        "GROUP BY DATE(o.createdAt) " +
+                        "ORDER BY DATE(o.createdAt)")
+        List<Object[]> findRevenueByDateRange(@Param("storeId") Long storeId,
+                        @Param("status") OrderStatus status,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        // Dashboard: Orders by status count
+        @Query("SELECT o.status, COUNT(o), SUM(o.totalAmount) " +
+                        "FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate " +
+                        "GROUP BY o.status")
+        List<Object[]> countOrdersByStatusAndDateRange(@Param("storeId") Long storeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        // Dashboard: Detailed orders for Sales screen
+        @Query("SELECT o FROM Order o " +
+                        "WHERE o.sellerStore.id = :storeId " +
+                        "AND (:status IS NULL OR o.status = :status) " +
+                        "AND (:productId IS NULL OR o.product.id = :productId) " +
+                        "AND o.createdAt BETWEEN :startDate AND :endDate " +
+                        "ORDER BY o.createdAt DESC")
+        Page<Order> findOrdersForDashboard(@Param("storeId") Long storeId,
+                        @Param("status") OrderStatus status,
+                        @Param("productId") Long productId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate,
+                        Pageable pageable);
 }

@@ -11,12 +11,12 @@ public class GlobalConfig {
     // Base URL
     public static final String BASE_URL = "http://localhost:8080";
 
-    // Escrow scan interval hours
+    // Escrow scan interval (lấy từ database, đơn vị: giờ)
     @Bean
     public Long escrowScanIntervalHours(SystemSettingService systemSettingService) {
-        String hoursStr = systemSettingService.getSettingValue("escrow.default_scan_hours", "0.02");
-        // Parse as double and convert to milliseconds
-        double hours = Double.parseDouble(hoursStr);
-        return (long) (hours * 60 * 60 * 1000);
+        // Lấy giá trị từ database (đơn vị: giờ)
+        Double hours = systemSettingService.getDoubleValue("escrow.default_scan_hours", 0.02);
+        // Convert từ giờ sang milliseconds
+        return Math.round(hours * 3600 * 1000);
     }
 }

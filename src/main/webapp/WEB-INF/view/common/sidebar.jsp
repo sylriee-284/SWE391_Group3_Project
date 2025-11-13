@@ -7,6 +7,7 @@
                 <ul class="menu">
                     <li><a href="/homepage">🏠 Trang chủ</a></li>
 
+
                     <c:if test="${pageContext.request.userPrincipal == null}">
                         <li><a href="/register">📝 Đăng ký ngay</a></li>
                     </c:if>
@@ -18,20 +19,22 @@
                             <a class="d-flex justify-content-between align-items-center text-decoration-none text-white"
                                 data-bs-toggle="collapse" href="#paymentMenu" role="button" aria-expanded="false"
                                 aria-controls="paymentMenu">
-                                💳 Quản lý thanh toán
+                                💳Quản lý thanh toán
                                 <i class="fas fa-chevron-down"></i>
                             </a>
                             <ul class="collapse list-unstyled ms-3 mt-2" id="paymentMenu">
+                                <li><a href="/wallet">💰 Ví của tôi</a></li>
                                 <li><a href="/wallet/deposit" class="text-white text-decoration-none">➕ Nạp tiền</a>
                                 </li>
                                 <li><a href="/wallet/transactions" class="text-white text-decoration-none">📜 Lịch sử
                                         giao
                                         dịch</a></li>
 
+
                                 <!-- Chỉ hiển thị nếu user có role SELLER -->
                                 <sec:authorize access="hasRole('SELLER')">
-                                    <li><a href="/wallet/withdraw" class="text-white text-decoration-none">📤 Rút
-                                            tiền</a></li>
+                                    <li><a href="/seller/withdrawals" class="text-white text-decoration-none">💸 Yêu cầu
+                                            rút tiền</a></li>
                                 </sec:authorize>
                             </ul>
                         </li>
@@ -62,25 +65,40 @@
                     </sec:authorize>
 
                     <sec:authorize access="isAuthenticated() and hasRole('SELLER')">
-                        <!-- Cửa hàng của tôi -->
-                        <li class="mt-2">
-                            <a class="d-flex justify-content-between align-items-center text-decoration-none text-white"
-                                data-bs-toggle="collapse" href="#sellerMenu" role="button" aria-expanded="false"
-                                aria-controls="sellerMenu">
-                                🏪 Cửa hàng của tôi
-                                <i class="fas fa-chevron-down"></i>
-                            </a>
-                            <ul class="collapse list-unstyled ms-3 mt-2" id="sellerMenu">
-                                <li><a href="/seller/dashboard" class="text-white text-decoration-none">📊 Bảng điều
-                                        khiển người bán</a></li>
-                                <li><a href="/seller/profile" class="text-white text-decoration-none">🏪 Thông tin
-                                        cửa hàng</a></li>
-                                <li><a href="/seller/products" class="text-white text-decoration-none">📦 Quản lý sản
-                                        phẩm</a></li>
-                                <li><a href="/seller/reports" class="text-white text-decoration-none">📈 Báo cáo & thống
-                                        kê</a></li>
-                            </ul>
-                        </li>
+                        <c:choose>
+                            <c:when test="${userStore.status == 'INACTIVE'}">
+                                <!-- Nếu cửa hàng đã đóng (INACTIVE), hiển thị link Kích hoạt cửa hàng giống như PENDING -->
+                                <li class="mt-2">
+                                    <a href="/seller/register" class="text-white text-decoration-none">🛍️ Kích hoạt cửa
+                                        hàng</a>
+                                </li>
+                            </c:when>
+                            <c:otherwise>
+                                <!-- Nếu cửa hàng đang hoạt động, hiển thị đầy đủ menu -->
+                                <li class="mt-2">
+                                    <a class="d-flex justify-content-between align-items-center text-decoration-none text-white"
+                                        data-bs-toggle="collapse" href="#sellerMenu" role="button" aria-expanded="false"
+                                        aria-controls="sellerMenu">
+                                        🏪Cửa hàng của tôi
+                                        <i class="fas fa-chevron-down"></i>
+                                    </a>
+                                    <ul class="collapse list-unstyled ms-3 mt-2" id="sellerMenu">
+                                        <li><a href="/seller/dashboard" class="text-white text-decoration-none">📊 Bảng
+                                                điều khiển</a></li>
+                                        <li><a href="/seller/profile" class="text-white text-decoration-none">🏪 Thông
+                                                tin
+                                                cửa hàng</a></li>
+                                        <li><a href="/seller/store/settings" class="text-white text-decoration-none">⚙️
+                                                Quản lý
+                                                cửa
+                                                hàng</a></li>
+                                        <li><a href="/seller/products" class="text-white text-decoration-none">📦 Quản
+                                                lý sản
+                                                phẩm</a></li>
+                                    </ul>
+                                </li>
+                            </c:otherwise>
+                        </c:choose>
                     </sec:authorize>
 
                     <!-- Quản lý Admin -->
@@ -95,17 +113,18 @@
                             </a>
                             <ul class="collapse list-unstyled ms-3 mt-2" id="adminMenu">
                                 <li><a href="/admin/dashboard" class="text-white text-decoration-none">📊 Bảng điều
-                                        khiển Admin</a></li>
+                                        khiển</a></li>
                                 <li><a href="/admin/users" class="text-white text-decoration-none">👥 Quản lý người
                                         dùng</a></li>
                                 <li><a href="/admin/stores" class="text-white text-decoration-none">🏪 Quản lý cửa
                                         hàng</a></li>
                                 <li><a href="/admin/categories" class="text-white text-decoration-none">📦 Quản lý mặt
                                         hàng</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">💳 Đơn rút tiền</a></li>
+                                <li><a href="/admin/withdrawals" class="text-white text-decoration-none">💲 Quản lý rút
+                                        tiền</a></li>
                                 <li><a href="/admin/system-config" class="text-white text-decoration-none">⚙️ Cài đặt
                                         platform</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">📈 Báo cáo & thống kê</a></li>
+
                             </ul>
                         </li>
                     </sec:authorize>

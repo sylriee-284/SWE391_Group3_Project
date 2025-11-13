@@ -18,10 +18,9 @@
                 <div class="container mt-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4>Chi tiết sản phẩm #${product.id}</h4>
-                        <c:url var="backUrl" value="/seller/products">
-                            <c:param name="storeId" value="${storeId}" />
-                        </c:url>
-                        <a class="btn btn-outline-secondary" href="${backUrl}">← Quay lại</a>
+                        <a class="btn btn-outline-secondary" href="/seller/products">
+                            <i class="fas fa-arrow-left"></i> Quay lại
+                        </a>
                     </div>
 
                     <div class="card">

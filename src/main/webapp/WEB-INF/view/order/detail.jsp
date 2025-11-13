@@ -108,8 +108,8 @@
                                                                 <h6 class="border-bottom pb-2">Buyer/Seller Information
                                                                 </h6>
                                                                 <table class="table table-borderless">
-                                                                    <c:if
-                                                                        test="${order.buyer != null && (order.buyer.id == currentUser.id || !isSeller)}">
+                                                                    <!-- Chỉ hiển thị thông tin buyer cho chính buyer hoặc admin -->
+                                                                    <c:if test="${order.buyer != null && (order.buyer.id == currentUser.id)}">
                                                                         <tr>
                                                                             <td class="text-muted">Buyer:</td>
                                                                             <td>${order.buyer.fullName}
@@ -121,6 +121,21 @@
                                                                             <td>${order.buyer.email}</td>
                                                                         </tr>
                                                                     </c:if>
+                                                                    <!-- Hoặc admin có thể xem thông tin buyer -->
+                                                                    <sec:authorize access="hasRole('ADMIN')">
+                                                                        <c:if test="${order.buyer != null && order.buyer.id != currentUser.id}">
+                                                                            <tr>
+                                                                                <td class="text-muted">Buyer:</td>
+                                                                                <td>${order.buyer.fullName}
+                                                                                    (${order.buyer.username})
+                                                                                </td>
+                                                                            </tr>
+                                                                            <tr>
+                                                                                <td class="text-muted">Email:</td>
+                                                                                <td>${order.buyer.email}</td>
+                                                                            </tr>
+                                                                        </c:if>
+                                                                    </sec:authorize>
                                                                     <c:if test="${order.sellerStore != null}">
                                                                         <tr>
                                                                             <td class="text-muted">Store:</td>

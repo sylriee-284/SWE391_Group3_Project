@@ -17,7 +17,7 @@ import vn.group3.marketplace.domain.entity.SellerStore;
 import vn.group3.marketplace.domain.enums.ProductStatus;
 import vn.group3.marketplace.domain.enums.ProductStorageStatus;
 import vn.group3.marketplace.repository.CategoryRepository;
-import vn.group3.marketplace.repository.ProductStorageRepository;
+// removed unused ProductStorageRepository import
 import vn.group3.marketplace.repository.SellerStoreRepository;
 import vn.group3.marketplace.service.ProductService;
 
@@ -42,7 +42,8 @@ public class SellerProductController {
 
     private final ProductService productService;
     private final CategoryRepository categoryRepo;
-    private final ProductStorageRepository storageRepo;
+    // product storage repository not needed here; use ProductStorageService if
+    // required
     private final SellerStoreRepository storeRepo;
 
     @Value("${app.upload.dir:uploads}")
@@ -63,6 +64,11 @@ public class SellerProductController {
         return sellerStore != null ? sellerStore.getId() : null;
     }
 
+    // Resolve store ID: use provided storeId or get from current user
+    private Long resolveStoreId(Long storeId, CustomUserDetails currentUser) {
+        return storeId != null ? storeId : getCurrentSellerStoreId(currentUser);
+    }
+
     // Lấy tối đa 4 danh mục cha để hiển thị nhanh
     private List<Category> top4Parents() {
         List<Category> parents = categoryRepo.findByParentIsNullAndIsDeletedFalseOrderByNameAsc();
@@ -74,12 +80,77 @@ public class SellerProductController {
         return storeRepo.findById(storeId).map(SellerStore::getMaxListingPrice).orElse(null);
     }
 
-    // Lưu ảnh vào thư mục uploads và trả về đường dẫn public
-    private String saveImageToUploads(MultipartFile file) throws Exception {
+    // Xóa file ảnh cũ từ thư mục static
+    private void deleteOldImageFile(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty())
+            return;
+
+        try {
+            // Chuyển URL thành đường dẫn file
+            String fileName = imageUrl;
+            if (fileName.startsWith("/images/products/")) {
+                fileName = fileName.substring("/images/products/".length());
+            } else if (fileName.startsWith("/image/products/")) {
+                fileName = fileName.substring("/image/products/".length());
+            } else {
+                // Nếu URL không theo format mong đợi, bỏ qua
+                return;
+            }
+
+            Path staticProductsDir = Paths.get("src/main/resources/static/images/products");
+            Path fileToDelete = staticProductsDir.resolve(fileName);
+
+            if (Files.exists(fileToDelete)) {
+                Files.delete(fileToDelete);
+            }
+        } catch (Exception e) {
+            // Log error silently if needed
+        }
+    }
+
+    // Tìm số thứ tự tiếp theo để đặt tên file ảnh (ví dụ: nếu có 1.png, 2.png thì
+    // trả về 3)
+    private int getNextImageNumber(Path directory) throws Exception {
+        if (!Files.exists(directory)) {
+            return 1;
+        }
+
+        int maxNumber = 0;
+        try (var stream = Files.list(directory)) {
+            var files = stream
+                    .filter(Files::isRegularFile)
+                    .map(p -> p.getFileName().toString())
+                    .toList();
+
+            for (String filename : files) {
+                // Lấy tên file không có extension (ví dụ: "123.png" -> "123")
+                String nameWithoutExt = filename;
+                int dotIndex = filename.lastIndexOf('.');
+                if (dotIndex > 0) {
+                    nameWithoutExt = filename.substring(0, dotIndex);
+                }
+
+                // Thử parse thành số
+                try {
+                    int num = Integer.parseInt(nameWithoutExt);
+                    if (num > maxNumber) {
+                        maxNumber = num;
+                    }
+                } catch (NumberFormatException ignored) {
+                    // Bỏ qua file không phải số
+                }
+            }
+        }
+
+        return maxNumber + 1;
+    }
+
+    // Lưu một file ảnh đơn vào thư mục static images của project và trả về đường
+    // dẫn public
+    private String saveSingleImageToStatic(MultipartFile file, Path targetDir, String filename) throws Exception {
         if (file == null || file.isEmpty())
             return null;
 
-        // Kiểm tra MIME & size (<= 10MB)
         long maxBytes = 10L * 1024 * 1024;
         if (file.getSize() > maxBytes) {
             throw new IllegalArgumentException("Ảnh vượt quá 10MB.");
@@ -89,19 +160,65 @@ public class SellerProductController {
             throw new IllegalArgumentException("Chỉ hỗ trợ ảnh JPG hoặc PNG.");
         }
 
-        Path root = Paths.get(uploadDir);
-        Files.createDirectories(root);
+        Files.createDirectories(targetDir);
 
         String original = file.getOriginalFilename();
-        String ext = ".jpg";
+        String ext = ".png";
         if (original != null && original.lastIndexOf('.') >= 0) {
             ext = original.substring(original.lastIndexOf('.')).toLowerCase();
         }
-        String filename = UUID.randomUUID().toString().replace("-", "") + ext;
-        Path dest = root.resolve(filename);
+
+        String safeName = filename + ext;
+        Path dest = targetDir.resolve(safeName);
         Files.copy(file.getInputStream(), dest, StandardCopyOption.REPLACE_EXISTING);
 
-        return "/uploads/" + filename;
+        return "/images/products/" + safeName;
+    }
+
+    // Lưu nhiều file (theo thứ tự số) vào thư mục static images/products
+    private List<String> saveMultipleImagesToStatic(Long productId, MultipartFile[] files) throws Exception {
+        if (files == null || files.length == 0) {
+            return Collections.emptyList();
+        }
+
+        // Kiểm tra xem có file thực sự được upload không
+        boolean hasValidFile = false;
+        for (MultipartFile f : files) {
+            if (f != null && !f.isEmpty() && f.getSize() > 0) {
+                hasValidFile = true;
+                break;
+            }
+        }
+
+        if (!hasValidFile) {
+            return Collections.emptyList();
+        }
+
+        // Target directory inside project static resources
+        Path staticProductsDir = Paths.get("src/main/resources/static/images/products");
+
+        // Tìm số thứ tự tiếp theo (chỉ dùng khi productId == null)
+        int nextNumber = (productId == null) ? getNextImageNumber(staticProductsDir) : 0;
+
+        List<String> saved = new ArrayList<>();
+        for (MultipartFile f : files) {
+            if (f == null || f.isEmpty() || f.getSize() == 0)
+                continue;
+
+            // Nếu đang update sản phẩm (có productId), dùng productId làm tên file
+            // Nếu đang tạo mới (không có productId), dùng số thứ tự tiếp theo
+            String filenameBase = (productId != null) ? String.valueOf(productId) : String.valueOf(nextNumber);
+            String url = saveSingleImageToStatic(f, staticProductsDir, filenameBase);
+            if (url != null) {
+                saved.add(url);
+                // Chỉ tăng số thứ tự khi đang tạo mới (không có productId)
+                if (productId == null) {
+                    nextNumber++;
+                }
+            }
+        }
+
+        return saved;
     }
 
     // ============ LIST ============
@@ -198,15 +315,36 @@ public class SellerProductController {
         // CUNG CẤP max price cho trang danh sách (để modal Sửa áp giới hạn)
         model.addAttribute("storeMaxListingPrice", getStoreMaxPrice(sid));
 
+        // Truyền thông tin trạng thái cửa hàng để kiểm tra có cho phép thêm sản phẩm
+        // không
+        storeRepo.findById(sid).ifPresent(store -> {
+            model.addAttribute("storeStatus", store.getStatus());
+        });
+
         return "seller/products";
     }
 
     // ============ NEW FORM ============
     @GetMapping("/new")
-    public String createForm(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
+    public String createForm(@AuthenticationPrincipal CustomUserDetails currentUser,
+            Model model,
+            RedirectAttributes redirectAttributes) {
         Long sid = getCurrentSellerStoreId(currentUser);
         if (sid == null) {
             return "redirect:/login?error=not_authenticated";
+        }
+
+        // Kiểm tra trạng thái cửa hàng
+        Optional<SellerStore> storeOpt = storeRepo.findById(sid);
+        if (storeOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy cửa hàng");
+            return "redirect:/seller/products?storeId=" + sid;
+        }
+
+        SellerStore sellerStore = storeOpt.get();
+        if ("INACTIVE".equals(sellerStore.getStatus().name())) {
+            redirectAttributes.addFlashAttribute("error", "Không thể thêm sản phẩm mới khi cửa hàng đã đóng");
+            return "redirect:/seller/products?storeId=" + sid;
         }
 
         Product form = new Product();
@@ -235,7 +373,8 @@ public class SellerProductController {
     public String create(@AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @ModelAttribute("form") Product form,
             BindingResult binding,
-            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "storeId", required = false) Long storeId,
+            @RequestParam(value = "imageFiles", required = false) MultipartFile[] imageFiles,
             Model model,
             RedirectAttributes ra) {
 
@@ -246,16 +385,6 @@ public class SellerProductController {
         SellerStore store = new SellerStore();
         store.setId(sid);
         form.setSellerStore(store);
-
-        // Upload ảnh (nếu có)
-        if (imageFile != null && !imageFile.isEmpty()) {
-            try {
-                String imagePath = saveImageToUploads(imageFile);
-                form.setProductUrl(imagePath);
-            } catch (Exception e) {
-                binding.rejectValue("productUrl", "image.invalid", e.getMessage());
-            }
-        }
 
         // Kiểm tra giá > 0
         if (form.getPrice() == null || form.getPrice().compareTo(BigDecimal.valueOf(0.01)) < 0) {
@@ -288,9 +417,49 @@ public class SellerProductController {
             return "seller/product-form";
         }
 
-        productService.create(form);
+        // Tạo sản phẩm trước để có ID (ProductService.create() sẽ validate và save)
+        Product createdProduct = null;
+        try {
+            createdProduct = productService.create(form);
+        } catch (IllegalArgumentException ex) {
+            // Nếu service ném IllegalArgumentException (ví dụ: slug trùng, giá vượt trần)
+            binding.reject("create.error", ex.getMessage());
+            model.addAttribute("storeId", sid);
+            model.addAttribute("storeMaxListingPrice", maxPrice);
+            model.addAttribute("formMode", "CREATE");
+            model.addAttribute("parentCategories", top4Parents());
+
+            List<Category> subCats = Collections.emptyList();
+            if (form.getCategory() != null && form.getCategory().getId() != null) {
+                Category current = categoryRepo.findById(form.getCategory().getId()).orElse(null);
+                if (current != null && current.getParent() != null) {
+                    subCats = categoryRepo.findByParentAndIsDeletedFalse(current.getParent());
+                    model.addAttribute("selectedParentId", current.getParent().getId());
+                    model.addAttribute("selectedChildId", current.getId());
+                }
+            }
+            model.addAttribute("subCategories", subCats);
+            return "seller/product-form";
+        }
+
+        // Sau khi đã có productId, thử lưu ảnh (nếu upload)
+        try {
+            List<String> saved = saveMultipleImagesToStatic(createdProduct.getId(), imageFiles);
+            if (!saved.isEmpty()) {
+                // Cập nhật lại product với URL ảnh (lưu ảnh đầu tiên làm ảnh đại diện)
+                createdProduct.setProductUrl(saved.get(0));
+                productService.update(createdProduct, sid);
+            }
+        } catch (Exception e) {
+            // Nếu upload ảnh thất bại, sản phẩm vẫn được tạo nhưng không có ảnh; hiển thị
+            // cảnh báo
+            ra.addFlashAttribute("warningMessage", "Sản phẩm đã được tạo nhưng upload ảnh thất bại: " + e.getMessage());
+            // Vẫn tiếp tục redirect về danh sách
+            return "redirect:/seller/products";
+        }
+
         ra.addFlashAttribute("successMessage", "Thêm sản phẩm mới thành công!");
-        return "redirect:/seller/products";
+        return "redirect:/seller/products?storeId=" + sid;
     }
 
     // ============ EDIT FORM ============
@@ -340,11 +509,12 @@ public class SellerProductController {
             @PathVariable Long id,
             @Valid @ModelAttribute("form") Product form,
             BindingResult binding,
-            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "storeId", required = false) Long storeId,
+            @RequestParam(value = "imageFiles", required = false) MultipartFile[] imageFiles,
             Model model,
-            RedirectAttributes ra) {
+            RedirectAttributes redirectAttributes) {
 
-        Long sid = getCurrentSellerStoreId(currentUser);
+        Long sid = resolveStoreId(storeId, currentUser);
         if (sid == null) {
             return "redirect:/login?error=not_authenticated";
         }
@@ -352,17 +522,8 @@ public class SellerProductController {
 
         Product existed = productService.getOwned(id, sid);
 
-        // Ảnh: nếu upload mới thì validate; nếu không, giữ ảnh cũ
-        if (imageFile != null && !imageFile.isEmpty()) {
-            try {
-                String imagePath = saveImageToUploads(imageFile);
-                form.setProductUrl(imagePath);
-            } catch (Exception e) {
-                binding.rejectValue("productUrl", "image.invalid", e.getMessage());
-            }
-        } else {
-            form.setProductUrl(existed.getProductUrl());
-        }
+        // Lấy giá niêm yết tối đa của cửa hàng
+        BigDecimal maxPrice = getStoreMaxPrice(sid);
 
         // Kiểm tra giá > 0
         if (form.getPrice() == null || form.getPrice().compareTo(BigDecimal.valueOf(0.01)) < 0) {
@@ -370,9 +531,26 @@ public class SellerProductController {
         }
 
         // Kiểm tra trần giá theo store (nếu có)
-        BigDecimal maxPrice = getStoreMaxPrice(sid);
         if (maxPrice != null && form.getPrice() != null && form.getPrice().compareTo(maxPrice) > 0) {
-            binding.rejectValue("price", "price.max", "Giá vượt mức tối đa cho phép của cửa hàng.");
+            binding.rejectValue("price", "price.max",
+                    "Giá vượt mức tối đa cho phép của cửa hàng. Giá niêm yết tối đa là: " + maxPrice + " ₫");
+        }
+
+        // Ảnh: nếu upload mới thì XÓA ảnh cũ và lưu ảnh mới; nếu không, giữ ảnh cũ
+        try {
+            List<String> saved = saveMultipleImagesToStatic(id, imageFiles);
+            if (!saved.isEmpty()) {
+                // XÓA ảnh cũ trước khi cập nhật ảnh mới
+                if (existed.getProductUrl() != null && !existed.getProductUrl().isEmpty()) {
+                    deleteOldImageFile(existed.getProductUrl());
+                }
+                form.setProductUrl(saved.get(0));
+            } else {
+                // Không upload ảnh mới, giữ nguyên ảnh cũ
+                form.setProductUrl(existed.getProductUrl());
+            }
+        } catch (Exception e) {
+            binding.rejectValue("productUrl", "image.invalid", e.getMessage());
         }
 
         if (binding.hasErrors()) {
@@ -404,7 +582,7 @@ public class SellerProductController {
 
         try {
             productService.update(form, sid);
-            ra.addFlashAttribute("successMessage", "Sửa sản phẩm thành công!");
+            redirectAttributes.addFlashAttribute("successMessage", "Sửa sản phẩm thành công!");
             return "redirect:/seller/products";
         } catch (IllegalArgumentException ex) {
             // Bind error to status field so it shows on the form
@@ -470,21 +648,27 @@ public class SellerProductController {
 
     // ============ DETAIL (view-only) ============
     @GetMapping("/{id}")
-    public String detail(@AuthenticationPrincipal CustomUserDetails currentUser,
-            @PathVariable Long id,
-            Model model) {
-        Long sid = getCurrentSellerStoreId(currentUser);
-        if (sid == null) {
-            return "redirect:/login?error=not_authenticated";
+    public String detail(@PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @RequestParam(value = "storeId", required = false) Long storeId,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+        Long sid = resolveStoreId(storeId, currentUser);
+
+        try {
+            // Use getOwned to ensure seller can only view their product in seller context
+            Product product = productService.getOwned(id, sid);
+
+            model.addAttribute("product", product);
+            model.addAttribute("storeId", sid);
+
+            return "seller/product-detail";
+        } catch (IllegalArgumentException e) {
+            // Product not found or doesn't belong to this store
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Không tìm thấy sản phẩm hoặc sản phẩm không thuộc cửa hàng của bạn.");
+            return "redirect:/seller/products";
         }
-
-        // Use getOwned to ensure seller can only view their product in seller context
-        Product product = productService.getOwned(id, sid);
-
-        model.addAttribute("product", product);
-        model.addAttribute("storeId", sid);
-
-        return "seller/product-detail";
     }
 
     // ============ AJAX: cập nhật nhanh (dùng cho modal) ============
@@ -515,9 +699,33 @@ public class SellerProductController {
             if (slug != null)
                 existing.setSlug(slug);
             if (priceObj != null) {
+                // Try to coerce common formatted input into a clean numeric string.
+                // Users may paste values with grouping (commas/dots) or currency symbols.
+                String raw = String.valueOf(priceObj).trim();
+                // Keep digits, dot, comma and minus for initial normalization
+                String cleaned = raw.replaceAll("[^0-9,\\.\\-]", "");
+                // Remove common thousand separators (commas)
+                cleaned = cleaned.replaceAll(",", "");
+                // If there are multiple dots (e.g. 1.000.000) assume dots are thousand
+                // separators and remove them. If there's only one dot it may be a
+                // decimal separator and should be kept.
+                int dotCount = cleaned.length() - cleaned.replace(".", "").length();
+                if (dotCount > 1) {
+                    cleaned = cleaned.replaceAll("\\.", "");
+                }
+
+                if (cleaned.isEmpty() || cleaned.equals("-") || cleaned.equals(".")) {
+                    out.put("ok", false);
+                    out.put("message", "Giá không hợp lệ");
+                    return out;
+                }
+
                 try {
-                    existing.setPrice(new java.math.BigDecimal(String.valueOf(priceObj)));
-                } catch (Exception ignored) {
+                    existing.setPrice(new java.math.BigDecimal(cleaned));
+                } catch (Exception pe) {
+                    out.put("ok", false);
+                    out.put("message", "Giá không hợp lệ");
+                    return out;
                 }
             }
             if (stockObj != null) {
@@ -573,6 +781,74 @@ public class SellerProductController {
         } catch (Exception ex) {
             out.put("ok", false);
             out.put("message", "Lỗi hệ thống");
+            return out;
+        }
+    }
+
+    // ============ AJAX: Upload ảnh sản phẩm ============
+    @PostMapping(value = "/{id}/upload-image", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object> uploadImage(@PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @RequestParam("imageFile") MultipartFile imageFile,
+            @RequestParam(value = "storeId", required = false) Long storeId) {
+        Long sid = resolveStoreId(storeId, currentUser);
+        Map<String, Object> out = new HashMap<>();
+
+        try {
+            Product existing = productService.getOwned(id, sid);
+
+            // Validate file
+            if (imageFile == null || imageFile.isEmpty()) {
+                out.put("ok", false);
+                out.put("message", "Vui lòng chọn file ảnh");
+                return out;
+            }
+
+            // Validate file type
+            String contentType = imageFile.getContentType();
+            if (contentType == null || (!contentType.equals("image/jpeg") && !contentType.equals("image/png"))) {
+                out.put("ok", false);
+                out.put("message", "Chỉ chấp nhận file JPG hoặc PNG");
+                return out;
+            }
+
+            // Validate file size (max 10MB)
+            if (imageFile.getSize() > 10 * 1024 * 1024) {
+                out.put("ok", false);
+                out.put("message", "File ảnh không được vượt quá 10MB");
+                return out;
+            }
+
+            // Delete old image first
+            if (existing.getProductUrl() != null && !existing.getProductUrl().isEmpty()) {
+                deleteOldImageFile(existing.getProductUrl());
+            }
+
+            // Save new image with same base filename as productId
+            Path staticProductsDir = Paths.get("src/main/resources/static/images/products");
+            Files.createDirectories(staticProductsDir);
+
+            // Use productId as base filename (without extension)
+            String filenameBase = String.valueOf(id);
+            String imageUrl = saveSingleImageToStatic(imageFile, staticProductsDir, filenameBase);
+
+            // Update product
+            existing.setProductUrl(imageUrl);
+            productService.update(existing, sid);
+
+            out.put("ok", true);
+            out.put("message", "Upload ảnh thành công");
+            out.put("imageUrl", imageUrl);
+            return out;
+
+        } catch (IllegalArgumentException ex) {
+            out.put("ok", false);
+            out.put("message", ex.getMessage());
+            return out;
+        } catch (Exception ex) {
+            out.put("ok", false);
+            out.put("message", "Lỗi khi upload ảnh: " + ex.getMessage());
             return out;
         }
     }

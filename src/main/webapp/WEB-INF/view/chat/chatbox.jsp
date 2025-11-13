@@ -28,9 +28,9 @@
 
                         <script>
                             const firebaseConfig = {
-                                apiKey: "AIzaSyDenK3979rENG3vgxb3MlynYZqLzyZfV_A",
-                                authDomain: "mmo-market-system.firebaseapp.com",
-                                projectId: "mmo-market-system"
+                                apiKey: "${firebaseApiKey}",
+                                authDomain: "${firebaseAuthDomain}",
+                                projectId: "${firebaseProjectId}"
                             };
                         </script>
 
@@ -41,6 +41,9 @@
                         </script>
 
                         <meta id="me-username" content="${fn:escapeXml(currentUser.username)}" />
+                        <c:if test="${not empty chatTo}">
+                            <meta id="chat-to-username" content="${fn:escapeXml(chatTo)}" />
+                        </c:if>
 
                     </head>
 
@@ -130,6 +133,11 @@
                             let activeCid = null;
                             let unsubConvos = null;
                             let unsubMsgs = null;
+                            let oldestMessageDoc = null; // Document của message cũ nhất đã load
+                            let isLoadingMore = false;    // Đang load thêm messages
+                            let hasMoreMessages = true;  // Còn messages cũ hơn để load
+                            let loadedMessageIds = new Set(); // Track loaded message IDs to prevent duplicates
+                            let newestTimestamp = null; // Track newest message timestamp
 
                             // ====== HÀM CHÍNH, CHỈ CHẠY SAU KHI DOM SẴN SÀNG ======
                             async function boot() {
@@ -179,6 +187,7 @@
                                     const verifiedBadge = (other === 'admin') ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="#0d6efd" style="vertical-align: middle; margin-left: 4px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' : '';
                                     const wrap = document.createElement('div');
                                     wrap.className = 'contact-item';
+                                    wrap.setAttribute('data-cid', cid); // Thêm data attribute để track
                                     wrap.style.cursor = 'pointer';
                                     wrap.innerHTML =
                                         '<img src="' + avatarUrl + '" alt="' + esc(other) + '" class="contact-avatar">' +
@@ -208,7 +217,23 @@
                                         if (snap.empty) {
                                             listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">Chưa có cuộc hội thoại nào</div>';
                                         } else {
-                                            snap.forEach(function (doc) {
+                                            // Sort documents by lastMessageAt (desc) để đảm bảo thứ tự đúng
+                                            const docs = snap.docs.slice(); // Copy array
+                                            docs.sort(function (a, b) {
+                                                const aTime = a.data().lastMessageAt;
+                                                const bTime = b.data().lastMessageAt;
+
+                                                if (!aTime && !bTime) return 0;
+                                                if (!aTime) return 1;
+                                                if (!bTime) return -1;
+
+                                                const aTimestamp = aTime.toDate ? aTime.toDate().getTime() : (aTime.getTime ? aTime.getTime() : 0);
+                                                const bTimestamp = bTime.toDate ? bTime.toDate().getTime() : (bTime.getTime ? bTime.getTime() : 0);
+
+                                                return bTimestamp - aTimestamp; // Desc order
+                                            });
+
+                                            docs.forEach(function (doc) {
                                                 listEl.appendChild(renderConvoItem(doc));
                                             });
                                         }
@@ -223,11 +248,27 @@
                                                 if (snap.empty) {
                                                     listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">Chưa có cuộc hội thoại nào</div>';
                                                 } else {
-                                                    snap.forEach(function (doc) {
+                                                    // Sort documents by lastMessageAt (desc) vì không có orderBy trong query
+                                                    const docs = snap.docs.slice(); // Copy array
+                                                    docs.sort(function (a, b) {
+                                                        const aTime = a.data().lastMessageAt;
+                                                        const bTime = b.data().lastMessageAt;
+
+                                                        if (!aTime && !bTime) return 0;
+                                                        if (!aTime) return 1;
+                                                        if (!bTime) return -1;
+
+                                                        const aTimestamp = aTime.toDate ? aTime.toDate().getTime() : (aTime.getTime ? aTime.getTime() : 0);
+                                                        const bTimestamp = bTime.toDate ? bTime.toDate().getTime() : (bTime.getTime ? bTime.getTime() : 0);
+
+                                                        return bTimestamp - aTimestamp; // Desc order
+                                                    });
+
+                                                    docs.forEach(function (doc) {
                                                         listEl.appendChild(renderConvoItem(doc));
                                                     });
                                                 }
-                                            }).catch(function (e) {
+                                            }).catch(() => {
                                                 listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: #f00;">Lỗi tải conversations</div>';
                                             });
                                         } else {
@@ -238,8 +279,24 @@
                                     // Sau đó listen real-time updates
                                     unsubConvos = q.onSnapshot(function (snap) {
                                         if (!snap.empty) {
+                                            // Sort documents by lastMessageAt (desc) để đảm bảo thứ tự đúng
+                                            const docs = snap.docs.slice(); // Copy array
+                                            docs.sort(function (a, b) {
+                                                const aTime = a.data().lastMessageAt;
+                                                const bTime = b.data().lastMessageAt;
+
+                                                if (!aTime && !bTime) return 0;
+                                                if (!aTime) return 1;
+                                                if (!bTime) return -1;
+
+                                                const aTimestamp = aTime.toDate ? aTime.toDate().getTime() : (aTime.getTime ? aTime.getTime() : 0);
+                                                const bTimestamp = bTime.toDate ? bTime.toDate().getTime() : (bTime.getTime ? bTime.getTime() : 0);
+
+                                                return bTimestamp - aTimestamp; // Desc order
+                                            });
+
                                             listEl.innerHTML = '';
-                                            snap.forEach(function (doc) {
+                                            docs.forEach(function (doc) {
                                                 listEl.appendChild(renderConvoItem(doc));
                                             });
                                         }
@@ -248,17 +305,56 @@
                                     });
                                 }
 
+                                // ---- Thêm conversation vào danh sách sidebar
+                                function addConversationToSidebar(cid) {
+                                    // Kiểm tra xem conversation đã có trong sidebar chưa
+                                    const existingItem = listEl.querySelector(`[data-cid="${cid}"]`);
+                                    if (existingItem) {
+                                        return; // Đã có rồi, không cần thêm
+                                    }
+
+                                    // Fetch conversation document và thêm vào sidebar
+                                    db.collection('conversations').doc(cid).get().then(function (doc) {
+                                        if (doc.exists) {
+                                            // Xóa message "Chưa có cuộc hội thoại nào" nếu có
+                                            const emptyMsg = listEl.querySelector('div[style*="text-align:center"]');
+                                            if (emptyMsg) {
+                                                emptyMsg.remove();
+                                            }
+
+                                            // Render và thêm vào đầu danh sách
+                                            const convoItem = renderConvoItem(doc);
+                                            convoItem.setAttribute('data-cid', cid);
+
+                                            // Thêm vào đầu danh sách (vì mới nhất)
+                                            const firstChild = listEl.firstChild;
+                                            if (firstChild && firstChild.classList.contains('contact-item')) {
+                                                listEl.insertBefore(convoItem, firstChild);
+                                            } else {
+                                                listEl.insertBefore(convoItem, listEl.firstChild);
+                                            }
+                                        }
+                                    }).catch(function (err) {
+                                        // Nếu không fetch được, chỉ cần refresh toàn bộ danh sách
+                                        setTimeout(() => listenConversations(), 500);
+                                    });
+                                }
+
                                 // ---- Tạo/mở cuộc trò chuyện theo username
                                 async function getOrCreateConversationWithUsername(partnerUsername) {
                                     const me = meUsername;
                                     const you = String(partnerUsername || '').toLowerCase();
-                                    if (!me || !you || me === you) throw new Error('invalid-usernames');
+
+                                    if (!me || !you || me === you) {
+                                        throw new Error('invalid-usernames');
+                                    }
 
                                     const cid = cidOf(me, you);
                                     const cref = db.collection('conversations').doc(cid);
 
                                     try {
                                         const snap = await cref.get();
+
                                         if (!snap.exists) {
                                             // Tạo conversation mới
                                             await cref.set({
@@ -270,18 +366,18 @@
                                                 lastMessagePreview: '',
                                                 lastSeenAt: (function (o) { o[me] = firebase.firestore.FieldValue.serverTimestamp(); return o; })({})
                                             });
+
+                                            // Thêm conversation mới vào sidebar ngay lập tức
+                                            addConversationToSidebar(cid);
                                         }
                                     } catch (error) {
                                         // Nếu lỗi permissions, thử lại với merge
                                         if (error.code === 'permission-denied') {
-                                            try {
-                                                await cref.set({
-                                                    participantsUsernames: [me, you].sort(),
-                                                    lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
-                                                }, { merge: true });
-                                            } catch (mergeError) {
-                                                throw new Error('Không thể tạo conversation. Kiểm tra Firebase Security Rules.');
-                                            }
+                                            await cref.set({
+                                                participantsUsernames: [me, you].sort(),
+                                                lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
+                                            }, { merge: true });
+                                            addConversationToSidebar(cid);
                                         } else {
                                             throw error;
                                         }
@@ -289,11 +385,126 @@
                                     return cid;
                                 }
 
+                                // ---- Render một message thành DOM element
+                                function renderMessage(doc) {
+                                    const m = doc.data();
+                                    const isMe = String(m.senderUsername || '').toLowerCase() === meUsername;
+
+                                    const row = document.createElement('div');
+                                    row.className = 'message-row';
+                                    row.setAttribute('data-msg-id', doc.id);
+                                    row.style.cssText = 'display:flex;margin-bottom:15px;align-items:flex-start;justify-content:' + (isMe ? 'flex-end' : 'flex-start') + ';';
+
+                                    const col = document.createElement('div');
+                                    col.style.maxWidth = '70%';
+
+                                    const bubble = document.createElement('div');
+                                    bubble.style.cssText =
+                                        'padding:12px 16px;border-radius:18px;font-size:14px;line-height:1.4;' +
+                                        'background:' + (isMe ? '#0d6efd' : '#e5e5e5') + ';color:' + (isMe ? '#fff' : '#333') + ';' +
+                                        (isMe ? 'border-bottom-right-radius:4px;' : 'border-bottom-left-radius:4px;') +
+                                        'white-space:pre-wrap;word-break:break-word;';
+                                    bubble.textContent = m.text || '';
+
+                                    const meta = document.createElement('div');
+                                    meta.style.cssText = 'font-size:11px;color:#999;margin-top:4px;text-align:' + (isMe ? 'right' : 'left') + ';';
+                                    meta.textContent = (m.ts && m.ts.toDate) ? m.ts.toDate().toLocaleString() : '';
+
+                                    col.appendChild(bubble);
+                                    col.appendChild(meta);
+                                    row.appendChild(col);
+                                    return row;
+                                }
+
+                                // ---- Load thêm messages cũ hơn (20 messages mỗi lần)
+                                async function loadMoreMessages() {
+                                    if (!activeCid || isLoadingMore || !hasMoreMessages || !oldestMessageDoc) {
+                                        return;
+                                    }
+
+                                    isLoadingMore = true;
+                                    const loadMoreBtn = msgsEl.querySelector('.load-more-btn');
+                                    if (loadMoreBtn) {
+                                        loadMoreBtn.textContent = 'Đang tải...';
+                                        loadMoreBtn.style.pointerEvents = 'none';
+                                    }
+
+                                    try {
+                                        const q = db.collection('conversations').doc(activeCid)
+                                            .collection('messages')
+                                            .orderBy('ts', 'desc')
+                                            .startAfter(oldestMessageDoc)
+                                            .limit(20);
+
+                                        const snap = await q.get();
+
+                                        if (snap.empty) {
+                                            hasMoreMessages = false;
+                                            if (loadMoreBtn) {
+                                                loadMoreBtn.textContent = 'Không còn tin nhắn cũ hơn';
+                                                loadMoreBtn.style.opacity = '0.5';
+                                                loadMoreBtn.style.cursor = 'default';
+                                            }
+                                            isLoadingMore = false;
+                                            return;
+                                        }
+
+                                        // Lưu document cũ nhất mới load được
+                                        oldestMessageDoc = snap.docs[snap.docs.length - 1];
+                                        if (snap.docs.length < 20) {
+                                            hasMoreMessages = false;
+                                        }
+
+                                        // Lấy scroll position trước khi thêm messages
+                                        const scrollBefore = msgsEl.scrollHeight - msgsEl.scrollTop;
+                                        const firstMsgRow = msgsEl.querySelector('.message-row');
+
+                                        // Thêm messages cũ vào đầu (theo thứ tự cũ → mới)
+                                        for (let i = snap.docs.length - 1; i >= 0; i--) {
+                                            const doc = snap.docs[i];
+                                            loadedMessageIds.add(doc.id); // Track loaded message ID
+                                            const msgRow = renderMessage(doc);
+                                            if (firstMsgRow) {
+                                                msgsEl.insertBefore(msgRow, firstMsgRow);
+                                            } else {
+                                                msgsEl.insertBefore(msgRow, msgsEl.firstChild);
+                                            }
+                                        }
+
+                                        // Restore scroll position
+                                        msgsEl.scrollTop = msgsEl.scrollHeight - scrollBefore;
+
+                                        // Update button
+                                        if (loadMoreBtn) {
+                                            if (hasMoreMessages) {
+                                                loadMoreBtn.textContent = 'Tải thêm tin nhắn cũ';
+                                            } else {
+                                                loadMoreBtn.textContent = 'Đã tải hết tin nhắn';
+                                                loadMoreBtn.style.opacity = '0.5';
+                                                loadMoreBtn.style.cursor = 'default';
+                                            }
+                                            loadMoreBtn.style.pointerEvents = 'auto';
+                                        }
+                                    } catch (error) {
+                                        if (loadMoreBtn) {
+                                            loadMoreBtn.textContent = 'Lỗi tải tin nhắn. Nhấn để thử lại';
+                                            loadMoreBtn.style.pointerEvents = 'auto';
+                                        }
+                                    } finally {
+                                        isLoadingMore = false;
+                                    }
+                                }
+
                                 // ---- Chọn conversation & nghe messages
                                 function selectConversation(cid) {
                                     activeCid = cid;
                                     if (unsubMsgs) unsubMsgs();
                                     enableComposer(true);
+
+                                    // Reset pagination state
+                                    oldestMessageDoc = null;
+                                    isLoadingMore = false;
+                                    hasMoreMessages = true;
 
                                     // header
                                     db.collection('conversations').doc(cid).get().then(function (s) {
@@ -305,46 +516,205 @@
 
                                     msgsEl.innerHTML = '<div style="color:#999;padding:12px">Đang tải…</div>';
 
-                                    const q = db.collection('conversations').doc(cid)
-                                        .collection('messages').orderBy('ts', 'asc').limit(200);
+                                    // Load 20 messages mới nhất ban đầu (orderBy desc)
+                                    const initialQuery = db.collection('conversations').doc(cid)
+                                        .collection('messages')
+                                        .orderBy('ts', 'desc')
+                                        .limit(20);
 
-                                    unsubMsgs = q.onSnapshot(async function (snap) {
+                                    // Reset loaded message IDs
+                                    loadedMessageIds.clear();
+                                    newestTimestamp = null;
+
+                                    initialQuery.get().then(async function (snap) {
                                         msgsEl.innerHTML = '';
-                                        snap.forEach(function (doc) {
-                                            const m = doc.data();
-                                            const isMe = String(m.senderUsername || '').toLowerCase() === meUsername;
 
-                                            const row = document.createElement('div');
-                                            row.style.cssText = 'display:flex;margin-bottom:15px;align-items:flex-start;justify-content:' + (isMe ? 'flex-end' : 'flex-start') + ';';
+                                        if (snap.empty) {
+                                            msgsEl.innerHTML = '<div style="text-align:center; padding: 20px; color:#999;">Chưa có tin nhắn nào</div>';
+                                            // Setup real-time listener even when empty
+                                            setupRealtimeListener(cid, null);
+                                            return;
+                                        }
 
-                                            const col = document.createElement('div');
-                                            col.style.maxWidth = '70%';
+                                        // Lưu document cũ nhất đã load
+                                        oldestMessageDoc = snap.docs[snap.docs.length - 1];
+                                        if (snap.docs.length < 20) {
+                                            hasMoreMessages = false;
+                                        }
 
-                                            const bubble = document.createElement('div');
-                                            bubble.style.cssText =
-                                                'padding:12px 16px;border-radius:18px;font-size:14px;line-height:1.4;' +
-                                                'background:' + (isMe ? '#0d6efd' : '#e5e5e5') + ';color:' + (isMe ? '#fff' : '#333') + ';' +
-                                                (isMe ? 'border-bottom-right-radius:4px;' : 'border-bottom-left-radius:4px;') +
-                                                'white-space:pre-wrap;word-break:break-word;';
-                                            bubble.textContent = m.text || '';
+                                        // Lưu timestamp của message mới nhất
+                                        newestTimestamp = snap.docs[0].data().ts;
 
-                                            const meta = document.createElement('div');
-                                            meta.style.cssText = 'font-size:11px;color:#999;margin-top:4px;text-align:' + (isMe ? 'right' : 'left') + ';';
-                                            meta.textContent = (m.ts && m.ts.toDate) ? m.ts.toDate().toLocaleString() : '';
+                                        // Thêm nút "Tải thêm" ở đầu nếu còn messages cũ hơn
+                                        if (hasMoreMessages) {
+                                            const loadMoreBtn = document.createElement('button');
+                                            loadMoreBtn.className = 'load-more-btn';
+                                            loadMoreBtn.type = 'button';
+                                            loadMoreBtn.style.cssText = 'width:100%;padding:10px;margin-bottom:10px;background:#f0f0f0;border:1px solid #ddd;border-radius:5px;color:#0d6efd;cursor:pointer;font-size:14px;';
+                                            loadMoreBtn.textContent = 'Tải thêm tin nhắn cũ';
+                                            loadMoreBtn.onclick = loadMoreMessages;
+                                            msgsEl.appendChild(loadMoreBtn);
+                                        }
 
-                                            col.appendChild(bubble);
-                                            col.appendChild(meta);
-                                            row.appendChild(col);
-                                            msgsEl.appendChild(row);
-                                        });
-                                        msgsEl.scrollTop = msgsEl.scrollHeight;
+                                        // Render messages từ cũ → mới (reverse để hiển thị đúng thứ tự)
+                                        for (let i = snap.docs.length - 1; i >= 0; i--) {
+                                            const doc = snap.docs[i];
+                                            loadedMessageIds.add(doc.id); // Track loaded message ID
+                                            const msgRow = renderMessage(doc);
+                                            msgsEl.appendChild(msgRow);
+                                        }
+
+                                        // Scroll xuống cuối
+                                        setTimeout(() => {
+                                            msgsEl.scrollTop = msgsEl.scrollHeight;
+                                        }, 100);
 
                                         // mark read
-                                        try {
-                                            await db.collection('conversations').doc(cid)
-                                                .set({ lastSeenAt: (function (o) { o[meUsername] = firebase.firestore.FieldValue.serverTimestamp(); return o; })({}) }, { merge: true });
-                                        } catch (e) { }
-                                    }, function (err) { });
+                                        db.collection('conversations').doc(cid)
+                                            .set({ lastSeenAt: (function (o) { o[meUsername] = firebase.firestore.FieldValue.serverTimestamp(); return o; })({}) }, { merge: true }).catch(() => { });
+
+                                        // Setup real-time listener
+                                        setupRealtimeListener(cid, newestTimestamp);
+                                    }).catch(function (err) {
+                                        msgsEl.innerHTML = '<div style="text-align:center; padding: 20px; color:#f00;">Lỗi tải tin nhắn</div>';
+                                    });
+
+                                    // Helper function to setup real-time listener
+                                    function setupRealtimeListener(cid, baseTimestamp) {
+                                        if (unsubMsgs) {
+                                            unsubMsgs();
+                                        }
+
+                                        if (baseTimestamp) {
+                                            // Query cho messages mới hơn message mới nhất
+                                            const realtimeQuery = db.collection('conversations').doc(cid)
+                                                .collection('messages')
+                                                .where('ts', '>', baseTimestamp)
+                                                .orderBy('ts', 'asc')
+                                                .limit(50);
+
+                                            unsubMsgs = realtimeQuery.onSnapshot(async function (newSnap) {
+                                                if (!newSnap.empty) {
+                                                    let shouldScroll = false;
+                                                    newSnap.forEach(function (doc) {
+                                                        // Double check: both Set and DOM
+                                                        if (!loadedMessageIds.has(doc.id)) {
+                                                            const existingRow = msgsEl.querySelector(`[data-msg-id="${doc.id}"]`);
+                                                            if (!existingRow) {
+                                                                loadedMessageIds.add(doc.id); // Add to Set
+                                                                const msgRow = renderMessage(doc);
+                                                                msgsEl.appendChild(msgRow);
+                                                                shouldScroll = true;
+
+                                                                // Update newestTimestamp
+                                                                const msgTimestamp = doc.data().ts;
+                                                                if (!newestTimestamp || msgTimestamp > newestTimestamp) {
+                                                                    newestTimestamp = msgTimestamp;
+                                                                }
+                                                            }
+                                                        }
+                                                    });
+
+                                                    // Always scroll to bottom when new message arrives
+                                                    if (shouldScroll) {
+                                                        setTimeout(() => {
+                                                            msgsEl.scrollTop = msgsEl.scrollHeight;
+                                                        }, 100);
+                                                    }
+                                                }
+
+                                                // mark read
+                                                db.collection('conversations').doc(cid)
+                                                    .set({ lastSeenAt: (function (o) { o[meUsername] = firebase.firestore.FieldValue.serverTimestamp(); return o; })({}) }, { merge: true }).catch(() => { });
+                                            }, function (err) {
+                                                // Fallback: listen to all messages and filter
+                                                if (err.code === 'failed-precondition') {
+                                                    const fallbackQuery = db.collection('conversations').doc(cid)
+                                                        .collection('messages')
+                                                        .orderBy('ts', 'desc')
+                                                        .limit(50);
+
+                                                    unsubMsgs = fallbackQuery.onSnapshot(async function (fallbackSnap) {
+                                                        if (!fallbackSnap.empty) {
+                                                            let shouldScroll = false;
+                                                            fallbackSnap.forEach(function (doc) {
+                                                                const docTimestamp = doc.data().ts;
+                                                                // Only add if newer than baseTimestamp
+                                                                if ((!baseTimestamp || (docTimestamp && docTimestamp > baseTimestamp))
+                                                                    && !loadedMessageIds.has(doc.id)) {
+                                                                    const existingRow = msgsEl.querySelector(`[data-msg-id="${doc.id}"]`);
+                                                                    if (!existingRow) {
+                                                                        loadedMessageIds.add(doc.id);
+                                                                        const msgRow = renderMessage(doc);
+                                                                        // Insert at correct position (newer messages go to end)
+                                                                        msgsEl.appendChild(msgRow);
+                                                                        shouldScroll = true;
+
+                                                                        if (!newestTimestamp || docTimestamp > newestTimestamp) {
+                                                                            newestTimestamp = docTimestamp;
+                                                                        }
+                                                                    }
+                                                                }
+                                                            });
+
+                                                            if (shouldScroll) {
+                                                                setTimeout(() => {
+                                                                    msgsEl.scrollTop = msgsEl.scrollHeight;
+                                                                }, 100);
+                                                            }
+                                                        }
+
+                                                        db.collection('conversations').doc(cid)
+                                                            .set({ lastSeenAt: (function (o) { o[meUsername] = firebase.firestore.FieldValue.serverTimestamp(); return o; })({}) }, { merge: true }).catch(() => { });
+                                                    }, function (fallbackErr) { });
+                                                }
+                                            });
+                                        } else {
+                                            // No base timestamp - listen to all messages
+                                            const realtimeQuery = db.collection('conversations').doc(cid)
+                                                .collection('messages')
+                                                .orderBy('ts', 'asc')
+                                                .limit(50);
+
+                                            unsubMsgs = realtimeQuery.onSnapshot(async function (newSnap) {
+                                                if (!newSnap.empty) {
+                                                    let shouldScroll = false;
+                                                    newSnap.forEach(function (doc) {
+                                                        if (!loadedMessageIds.has(doc.id)) {
+                                                            const existingRow = msgsEl.querySelector(`[data-msg-id="${doc.id}"]`);
+                                                            if (!existingRow) {
+                                                                loadedMessageIds.add(doc.id);
+
+                                                                // Remove "Chưa có tin nhắn nào" message if exists
+                                                                const emptyMsg = msgsEl.querySelector('div[style*="text-align:center"]');
+                                                                if (emptyMsg) {
+                                                                    emptyMsg.remove();
+                                                                }
+
+                                                                const msgRow = renderMessage(doc);
+                                                                msgsEl.appendChild(msgRow);
+                                                                shouldScroll = true;
+
+                                                                const msgTimestamp = doc.data().ts;
+                                                                if (!newestTimestamp || msgTimestamp > newestTimestamp) {
+                                                                    newestTimestamp = msgTimestamp;
+                                                                }
+                                                            }
+                                                        }
+                                                    });
+
+                                                    if (shouldScroll) {
+                                                        setTimeout(() => {
+                                                            msgsEl.scrollTop = msgsEl.scrollHeight;
+                                                        }, 100);
+                                                    }
+                                                }
+
+                                                db.collection('conversations').doc(cid)
+                                                    .set({ lastSeenAt: (function (o) { o[meUsername] = firebase.firestore.FieldValue.serverTimestamp(); return o; })({}) }, { merge: true }).catch(() => { });
+                                            }, function (err) { });
+                                        }
+                                    }
                                 }
 
                                 // ---- Gửi message (text-only)
@@ -374,6 +744,14 @@
                                         await batch.commit();
                                         inputEl.value = '';
                                         inputEl.focus();
+
+                                        // Force scroll to bottom after sending
+                                        setTimeout(() => {
+                                            msgsEl.scrollTop = msgsEl.scrollHeight;
+                                        }, 100);
+
+                                        // Refresh conversation list to show new message
+                                        listenConversations();
                                     } catch (e) {
                                         alert('Gửi thất bại: ' + (e && e.message ? e.message : e));
                                     }
@@ -381,12 +759,8 @@
 
                                 // ---- Liên hệ Admin
                                 async function openAdminChat() {
-                                    try {
-                                        const cid = await getOrCreateConversationWithUsername('admin');
-                                        selectConversation(cid);
-                                    } catch (e) {
-                                        alert('Không thể mở chat với admin: ' + (e && e.message ? e.message : e));
-                                    }
+                                    const cid = await getOrCreateConversationWithUsername('admin');
+                                    selectConversation(cid);
                                 }
 
                                 // ---- Wire UI
@@ -397,6 +771,69 @@
 
                                 // ---- Start
                                 listenConversations();
+
+                                // ---- Auto-open conversation if chatTo parameter is present
+                                const chatToMeta = document.getElementById('chat-to-username');
+                                if (chatToMeta && chatToMeta.content) {
+                                    const chatToUsername = String(chatToMeta.content).trim().toLowerCase();
+
+                                    if (chatToUsername && chatToUsername !== meUsername) {
+                                        // Function to auto-open conversation with retry logic
+                                        async function autoOpenChat() {
+                                            // Wait for Firebase auth to be ready
+                                            let authReady = false;
+                                            let retryCount = 0;
+                                            const maxRetries = 15;
+
+                                            while (!authReady && retryCount < maxRetries) {
+                                                if (auth.currentUser) {
+                                                    authReady = true;
+                                                } else {
+                                                    retryCount++;
+                                                    await new Promise(resolve => setTimeout(resolve, 300));
+                                                }
+                                            }
+
+                                            try {
+                                                const cid = await getOrCreateConversationWithUsername(chatToUsername);
+
+                                                // Wait a bit for conversation to be saved
+                                                await new Promise(resolve => setTimeout(resolve, 500));
+
+                                                // Verify conversation exists
+                                                const convRef = db.collection('conversations').doc(cid);
+                                                const convSnap = await convRef.get();
+
+                                                if (convSnap.exists) {
+                                                    selectConversation(cid);
+                                                } else {
+                                                    // Retry once more
+                                                    setTimeout(async () => {
+                                                        try {
+                                                            const newCid = await getOrCreateConversationWithUsername(chatToUsername);
+                                                            await new Promise(resolve => setTimeout(resolve, 500));
+                                                            selectConversation(newCid);
+                                                        } catch (e2) { }
+                                                    }, 1000);
+                                                }
+                                            } catch (e) {
+                                                // Retry after delay
+                                                setTimeout(async () => {
+                                                    try {
+                                                        const cid = await getOrCreateConversationWithUsername(chatToUsername);
+                                                        await new Promise(resolve => setTimeout(resolve, 500));
+                                                        selectConversation(cid);
+                                                    } catch (e2) { }
+                                                }, 2000);
+                                            }
+                                        }
+
+                                        // Start auto-open after initial delay
+                                        setTimeout(() => {
+                                            autoOpenChat();
+                                        }, 800);
+                                    }
+                                }
                             }
 
                             // Chạy sau khi DOM sẵn sàng
@@ -486,87 +923,6 @@
                                     }, 5000);
                                 });
                             });
-
-                            // Table functionality
-                            document.addEventListener('DOMContentLoaded', function () {
-                                // Initialize table sorting and resizing if table exists
-                                var table = document.getElementById('resizableTable');
-                                if (table) {
-                                    initializeTableFeatures();
-                                }
-                            });
-
-                            function initializeTableFeatures() {
-                                // Add sorting functionality
-                                var headers = document.querySelectorAll('.resizable-table th.sortable');
-                                headers.forEach(function (header, index) {
-                                    header.addEventListener('click', function () {
-                                        sortTable(index, this);
-                                    });
-                                });
-
-                                // Add resizing functionality
-                                var resizers = document.querySelectorAll('.resizer');
-                                resizers.forEach(function (resizer) {
-                                    resizer.addEventListener('mousedown', function (e) {
-                                        startResize(e, this);
-                                    });
-                                });
-                            }
-
-                            function sortTable(columnIndex, header) {
-                                // Basic sorting implementation
-                                var table = document.getElementById('resizableTable');
-                                var tbody = table.querySelector('tbody');
-                                var rows = Array.from(tbody.querySelectorAll('tr'));
-
-                                var isAsc = !header.classList.contains('sort-asc');
-
-                                // Remove existing sort classes
-                                document.querySelectorAll('.resizable-table th').forEach(th => {
-                                    th.classList.remove('sort-asc', 'sort-desc');
-                                });
-
-                                // Add current sort class
-                                header.classList.add(isAsc ? 'sort-asc' : 'sort-desc');
-
-                                // Sort rows
-                                rows.sort(function (a, b) {
-                                    var aVal = a.cells[columnIndex].textContent.trim();
-                                    var bVal = b.cells[columnIndex].textContent.trim();
-
-                                    if (isAsc) {
-                                        return aVal > bVal ? 1 : -1;
-                                    } else {
-                                        return aVal < bVal ? 1 : -1;
-                                    }
-                                });
-
-                                // Reorder rows
-                                rows.forEach(row => tbody.appendChild(row));
-                            }
-
-                            function startResize(e, resizer) {
-                                e.preventDefault();
-                                resizer.classList.add('resizing');
-
-                                var startX = e.clientX;
-                                var startWidth = resizer.parentElement.offsetWidth;
-
-                                function doResize(e) {
-                                    var newWidth = startWidth + e.clientX - startX;
-                                    resizer.parentElement.style.width = newWidth + 'px';
-                                }
-
-                                function stopResize() {
-                                    resizer.classList.remove('resizing');
-                                    document.removeEventListener('mousemove', doResize);
-                                    document.removeEventListener('mouseup', stopResize);
-                                }
-
-                                document.addEventListener('mousemove', doResize);
-                                document.addEventListener('mouseup', stopResize);
-                            }
                         </script>
                     </body>
 

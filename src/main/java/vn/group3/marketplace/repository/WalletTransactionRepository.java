@@ -6,6 +6,8 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import vn.group3.marketplace.domain.entity.User;
@@ -16,48 +18,153 @@ import vn.group3.marketplace.domain.enums.WalletTransactionStatus;
 @Repository
 public interface WalletTransactionRepository extends JpaRepository<WalletTransaction, Long> {
 
-    Optional<WalletTransaction> findByPaymentRef(String paymentRef);
+        Optional<WalletTransaction> findByPaymentRef(String paymentRef);
 
-    /**
-     * Tìm tất cả giao dịch của 1 user (có phân trang)
-     */
-    Page<WalletTransaction> findByUserOrderByIdDesc(User user, Pageable pageable);
+        /**
+         * Tìm tất cả giao dịch của 1 user (có phân trang)
+         */
+        Page<WalletTransaction> findByUserOrderByIdDesc(User user, Pageable pageable);
 
-    /**
-     * Tìm giao dịch theo user và loại giao dịch
-     */
-    Page<WalletTransaction> findByUserAndTypeOrderByIdDesc(User user, WalletTransactionType type, Pageable pageable);
+        /**
+         * Tìm giao dịch theo user và loại giao dịch
+         */
+        Page<WalletTransaction> findByUserAndTypeOrderByIdDesc(User user, WalletTransactionType type,
+                        Pageable pageable);
 
-    /**
-     * Tìm giao dịch theo user và trạng thái thanh toán
-     */
-    Page<WalletTransaction> findByUserAndPaymentStatusOrderByIdDesc(User user, WalletTransactionStatus status,
-            Pageable pageable);
+        /**
+         * Tìm giao dịch theo user và trạng thái thanh toán
+         */
+        Page<WalletTransaction> findByUserAndPaymentStatusOrderByIdDesc(User user, WalletTransactionStatus status,
+                        Pageable pageable);
 
-    /**
-     * Tìm giao dịch theo user, loại giao dịch và trạng thái thanh toán
-     */
-    Page<WalletTransaction> findByUserAndTypeAndPaymentStatusOrderByIdDesc(User user, WalletTransactionType type,
-            WalletTransactionStatus status, Pageable pageable);
+        /**
+         * Tìm giao dịch theo user, loại giao dịch và trạng thái thanh toán
+         */
+        Page<WalletTransaction> findByUserAndTypeAndPaymentStatusOrderByIdDesc(User user, WalletTransactionType type,
+                        WalletTransactionStatus status, Pageable pageable);
 
-    /**
-     * Tìm giao dịch gần đây của user (top 10)
-     */
-    List<WalletTransaction> findTop10ByUserOrderByIdDesc(User user);
+        /**
+         * Tìm giao dịch gần đây của user (top 10)
+         */
+        List<WalletTransaction> findTop10ByUserOrderByIdDesc(User user);
 
-    /**
-     * Đếm tổng số giao dịch của user
-     */
-    long countByUser(User user);
+        /**
+         * Đếm tổng số giao dịch của user
+         */
+        long countByUser(User user);
 
-    /**
-     * Đếm số giao dịch theo loại
-     */
-    long countByUserAndType(User user, WalletTransactionType type);
+        /**
+         * Đếm số giao dịch theo loại
+         */
+        long countByUserAndType(User user, WalletTransactionType type);
 
-    /**
-     * Đếm số giao dịch theo trạng thái
-     */
-    long countByUserAndPaymentStatus(User user, WalletTransactionStatus status);
+        /**
+         * Đếm số giao dịch theo trạng thái
+         */
+        long countByUserAndPaymentStatus(User user, WalletTransactionStatus status);
+
+        /**
+         * Kiểm tra xem user có giao dịch với loại và trạng thái cụ thể không
+         */
+        boolean existsByUserAndTypeAndPaymentStatus(User user, WalletTransactionType type,
+                        WalletTransactionStatus status);
+
+        /**
+         * Tìm tất cả giao dịch theo loại (cho admin)
+         */
+        Page<WalletTransaction> findByTypeOrderByIdDesc(WalletTransactionType type, Pageable pageable);
+
+        /**
+         * Tìm giao dịch theo loại và trạng thái (cho admin)
+         */
+        Page<WalletTransaction> findByTypeAndPaymentStatusOrderByIdDesc(WalletTransactionType type,
+                        WalletTransactionStatus status,
+                        Pageable pageable);
+
+        /**
+         * Tìm tất cả giao dịch theo loại với JOIN FETCH user (cho admin)
+         */
+        @Query("SELECT w FROM WalletTransaction w JOIN FETCH w.user WHERE w.type = :type ORDER BY w.id DESC")
+        Page<WalletTransaction> findByTypeWithUserOrderByIdDesc(@Param("type") WalletTransactionType type,
+                        Pageable pageable);
+
+        /**
+         * Tìm giao dịch theo loại và trạng thái với JOIN FETCH user (cho admin)
+         */
+        @Query("SELECT w FROM WalletTransaction w JOIN FETCH w.user WHERE w.type = :type AND w.paymentStatus = :status ORDER BY w.id DESC")
+        Page<WalletTransaction> findByTypeAndPaymentStatusWithUserOrderByIdDesc(
+                        @Param("type") WalletTransactionType type,
+                        @Param("status") WalletTransactionStatus status,
+                        Pageable pageable);
+
+        /**
+         * Tìm giao dịch với các bộ lọc (trạng thái và khoảng thời gian) - không có
+         * keyword
+         */
+        @Query("SELECT w FROM WalletTransaction w JOIN FETCH w.user WHERE w.type = :type " +
+                        "AND (:status IS NULL OR w.paymentStatus = :status) " +
+                        "AND (:fromDate IS NULL OR DATE(w.createdAt) >= DATE(CAST(:fromDate AS date))) " +
+                        "AND (:toDate IS NULL OR DATE(w.createdAt) <= DATE(CAST(:toDate AS date))) " +
+                        "ORDER BY w.id DESC")
+        Page<WalletTransaction> findWithdrawalsByFilters(
+                        @Param("type") WalletTransactionType type,
+                        @Param("status") WalletTransactionStatus status,
+                        @Param("fromDate") String fromDate,
+                        @Param("toDate") String toDate,
+                        Pageable pageable);
+
+        /**
+         * Tìm giao dịch với các bộ lọc (trạng thái, khoảng thời gian và keyword)
+         */
+        @Query("SELECT w FROM WalletTransaction w JOIN FETCH w.user WHERE w.type = :type " +
+                        "AND (:status IS NULL OR w.paymentStatus = :status) " +
+                        "AND (:fromDate IS NULL OR DATE(w.createdAt) >= DATE(CAST(:fromDate AS date))) " +
+                        "AND (:toDate IS NULL OR DATE(w.createdAt) <= DATE(CAST(:toDate AS date))) " +
+                        "AND (:keyword IS NULL OR :keyword = '' OR LOWER(w.paymentRef) LIKE LOWER(CONCAT('%', :keyword, '%'))) "
+                        +
+                        "ORDER BY w.id DESC")
+        Page<WalletTransaction> findWithdrawalsByFilters(
+                        @Param("type") WalletTransactionType type,
+                        @Param("status") WalletTransactionStatus status,
+                        @Param("fromDate") String fromDate,
+                        @Param("toDate") String toDate,
+                        @Param("keyword") String keyword,
+                        Pageable pageable);
+
+        /**
+         * Tìm giao dịch chỉ bằng keyword (bỏ qua trạng thái và ngày tháng)
+         */
+        @Query("SELECT w FROM WalletTransaction w JOIN FETCH w.user WHERE w.type = :type " +
+                        "AND LOWER(w.paymentRef) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                        "ORDER BY w.id DESC")
+        Page<WalletTransaction> findWithdrawalsByKeyword(
+                        @Param("type") WalletTransactionType type,
+                        @Param("keyword") String keyword,
+                        Pageable pageable);
+
+        // Admin dashboard analytics queries
+        /**
+         * Thống kê giao dịch theo loại
+         */
+        @Query("SELECT w.type, COUNT(w) FROM WalletTransaction w GROUP BY w.type")
+        java.util.List<Object[]> getTransactionCountByType();
+
+        /**
+         * Thống kê giao dịch theo trạng thái
+         */
+        @Query("SELECT w.paymentStatus, COUNT(w) FROM WalletTransaction w GROUP BY w.paymentStatus")
+        java.util.List<Object[]> getTransactionCountByStatus();
+
+        /**
+         * Tổng giá trị giao dịch theo loại
+         */
+        @Query("SELECT w.type, SUM(w.amount) FROM WalletTransaction w GROUP BY w.type")
+        java.util.List<Object[]> getTotalAmountByType();
+
+        /**
+         * Giao dịch theo tháng
+         */
+        @Query("SELECT SUM(w.amount), MONTH(w.createdAt), YEAR(w.createdAt) FROM WalletTransaction w WHERE w.createdAt >= :startDate GROUP BY YEAR(w.createdAt), MONTH(w.createdAt) ORDER BY YEAR(w.createdAt), MONTH(w.createdAt)")
+        java.util.List<Object[]> getMonthlyTransactionVolume(@Param("startDate") java.time.LocalDateTime startDate);
 
 }

@@ -1,9 +1,7 @@
 package vn.group3.marketplace.controller;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,8 +10,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import vn.group3.marketplace.domain.entity.User;
 import vn.group3.marketplace.domain.enums.StoreStatus;
 import vn.group3.marketplace.service.UserService;
@@ -22,12 +18,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 
-import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import vn.group3.marketplace.domain.entity.SellerStore;
 import vn.group3.marketplace.domain.entity.SystemSetting;
 import vn.group3.marketplace.service.SellerStoreService;
 import vn.group3.marketplace.service.SystemSettingService;
+import vn.group3.marketplace.repository.UserRepository;
+import vn.group3.marketplace.repository.OrderRepository;
+import vn.group3.marketplace.repository.ProductRepository;
+import vn.group3.marketplace.repository.SellerStoreRepository;
+import vn.group3.marketplace.repository.WalletTransactionRepository;
+import vn.group3.marketplace.domain.enums.OrderStatus;
+import vn.group3.marketplace.domain.enums.ProductStatus;
+import java.time.LocalDateTime;
 
 @Controller
 @RequestMapping("/admin")
@@ -38,13 +41,28 @@ public class AdminController {
     private final UserService userService;
     private final SystemSettingService systemSettingService;
     private final SellerStoreService sellerStoreService;
+    private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
+    private final ProductRepository productRepository;
+    private final SellerStoreRepository sellerStoreRepository;
+    private final WalletTransactionRepository walletTransactionRepository;
 
     public AdminController(UserService userService,
             SystemSettingService systemSettingService,
-            SellerStoreService sellerStoreService) {
+            SellerStoreService sellerStoreService,
+            UserRepository userRepository,
+            OrderRepository orderRepository,
+            ProductRepository productRepository,
+            SellerStoreRepository sellerStoreRepository,
+            WalletTransactionRepository walletTransactionRepository) {
         this.userService = userService;
         this.systemSettingService = systemSettingService;
         this.sellerStoreService = sellerStoreService;
+        this.userRepository = userRepository;
+        this.orderRepository = orderRepository;
+        this.productRepository = productRepository;
+        this.sellerStoreRepository = sellerStoreRepository;
+        this.walletTransactionRepository = walletTransactionRepository;
     }
 
     private static final String SUCCESS_MESSAGE = "successMessage";
@@ -57,6 +75,230 @@ public class AdminController {
     public String dashboard(Model model) {
         // Load report data: orders, users, revenue, disputes...
         return "admin/dashboard";
+    }
+
+    // API endpoints for chart data
+    @GetMapping("/api/order-stats-data")
+    @ResponseBody
+    public java.util.Map<String, Object> getOrderStatsData() {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+
+        try {
+            List<Object[]> statsData = orderRepository.getOrderStatusStats();
+
+            java.util.List<String> labels = new java.util.ArrayList<>();
+            java.util.List<Long> counts = new java.util.ArrayList<>();
+
+            // Map order status to Vietnamese labels
+            java.util.Map<String, String> statusLabels = new java.util.HashMap<>();
+            statusLabels.put("COMPLETED", "Hoàn thành");
+            statusLabels.put("PENDING", "Chờ xử lý");
+            statusLabels.put("PROCESSING", "Đang xử lý");
+            statusLabels.put("CANCELLED", "Đã hủy");
+            statusLabels.put("REFUNDED", "Đã hoàn tiền");
+            statusLabels.put("FAILED", "Thất bại");
+
+            for (Object[] row : statsData) {
+                OrderStatus status = (OrderStatus) row[0];
+                Long count = (Long) row[1];
+
+                String label = statusLabels.getOrDefault(status.name(), status.name());
+                labels.add(label);
+                counts.add(count);
+            }
+
+            // If no data, provide default structure
+            if (labels.isEmpty()) {
+                labels = java.util.Arrays.asList("Chờ xử lý", "Đang xử lý", "Hoàn thành", "Đã hủy");
+                counts = java.util.Arrays.asList(0L, 0L, 0L, 0L);
+            }
+
+            data.put("labels", labels);
+            data.put("data", counts);
+        } catch (Exception e) {
+            log.error("Error fetching order stats data", e);
+            data.put("labels", java.util.Arrays.asList("Chờ xử lý", "Đang xử lý", "Hoàn thành", "Đã hủy"));
+            data.put("data", java.util.Arrays.asList(0, 0, 0, 0));
+        }
+
+        return data;
+    }
+
+    @GetMapping("/api/kpi-data")
+    @ResponseBody
+    public java.util.Map<String, Object> getKpiData() {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+
+        try {
+            // Total users count (from User entity)
+            long totalUsers = userRepository.countActiveUsers();
+            data.put("totalUsers", totalUsers);
+
+            // New users this month
+            LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+            LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
+            long newUsersThisMonth = userRepository.countNewUsersThisMonth(startOfMonth, endOfMonth);
+            data.put("newUsersThisMonth", newUsersThisMonth);
+
+            // Total orders count (from Order entity)
+            long totalOrders = orderRepository.countTotalOrders();
+            data.put("totalOrders", totalOrders);
+
+            // Pending orders
+            long pendingOrders = orderRepository.countOrdersByStatus(OrderStatus.PENDING);
+            data.put("pendingOrders", pendingOrders);
+
+            // Total products count (from Product entity)
+            long totalProducts = productRepository.countTotalProducts();
+            data.put("totalProducts", totalProducts);
+
+            // Active products
+            long activeProducts = productRepository.countProductsByStatus(ProductStatus.ACTIVE);
+            data.put("activeProducts", activeProducts);
+
+            // Total stores count (from SellerStore entity)
+            long totalStores = sellerStoreRepository.countTotalStores();
+            data.put("totalStores", totalStores);
+
+            // Active stores
+            long activeStores = sellerStoreRepository.countActiveStores();
+            data.put("activeStores", activeStores);
+
+            // Active users now (estimation based on recent registrations)
+            data.put("activeUsersNow", Math.min(totalUsers, newUsersThisMonth * 2 + 10));
+
+        } catch (Exception e) {
+            log.error("Error fetching KPI data", e);
+            // Fallback data in case of error
+            data.put("totalUsers", 0);
+            data.put("newUsersThisMonth", 0);
+            data.put("totalOrders", 0);
+            data.put("pendingOrders", 0);
+            data.put("totalProducts", 0);
+            data.put("activeProducts", 0);
+            data.put("totalStores", 0);
+            data.put("activeStores", 0);
+            data.put("activeUsersNow", 0);
+        }
+
+        return data;
+    }
+
+    // New analytics API endpoints
+    @GetMapping("/api/wallet-transaction-data")
+    @ResponseBody
+    public java.util.Map<String, Object> getWalletTransactionData() {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+
+        try {
+            List<Object[]> typeData = walletTransactionRepository.getTransactionCountByType();
+
+            java.util.List<String> labels = new java.util.ArrayList<>();
+            java.util.List<Long> counts = new java.util.ArrayList<>();
+
+            for (Object[] row : typeData) {
+                String type = row[0].toString();
+                Long count = (Long) row[1];
+
+                // Translate enum to Vietnamese
+                String vietnameseLabel = switch (type) {
+                    case "DEPOSIT" -> "Nạp tiền";
+                    case "WITHDRAWAL" -> "Rút tiền";
+                    case "PAYMENT" -> "Thanh toán";
+                    case "REFUND" -> "Hoàn tiền";
+                    case "ORDER_RELEASE" -> "Giải phóng đơn hàng";
+                    case "ADMIN_COMMISSION_FEE" -> "Phí hoa hồng";
+                    case "SELLER_PAYOUT" -> "Thanh toán cho seller";
+                    default -> type;
+                };
+
+                labels.add(vietnameseLabel);
+                counts.add(count);
+            }
+
+            data.put("labels", labels);
+            data.put("data", counts);
+        } catch (Exception e) {
+            log.error("Error fetching wallet transaction data", e);
+            data.put("labels", java.util.Arrays.asList("Nạp tiền", "Rút tiền", "Thanh toán"));
+            data.put("data", java.util.Arrays.asList(0, 0, 0));
+        }
+
+        return data;
+    }
+
+    @GetMapping("/api/top-products-data")
+    @ResponseBody
+    public java.util.Map<String, Object> getTopProductsData() {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+
+        try {
+            PageRequest pageRequest = PageRequest.of(0, 10);
+            List<Object[]> topProducts = productRepository.getTopSellingProducts(pageRequest);
+
+            java.util.List<String> labels = new java.util.ArrayList<>();
+            java.util.List<Long> counts = new java.util.ArrayList<>();
+
+            for (Object[] row : topProducts) {
+                String productName = (String) row[1];
+                Long totalSold = (Long) row[2];
+
+                labels.add(productName);
+                counts.add(totalSold);
+            }
+
+            if (labels.isEmpty()) {
+                labels.add("Chưa có dữ liệu");
+                counts.add(0L);
+            }
+
+            data.put("labels", labels);
+            data.put("data", counts);
+        } catch (Exception e) {
+            log.error("Error fetching top products data", e);
+            data.put("labels", java.util.Arrays.asList("Chưa có dữ liệu"));
+            data.put("data", java.util.Arrays.asList(0));
+        }
+
+        return data;
+    }
+
+    @GetMapping("/api/revenue-data")
+    @ResponseBody
+    public java.util.Map<String, Object> getRevenueData() {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+
+        try {
+            LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
+            List<Object[]> revenueData = orderRepository.getMonthlyRevenue(sixMonthsAgo);
+
+            java.util.List<String> labels = new java.util.ArrayList<>();
+            java.util.List<java.math.BigDecimal> amounts = new java.util.ArrayList<>();
+
+            for (Object[] row : revenueData) {
+                java.math.BigDecimal totalAmount = (java.math.BigDecimal) row[0];
+                Integer month = (Integer) row[1];
+                Integer year = (Integer) row[2];
+
+                String label = "Tháng " + month + "/" + year;
+                labels.add(label);
+                amounts.add(totalAmount != null ? totalAmount : java.math.BigDecimal.ZERO);
+            }
+
+            if (labels.isEmpty()) {
+                labels = java.util.Arrays.asList("T1", "T2", "T3", "T4", "T5", "T6");
+                amounts = java.util.Collections.nCopies(6, java.math.BigDecimal.ZERO);
+            }
+
+            data.put("labels", labels);
+            data.put("data", amounts);
+        } catch (Exception e) {
+            log.error("Error fetching revenue data", e);
+            data.put("labels", java.util.Arrays.asList("T1", "T2", "T3", "T4", "T5", "T6"));
+            data.put("data", java.util.Collections.nCopies(6, 0));
+        }
+
+        return data;
     }
 
     @GetMapping("/categories/overview")

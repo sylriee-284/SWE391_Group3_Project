@@ -32,6 +32,9 @@ public class SecurityConfig {
                                                 .requestMatchers("/seller/register").authenticated()
                                                 .requestMatchers("/seller/register-success").authenticated()
                                                 .requestMatchers("/seller/retry-deposit/**").authenticated()
+                                                .requestMatchers("/seller/update-pending-store/**").authenticated()
+                                                .requestMatchers("/seller/profile", "/seller/profile/update")
+                                                .authenticated()
                                                 // Allow anonymous users to check store name availability
                                                 .requestMatchers("/seller/check-store-name").permitAll()
                                                 .requestMatchers("/seller/**").hasRole("SELLER")

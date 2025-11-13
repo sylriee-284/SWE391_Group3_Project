@@ -15,6 +15,8 @@
 
                     <!-- Include common head with all CSS and JS -->
                     <jsp:include page="../common/head.jsp" />
+                        
+                <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/order_list.css">
                 </head>
 
                 <body>
@@ -161,9 +163,26 @@
 
                                                     <td>
                                                         <a href="/orders/${order.id}"
-                                                            class="btn btn-sm btn-info text-white">
+                                                            class="btn btn-sm btn-info text-white mb-1">
                                                             <i class="bi bi-info-circle"></i> Details
                                                         </a>
+                                                        
+                                                        <!-- Rate button - chỉ hiện khi order COMPLETED và chưa đánh giá -->
+                                                        <c:if test="${order.status == 'COMPLETED'}">
+                                                            <c:choose>
+                                                                <c:when test="${order.rating != null}">
+                                                                    <button type="button" class="btn btn-sm btn-secondary mb-1" disabled>
+                                                                        <i class="bi bi-check-circle"></i> Rated (${order.rating}★)
+                                                                    </button>
+                                                                </c:when>
+                                                                <c:otherwise>
+                                                                    <button type="button" class="btn btn-sm btn-warning text-white mb-1"
+                                                                        onclick="openRatingModal(${order.id}, ${order.product.id}, '${order.productName}')">
+                                                                        <i class="bi bi-star"></i> Rate
+                                                                    </button>
+                                                                </c:otherwise>
+                                                            </c:choose>
+                                                        </c:if>
                                                     </td>
                                                 </tr>
                                             </c:forEach>
@@ -390,6 +409,132 @@
                                 !sidebar.contains(event.target) &&
                                 !menuToggle.contains(event.target)) {
                                 toggleSidebar();
+                            }
+                        });
+
+                        // Flash messages
+                        <c:if test="${not empty success}">
+                            iziToast.success({
+                                title: 'Success',
+                                message: '${success}',
+                                position: 'topRight'
+                            });
+                        </c:if>
+                        <c:if test="${not empty error}">
+                            iziToast.error({
+                                title: 'Error',
+                                message: '${error}',
+                                position: 'topRight'
+                            });
+                        </c:if>
+                    </script>
+
+                    <!-- Rating Modal -->
+                    <div class="modal fade" id="ratingModal" tabindex="-1" aria-labelledby="ratingModalLabel"
+                        aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header bg-warning text-dark">
+                                    <h5 class="modal-title" id="ratingModalLabel">Rate Product</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="ratingForm" method="POST" action="">
+                                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+                                        <input type="hidden" id="ratingValue" name="rating" value="0" />
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Product: <span
+                                                    id="productNameDisplay"></span></label>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Rating</label>
+                                            <div class="star-rating d-flex gap-2 fs-2">
+                                                <i class="bi bi-star-fill star-icon" data-rating="1"></i>
+                                                <i class="bi bi-star-fill star-icon" data-rating="2"></i>
+                                                <i class="bi bi-star-fill star-icon" data-rating="3"></i>
+                                                <i class="bi bi-star-fill star-icon" data-rating="4"></i>
+                                                <i class="bi bi-star-fill star-icon" data-rating="5"></i>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" form="ratingForm" class="btn btn-warning" id="submitRating">Submit
+                                        Rating</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                   
+
+                    <script>
+                        let selectedRating = 0;
+
+                        function openRatingModal(orderId, productId, productName) {
+                            // Set form action URL
+                            document.getElementById('ratingForm').action = '/orders/' + orderId + '/rate';
+                            document.getElementById('productNameDisplay').textContent = productName;
+                            document.getElementById('ratingValue').value = 0;
+                            selectedRating = 0;
+                            updateStars(0);
+                            var modal = new bootstrap.Modal(document.getElementById('ratingModal'));
+                            modal.show();
+                        }
+
+                        function updateStars(rating) {
+                            const stars = document.querySelectorAll('.star-icon');
+                            stars.forEach((star, index) => {
+                                if (index < rating) {
+                                    star.classList.add('active');
+                                } else {
+                                    star.classList.remove('active');
+                                }
+                            });
+                        }
+
+                        // Star click event
+                        document.querySelectorAll('.star-icon').forEach(star => {
+                            star.addEventListener('click', function () {
+                                selectedRating = parseInt(this.getAttribute('data-rating'));
+                                document.getElementById('ratingValue').value = selectedRating;
+                                updateStars(selectedRating);
+                            });
+
+                            // Hover effect
+                            star.addEventListener('mouseenter', function () {
+                                const hoverRating = parseInt(this.getAttribute('data-rating'));
+                                const stars = document.querySelectorAll('.star-icon');
+                                stars.forEach((s, index) => {
+                                    if (index < hoverRating) {
+                                        s.classList.add('hover');
+                                    } else {
+                                        s.classList.remove('hover');
+                                    }
+                                });
+                            });
+
+                            star.addEventListener('mouseleave', function () {
+                                document.querySelectorAll('.star-icon').forEach(s => s.classList.remove('hover'));
+                            });
+                        });
+
+                        // Validate form trước khi submit
+                        document.getElementById('ratingForm').addEventListener('submit', function (e) {
+                            const rating = document.getElementById('ratingValue').value;
+
+                            if (rating === '0') {
+                                e.preventDefault();
+                                iziToast.warning({
+                                    title: 'Warning',
+                                    message: 'Please select a rating',
+                                    position: 'topRight'
+                                });
+                                return false;
                             }
                         });
                     </script>
