@@ -32,7 +32,7 @@
                             <div class="row mb-3">
                                 <div class="col-12">
                                     <a href="/wallet/transactions" class="btn btn-outline-secondary">
-                                        <i class="fas fa-arrow-left"></i> Back to List
+                                        <i class="fas fa-arrow-left"></i> Quay lại Danh sách
                                     </a>
                                 </div>
                             </div>
@@ -70,7 +70,7 @@
                                         <h2 class="mb-2">
                                             <c:forEach var="type" items="${transactionTypes}">
                                                 <c:if test="${transaction.type == type}">
-                                                    ${type} Transaction
+                                                    Giao dịch ${type}
                                                 </c:if>
                                             </c:forEach>
                                         </h2>
@@ -87,16 +87,16 @@
 
                                             <c:choose>
                                                 <c:when test='${transaction.paymentStatus.name() eq "SUCCESS"}'>
-                                                    <i class="fas fa-check-circle"></i> Success
+                                                    <i class="fas fa-check-circle"></i> Thành công
                                                 </c:when>
                                                 <c:when test='${transaction.paymentStatus.name() eq "PENDING"}'>
-                                                    <i class="fas fa-clock"></i> Pending
+                                                    <i class="fas fa-clock"></i> Đang chờ
                                                 </c:when>
                                                 <c:when test='${transaction.paymentStatus.name() eq "FAILED"}'>
-                                                    <i class="fas fa-times-circle"></i> Failed
+                                                    <i class="fas fa-times-circle"></i> Thất bại
                                                 </c:when>
                                                 <c:when test='${transaction.paymentStatus.name() eq "CANCELLED"}'>
-                                                    <i class="fas fa-ban"></i> Cancelled
+                                                    <i class="fas fa-ban"></i> Đã hủy
                                                 </c:when>
                                                 <c:otherwise>${transaction.paymentStatus.name()}</c:otherwise>
                                             </c:choose>
@@ -111,7 +111,7 @@
                                     <div class="card detail-card">
                                         <div class="card-body text-center">
                             <h5 class="card-title text-muted mb-3">
-                                <i class="fas fa-money-bill-wave"></i> Amount
+                                <i class="fas fa-money-bill-wave"></i> Số tiền
                             </h5>
                             <c:set var="isPositive"
                                 value="${transaction.type.name() eq 'DEPOSIT' or transaction.type.name() eq 'DEPOSIT_REFUND' or transaction.type.name() eq 'REFUND' or transaction.type.name() eq 'ORDER_RELEASE' or transaction.type.name() eq 'ADMIN_COMMISSION_FEE' or transaction.paymentStatus.name() eq 'RELEASED'}" />
@@ -132,19 +132,19 @@
                                     <div class="card detail-card">
                                         <div class="card-body">
                                             <h5 class="card-title text-muted mb-3">
-                                                <i class="fas fa-info-circle"></i> Transaction Information
+                                                <i class="fas fa-info-circle"></i> Thông tin giao dịch
                                             </h5>
 
                                             <div class="info-row">
                                                 <div class="row">
-                                                    <div class="col-5 info-label">Payment reference:</div>
+                                                    <div class="col-5 info-label">Mã tham chiếu:</div>
                                                     <div class="col-7">
                                                         <c:choose>
                                                             <c:when test="${transaction.paymentRef != null}">
                                                                 <code>${transaction.paymentRef}</code>
                                                             </c:when>
                                                             <c:otherwise>
-                                                                <span class="text-muted">Not available</span>
+                                                                <span class="text-muted">Không có</span>
                                                             </c:otherwise>
                                                         </c:choose>
                                                     </div>
@@ -153,7 +153,7 @@
 
                                             <div class="info-row">
                                                 <div class="row">
-                                                    <div class="col-5 info-label">Transaction Type:</div>
+                                                    <div class="col-5 info-label">Loại giao dịch:</div>
                                                     <div class="col-7">
                                                         <span class="badge bg-primary">
                                                             <c:forEach var="type" items="${transactionTypes}">
@@ -261,15 +261,15 @@
                             <div class="row mt-4">
                                 <div class="col-12 text-center">
                                     <a href="/wallet/transactions" class="btn btn-secondary me-2">
-                                        <i class="fas fa-list"></i> Transaction List
+                                        <i class="fas fa-list"></i> Danh sách Giao dịch
                                     </a>
                                     <a href="/wallet" class="btn btn-primary me-2">
-                                        <i class="fas fa-wallet"></i> My Wallet
+                                        <i class="fas fa-wallet"></i> Ví của tôi
                                     </a>
                                     <c:if
                                         test='${transaction.paymentStatus.name() == "SUCCESS" && transaction.type.name() == "DEPOSIT"}'>
                                         <a href="/wallet/deposit" class="btn btn-success">
-                                            <i class="fas fa-plus"></i> Add More Funds
+                                            <i class="fas fa-plus"></i> Nạp thêm tiền
                                         </a>
                                     </c:if>
                                 </div>

@@ -120,14 +120,14 @@
                                         <div class="col-12">
                                             <div class="card">
                                                 <div class="card-header">
-                                                    <h5><i class="fas fa-cog"></i> Actions</h5>
+                                                    <h5><i class="fas fa-cog"></i> Thao tác</h5>
                                                 </div>
                                                 <div class="card-body">
                                                     <div class="row">
                                                         <div class="col-md-4 mb-3">
                                                             <a href="/wallet/deposit" class="btn btn-success w-100">
                                                                 <i class="fas fa-plus-circle"></i><br>
-                                                                Deposit
+                                                                Nạp tiền
                                                             </a>
                                                         </div>
 

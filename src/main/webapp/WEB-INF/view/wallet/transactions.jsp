@@ -278,13 +278,13 @@
                                     <!-- 📭 Empty state -->
                                     <div class="text-center py-5">
                                         <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-                                        <h4 class="text-muted">No transactions yet</h4>
-                                        <p class="text-muted">You haven't made any transactions or no
-                                            matching
-                                            transactions were
-                                            found for the current filters.</p>
+                                        <h4 class="text-muted">Chưa có giao dịch nào</h4>
+                                        <p class="text-muted">Bạn chưa thực hiện giao dịch nào hoặc không tìm thấy
+                                            giao dịch
+                                            phù hợp với
+                                            bộ lọc hiện tại.</p>
                                         <a href="/wallet/deposit" class="btn btn-primary">
-                                            <i class="fas fa-plus"></i> Deposit now
+                                            <i class="fas fa-plus"></i> Nạp tiền ngay
                                         </a>
                                     </div>
                                 </c:otherwise>
@@ -303,7 +303,7 @@
                     <c:if test="${not empty successMessage}">
                         <script>
                             iziToast.success({
-                                title: 'Success!',
+                                title: 'Thành công!',
                                 message: '${successMessage}',
                                 position: 'topRight',
                                 timeout: 5000
@@ -314,7 +314,7 @@
                     <c:if test="${not empty errorMessage}">
                         <script>
                             iziToast.error({
-                                title: 'Error!',
+                                title: 'Lỗi!',
                                 message: '${errorMessage}',
                                 position: 'topRight',
                                 timeout: 5000
