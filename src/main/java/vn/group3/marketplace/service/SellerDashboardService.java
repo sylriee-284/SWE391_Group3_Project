@@ -365,7 +365,7 @@ public class SellerDashboardService {
                                 releaseEnd);
                 List<ReleaseScheduleDTO> upcomingReleases = releaseData.stream()
                                 .map(row -> ReleaseScheduleDTO.builder()
-                                                .releaseDate(((java.sql.Date) row[0]).toLocalDate().atStartOfDay())
+                                                .releaseDate((LocalDateTime) row[0])
                                                 .amount((BigDecimal) row[1])
                                                 .orderCount(((Long) row[2]).intValue())
                                                 .build())
