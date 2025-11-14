@@ -59,14 +59,18 @@ public class AuthController {
 
     @GetMapping("/login/captcha")
     public void getCaptcha(HttpSession session, HttpServletResponse response) throws IOException {
+        // 1. Generate captcha text (4 digits)
         String captchaText = captchaService.generateCaptchaText();
         session.setAttribute(CAPTCHA_SESSION_KEY, captchaText);
+        // 2. Generate captcha image from captcha text
         byte[] image = captchaService.generateCaptchaImage(captchaText);
+        // 3. Set response headers
         response.setContentType("image/png");
         response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         response.setHeader("Pragma", "no-cache");
         response.setDateHeader("Expires", 0);
-        response.getOutputStream().write(image);
+        // 4. Write image to response output stream
+        response.getOutputStream().write(image); // Send data (byte array) from server to client via HTTP
         response.getOutputStream().flush();
     }
 
