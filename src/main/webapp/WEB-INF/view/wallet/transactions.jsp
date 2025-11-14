@@ -195,14 +195,14 @@
                                                                             <span class="text-success">+
                                                                                 <fmt:formatNumber
                                                                                     value="${transaction.amount}"
-                                                                                    type="number" pattern="#,###" />
+                                                                                    pattern="###,###,###" maxFractionDigits="0" />
                                                                             </span>
                                                                         </c:when>
                                                                         <c:otherwise>
                                                                             <span class="text-danger">-
                                                                                 <fmt:formatNumber
                                                                                     value="${transaction.amount}"
-                                                                                    type="number" pattern="#,###" />
+                                                                                    pattern="###,###,###" maxFractionDigits="0" />
                                                                             </span>
                                                                         </c:otherwise>
                                                                     </c:choose>

@@ -155,8 +155,8 @@
                                                 <div class="col-md-4 info-label">Số tiền (bằng số)</div>
                                                 <div class="col-md-8">
                                                     <strong>
-                                                        <fmt:formatNumber value="${withdrawal.amount}" type="currency"
-                                                            currencySymbol="" /> ₫
+                                                        <fmt:formatNumber value="${withdrawal.amount}"
+                                                            pattern="###,###,###" maxFractionDigits="0" /> ₫
                                                     </strong>
                                                 </div>
                                             </div>

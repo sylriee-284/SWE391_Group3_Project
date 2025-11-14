@@ -52,7 +52,7 @@
                                 <button class="btn btn-success btn-sm dropdown-toggle" type="button" id="userDropdown"
                                     data-bs-toggle="dropdown" aria-expanded="false">
                                     💰
-                                    <fmt:formatNumber value="${user.balance}" type="number" maxFractionDigits="0" />
+                                    <fmt:formatNumber value="${user.balance}" pattern="###,###,###" maxFractionDigits="0" />
                                     VND | Xin chào, ${user.username}
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">

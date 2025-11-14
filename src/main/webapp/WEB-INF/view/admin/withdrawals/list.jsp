@@ -170,7 +170,7 @@
                                                     <td>
                                                         <strong>
                                                             <fmt:formatNumber value="${withdrawal.amount}"
-                                                                type="currency" currencySymbol="" /> ₫
+                                                                pattern="###,###,###" maxFractionDigits="0" /> ₫
                                                         </strong>
                                                     </td>
                                                     <td>

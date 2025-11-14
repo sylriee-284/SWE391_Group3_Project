@@ -118,8 +118,8 @@
 
                             <div
                                 class="amount-display ${isPositive ? 'amount-positive' : 'amount-negative'}">
-                                ${isPositive ? '+' : '-'}                                                <fmt:formatNumber value="${transaction.amount}" type="number"
-                                                    pattern="#,###" />
+                                ${isPositive ? '+' : '-'}                                                <fmt:formatNumber value="${transaction.amount}"
+                                                    pattern="###,###,###" maxFractionDigits="0" />
                                                 <small class="fs-4">VNĐ</small>
                                             </div>
 

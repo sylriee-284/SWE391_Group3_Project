@@ -51,8 +51,8 @@
                                         <div>
                                             <p class="mb-1">Số dư khả dụng</p>
                                             <div class="balance-amount">
-                                                <fmt:formatNumber value="${currentUser.balance}" type="currency"
-                                                    currencySymbol="" /> ₫
+                                                <fmt:formatNumber value="${currentUser.balance}"
+                                                    pattern="###,###,###" maxFractionDigits="0" /> ₫
                                             </div>
                                         </div>
                                         <div>

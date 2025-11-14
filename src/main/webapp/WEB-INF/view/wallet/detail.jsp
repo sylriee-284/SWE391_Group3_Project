@@ -49,7 +49,7 @@
                                                         <c:choose>
                                                             <c:when test="${wallet != null}">
                                                                 <fmt:formatNumber value="${wallet.balance}"
-                                                                    type="currency" currencySymbol="₫" />
+                                                                    pattern="###,###,###" maxFractionDigits="0" /> ₫
                                                             </c:when>
                                                             <c:otherwise>
                                                                 0 ₫
@@ -87,8 +87,8 @@
                                                         </h5>
                                                         <p class="card-text">
                                                             <strong class="h4">
-                                                                <fmt:formatNumber value="${depositHeld}" type="currency" 
-                                                                    currencySymbol="₫" maxFractionDigits="0"/>
+                                                                <fmt:formatNumber value="${depositHeld}" 
+                                                                    pattern="###,###,###" maxFractionDigits="0"/> ₫
                                                             </strong><br>
                                                             <small class="text-muted">Deposit held for orders</small>
                                                         </p>
@@ -104,8 +104,8 @@
                                                         </h5>
                                                         <p class="card-text">
                                                             <strong class="h4">
-                                                                <fmt:formatNumber value="${escrowHeld}" type="currency" 
-                                                                    currencySymbol="₫" maxFractionDigits="0"/>
+                                                                <fmt:formatNumber value="${escrowHeld}" 
+                                                                    pattern="###,###,###" maxFractionDigits="0"/> ₫
                                                             </strong><br>
                                                             <small class="text-muted">Escrow held for transactions</small>
                                                         </p>
