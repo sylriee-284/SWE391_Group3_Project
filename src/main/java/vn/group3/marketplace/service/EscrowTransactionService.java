@@ -57,12 +57,13 @@ public class EscrowTransactionService {
     @Transactional
     public void createEscrowTransaction(Order order) {
         try {
-            // Fixed escrow hold period: 1 minute (60 seconds)
-            // System will automatically scan and release after 1 minute
-            long holdSeconds = 60; // 1 minute
+            // Get hold seconds from system setting
+            String holdHoursStr = systemSettingService.getSettingValue("escrow.default_hold_hours", "0.0161");
+            double holdHours = Double.parseDouble(holdHoursStr);
+            double holdSeconds = holdHours * 3600;
 
-            logger.info("Creating escrow for order {} with value {} VND - Hold period: 1 minute (60 seconds)",
-                    order.getId(), order.getTotalAmount());
+            logger.info("Creating escrow for order {} with value {} VND - Hold period: {} hours",
+                    order.getId(), order.getTotalAmount(), holdHours);
 
             SellerStore sellerStore = order.getSellerStore();
             if (sellerStore.getFeeModel().equals(SellerStoresType.PERCENTAGE)) {
@@ -83,7 +84,7 @@ public class EscrowTransactionService {
                         .sellerAmount(sellerAmount) // Amount for seller
                         .adminAmount(feeAmount) // Amount for admin
                         .status(EscrowStatus.HELD)
-                        .holdUntil(LocalDateTime.now().plusSeconds(holdSeconds))
+                        .holdUntil(LocalDateTime.now().plusSeconds(Math.round(holdSeconds)))
                         .build();
                 escrowTransaction.setCreatedBy(0L);
                 escrowTransactionRepository.save(escrowTransaction);
@@ -107,7 +108,7 @@ public class EscrowTransactionService {
                         .sellerAmount(order.getTotalAmount()) // Full amount goes to seller
                         .adminAmount(BigDecimal.ZERO) // No admin fee
                         .status(EscrowStatus.HELD)
-                        .holdUntil(LocalDateTime.now().plusSeconds(holdSeconds))
+                        .holdUntil(LocalDateTime.now().plusSeconds(Math.round(holdSeconds)))
                         .build();
                 escrowTransaction.setCreatedBy(0L);
                 escrowTransactionRepository.save(escrowTransaction);
@@ -286,10 +287,15 @@ public class EscrowTransactionService {
             // Create escrow transaction with 1 minute hold
             self.createEscrowTransaction(order);
 
-            // Payment will be automatically released after 1 minute by the scheduled task
+            // Get scan period from system setting
+            String scanPeriodStr = systemSettingService.getSettingValue("escrow.default_scan_hours", "0.02");
+            double scanPeriod = Double.parseDouble(scanPeriodStr);
+
+            // Payment will be automatically released after scan period by the scheduled
+            // task
             logger.info(
-                    "Escrow transaction created for order: {}. Will be auto-released after 1 minute by scheduled task.",
-                    order.getId());
+                    "Escrow transaction created for order: {}. Will be auto-released after {} hours by scheduled task.",
+                    order.getId(), scanPeriod);
 
             logger.info("Escrow transaction processing completed for order: {}", order.getId());
             return CompletableFuture.completedFuture(null);
