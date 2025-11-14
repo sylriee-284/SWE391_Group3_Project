@@ -1,0 +1,98 @@
+@startuml
+title Order State Transition Diagram - MMO Marketplace
+
+skinparam state {
+  BackgroundColor<<Success>> LightGreen
+  BackgroundColor<<Failed>> LightCoral
+  BackgroundColor<<Processing>> LightYellow
+  BorderColor Black
+}
+
+state "PENDING_PAYMENT" as PP <<Processing>>
+state "PAYMENT_PROCESSING" as PROC <<Processing>>
+state "OUT_OF_STOCK" as OOS <<Failed>>
+state "PAID" as PAID <<Processing>>
+state "PAYMENT_FAILED" as FAIL <<Failed>>
+state "COMPLETED" as COMP <<Success>>
+
+[*] --> PP : <b>Action:</b> User đặt hàng\n<b>System:</b> createOrderFromTask()\n<b>Validation:</b>\n- Kiểm tra product tồn tại\n- Kiểm tra số dư user\n- Tạo Order với status = PENDING_PAYMENT
+
+PP --> PROC : <b>Action:</b> Xử lý thanh toán\n<b>System:</b> enqueuePurchasePayment()\n<b>Process:</b>\n- Đưa vào payment queue\n- Chờ xử lý tuần tự
+
+PROC --> OOS : <b>Condition:</b> Kiểm tra tồn kho\n<b>System:</b> checkStockAvailability() = false\n<b>Result:</b> Không đủ hàng\n<b>Action:</b> updateOrderStatus(OUT_OF_STOCK)
+
+PROC --> PAID : <b>Condition:</b> Thanh toán thành công\n<b>System:</b> processPurchasePayment()\n<b>Actions:</b>\n1. decrementBalance() - Trừ tiền user\n2. updateOrderStatus(PAID)\n3. Cập nhật ProductStorage → DELIVERED\n4. Tạo EscrowTransaction (async)
+
+PROC --> FAIL : <b>Condition:</b> Thanh toán thất bại\n<b>Reasons:</b>\n- Timeout (30 giây)\n- Số dư không đủ\n- Lỗi xử lý\n<b>Action:</b> updateOrderStatus(PAYMENT_FAILED)
+
+PAID --> COMP : <b>Action:</b> Hoàn tất đơn hàng (tự động)\n<b>System:</b> updateOrderBasedOnPaymentStatus()\n<b>Process:</b>\n1. Gửi email xác nhận\n2. Gửi notification cho user\n3. Update product sold quantity\n4. updateOrderStatus(COMPLETED)
+
+OOS --> [*] : <b>End State</b>\nĐơn hàng kết thúc do hết hàng
+
+FAIL --> [*] : <b>End State</b>\nĐơn hàng kết thúc do thanh toán thất bại
+
+COMP --> [*] : <b>End State</b>\nĐơn hàng hoàn tất thành công\n<b>Optional:</b> User có thể đánh giá (rating)
+
+note top of PP
+  <b>PENDING_PAYMENT</b>
+  Trạng thái chờ thanh toán
+  
+  <b>Entry conditions:</b>
+  • User đã chọn sản phẩm
+  • Số lượng hợp lệ
+  • Product đang ACTIVE
+  
+  <b>Business rules:</b>
+  • Kiểm tra balance >= totalAmount
+  • Validate product và store tồn tại
+end note
+
+note bottom of COMP
+  <b>COMPLETED</b>
+  Trạng thái cuối cùng thành công
+  
+  <b>Final state:</b>
+  • ProductStorage đã DELIVERED
+  • User đã nhận hàng (digital goods)
+  • Escrow transaction đã tạo
+  • Email confirmation đã gửi
+  
+  <b>User actions:</b>
+  • Có thể đánh giá sản phẩm (1-5 sao)
+  • Xem lịch sử đơn hàng
+end note
+
+legend right
+  <b>Mô tả các trạng thái:</b>
+  
+  <b>1. PENDING_PAYMENT (Chờ thanh toán):</b>
+  • Order vừa được tạo
+  • Chờ hệ thống xử lý thanh toán
+  
+  <b>2. PAYMENT_PROCESSING (Đang xử lý thanh toán):</b>
+  • Kiểm tra tồn kho
+  • Xử lý trừ tiền từ ví
+  
+  <b>3. OUT_OF_STOCK (Hết hàng):</b>
+  • Không đủ số lượng trong kho
+  • Đơn hàng kết thúc
+  
+  <b>4. PAID (Đã thanh toán):</b>
+  • Thanh toán thành công
+  • Tự động chuyển sang COMPLETED
+  
+  <b>5. PAYMENT_FAILED (Thanh toán thất bại):</b>
+  • Không đủ tiền hoặc lỗi hệ thống
+  • Đơn hàng kết thúc
+  
+  <b>6. COMPLETED (Hoàn tất):</b>
+  • Đơn hàng thành công
+  • User đã nhận hàng
+  • Có thể đánh giá
+  
+  <b>Lưu ý:</b>
+  • PENDING không được sử dụng trong thực tế
+  • CONFIRMED, CANCELLED, REFUNDED chưa implement
+endlegend
+
+@enduml

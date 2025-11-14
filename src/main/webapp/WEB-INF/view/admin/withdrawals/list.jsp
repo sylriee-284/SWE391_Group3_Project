@@ -89,8 +89,7 @@
 
                             <!-- Filter Section -->
                             <div class="filter-section">
-                                <form method="get" action="/admin/withdrawals" class="row g-3" id="filterForm"
-                                    onsubmit="trimKeyword()">
+                                <form method="get" action="/admin/withdrawals" class="row g-3" id="filterForm">
                                     <div class="col-md-3">
                                         <label for="keyword" class="form-label">Tìm Payment Ref:</label>
                                         <input type="text" class="form-control" id="keyword" name="keyword"
@@ -131,201 +130,194 @@
                                             </button>
                                         </div>
                                     </div>
+                                </form>
                             </div>
-                        </div>
-                        </form>
 
-                        <!-- Withdrawals Table -->
-                        <div class="card">
-                            <div class="card-header bg-white">
-                                <h5 class="mb-0">Danh sách yêu cầu rút tiền</h5>
-                            </div>
-                            <div class="card-body">
-                                <c:if test="${empty withdrawals.content}">
-                                    <div class="text-center py-5">
-                                        <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
-                                        <p class="text-muted mt-3">Không có yêu cầu rút tiền nào</p>
-                                    </div>
-                                </c:if>
+                            <!-- Withdrawals Table -->
+                            <div class="card">
+                                <div class="card-header bg-white">
+                                    <h5 class="mb-0">Danh sách yêu cầu rút tiền</h5>
+                                </div>
+                                <div class="card-body">
+                            <c:if test="${empty withdrawals.content}">
+                                <div class="text-center py-5">
+                                    <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                                    <p class="text-muted mt-3">Không có yêu cầu rút tiền nào</p>
+                                </div>
+                            </c:if>
 
-                                <c:if test="${not empty withdrawals.content}">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover">
-                                            <thead>
+                            <c:if test="${not empty withdrawals.content}">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Payment Ref</th>
+                                                <th>Số tiền</th>
+                                                <th>Ngân hàng</th>
+                                                <th>Ngày tạo</th>
+                                                <th>Trạng thái</th>
+                                                <th>Thao tác</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <c:forEach items="${withdrawals.content}" var="withdrawal">
                                                 <tr>
-                                                    <th>ID</th>
-                                                    <th>Payment Ref</th>
-                                                    <th>Số tiền</th>
-                                                    <th>Ngân hàng</th>
-                                                    <th>Ngày tạo</th>
-                                                    <th>Trạng thái</th>
-                                                    <th>Thao tác</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <c:forEach items="${withdrawals.content}" var="withdrawal">
-                                                    <tr>
-                                                        <td>#${withdrawal.id}</td>
-                                                        <td>
-                                                            <code class="text-primary">${withdrawal.paymentRef}</code>
-                                                        </td>
-                                                        <td>
-                                                            <strong>
-                                                                <fmt:formatNumber value="${withdrawal.amount}"
-                                                                    type="currency" currencySymbol="" /> ₫
-                                                            </strong>
-                                                        </td>
-                                                        <td>
-                                                            <%-- Parse bank info from note field --%>
-                                                                <c:set var="bankInfo"
-                                                                    value="${fn:split(withdrawal.note, '-')}" />
-                                                                <c:choose>
-                                                                    <c:when test="${fn:length(bankInfo) >= 4}">
-                                                                        <%-- Trim whitespace from each part --%>
-                                                                            <c:set var="bankName"
-                                                                                value="${fn:trim(bankInfo[1])}" />
-                                                                            <c:set var="accountNumber"
-                                                                                value="${fn:trim(bankInfo[2])}" />
-                                                                            <c:set var="accountName"
-                                                                                value="${fn:trim(bankInfo[3])}" />
-                                                                            <div>
-                                                                                <strong>${bankName}</strong><br />
-                                                                                <small>${accountNumber}</small><br />
-                                                                                <small
-                                                                                    class="text-muted">${accountName}</small>
-                                                                            </div>
-                                                                    </c:when>
-                                                                    <c:otherwise>
-                                                                        <%-- Display raw note if format is incorrect
-                                                                            --%>
-                                                                            <small
-                                                                                class="text-muted">${withdrawal.note}</small>
-                                                                    </c:otherwise>
-                                                                </c:choose>
-                                                        </td>
-                                                        <td>
-                                                            ${withdrawal.createdAt}
-                                                        </td>
-                                                        <td>
+                                                    <td>#${withdrawal.id}</td>
+                                                    <td>
+                                                        <code class="text-primary">${withdrawal.paymentRef}</code>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            <fmt:formatNumber value="${withdrawal.amount}"
+                                                                pattern="###,###,###" maxFractionDigits="0" /> ₫
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <%-- Parse bank info from note field --%>
+                                                            <c:set var="bankInfo"
+                                                                value="${fn:split(withdrawal.note, '-')}" />
                                                             <c:choose>
-                                                                <c:when test="${withdrawal.paymentStatus == 'PENDING'}">
-                                                                    <span class="status-badge status-pending">
-                                                                        <i class="bi bi-clock-history me-1"></i>Chờ
-                                                                        duyệt
-                                                                    </span>
+                                                                <c:when test="${fn:length(bankInfo) >= 4}">
+                                                                    <%-- Trim whitespace from each part --%>
+                                                                        <c:set var="bankName"
+                                                                            value="${fn:trim(bankInfo[1])}" />
+                                                                        <c:set var="accountNumber"
+                                                                            value="${fn:trim(bankInfo[2])}" />
+                                                                        <c:set var="accountName"
+                                                                            value="${fn:trim(bankInfo[3])}" />
+                                                                        <div>
+                                                                            <strong>${bankName}</strong><br />
+                                                                            <small>${accountNumber}</small><br />
+                                                                            <small
+                                                                                class="text-muted">${accountName}</small>
+                                                                        </div>
                                                                 </c:when>
-                                                                <c:when test="${withdrawal.paymentStatus == 'SUCCESS'}">
-                                                                    <span class="status-badge status-success">
-                                                                        <i class="bi bi-check-circle me-1"></i>Đã
-                                                                        duyệt
-                                                                    </span>
-                                                                </c:when>
-                                                                <c:when
-                                                                    test="${withdrawal.paymentStatus == 'REJECTED'}">
-                                                                    <span class="status-badge status-rejected">
-                                                                        <i class="bi bi-x-circle me-1"></i>Từ chối
-                                                                    </span>
-                                                                </c:when>
-                                                                <c:when
-                                                                    test="${withdrawal.paymentStatus == 'CANCELLED'}">
-                                                                    <span class="status-badge status-cancelled">
-                                                                        <i class="bi bi-slash-circle me-1"></i>Đã
-                                                                        hủy
-                                                                    </span>
-                                                                </c:when>
+                                                                <c:otherwise>
+                                                                    <%-- Display raw note if format is incorrect --%>
+                                                                        <small
+                                                                            class="text-muted">${withdrawal.note}</small>
+                                                                </c:otherwise>
                                                             </c:choose>
-                                                        </td>
-                                                        <td>
-                                                            <a href="/admin/withdrawals/${withdrawal.id}"
-                                                                class="btn btn-sm btn-outline-primary">
-                                                                <i class="bi bi-gear"></i> Xử lý
-                                                            </a>
-                                                        </td>
-                                                    </tr>
+                                                    </td>
+                                                    <td>
+                                                        ${withdrawal.createdAt}
+                                                    </td>
+                                                    <td>
+                                                        <c:choose>
+                                                            <c:when test="${withdrawal.paymentStatus == 'PENDING'}">
+                                                                <span class="status-badge status-pending">
+                                                                    <i class="bi bi-clock-history me-1"></i>Chờ
+                                                                    duyệt
+                                                                </span>
+                                                            </c:when>
+                                                            <c:when test="${withdrawal.paymentStatus == 'SUCCESS'}">
+                                                                <span class="status-badge status-success">
+                                                                    <i class="bi bi-check-circle me-1"></i>Đã
+                                                                    duyệt
+                                                                </span>
+                                                            </c:when>
+                                                            <c:when test="${withdrawal.paymentStatus == 'REJECTED'}">
+                                                                <span class="status-badge status-rejected">
+                                                                    <i class="bi bi-x-circle me-1"></i>Từ chối
+                                                                </span>
+                                                            </c:when>
+                                                            <c:when test="${withdrawal.paymentStatus == 'CANCELLED'}">
+                                                                <span class="status-badge status-cancelled">
+                                                                    <i class="bi bi-slash-circle me-1"></i>Đã
+                                                                    hủy
+                                                                </span>
+                                                            </c:when>
+                                                        </c:choose>
+                                                    </td>
+                                                    <td>
+                                                        <a href="/admin/withdrawals/${withdrawal.id}"
+                                                            class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-gear"></i> Xử lý
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </c:forEach>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Pagination -->
+                                <c:if test="${withdrawals.totalPages > 1}">
+                                    <div class="pagination-container mt-4">
+                                        <nav aria-label="Phân trang">
+                                            <ul class="pagination mb-0 justify-content-center">
+                                                <!-- First Page -->
+                                                <li class="page-item ${currentPage == 0 ? 'disabled' : ''}">
+                                                    <a class="page-link"
+                                                        href="?page=0&status=${selectedStatus}&fromDate=${param.fromDate}&toDate=${param.toDate}&keyword=${param.keyword}"
+                                                        aria-label="First">
+                                                        <span aria-hidden="true">&laquo;&laquo;</span>
+                                                    </a>
+                                                </li>
+                                                <!-- Previous Page -->
+                                                <li class="page-item ${currentPage == 0 ? 'disabled' : ''}">
+                                                    <a class="page-link"
+                                                        href="?page=${currentPage - 1}&status=${selectedStatus}&fromDate=${param.fromDate}&toDate=${param.toDate}&keyword=${param.keyword}"
+                                                        aria-label="Previous">
+                                                        <span aria-hidden="true">&laquo;</span>
+                                                    </a>
+                                                </li>
+
+                                                <!-- Page Numbers -->
+                                                <c:forEach begin="${currentPage > 2 ? currentPage - 2 : 0}"
+                                                    end="${currentPage + 2 < totalPages - 1 ? currentPage + 2 : totalPages - 1}"
+                                                    var="i">
+                                                    <li class="page-item ${currentPage == i ? 'active' : ''}">
+                                                        <a class="page-link"
+                                                            href="?page=${i}&status=${selectedStatus}&fromDate=${param.fromDate}&toDate=${param.toDate}&keyword=${param.keyword}">${i
+                                                            +
+                                                            1}</a>
+                                                    </li>
                                                 </c:forEach>
-                                            </tbody>
-                                        </table>
+
+                                                <!-- Show dots if there are more pages -->
+                                                <c:if test="${currentPage + 2 < totalPages - 1}">
+                                                    <li class="page-item disabled">
+                                                        <span class="page-link">...</span>
+                                                    </li>
+                                                </c:if>
+
+                                                <!-- Last page number if not in range -->
+                                                <c:if test="${currentPage + 2 < totalPages - 1}">
+                                                    <li class="page-item">
+                                                        <a class="page-link"
+                                                            href="?page=${totalPages - 1}&status=${selectedStatus}&fromDate=${param.fromDate}&toDate=${param.toDate}&keyword=${param.keyword}">${totalPages}</a>
+                                                    </li>
+                                                </c:if>
+
+                                                <!-- Next Page -->
+                                                <li
+                                                    class="page-item ${currentPage == totalPages - 1 ? 'disabled' : ''}">
+                                                    <a class="page-link"
+                                                        href="?page=${currentPage + 1}&status=${selectedStatus}&fromDate=${param.fromDate}&toDate=${param.toDate}&keyword=${param.keyword}"
+                                                        aria-label="Next">
+                                                        <span aria-hidden="true">&raquo;</span>
+                                                    </a>
+                                                </li>
+                                                <!-- Last Page -->
+                                                <li
+                                                    class="page-item ${currentPage == totalPages - 1 ? 'disabled' : ''}">
+                                                    <a class="page-link"
+                                                        href="?page=${totalPages - 1}&status=${selectedStatus}&fromDate=${param.fromDate}&toDate=${param.toDate}&keyword=${param.keyword}"
+                                                        aria-label="Last">
+                                                        <span aria-hidden="true">&raquo;&raquo;</span>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </nav>
                                     </div>
-
-                                    <!-- Pagination -->
-                                    <c:if test="${withdrawals.totalPages > 1}">
-                                        <div class="pagination-container mt-4">
-                                            <nav aria-label="Phân trang">
-                                                <ul class="pagination mb-0 justify-content-center">
-                                                    <!-- First Page -->
-                                                    <li class="page-item ${currentPage == 0 ? 'disabled' : ''}">
-                                                        <a class="page-link"
-                                                            href="?page=0&keyword=${param.keyword}&status=${selectedStatus}&fromDate=${param.fromDate}&toDate=${param.toDate}"
-                                                            aria-label="First">
-                                                            <span aria-hidden="true">&laquo;&laquo;</span>
-                                                        </a>
-                                                    </li>
-                                                    <!-- Previous Page -->
-                                                    <li class="page-item ${currentPage == 0 ? 'disabled' : ''}">
-                                                        <a class="page-link"
-                                                            href="?page=${currentPage - 1}&keyword=${param.keyword}&status=${selectedStatus}&fromDate=${param.fromDate}&toDate=${param.toDate}"
-                                                            aria-label="Previous">
-                                                            <span aria-hidden="true">&laquo;</span>
-                                                        </a>
-                                                    </li>
-
-                                                    <!-- Page Numbers -->
-                                                    <c:forEach begin="${currentPage > 2 ? currentPage - 2 : 0}"
-                                                        end="${currentPage + 2 < totalPages - 1 ? currentPage + 2 : totalPages - 1}"
-                                                        var="i">
-                                                        <li class="page-item ${currentPage == i ? 'active' : ''}">
-                                                            <a class="page-link"
-                                                                href="?page=${i}&keyword=${param.keyword}&status=${selectedStatus}&fromDate=${param.fromDate}&toDate=${param.toDate}">${i
-                                                                +
-                                                                1}</a>
-                                                        </li>
-                                                    </c:forEach>
-
-                                                    <!-- Show dots if there are more pages -->
-                                                    <c:if test="${currentPage + 2 < totalPages - 1}">
-                                                        <li class="page-item disabled">
-                                                            <span class="page-link">...</span>
-                                                        </li>
-                                                    </c:if>
-
-                                                    <!-- Last page number if not in range -->
-                                                    <c:if test="${currentPage + 2 < totalPages - 1}">
-                                                        <li class="page-item">
-                                                            <a class="page-link"
-                                                                href="?page=${totalPages - 1}&keyword=${param.keyword}&status=${selectedStatus}&fromDate=${param.fromDate}&toDate=${param.toDate}">${totalPages}</a>
-                                                        </li>
-                                                    </c:if>
-
-                                                    <!-- Next Page -->
-                                                    <li
-                                                        class="page-item ${currentPage == totalPages - 1 ? 'disabled' : ''}">
-                                                        <a class="page-link"
-                                                            href="?page=${currentPage + 1}&keyword=${param.keyword}&status=${selectedStatus}&fromDate=${param.fromDate}&toDate=${param.toDate}"
-                                                            aria-label="Next">
-                                                            <span aria-hidden="true">&raquo;</span>
-                                                        </a>
-                                                    </li>
-                                                    <!-- Last Page -->
-                                                    <li
-                                                        class="page-item ${currentPage == totalPages - 1 ? 'disabled' : ''}">
-                                                        <a class="page-link"
-                                                            href="?page=${totalPages - 1}&keyword=${param.keyword}&status=${selectedStatus}&fromDate=${param.fromDate}&toDate=${param.toDate}"
-                                                            aria-label="Last">
-                                                            <span aria-hidden="true">&raquo;&raquo;</span>
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                            </nav>
-                                        </div>
-                                    </c:if>
                                 </c:if>
-                            </div>
+                            </c:if>
                         </div>
                     </div>
+                        </div>
                     </div>
-                    </div>
-
-
 
                     <!-- Include Footer -->
                     <jsp:include page="../../common/footer.jsp" />
@@ -426,14 +418,6 @@
                             document.getElementById('fromDate').value = '';
                             document.getElementById('toDate').value = '';
                             document.getElementById('filterForm').submit();
-                        }
-
-                        // Trim keyword before form submission
-                        function trimKeyword() {
-                            const keywordInput = document.getElementById('keyword');
-                            if (keywordInput) {
-                                keywordInput.value = keywordInput.value.trim();
-                            }
                         }
 
                         // Date validation

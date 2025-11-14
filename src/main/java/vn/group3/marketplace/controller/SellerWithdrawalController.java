@@ -16,6 +16,9 @@ import vn.group3.marketplace.service.AuthenticationRefreshService;
 
 import java.math.BigDecimal;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ExecutionException;
 
 @Controller
 @RequestMapping("/seller/withdrawals")
@@ -247,6 +250,7 @@ public class SellerWithdrawalController {
      * - CHỈ cho phép sửa thông tin ngân hàng (bankName, bankAccountNumber, bankAccountName)
      * - KHÔNG cho phép sửa số tiền (amount đã được lock)
      * - Yêu cầu phải ở trạng thái PENDING (chưa được chấp nhận)
+     * - Sử dụng QUEUE để serialize với admin operations (approve/reject)
      */
     @PostMapping("/{id}/update")
     public String updateWithdrawal(
@@ -259,24 +263,92 @@ public class SellerWithdrawalController {
 
         try {
             User user = currentUser.getUser();
-            withdrawalRequestService.updateWithdrawalRequest(
+            
+            // Validate số tài khoản ngân hàng (chỉ chứa số và chữ cái, không có ký tự đặc biệt)
+            if (bankAccountNumber == null || bankAccountNumber.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "❌ Số tài khoản ngân hàng không được để trống.");
+                return "redirect:/seller/withdrawals/" + id + "/edit";
+            }
+            if (!bankAccountNumber.matches("^[a-zA-Z0-9]+$")) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "❌ Số tài khoản ngân hàng chỉ được chứa chữ cái và số, không có ký tự đặc biệt.");
+                return "redirect:/seller/withdrawals/" + id + "/edit";
+            }
+            
+            // Validate tên tài khoản ngân hàng (chỉ chứa chữ cái không dấu và số, không có ký tự đặc biệt)
+            if (bankAccountName == null || bankAccountName.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "❌ Tên tài khoản ngân hàng không được để trống.");
+                return "redirect:/seller/withdrawals/" + id + "/edit";
+            }
+            // Chỉ cho phép chữ cái A-Z (không phân biệt hoa thường), số 0-9, và khoảng trắng
+            if (!bankAccountName.matches("^[a-zA-Z0-9\\s]+$")) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "❌ Tên tài khoản ngân hàng chỉ được chứa chữ cái không dấu, số và khoảng trắng.");
+                return "redirect:/seller/withdrawals/" + id + "/edit";
+            }
+            
+            // Validate tên ngân hàng
+            if (bankName == null || bankName.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "❌ Tên ngân hàng không được để trống.");
+                return "redirect:/seller/withdrawals/" + id + "/edit";
+            }
+            
+            // ✅ Submit vào QUEUE - serialize với create, cancel, approve, reject
+            Future<WalletTransaction> future = withdrawalRequestService.updateWithdrawalRequestAsync(
                     id, bankName, bankAccountNumber, bankAccountName, user);
+            
+            // ✅ Đợi kết quả với timeout 10 giây
+            future.get(10, TimeUnit.SECONDS);
 
             redirectAttributes.addFlashAttribute("success", 
                     "✅ Cập nhật thông tin ngân hàng thành công!");
             return "redirect:/seller/withdrawals";
 
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("error", "❌ " + e.getMessage());
+        } catch (TimeoutException e) {
+            // Queue quá đông hoặc xử lý lâu
+            redirectAttributes.addFlashAttribute("error", 
+                    "⏱️ Đang xử lý yêu cầu, vui lòng kiểm tra lại sau.");
             return "redirect:/seller/withdrawals/" + id + "/edit";
             
-        } catch (IllegalStateException e) {
+        } catch (ExecutionException e) {
+            // Exception từ async task
+            Throwable cause = e.getCause();
+            if (cause instanceof IllegalArgumentException) {
+                redirectAttributes.addFlashAttribute("error", "❌ " + cause.getMessage());
+                return "redirect:/seller/withdrawals/" + id + "/edit";
+            } else if (cause instanceof IllegalStateException) {
+                redirectAttributes.addFlashAttribute("error", "❌ " + cause.getMessage());
+                return "redirect:/seller/withdrawals/" + id + "/edit";
+            } else if (cause instanceof SecurityException) {
+                redirectAttributes.addFlashAttribute("error", "❌ " + cause.getMessage());
+                return "redirect:/seller/withdrawals";
+            } else {
+                redirectAttributes.addFlashAttribute("error", 
+                    "❌ Có lỗi xảy ra: " + cause.getMessage());
+                return "redirect:/seller/withdrawals/" + id + "/edit";
+            }
+            
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            redirectAttributes.addFlashAttribute("error", 
+                    "❌ Yêu cầu bị gián đoạn, vui lòng thử lại.");
+            return "redirect:/seller/withdrawals/" + id + "/edit";
+            
+        } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("error", "❌ " + e.getMessage());
             return "redirect:/seller/withdrawals/" + id + "/edit";
             
         } catch (SecurityException e) {
             redirectAttributes.addFlashAttribute("error", "❌ " + e.getMessage());
             return "redirect:/seller/withdrawals";
+            
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", 
+                    "❌ Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/seller/withdrawals/" + id + "/edit";
         }
     }
 

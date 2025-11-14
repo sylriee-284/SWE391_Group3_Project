@@ -84,8 +84,8 @@
                                                 <p class="text-muted mb-2">Số tiền rút</p>
                                                 <div class="amount-display">
                                                     -
-                                                    <fmt:formatNumber value="${withdrawal.amount}" type="currency"
-                                                        currencySymbol="" /> ₫
+                                                    <fmt:formatNumber value="${withdrawal.amount}"
+                                                        pattern="###,###,###" maxFractionDigits="0" /> ₫
                                                 </div>
                                             </div>
 
