@@ -226,43 +226,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- System Status Row -->
-                        <div class="row mb-4">
-                            <!-- System Status -->
-                            <div class="col-lg-12 mb-4">
-                                <div class="card dashboard-card h-100">
-                                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                                        <h6 class="card-title mb-0 fw-bold">
-                                            <i class="bi bi-speedometer2 me-2 text-success"></i>Trạng Thái Hệ Thống
-                                        </h6>
-                                        <span class="badge bg-success">Hoạt Động</span>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <div class="d-flex align-items-center mb-3">
-                                                    <i class="bi bi-clock me-3 text-warning fs-5"></i>
-                                                    <div>
-                                                        <div class="fw-medium">Thời Gian Hoạt Động</div>
-                                                        <div class="text-muted small">Đang chạy ổn định</div>
-                                                    </div>
-                                                </div>
-                                                <div class="d-flex align-items-center mb-3">
-                                                    <i class="bi bi-calendar me-3 text-info fs-5"></i>
-                                                    <div>
-                                                        <div class="fw-medium">Cập Nhật Lần Cuối</div>
-                                                        <div class="text-muted small">
-                                                            <script>document.write(new Date().toLocaleString('vi-VN'))</script>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
