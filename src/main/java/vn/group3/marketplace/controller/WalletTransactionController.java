@@ -42,49 +42,76 @@ public class WalletTransactionController {
         User user = currentUser.getUser();
         Page<WalletTransaction> transactions;
 
+        // Sanitize inputs
+        String sanitizedType = (type != null) ? type.trim() : null;
+        String sanitizedStatus = (status != null) ? status.trim() : null;
+
+        // Validate pagination params (page >= 0, size in [1, 100])
+        if (page < 0) {
+            return buildRedirectUrl(0, size, sanitizedType, sanitizedStatus);
+        }
+        if (size < 1 || size > 100) {
+            int normalizedSize = 10; // default fallback
+            return buildRedirectUrl(page, normalizedSize, sanitizedType, sanitizedStatus);
+        }
+
         // Filter theo type và status với logic ưu tiên
-        boolean hasType = type != null && !type.isEmpty();
-        boolean hasStatus = status != null && !status.isEmpty();
+        boolean hasType = sanitizedType != null && !sanitizedType.isEmpty();
+        boolean hasStatus = sanitizedStatus != null && !sanitizedStatus.isEmpty();
+
+        // Track parsed enums validity to preserve filters on overflow redirect
+        WalletTransactionType parsedType = null;
+        WalletTransactionStatus parsedStatus = null;
 
         if (hasType && hasStatus) {
             // Cả hai filter - ưu tiên cao nhất
             try {
-                WalletTransactionType transactionType = WalletTransactionType.valueOf(type.toUpperCase());
-                WalletTransactionStatus transactionStatus = WalletTransactionStatus.valueOf(status.toUpperCase());
-                transactions = walletTransactionService.getTransactionsByUserAndTypeAndStatus(user, transactionType,
-                        transactionStatus, page, size);
-                model.addAttribute("selectedType", type);
-                model.addAttribute("selectedStatus", status);
+                parsedType = WalletTransactionType.valueOf(sanitizedType.toUpperCase());
+                parsedStatus = WalletTransactionStatus.valueOf(sanitizedStatus.toUpperCase());
+                transactions = walletTransactionService.getTransactionsByUserAndTypeAndStatus(user, parsedType,
+                        parsedStatus, page, size);
+                model.addAttribute("selectedType", sanitizedType);
+                model.addAttribute("selectedStatus", sanitizedStatus);
             } catch (IllegalArgumentException e) {
                 transactions = walletTransactionService.getTransactionsByUser(user, page, size);
             }
         } else if (hasType) {
             // Chỉ filter theo type
             try {
-                WalletTransactionType transactionType = WalletTransactionType.valueOf(type.toUpperCase());
-                transactions = walletTransactionService.getTransactionsByUserAndType(user, transactionType, page, size);
-                model.addAttribute("selectedType", type);
+                parsedType = WalletTransactionType.valueOf(sanitizedType.toUpperCase());
+                transactions = walletTransactionService.getTransactionsByUserAndType(user, parsedType, page, size);
+                model.addAttribute("selectedType", sanitizedType);
             } catch (IllegalArgumentException e) {
                 transactions = walletTransactionService.getTransactionsByUser(user, page, size);
             }
         } else if (hasStatus) {
             // Chỉ filter theo status
             try {
-                WalletTransactionStatus transactionStatus = WalletTransactionStatus.valueOf(status.toUpperCase());
-                transactions = walletTransactionService.getTransactionsByUserAndStatus(user, transactionStatus, page,
+                parsedStatus = WalletTransactionStatus.valueOf(sanitizedStatus.toUpperCase());
+                transactions = walletTransactionService.getTransactionsByUserAndStatus(user, parsedStatus, page,
                         size);
             } catch (IllegalArgumentException e) {
                 transactions = walletTransactionService.getTransactionsByUser(user, page, size);
             }
-            model.addAttribute("selectedStatus", status);
+            model.addAttribute("selectedStatus", sanitizedStatus);
         } else {
             // Không có filter - lấy tất cả
             transactions = walletTransactionService.getTransactionsByUser(user, page, size);
         }
 
+        // Nếu page vượt quá tổng trang, redirect về trang cuối cùng, giữ lại filter hợp
+        // lệ
+        int totalPages = transactions.getTotalPages();
+        if (totalPages > 0 && page >= totalPages) {
+            int lastPage = totalPages - 1;
+            // Dùng sanitized chuỗi nếu enum parse thành công, ngược lại bỏ filter đó
+            String typeForRedirect = (parsedType != null) ? sanitizedType : null;
+            String statusForRedirect = (parsedStatus != null) ? sanitizedStatus : null;
+            return buildRedirectUrl(lastPage, size, typeForRedirect, statusForRedirect);
+        }
+
         // Thống kê
         long totalTransactions = transactions.getTotalElements();
-        int totalPages = transactions.getTotalPages();
 
         // Add to model
         model.addAttribute("transactions", transactions);
@@ -131,4 +158,15 @@ public class WalletTransactionController {
         return "wallet/transaction-detail";
     }
 
+    private String buildRedirectUrl(int page, int size, String type, String status) {
+        StringBuilder sb = new StringBuilder("redirect:/wallet/transactions?page=").append(page)
+                .append("&size=").append(size);
+        if (type != null && !type.isEmpty()) {
+            sb.append("&type=").append(type);
+        }
+        if (status != null && !status.isEmpty()) {
+            sb.append("&status=").append(status);
+        }
+        return sb.toString();
+    }
 }

@@ -142,10 +142,10 @@ public class CategoryController {
         return "category/category-products";
     }
 
-    // ========================= ADMIN ENDPOINTS =========================
+    // ADMIN ENDPOINTS
     // Tất cả các endpoint admin sử dụng prefix /admin/categories
 
-    // ===================== DANH SÁCH CHA =====================
+    // DANH SÁCH CHA
     @GetMapping("/admin/categories")
     public String listParentCategories(
             @RequestParam(defaultValue = "1") int page,
