@@ -49,8 +49,8 @@
                             <div>
                                 <p class="mb-1">Số dư khả dụng</p>
                                 <div class="balance-amount">
-                                    <fmt:formatNumber value="${currentUser.balance}" type="currency"
-                                        currencySymbol="" /> ₫
+                                    <fmt:formatNumber value="${currentUser.balance}"
+                                        pattern="###,###,###" maxFractionDigits="0" /> ₫
                                 </div>
                         </div>
                         <c:choose>
@@ -117,7 +117,7 @@
                                                             <td>
                                                                 <strong class="text-danger">
                                                                     -<fmt:formatNumber value="${withdrawal.amount}"
-                                                                        type="currency" currencySymbol="" /> ₫
+                                                                        pattern="###,###,###" maxFractionDigits="0" /> ₫
                                                                 </strong>
                                                             </td>
                                                             <td>

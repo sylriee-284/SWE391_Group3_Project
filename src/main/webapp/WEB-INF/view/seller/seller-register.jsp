@@ -590,11 +590,8 @@
                         $(document).ready(function () {
                             console.log('=== Seller Registration Script Loaded ===');
 
-                            let storeNameTimer;
                             const $storeName = $('#storeName');
-                            const $storeNameFeedback = $('#storeNameFeedback');
                             const $depositAmount = $('#depositAmount');
-                            const checkUrl = $storeName.data('store-check-url');
 
                             console.log('Deposit Amount Input Found:', $depositAmount.length > 0);
                             console.log('Max Listing Price Display Found:', $('#maxListingPriceContainer').length > 0);
@@ -621,30 +618,6 @@
                                 if (!string) return 0;
                                 return parseInt(string.replace(/\D/g, ''));
                             }
-
-                            // Kiểm tra tên cửa hàng khi nhập
-                            $storeName.on('input', function () {
-                                clearTimeout(storeNameTimer);
-                                const value = $(this).val().trim();
-
-                                if (value.length < 3) {
-                                    $storeName.removeClass('is-valid is-invalid');
-                                    return;
-                                }
-
-                                storeNameTimer = setTimeout(function () {
-                                    $.get(checkUrl, { storeName: value })
-                                        .done(function (response) {
-                                            if (response.exists) {
-                                                $storeName.removeClass('is-valid').addClass('is-invalid');
-                                                $storeNameFeedback.text(response.message);
-                                            } else {
-                                                $storeName.removeClass('is-invalid').addClass('is-valid');
-                                                $storeNameFeedback.text('');
-                                            }
-                                        });
-                                }, 500);
-                            });
 
                             // Get settings from model
                             const minDepositAmount = parseFloat('${minDepositAmount}') || 5000000;
@@ -721,11 +694,17 @@
                             $('#sellerRegistrationForm').on('submit', function (e) {
                                 const $form = $(this);
                                 const depositAmount = parseCurrency($depositAmount.val());
+                                const storeName = $storeName.val().trim();
 
-                                // Kiểm tra tên cửa hàng hợp lệ
-                                if ($storeName.hasClass('is-invalid')) {
+                                // Kiểm tra tên cửa hàng không được rỗng
+                                if (!storeName || storeName.length < 3) {
                                     e.preventDefault();
-                                    $('#storeNameFeedback').text('Vui lòng chọn tên cửa hàng khác!');
+                                    iziToast.error({
+                                        title: 'Lỗi Validation',
+                                        message: 'Tên cửa hàng phải có ít nhất 3 ký tự',
+                                        position: 'topRight',
+                                        timeout: 4000
+                                    });
                                     return false;
                                 }
 
@@ -854,15 +833,12 @@
                             // Initialize edit form validation
                             function initEditFormValidation() {
                                 const $editStoreName = $('#editStoreName');
-                                const $editStoreNameFeedback = $('#editStoreNameFeedback');
                                 const $editDepositAmount = $('#editDepositAmount');
-                                const checkUrl = $editStoreName.data('store-check-url');
                                 const originalName = $editStoreName.data('original-name');
                                 
                                 const minDepositAmount = parseFloat('${minDepositAmount}') || 5000000;
                                 const maxListingPriceRate = parseFloat('${maxListingPriceRate}') || 0.1;
                                 
-                                let editStoreNameTimer;
                                 let isEditUpdating = false;
                                 
                                 // Format currency helper
@@ -885,55 +861,6 @@
                                     $('#editMaxListingPrice').val(formattedPrice);
                                     $('#editMaxListingPriceContainer').show();
                                 }
-                                
-                                // Store name AJAX validation
-                                $editStoreName.off('input').on('input', function () {
-                                    clearTimeout(editStoreNameTimer);
-                                    const value = $(this).val().trim();
-                                    
-                                    console.log('Store name input:', value, 'Original:', originalName);
-                                    
-                                    // If same as original name, it's valid
-                                    if (value === originalName) {
-                                        $editStoreName.removeClass('is-invalid').addClass('is-valid');
-                                        $editStoreNameFeedback.text('');
-                                        console.log('Same as original - valid');
-                                        return;
-                                    }
-                                    
-                                    if (value.length < 3) {
-                                        $editStoreName.removeClass('is-valid is-invalid');
-                                        console.log('Too short - neutral');
-                                        return;
-                                    }
-                                    
-                                    editStoreNameTimer = setTimeout(function () {
-                                        console.log('Checking store name:', value);
-                                        $.get(checkUrl, { storeName: value })
-                                            .done(function (response) {
-                                                console.log('Check result:', response);
-                                                if (response.exists) {
-                                                    $editStoreName.removeClass('is-valid').addClass('is-invalid');
-                                                    $editStoreNameFeedback.text(response.message);
-                                                    
-                                                    // Show iziToast error
-                                                    iziToast.error({
-                                                        title: 'Tên cửa hàng không hợp lệ',
-                                                        message: response.message || 'Tên cửa hàng đã tồn tại',
-                                                        position: 'topRight',
-                                                        timeout: 5000
-                                                    });
-                                                } else {
-                                                    $editStoreName.removeClass('is-invalid').addClass('is-valid');
-                                                    $editStoreNameFeedback.text('');
-                                                }
-                                            })
-                                            .fail(function(xhr, status, error) {
-                                                console.error('AJAX check failed:', error);
-                                                // Don't show toast for AJAX failures - just log to console
-                                            });
-                                    }, 500);
-                                });
                                 
                                 // Deposit amount input handling
                                 $editDepositAmount.off('input keyup').on('input keyup', function (e) {
@@ -1001,8 +928,6 @@
                                     // Validate store name
                                     if (!currentName || currentName.length < 3) {
                                         $editStoreName.addClass('is-invalid');
-                                        $editStoreNameFeedback.text('Tên cửa hàng phải có ít nhất 3 ký tự');
-                                        $editStoreName.focus();
                                         
                                         iziToast.error({
                                             title: 'Lỗi Validation',
@@ -1011,22 +936,6 @@
                                             timeout: 4000
                                         });
                                         return false;
-                                    }
-                                    
-                                    // If name is different from original, check if it's invalid
-                                    if (currentName !== originalName) {
-                                        if ($editStoreName.hasClass('is-invalid')) {
-                                            $editStoreNameFeedback.text('Vui lòng chọn tên cửa hàng khác!');
-                                            $editStoreName.focus();
-                                            
-                                            iziToast.error({
-                                                title: 'Tên cửa hàng không hợp lệ',
-                                                message: 'Tên cửa hàng đã tồn tại. Vui lòng chọn tên khác!',
-                                                position: 'topRight',
-                                                timeout: 5000
-                                            });
-                                            return false;
-                                        }
                                     }
                                     
                                     // Validate deposit amount
