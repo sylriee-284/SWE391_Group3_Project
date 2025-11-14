@@ -206,7 +206,18 @@ public class WalletController {
         logger.debug("=== VNPay Callback Received ===");
         logger.debug("All params: {}", params);
 
-        // Lấy payment reference từ params
+        // BƯỚC 1: VERIFY SIGNATURE - Bảo mật quan trọng nhất!
+        boolean isValidSignature = vnpayService.verifyCallback(params);
+        if (!isValidSignature) {
+            logger.error("❌ SECURITY ALERT: Invalid VNPay signature detected!");
+            logger.error("❌ Possible attack attempt or data tampering");
+            logger.error("❌ Callback params: {}", params);
+            return "wallet/failure";  // Từ chối callback không hợp lệ
+        }
+        
+        logger.info("✅ VNPay signature verified successfully");
+
+        // BƯỚC 2: Lấy payment reference từ params
         String paymentRef = params.get("vnp_TxnRef");
         String responseCode = params.get("vnp_ResponseCode");
         String amount = params.get("vnp_Amount");
@@ -217,7 +228,7 @@ public class WalletController {
         logger.debug("Amount: {}", amount);
         logger.debug("Bank Code: {}", bankCode);
 
-        // Kiểm tra thanh toán thành công (response code = 00)
+        // BƯỚC 3: Kiểm tra thanh toán thành công (response code = 00)
         if ("00".equals(responseCode)) {
             logger.info("Payment successful (ref={}), enqueueing deposit processing...", paymentRef);
 

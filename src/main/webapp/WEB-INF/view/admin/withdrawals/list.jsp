@@ -130,17 +130,15 @@
                                             </button>
                                         </div>
                                     </div>
+                                </form>
                             </div>
-                        </div>
-                        </form>
-                    </div>
 
-                    <!-- Withdrawals Table -->
-                    <div class="card">
-                        <div class="card-header bg-white">
-                            <h5 class="mb-0">Danh sách yêu cầu rút tiền</h5>
-                        </div>
-                        <div class="card-body">
+                            <!-- Withdrawals Table -->
+                            <div class="card">
+                                <div class="card-header bg-white">
+                                    <h5 class="mb-0">Danh sách yêu cầu rút tiền</h5>
+                                </div>
+                                <div class="card-body">
                             <c:if test="${empty withdrawals.content}">
                                 <div class="text-center py-5">
                                     <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
@@ -172,7 +170,7 @@
                                                     <td>
                                                         <strong>
                                                             <fmt:formatNumber value="${withdrawal.amount}"
-                                                                type="currency" currencySymbol="" /> ₫
+                                                                pattern="###,###,###" maxFractionDigits="0" /> ₫
                                                         </strong>
                                                     </td>
                                                     <td>
@@ -318,7 +316,7 @@
                             </c:if>
                         </div>
                     </div>
-                    </div>
+                        </div>
                     </div>
 
                     <!-- Include Footer -->

@@ -159,4 +159,70 @@ public class VNPayService {
         }
         return ipAdress;
     }
+
+    /**
+     * Verify VNPay callback signature to prevent tampering
+     * @param params All parameters from VNPay callback
+     * @return true if signature is valid, false otherwise
+     */
+    public boolean verifyCallback(Map<String, String> params) {
+        try {
+            logger.debug("=== Verifying VNPay Callback Signature ===");
+            
+            // 1. Extract vnp_SecureHash from params
+            String vnpSecureHash = params.get("vnp_SecureHash");
+            if (vnpSecureHash == null || vnpSecureHash.isEmpty()) {
+                logger.error("❌ vnp_SecureHash is missing from callback");
+                return false;
+            }
+            
+            // 2. Remove vnp_SecureHash and vnp_SecureHashType from params
+            Map<String, String> verifyParams = new HashMap<>(params);
+            verifyParams.remove("vnp_SecureHash");
+            verifyParams.remove("vnp_SecureHashType");
+            
+            // 3. Sort parameters by key
+            List<String> fieldNames = new ArrayList<>(verifyParams.keySet());
+            Collections.sort(fieldNames);
+            
+            // 4. Build hash data string (URL-encode values to match payment URL generation)
+            StringBuilder hashData = new StringBuilder();
+            Iterator<String> itr = fieldNames.iterator();
+            while (itr.hasNext()) {
+                String fieldName = itr.next();
+                String fieldValue = verifyParams.get(fieldName);
+                if (fieldValue != null && !fieldValue.isEmpty()) {
+                    hashData.append(fieldName).append('=')
+                        .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+                    if (itr.hasNext()) {
+                        hashData.append('&');
+                    }
+                }
+            }
+            
+            // 5. Calculate signature using secret key
+            String calculatedHash = hmacSHA512(secretKey, hashData.toString());
+            
+            logger.debug("VNPay Hash: {}", vnpSecureHash);
+            logger.debug("Calculated Hash: {}", calculatedHash);
+            logger.debug("Hash Data: {}", hashData.toString());
+            
+            // 6. Compare signatures (case-insensitive)
+            boolean isValid = calculatedHash.equalsIgnoreCase(vnpSecureHash);
+            
+            if (isValid) {
+                logger.info("✅ VNPay callback signature is VALID");
+            } else {
+                logger.error("❌ VNPay callback signature is INVALID - Possible tampering detected!");
+                logger.error("Expected: {}", calculatedHash);
+                logger.error("Received: {}", vnpSecureHash);
+            }
+            
+            return isValid;
+            
+        } catch (Exception e) {
+            logger.error("❌ Error verifying VNPay callback: {}", e.getMessage(), e);
+            return false;
+        }
+    }
 }

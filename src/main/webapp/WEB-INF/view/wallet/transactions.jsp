@@ -9,7 +9,7 @@
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Transaction History - MMO Market</title>
+                    <title>Lịch Sử Giao Dịch - MMO Market</title>
                     <jsp:include page="../common/head.jsp" />
                 </head>
 
@@ -32,12 +32,12 @@
                                 <div class="col-12">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <h2><i class="fas fa-history"></i> Transaction History</h2>
-                                            <p class="text-muted">Manage and track your wallet transactions</p>
+                                            <h2><i class="fas fa-history"></i> Lịch Sử Giao Dịch</h2>
+                                            <p class="text-muted">Quản lý và theo dõi các giao dịch ví của bạn</p>
                                         </div>
                                         <div class="text-end">
                                             <a href="/wallet" class="btn btn-outline-primary">
-                                                <i class="fas fa-wallet"></i> Back to Wallet
+                                                <i class="fas fa-wallet"></i> Quay Lại Ví
                                             </a>
                                         </div>
                                     </div>
@@ -50,10 +50,10 @@
                                     <!-- Row 1: Basic Filters -->
                                     <div class="row filter-row align-items-end">
                                         <div class="col-md-3">
-                                            <div class="filter-label">Transaction Type</div>
+                                            <div class="filter-label">Loại Giao Dịch</div>
                                             <select class="form-select" id="type" name="type"
                                                 onchange="this.form.submit()">
-                                                <option value="">All</option>
+                                                <option value="">Tất cả</option>
                                                 <c:forEach var="transactionType" items="${transactionTypes}">
                                                     <option value="${transactionType}" ${selectedType==transactionType
                                                         ? 'selected' : '' }>
@@ -64,10 +64,10 @@
                                         </div>
 
                                         <div class="col-md-3">
-                                            <div class="filter-label">Status</div>
+                                            <div class="filter-label">Trạng Thái</div>
                                             <select class="form-select" id="status" name="status"
                                                 onchange="this.form.submit()">
-                                                <option value="">All</option>
+                                                <option value="">Tất cả</option>
                                                 <c:forEach var="paymentStatus" items="${paymentStatuses}">
                                                     <option value="${paymentStatus}" ${selectedStatus==paymentStatus
                                                         ? 'selected' : '' }>
@@ -79,7 +79,7 @@
 
                                         <div class="col-md-3">
                                             <a href="/wallet/transactions" class="btn btn-outline-secondary">
-                                                <i class="fas fa-refresh"></i> Reset Filters
+                                                <i class="fas fa-refresh"></i> Đặt Lại Bộ Lọc
                                             </a>
                                         </div>
                                     </div>
@@ -98,30 +98,30 @@
                                                     <thead class="table-light text-nowrap">
                                                         <tr>
                                                             <th class="sortable" data-column="0" data-type="text">
-                                                                Type
+                                                                Loại
                                                                 <div class="resizer"></div>
                                                             </th>
                                                             <th class="sortable" data-column="1" data-type="date">
-                                                                Date
+                                                                Ngày
                                                                 <div class="resizer"></div>
                                                             </th>
                                                             <th class="sortable" data-column="2" data-type="text">
-                                                                Payment Method
+                                                                Phương Thức Thanh Toán
                                                                 <div class="resizer"></div>
                                                             </th>
                                                             <th class="sortable" data-column="3" data-type="text">
-                                                                Reference ID
+                                                                Mã Tham Chiếu
                                                                 <div class="resizer"></div>
                                                             </th>
                                                             <th class="sortable" data-column="4" data-type="number">
-                                                                Amount
+                                                                Số Tiền
                                                                 <div class="resizer"></div>
                                                             </th>
                                                             <th class="sortable" data-column="5" data-type="text">
-                                                                Status
+                                                                Trạng Thái
                                                                 <div class="resizer"></div>
                                                             </th>
-                                                            <th>Actions <div class="resizer"></div>
+                                                            <th>Thao Tác <div class="resizer"></div>
                                                             </th>
                                                         </tr>
                                                     </thead>
@@ -195,14 +195,14 @@
                                                                             <span class="text-success">+
                                                                                 <fmt:formatNumber
                                                                                     value="${transaction.amount}"
-                                                                                    type="number" pattern="#,###" />
+                                                                                    pattern="###,###,###" maxFractionDigits="0" />
                                                                             </span>
                                                                         </c:when>
                                                                         <c:otherwise>
                                                                             <span class="text-danger">-
                                                                                 <fmt:formatNumber
                                                                                     value="${transaction.amount}"
-                                                                                    type="number" pattern="#,###" />
+                                                                                    pattern="###,###,###" maxFractionDigits="0" />
                                                                             </span>
                                                                         </c:otherwise>
                                                                     </c:choose>
@@ -217,7 +217,7 @@
                                                                 <td class="text-center">
                                                                     <a href="/wallet/transactions/${transaction.id}"
                                                                         class="btn btn-sm btn-primary">
-                                                                        <i class="fas fa-eye"></i> View
+                                                                        <i class="fas fa-eye"></i> Xem
                                                                     </a>
                                                                 </td>
                                                             </tr>
@@ -278,13 +278,13 @@
                                     <!-- 📭 Empty state -->
                                     <div class="text-center py-5">
                                         <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-                                        <h4 class="text-muted">No transactions yet</h4>
-                                        <p class="text-muted">You haven't made any transactions or no
-                                            matching
-                                            transactions were
-                                            found for the current filters.</p>
+                                        <h4 class="text-muted">Chưa có giao dịch nào</h4>
+                                        <p class="text-muted">Bạn chưa thực hiện giao dịch nào hoặc không tìm thấy
+                                            giao dịch
+                                            phù hợp với
+                                            bộ lọc hiện tại.</p>
                                         <a href="/wallet/deposit" class="btn btn-primary">
-                                            <i class="fas fa-plus"></i> Deposit now
+                                            <i class="fas fa-plus"></i> Nạp tiền ngay
                                         </a>
                                     </div>
                                 </c:otherwise>
@@ -303,7 +303,7 @@
                     <c:if test="${not empty successMessage}">
                         <script>
                             iziToast.success({
-                                title: 'Success!',
+                                title: 'Thành công!',
                                 message: '${successMessage}',
                                 position: 'topRight',
                                 timeout: 5000
@@ -314,7 +314,7 @@
                     <c:if test="${not empty errorMessage}">
                         <script>
                             iziToast.error({
-                                title: 'Error!',
+                                title: 'Lỗi!',
                                 message: '${errorMessage}',
                                 position: 'topRight',
                                 timeout: 5000
