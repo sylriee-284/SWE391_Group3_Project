@@ -42,32 +42,53 @@ public class AdminWithdrawalController {
             @RequestParam(required = false) String keyword,
             Model model) {
 
+        // Validate pagination parameters
+        if (page < 0) {
+            page = 0; // Default to first page if negative
+        }
+
+        if (size <= 0 || size > 100) {
+            size = 10; // Default to 10 if invalid (too small or too large)
+        }
+
         Page<WalletTransaction> withdrawals;
         String selectedStatus = "";
 
-        // Get withdrawals with filters
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            // When searching by keyword, only use keyword (ignore status and date filters)
-            withdrawals = withdrawalRequestService.getWithdrawalRequestsWithFilters(
-                    null, null, null, keyword, page, size);
-        } else if ((status != null && !status.trim().isEmpty()) ||
-                (fromDate != null && !fromDate.trim().isEmpty()) ||
-                (toDate != null && !toDate.trim().isEmpty())) {
-
-            WalletTransactionStatus statusEnum = null;
-            if (status != null && !status.trim().isEmpty()) {
-                try {
-                    statusEnum = WalletTransactionStatus.valueOf(status.toUpperCase());
-                    selectedStatus = status.toUpperCase();
-                } catch (IllegalArgumentException e) {
-                    // Invalid status, ignore
-                }
+        // Process status parameter
+        WalletTransactionStatus statusEnum = null;
+        if (status != null && !status.trim().isEmpty()) {
+            try {
+                statusEnum = WalletTransactionStatus.valueOf(status.toUpperCase());
+                selectedStatus = status.toUpperCase();
+            } catch (IllegalArgumentException e) {
+                // Invalid status, ignore
             }
+        }
 
+        // Process date and keyword parameters
+        String processedFromDate = (fromDate != null && !fromDate.trim().isEmpty()) ? fromDate : null;
+        String processedToDate = (toDate != null && !toDate.trim().isEmpty()) ? toDate : null;
+        String processedKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
+
+        // Check if any filters are applied
+        boolean hasFilters = statusEnum != null || processedFromDate != null ||
+                processedToDate != null || processedKeyword != null;
+
+        // Get withdrawals with combined filters or all withdrawals
+        if (hasFilters) {
             withdrawals = withdrawalRequestService.getWithdrawalRequestsWithFilters(
-                    statusEnum, fromDate, toDate, null, page, size);
+                    statusEnum, processedFromDate, processedToDate, processedKeyword, page, size);
         } else {
             withdrawals = withdrawalRequestService.getAllWithdrawalRequests(page, size);
+        }
+
+        // Validate page number against actual total pages
+        if (page >= withdrawals.getTotalPages() && withdrawals.getTotalPages() > 0) {
+            // Redirect to last page if current page is beyond available pages
+            int lastPage = withdrawals.getTotalPages() - 1;
+            String redirectUrl = buildRedirectUrl(lastPage, size, status, processedFromDate, processedToDate,
+                    processedKeyword);
+            return "redirect:/admin/withdrawals" + redirectUrl;
         }
 
         model.addAttribute("withdrawals", withdrawals);
@@ -77,6 +98,36 @@ public class AdminWithdrawalController {
         model.addAttribute("totalElements", withdrawals.getTotalElements());
 
         return "admin/withdrawals/list";
+    }
+
+    /**
+     * Helper method to build redirect URL with current filters
+     */
+    private String buildRedirectUrl(int page, int size, String status, String fromDate, String toDate, String keyword) {
+        StringBuilder url = new StringBuilder("?page=" + page);
+
+        if (size != 10) { // Only add size if different from default
+            url.append("&size=").append(size);
+        }
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            url.append("&keyword=")
+                    .append(java.net.URLEncoder.encode(keyword, java.nio.charset.StandardCharsets.UTF_8));
+        }
+
+        if (status != null && !status.trim().isEmpty()) {
+            url.append("&status=").append(status);
+        }
+
+        if (fromDate != null && !fromDate.trim().isEmpty()) {
+            url.append("&fromDate=").append(fromDate);
+        }
+
+        if (toDate != null && !toDate.trim().isEmpty()) {
+            url.append("&toDate=").append(toDate);
+        }
+
+        return url.toString();
     }
 
     @GetMapping("/{id}")
