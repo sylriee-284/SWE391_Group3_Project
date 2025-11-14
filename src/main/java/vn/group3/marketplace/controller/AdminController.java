@@ -193,6 +193,7 @@ public class AdminController {
                     case "ORDER_RELEASE" -> "Giải phóng đơn hàng";
                     case "ADMIN_COMMISSION_FEE" -> "Phí hoa hồng";
                     case "SELLER_PAYOUT" -> "Thanh toán cho seller";
+                    case "DEPOSIT_REFUND" -> "Hoàn tiền đặt cọc";
                     default -> type;
                 };
 
