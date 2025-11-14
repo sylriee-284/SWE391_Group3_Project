@@ -39,21 +39,20 @@ public class WalletTransactionController {
             return "redirect:/login?error=not_authenticated";
         }
 
+        // ===== VALIDATE PAGINATION PARAMETERS =====
+        if (page < 0) {
+            page = 0;
+        }
+        if (size <= 0 || size > 100) {
+            size = 10; // Reset to default if invalid
+        }
+
         User user = currentUser.getUser();
         Page<WalletTransaction> transactions;
 
         // Sanitize inputs
         String sanitizedType = (type != null) ? type.trim() : null;
         String sanitizedStatus = (status != null) ? status.trim() : null;
-
-        // Validate pagination params (page >= 0, size in [1, 100])
-        if (page < 0) {
-            return buildRedirectUrl(0, size, sanitizedType, sanitizedStatus);
-        }
-        if (size < 1 || size > 100) {
-            int normalizedSize = 10; // default fallback
-            return buildRedirectUrl(page, normalizedSize, sanitizedType, sanitizedStatus);
-        }
 
         // Filter theo type và status với logic ưu tiên
         boolean hasType = sanitizedType != null && !sanitizedType.isEmpty();
@@ -99,11 +98,10 @@ public class WalletTransactionController {
             transactions = walletTransactionService.getTransactionsByUser(user, page, size);
         }
 
-        // Nếu page vượt quá tổng trang, redirect về trang cuối cùng, giữ lại filter hợp
-        // lệ
-        int totalPages = transactions.getTotalPages();
-        if (totalPages > 0 && page >= totalPages) {
-            int lastPage = totalPages - 1;
+        // ===== VALIDATE PAGE NUMBER AGAINST ACTUAL TOTAL PAGES =====
+        if (page >= transactions.getTotalPages() && transactions.getTotalPages() > 0) {
+            // Redirect to last page if current page is beyond available pages
+            int lastPage = transactions.getTotalPages() - 1;
             // Dùng sanitized chuỗi nếu enum parse thành công, ngược lại bỏ filter đó
             String typeForRedirect = (parsedType != null) ? sanitizedType : null;
             String statusForRedirect = (parsedStatus != null) ? sanitizedStatus : null;
@@ -116,7 +114,7 @@ public class WalletTransactionController {
         // Add to model
         model.addAttribute("transactions", transactions);
         model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("totalPages", transactions.getTotalPages());
         model.addAttribute("totalTransactions", totalTransactions);
         model.addAttribute("user", user);
 
@@ -158,15 +156,17 @@ public class WalletTransactionController {
         return "wallet/transaction-detail";
     }
 
+    // Helper method to build redirect URL with all filter parameters
     private String buildRedirectUrl(int page, int size, String type, String status) {
-        StringBuilder sb = new StringBuilder("redirect:/wallet/transactions?page=").append(page)
-                .append("&size=").append(size);
-        if (type != null && !type.isEmpty()) {
-            sb.append("&type=").append(type);
+        StringBuilder url = new StringBuilder("redirect:/wallet/transactions?page=" + page + "&size=" + size);
+
+        if (type != null && !type.trim().isEmpty()) {
+            url.append("&type=").append(java.net.URLEncoder.encode(type, java.nio.charset.StandardCharsets.UTF_8));
         }
-        if (status != null && !status.isEmpty()) {
-            sb.append("&status=").append(status);
+        if (status != null && !status.trim().isEmpty()) {
+            url.append("&status=").append(java.net.URLEncoder.encode(status, java.nio.charset.StandardCharsets.UTF_8));
         }
-        return sb.toString();
+
+        return url.toString();
     }
 }
