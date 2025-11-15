@@ -229,7 +229,7 @@
                                                                     maxFractionDigits="0" />đ
                                                             </span>
                                                             <small class="text-muted">
-                                                                Kho: ${product.stock}
+                                                                Kho: ${dynamicStockMap[product.id]}
                                                             </small>
                                                         </div>
                                                         <div
