@@ -286,6 +286,8 @@
                                                                         <c:if test="${not empty release.releaseDate}">
                                                                             ${release.releaseDate.toString().substring(0,
                                                                             10).replace('-', '/')}
+                                                                            ${release.releaseDate.toString().substring(11,
+                                                                            16)}
                                                                         </c:if>
                                                                     </td>
                                                                     <td>

@@ -235,7 +235,8 @@
                                                     <div class="kpi-title">${dashboard.averageOrderValue.title}</div>
                                                     <div class="kpi-value">
                                                         <fmt:formatNumber value="${dashboard.averageOrderValue.value}"
-                                                            type="number" groupingUsed="true" /> VND
+                                                            type="number" groupingUsed="true" maxFractionDigits="0" />
+                                                        VND
                                                     </div>
                                                     <div
                                                         class="kpi-change ${dashboard.averageOrderValue.changeDirection}">
