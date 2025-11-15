@@ -244,7 +244,7 @@
                                                 <td><span
                                                         class="badge ${p.status=='ACTIVE'?'bg-success':'bg-secondary'}">${p.status}</span>
                                                 </td>
-                                                <td>${p.stock}</td>
+                                                <td>${dynamicStockMap[p.id]}</td>
 
                                                 <td class="text-end">
                                                     <!-- Toggle -->
@@ -252,7 +252,7 @@
                                                         <c:param name="storeId" value="${storeId}" />
                                                     </c:url>
                                                     <form class="d-inline" method="post" action="${toggleUrl}"
-                                                        data-stock="${p.stock}"
+                                                        data-stock="${dynamicStockMap[p.id]}"
                                                         data-toggle-to="${p.status=='ACTIVE'?'INACTIVE':'ACTIVE'}">
                                                         <input type="hidden" name="to"
                                                             value="${p.status=='ACTIVE'?'INACTIVE':'ACTIVE'}" />
@@ -267,7 +267,8 @@
                                                             </c:when>
                                                             <c:otherwise>
                                                                 <c:choose>
-                                                                    <c:when test="${p.stock != null && p.stock > 0}">
+                                                                    <c:when
+                                                                        test="${dynamicStockMap[p.id] != null && dynamicStockMap[p.id] > 0}">
                                                                         <button
                                                                             class="btn btn-sm btn-outline-success">Bật</button>
                                                                     </c:when>
@@ -289,7 +290,8 @@
                                                         data-slug="${fn:escapeXml(p.slug)}"
                                                         data-category="${p.category != null ? fn:escapeXml(p.category.name) : '-'}"
                                                         data-price="${p.price}" data-status="${p.status}"
-                                                        data-stock="${p.stock}" data-img="${fn:escapeXml(p.productUrl)}"
+                                                        data-stock="${dynamicStockMap[p.id]}"
+                                                        data-img="${fn:escapeXml(p.productUrl)}"
                                                         data-desc="${fn:escapeXml(p.description)}">
                                                         <i class="bi bi-info-circle-fill"></i>
                                                         <span class="ms-1">Chi tiết</span>
@@ -306,7 +308,8 @@
                                                         data-category-id="${p.category != null ? p.category.id : ''}"
                                                         data-parent-category-id="${p.category != null && p.category.parent != null ? p.category.parent.id : ''}"
                                                         data-price="${p.price}" data-status="${p.status}"
-                                                        data-stock="${p.stock}" data-img="${fn:escapeXml(p.productUrl)}"
+                                                        data-stock="${dynamicStockMap[p.id]}"
+                                                        data-img="${fn:escapeXml(p.productUrl)}"
                                                         data-desc="${fn:escapeXml(p.description)}">
                                                         <i class="bi bi-pencil-fill"></i>
                                                         <span class="ms-1">Sửa</span>

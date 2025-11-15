@@ -20,6 +20,7 @@ import vn.group3.marketplace.repository.CategoryRepository;
 // removed unused ProductStorageRepository import
 import vn.group3.marketplace.repository.SellerStoreRepository;
 import vn.group3.marketplace.service.ProductService;
+import vn.group3.marketplace.service.ProductStorageService;
 
 import jakarta.validation.Valid;
 import org.springframework.validation.BindingResult;
@@ -45,6 +46,7 @@ public class SellerProductController {
     // product storage repository not needed here; use ProductStorageService if
     // required
     private final SellerStoreRepository storeRepo;
+    private final ProductStorageService productStorageService;
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
@@ -335,6 +337,13 @@ public class SellerProductController {
                 minP, maxP, idFrom, idTo,
                 PageRequest.of(page, size));
 
+        // Calculate dynamic stock for each product from ProductStorage
+        java.util.Map<Long, Long> dynamicStockMap = new java.util.HashMap<>();
+        data.getContent().forEach(product -> {
+            long dynamicStock = productStorageService.getAvailableStock(product.getId());
+            dynamicStockMap.put(product.getId(), dynamicStock);
+        });
+
         // ===== VALIDATE PAGE NUMBER AGAINST ACTUAL TOTAL PAGES =====
         if (page >= data.getTotalPages() && data.getTotalPages() > 0) {
             // Build redirect URL with all filter parameters
@@ -359,6 +368,7 @@ public class SellerProductController {
                         .collect(Collectors.toList());
 
         model.addAttribute("page", data);
+        model.addAttribute("dynamicStockMap", dynamicStockMap);
         model.addAttribute("q", q);
         model.addAttribute("status", status);
         model.addAttribute("parentCategoryId", parentCategoryId);
