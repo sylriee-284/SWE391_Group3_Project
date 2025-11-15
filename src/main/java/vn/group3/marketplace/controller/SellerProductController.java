@@ -20,6 +20,7 @@ import vn.group3.marketplace.repository.CategoryRepository;
 // removed unused ProductStorageRepository import
 import vn.group3.marketplace.repository.SellerStoreRepository;
 import vn.group3.marketplace.service.ProductService;
+import vn.group3.marketplace.service.ProductStorageService;
 
 import jakarta.validation.Valid;
 import org.springframework.validation.BindingResult;
@@ -42,9 +43,8 @@ public class SellerProductController {
 
     private final ProductService productService;
     private final CategoryRepository categoryRepo;
-    // product storage repository not needed here; use ProductStorageService if
-    // required
     private final SellerStoreRepository storeRepo;
+    private final ProductStorageService productStorageService;
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
@@ -62,6 +62,38 @@ public class SellerProductController {
         }
         SellerStore sellerStore = currentUser.getUser().getSellerStore();
         return sellerStore != null ? sellerStore.getId() : null;
+    }
+
+    // Helper method to build redirect URL with all filter parameters
+    private String buildSellerProductRedirectUrl(int page, int size, String q, ProductStatus status,
+            Long parentCategoryId, Long categoryId, String fromDate, String toDate,
+            String minPrice, String maxPrice, Long idFrom, Long idTo, Long storeId) {
+        StringBuilder url = new StringBuilder("/seller/products?page=" + page + "&size=" + size);
+
+        if (q != null && !q.trim().isEmpty())
+            url.append("&q=").append(java.net.URLEncoder.encode(q, java.nio.charset.StandardCharsets.UTF_8));
+        if (status != null)
+            url.append("&status=").append(status);
+        if (parentCategoryId != null)
+            url.append("&parentCategoryId=").append(parentCategoryId);
+        if (categoryId != null)
+            url.append("&categoryId=").append(categoryId);
+        if (fromDate != null && !fromDate.trim().isEmpty())
+            url.append("&fromDate=").append(fromDate);
+        if (toDate != null && !toDate.trim().isEmpty())
+            url.append("&toDate=").append(toDate);
+        if (minPrice != null && !minPrice.trim().isEmpty())
+            url.append("&minPrice=").append(minPrice);
+        if (maxPrice != null && !maxPrice.trim().isEmpty())
+            url.append("&maxPrice=").append(maxPrice);
+        if (idFrom != null)
+            url.append("&idFrom=").append(idFrom);
+        if (idTo != null)
+            url.append("&idTo=").append(idTo);
+        if (storeId != null)
+            url.append("&storeId=").append(storeId);
+
+        return url.toString();
     }
 
     // Resolve store ID: use provided storeId or get from current user
@@ -162,6 +194,20 @@ public class SellerProductController {
 
         Files.createDirectories(targetDir);
 
+        // Xóa ảnh cũ có cùng tên với extension khác
+        try {
+            String[] possibleExtensions = { ".jpg", ".jpeg", ".png", ".JPG", ".JPEG", ".PNG" };
+            for (String possibleExt : possibleExtensions) {
+                Path oldFile = targetDir.resolve(filename + possibleExt);
+                if (Files.exists(oldFile)) {
+                    Files.delete(oldFile);
+                    System.out.println("Đã xóa ảnh cũ: " + oldFile.getFileName());
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Lỗi khi xóa ảnh cũ: " + e.getMessage());
+        }
+
         String original = file.getOriginalFilename();
         String ext = ".png";
         if (original != null && original.lastIndexOf('.') >= 0) {
@@ -251,6 +297,14 @@ public class SellerProductController {
 
         Long sid = sellerStore.getId();
 
+        // ===== VALIDATE PAGINATION PARAMETERS =====
+        if (page < 0) {
+            page = 0;
+        }
+        if (size <= 0 || size > 100) {
+            size = 10; // Reset to default if invalid
+        }
+
         LocalDateTime createdFrom = null;
         LocalDateTime createdToExclusive = null;
         try {
@@ -280,6 +334,22 @@ public class SellerProductController {
                 parentCategoryId, createdFrom, createdToExclusive,
                 minP, maxP, idFrom, idTo,
                 PageRequest.of(page, size));
+
+        // ===== VALIDATE PAGE NUMBER AGAINST ACTUAL TOTAL PAGES =====
+        if (page >= data.getTotalPages() && data.getTotalPages() > 0) {
+            // Build redirect URL with all filter parameters
+            int lastPage = data.getTotalPages() - 1;
+            String redirectUrl = buildSellerProductRedirectUrl(lastPage, size, q, status, parentCategoryId,
+                    categoryId, fromDate, toDate, minPrice, maxPrice, idFrom, idTo, sid);
+            return "redirect:" + redirectUrl;
+        }
+
+        // Calculate dynamic stock for each product
+        data.getContent().forEach(product -> {
+            long dynamicStock = productStorageService.getAvailableStock(product.getId());
+            // Store dynamic stock in the stock field for JSP access
+            product.setStock((int) dynamicStock);
+        });
 
         // Phục vụ filter ở trang danh sách
         List<Category> allCats = categoryRepo.findByIsDeletedFalse();
@@ -754,6 +824,10 @@ public class SellerProductController {
                 }
             }
 
+            // IMPORTANT: Không thay đổi productUrl trong ajax-update
+            // URL ảnh chỉ được cập nhật thông qua endpoint upload-image riêng biệt
+            // Điều này đảm bảo ảnh mới đã upload không bị ghi đè
+
             // Kiểm tra trần giá theo store khi AJAX lưu nhanh
             BigDecimal maxPrice = getStoreMaxPrice(sid);
             if (maxPrice != null && existing.getPrice() != null && existing.getPrice().compareTo(maxPrice) > 0) {
@@ -820,9 +894,19 @@ public class SellerProductController {
                 return out;
             }
 
-            // Delete old image first
-            if (existing.getProductUrl() != null && !existing.getProductUrl().isEmpty()) {
-                deleteOldImageFile(existing.getProductUrl());
+            // Delete old image first - only if it exists and is different from what we're
+            // about to create
+            String oldImageUrl = existing.getProductUrl();
+            if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+                // Get the expected new image URL
+                String filenameBase = String.valueOf(id);
+                String expectedNewUrl = "/images/products/" + filenameBase + ".png"; // Default to PNG
+
+                // Only delete if the old URL is different from the new one we're creating
+                if (!oldImageUrl.equals(expectedNewUrl)
+                        && !oldImageUrl.equals("/images/products/" + filenameBase + ".jpg")) {
+                    deleteOldImageFile(oldImageUrl);
+                }
             }
 
             // Save new image with same base filename as productId
@@ -832,6 +916,13 @@ public class SellerProductController {
             // Use productId as base filename (without extension)
             String filenameBase = String.valueOf(id);
             String imageUrl = saveSingleImageToStatic(imageFile, staticProductsDir, filenameBase);
+
+            // Verify the image was actually saved
+            if (imageUrl == null || imageUrl.isEmpty()) {
+                out.put("ok", false);
+                out.put("message", "Không thể lưu ảnh mới");
+                return out;
+            }
 
             // Update product
             existing.setProductUrl(imageUrl);

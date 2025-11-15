@@ -1,6 +1,7 @@
 package vn.group3.marketplace.controller;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -130,16 +131,6 @@ public class AdminController {
         java.util.Map<String, Object> data = new java.util.HashMap<>();
 
         try {
-            // Total users count (from User entity)
-            long totalUsers = userRepository.countActiveUsers();
-            data.put("totalUsers", totalUsers);
-
-            // New users this month
-            LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
-            LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
-            long newUsersThisMonth = userRepository.countNewUsersThisMonth(startOfMonth, endOfMonth);
-            data.put("newUsersThisMonth", newUsersThisMonth);
-
             // Total orders count (from Order entity)
             long totalOrders = orderRepository.countTotalOrders();
             data.put("totalOrders", totalOrders);
@@ -164,21 +155,15 @@ public class AdminController {
             long activeStores = sellerStoreRepository.countActiveStores();
             data.put("activeStores", activeStores);
 
-            // Active users now (estimation based on recent registrations)
-            data.put("activeUsersNow", Math.min(totalUsers, newUsersThisMonth * 2 + 10));
-
         } catch (Exception e) {
             log.error("Error fetching KPI data", e);
             // Fallback data in case of error
-            data.put("totalUsers", 0);
-            data.put("newUsersThisMonth", 0);
             data.put("totalOrders", 0);
             data.put("pendingOrders", 0);
             data.put("totalProducts", 0);
             data.put("activeProducts", 0);
             data.put("totalStores", 0);
             data.put("activeStores", 0);
-            data.put("activeUsersNow", 0);
         }
 
         return data;
@@ -209,6 +194,7 @@ public class AdminController {
                     case "ORDER_RELEASE" -> "Giải phóng đơn hàng";
                     case "ADMIN_COMMISSION_FEE" -> "Phí hoa hồng";
                     case "SELLER_PAYOUT" -> "Thanh toán cho seller";
+                    case "DEPOSIT_REFUND" -> "Hoàn tiền đặt cọc";
                     default -> type;
                 };
 
@@ -465,7 +451,7 @@ public class AdminController {
         int window = 2;
         int start = Math.max(0, currentPage - window);
         int end = Math.min(Math.max(0, totalPages - 1), currentPage + window);
-        java.util.List<Integer> pages = new java.util.ArrayList<>();
+        List<Integer> pages = new ArrayList<>();
         for (int i = start; i <= end; i++) {
             pages.add(i);
         }
@@ -502,14 +488,14 @@ public class AdminController {
         } catch (NumberFormatException ex) {
         }
 
-        java.time.LocalDate from = null;
-        java.time.LocalDate to = null;
+        LocalDate from = null;
+        LocalDate to = null;
         try {
             if (createdFrom != null && !createdFrom.isBlank()) {
-                from = java.time.LocalDate.parse(createdFrom);
+                from = LocalDate.parse(createdFrom);
             }
             if (createdTo != null && !createdTo.isBlank()) {
-                to = java.time.LocalDate.parse(createdTo);
+                to = LocalDate.parse(createdTo);
             }
         } catch (Exception ex) {
         }
@@ -533,7 +519,7 @@ public class AdminController {
         int window = 2;
         int start = Math.max(0, currentPage - window);
         int end = Math.min(Math.max(0, totalPages - 1), currentPage + window);
-        java.util.List<Integer> pages = new java.util.ArrayList<>();
+        List<Integer> pages = new ArrayList<>();
         for (int i = start; i <= end; i++) {
             pages.add(i);
         }
@@ -576,14 +562,14 @@ public class AdminController {
         } catch (NumberFormatException ex) {
         }
 
-        java.time.LocalDate from = null;
-        java.time.LocalDate to = null;
+        LocalDate from = null;
+        LocalDate to = null;
         try {
             if (createdFrom != null && !createdFrom.isBlank()) {
-                from = java.time.LocalDate.parse(createdFrom);
+                from = LocalDate.parse(createdFrom);
             }
             if (createdTo != null && !createdTo.isBlank()) {
-                to = java.time.LocalDate.parse(createdTo);
+                to = LocalDate.parse(createdTo);
             }
         } catch (Exception ex) {
         }
@@ -607,7 +593,7 @@ public class AdminController {
         int window = 2;
         int start = Math.max(0, currentPage - window);
         int end = Math.min(Math.max(0, totalPages - 1), currentPage + window);
-        java.util.List<Integer> pages = new java.util.ArrayList<>();
+        List<Integer> pages = new ArrayList<>();
         for (int i = start; i <= end; i++) {
             pages.add(i);
         }

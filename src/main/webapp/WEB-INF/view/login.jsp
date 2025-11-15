@@ -112,8 +112,8 @@
                                 <script>
                                     function refreshCaptcha() {
                                         var img = document.getElementById('captchaImage');
-                                        img.src = '/login/captcha';
-                                        document.getElementById('captchaInput').value = '';
+                                        img.src = '/login/captcha';//Change src to refresh captcha image
+                                        document.getElementById('captchaInput').value = '';//Clear captcha input
                                     }
 
                                     // Validation functions

@@ -151,7 +151,7 @@
                                                                         <td class="text-muted">Product:</td>
                                                                         <td>
                                                                             <c:if test="${order.product != null}">
-                                                                                <a href="/products/${order.product.id}"
+                                                                                <a href="/product/${order.product.slug}"
                                                                                     class="fw-bold text-decoration-none">${order.productName}</a>
                                                                             </c:if>
                                                                             <c:if test="${order.product == null}">

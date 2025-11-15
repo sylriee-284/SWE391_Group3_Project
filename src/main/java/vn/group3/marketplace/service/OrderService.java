@@ -16,7 +16,9 @@ import vn.group3.marketplace.util.ValidationUtils;
 import vn.group3.marketplace.util.SecurityContextUtils;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -345,10 +347,10 @@ public class OrderService {
 
                 // 4. Convert productStoragesToDeliver to JSON string
                 try {
-                    // Tạo DTO đơn giản để tránh circular reference và lazy loading issues
-                    List<java.util.Map<String, Object>> productStorageData = productStoragesToDeliver.stream()
+                    // Tạo DTO đơn giản để tránh circular reference
+                    List<Map<String, Object>> productStorageData = productStoragesToDeliver.stream()
                             .map(ps -> {
-                                java.util.Map<String, Object> data = new java.util.HashMap<>();
+                                Map<String, Object> data = new HashMap<>();
                                 data.put("id", ps.getId());
                                 data.put("payloadJson", ps.getPayloadJson());
                                 data.put("payloadMask", ps.getPayloadMask());
@@ -390,14 +392,6 @@ public class OrderService {
                 orderRepository.save(order);
 
                 break;
-            case SUCCESS:
-            case PENDING:
-            case HELD:
-            case RELEASED:
-            case CANCELLED:
-            case REFUNDED:
-                // These statuses are handled elsewhere or don't require order updates
-                break;
             default:
                 // Unknown status - log warning but don't fail
                 break;
@@ -415,35 +409,35 @@ public class OrderService {
     @Transactional
     public void rateOrder(Long orderId, Integer rating, String comment) {
         User currentUser = getCurrentUser();
-        
+
         // Find order
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Order not found"));
-        
+
         // Validate: user must be the buyer
         if (!order.getBuyer().getId().equals(currentUser.getId())) {
             throw new IllegalStateException("You can only rate your own orders");
         }
-        
+
         // Validate: order must be COMPLETED
         if (order.getStatus() != OrderStatus.COMPLETED) {
             throw new IllegalStateException("You can only rate completed orders");
         }
-        
+
         // Validate: order must not be rated yet
         if (order.getRating() != null) {
             throw new IllegalStateException("This order has already been rated");
         }
-        
+
         // Validate rating value (1-5)
         if (rating < 1 || rating > 5) {
             throw new IllegalArgumentException("Rating must be between 1 and 5");
         }
-        
+
         // Save rating to order
         order.setRating(rating);
         orderRepository.save(order);
-        
+
         // Update product rating
         Product product = order.getProduct();
         updateProductRating(product.getId());
@@ -454,11 +448,11 @@ public class OrderService {
     private void updateProductRating(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new EntityNotFoundException("Product not found"));
-        
+
         // Get all completed orders with ratings for this product
         List<Order> ratedOrders = orderRepository.findByProductIdAndStatusAndRatingIsNotNull(
                 productId, OrderStatus.COMPLETED);
-        
+
         if (ratedOrders.isEmpty()) {
             product.setRating(BigDecimal.ZERO);
             product.setRatingCount(0);
@@ -468,11 +462,11 @@ public class OrderService {
                     .mapToInt(Order::getRating)
                     .average()
                     .orElse(0.0);
-            
+
             product.setRating(BigDecimal.valueOf(Math.round(avgRating * 100.0) / 100.0));
             product.setRatingCount(ratedOrders.size());
         }
-        
+
         productRepository.save(product);
     }
 }

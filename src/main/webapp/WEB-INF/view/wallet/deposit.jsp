@@ -45,7 +45,7 @@
                                         <!-- Legacy error messages from URL parameters -->
                                         <c:if test="${param.error eq 'invalid_amount'}">
                                             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                                <i class="fas fa-exclamation-circle"></i> Minimum amount is 10,000 VND
+                                                <i class="fas fa-exclamation-circle"></i> Số tiền tối thiểu là 10.000 VNĐ
                                                 <button type="button" class="btn-close"
                                                     data-bs-dismiss="alert"></button>
                                             </div>
@@ -53,8 +53,8 @@
 
                                         <c:if test="${param.error eq 'encoding'}">
                                             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                                <i class="fas fa-exclamation-circle"></i> An error occurred. Please try
-                                                again!
+                                                <i class="fas fa-exclamation-circle"></i> Đã xảy ra lỗi. Vui lòng thử
+                                                lại!
                                                 <button type="button" class="btn-close"
                                                     data-bs-dismiss="alert"></button>
                                             </div>
@@ -63,34 +63,34 @@
                                         <form action="/wallet/deposit" method="post" id="depositForm">
                                             <div class="mb-3">
                                                 <label for="amount" class="form-label">
-                                                    <i class="fas fa-money-bill-wave"></i> Amount (VND)
+                                                    <i class="fas fa-money-bill-wave"></i> Số tiền (VNĐ)
                                                 </label>
                                                 <input type="text" class="form-control" id="amount" name="amount"
-                                                    placeholder="Enter amount to deposit (e.g., 100000)" required>
-                                                <div class="form-text">Minimum amount: 10,000 VND</div>
-                                                <small class="text-muted">Please enter numbers only. Commas will be removed automatically.</small>
+                                                    placeholder="Nhập số tiền muốn nạp (ví dụ: 100000)" required>
+                                                <div class="form-text">Số tiền tối thiểu: 10.000 VNĐ</div>
+                                                <small class="text-muted">Vui lòng chỉ nhập số. Dấu phẩy sẽ tự động được loại bỏ.</small>
                                                 <div id="amountError" class="invalid-feedback" style="display: none;">
-                                                    Please enter a valid number.
+                                                    Vui lòng nhập số hợp lệ.
                                                 </div>
                                             </div>
 
                                             <div class="alert alert-info">
                                                 <i class="fas fa-info-circle"></i>
-                                                <strong>Note:</strong> You will be redirected to VNPay payment page to
-                                                complete
-                                                the transaction.
+                                                <strong>Lưu ý:</strong> Bạn sẽ được chuyển đến trang thanh toán VNPay để
+                                                hoàn tất
+                                                giao dịch.
                                             </div>
 
                                             <div class="d-grid">
                                                 <button type="submit" class="btn btn-primary btn-lg">
-                                                    <i class="fas fa-credit-card"></i> Pay with VNPay
+                                                    <i class="fas fa-credit-card"></i> Thanh toán với VNPay
                                                 </button>
                                             </div>
                                         </form>
 
                                         <div class="text-center mt-3">
                                             <a href="/wallet" class="btn btn-outline-secondary">
-                                                <i class="fas fa-arrow-left"></i> Back to Wallet
+                                                <i class="fas fa-arrow-left"></i> Quay lại Ví
                                             </a>
                                         </div>
                                     </div>
