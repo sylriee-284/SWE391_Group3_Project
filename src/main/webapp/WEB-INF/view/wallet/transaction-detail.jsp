@@ -110,19 +110,19 @@
                                 <div class="col-md-6 mb-4">
                                     <div class="card detail-card">
                                         <div class="card-body text-center">
-                            <h5 class="card-title text-muted mb-3">
-                                <i class="fas fa-money-bill-wave"></i> Số tiền
-                            </h5>
-                            <c:set var="isPositive"
-                                value="${transaction.type.name() eq 'DEPOSIT' or transaction.type.name() eq 'DEPOSIT_REFUND' or transaction.type.name() eq 'REFUND' or transaction.type.name() eq 'ORDER_RELEASE' or transaction.type.name() eq 'ADMIN_COMMISSION_FEE' or transaction.paymentStatus.name() eq 'RELEASED'}" />
+                                            <h5 class="card-title text-muted mb-3">
+                                                <i class="fas fa-money-bill-wave"></i> Số tiền
+                                            </h5>
+                                            <c:set var="isPositive"
+                                                value="${transaction.type.name() eq 'DEPOSIT' or transaction.type.name() eq 'DEPOSIT_REFUND' or transaction.type.name() eq 'REFUND' or transaction.type.name() eq 'ORDER_RELEASE' or transaction.type.name() eq 'ADMIN_COMMISSION_FEE' or transaction.paymentStatus.name() eq 'RELEASED'}" />
 
-                            <div
-                                class="amount-display ${isPositive ? 'amount-positive' : 'amount-negative'}">
-                                ${isPositive ? '+' : '-'}                                                <fmt:formatNumber value="${transaction.amount}"
-                                                    pattern="###,###,###" maxFractionDigits="0" />
+                                            <div
+                                                class="amount-display ${isPositive ? 'amount-positive' : 'amount-negative'}">
+                                                ${isPositive ? '+' : '-'}
+                                                <fmt:formatNumber value="${transaction.amount}" pattern="###,###,###"
+                                                    maxFractionDigits="0" />
                                                 <small class="fs-4">VNĐ</small>
                                             </div>
-
                                         </div>
                                     </div>
                                 </div>

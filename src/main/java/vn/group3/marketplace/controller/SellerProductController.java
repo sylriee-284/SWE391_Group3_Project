@@ -20,6 +20,7 @@ import vn.group3.marketplace.repository.CategoryRepository;
 // removed unused ProductStorageRepository import
 import vn.group3.marketplace.repository.SellerStoreRepository;
 import vn.group3.marketplace.service.ProductService;
+import vn.group3.marketplace.service.ProductStorageService;
 
 import jakarta.validation.Valid;
 import org.springframework.validation.BindingResult;
@@ -42,9 +43,8 @@ public class SellerProductController {
 
     private final ProductService productService;
     private final CategoryRepository categoryRepo;
-    // product storage repository not needed here; use ProductStorageService if
-    // required
     private final SellerStoreRepository storeRepo;
+    private final ProductStorageService productStorageService;
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
@@ -343,6 +343,13 @@ public class SellerProductController {
                     categoryId, fromDate, toDate, minPrice, maxPrice, idFrom, idTo, sid);
             return "redirect:" + redirectUrl;
         }
+
+        // Calculate dynamic stock for each product
+        data.getContent().forEach(product -> {
+            long dynamicStock = productStorageService.getAvailableStock(product.getId());
+            // Store dynamic stock in the stock field for JSP access
+            product.setStock((int) dynamicStock);
+        });
 
         // Phục vụ filter ở trang danh sách
         List<Category> allCats = categoryRepo.findByIsDeletedFalse();

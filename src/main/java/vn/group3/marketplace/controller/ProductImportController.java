@@ -17,6 +17,7 @@ import vn.group3.marketplace.dto.ImportResult;
 import vn.group3.marketplace.dto.ProductStorageImportDTO;
 import vn.group3.marketplace.service.ProductService;
 import vn.group3.marketplace.service.ProductStorageImportService;
+import vn.group3.marketplace.service.ProductStorageService;
 
 import java.util.List;
 
@@ -28,6 +29,7 @@ public class ProductImportController {
 
     private final ProductStorageImportService productStorageImportService;
     private final ProductService productService;
+    private final ProductStorageService productStorageService;
 
     // Constants
     private static final String ERROR_MESSAGE = "errorMessage";
@@ -49,6 +51,11 @@ public class ProductImportController {
                 model.addAttribute(ERROR_MESSAGE, PRODUCT_NOT_FOUND);
                 return "redirect:/seller/products";
             }
+
+            // Calculate dynamic stock
+            long dynamicStock = productStorageService.getAvailableStock(product.getId());
+            // Store dynamic stock in the stock field for JSP access
+            product.setStock((int) dynamicStock);
 
             model.addAttribute("product", product);
             model.addAttribute("productId", productId);

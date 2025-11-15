@@ -113,6 +113,7 @@ public class EscrowTransactionService {
                 escrowTransaction.setCreatedBy(0L);
                 escrowTransactionRepository.save(escrowTransaction);
 
+                // Update seller store escrow amount
                 sellerStore.setEscrowAmount(sellerStore.getEscrowAmount().add(order.getTotalAmount()));
                 sellerStoreRepository.save(sellerStore);
                 logger.info("Escrow transaction created for order: {} with hold until: {}",
