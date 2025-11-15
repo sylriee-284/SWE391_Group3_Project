@@ -239,7 +239,7 @@
                                                 <td>${p.category != null ? p.category.name : '-'}</td>
                                                 <td>
                                                     <fmt:formatNumber value="${p.price}" type="currency"
-                                                        currencySymbol="₫" />
+                                                        currencySymbol="₫" maxFractionDigits="0" />
                                                 </td>
                                                 <td><span
                                                         class="badge ${p.status=='ACTIVE'?'bg-success':'bg-secondary'}">${p.status}</span>
@@ -608,7 +608,7 @@
                     <!-- JS to populate modals + import button -->
                     <script>
                         (function () {
-                            const money = (v) => new Intl.NumberFormat('vi-VN').format(Number(v || 0));
+                            const money = (v) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Number(v || 0));
 
                             // Detail modal
                             const detailModal = document.getElementById('productDetailModal');

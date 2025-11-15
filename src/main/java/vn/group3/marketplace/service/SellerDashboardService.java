@@ -365,7 +365,7 @@ public class SellerDashboardService {
                                 releaseEnd);
                 List<ReleaseScheduleDTO> upcomingReleases = releaseData.stream()
                                 .map(row -> ReleaseScheduleDTO.builder()
-                                                .releaseDate(((java.sql.Date) row[0]).toLocalDate().atStartOfDay())
+                                                .releaseDate((LocalDateTime) row[0])
                                                 .amount((BigDecimal) row[1])
                                                 .orderCount(((Long) row[2]).intValue())
                                                 .build())
@@ -722,9 +722,10 @@ public class SellerDashboardService {
                 Integer ratingCount = (Integer) row[6];
                 // Integer stock = (Integer) row[7]; // Not used in DTO
 
-                // Calculate revenue for the period (using totalAmount from COMPLETED orders)
-                BigDecimal revenue = orderRepository.sumRevenueByStoreAndStatusAndDateRange(
-                                getCurrentSellerStore().getId(), OrderStatus.COMPLETED, start, end);
+                // Calculate revenue for the specific product (using sellerAmount from RELEASED
+                // escrow transactions)
+                BigDecimal revenue = escrowRepository.sumSellerAmountByProduct(
+                                getCurrentSellerStore().getId(), productId, start, end);
 
                 // Get inventory status
                 List<Object[]> inventoryData = productStorageRepository.countByProductIdAndGroupByStatus(productId);
