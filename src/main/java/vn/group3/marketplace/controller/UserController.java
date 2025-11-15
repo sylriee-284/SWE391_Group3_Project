@@ -143,6 +143,19 @@ public class UserController {
                 return "user/profile";
             }
 
+            // Check name length
+            if (fullName.trim().length() > 50) {
+                model.addAttribute("user", user);
+                model.addAttribute("errorMessage", "Tên không được vượt quá 50 ký tự");
+                model.addAttribute("editMode", true);
+                model.addAttribute("formEmail", email);
+                model.addAttribute("formFullName", fullName);
+                model.addAttribute("formPhone", phone);
+                model.addAttribute("formDateOfBirth", dateOfBirth);
+                model.addAttribute("formGender", gender);
+                return "user/profile";
+            }
+
             // Check if name contains only letters, spaces and Vietnamese characters
             String namePattern = "^[a-zA-ZàáảãạầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵĂăĐđĨĩŨũƠơƯưÀÁẢÃẠẦẤẨẪẬÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴ\\s]+$";
             if (!fullName.trim().matches(namePattern)) {
