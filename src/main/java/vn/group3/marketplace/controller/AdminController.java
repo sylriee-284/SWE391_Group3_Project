@@ -408,6 +408,32 @@ public class AdminController {
             Model model, RedirectAttributes ra) {
 
         try {
+            // VALIDATE: Phone không được để trống
+            if (user.getPhone() == null || user.getPhone().trim().isEmpty()) {
+                model.addAttribute("phoneError", "Số điện thoại không được để trống.");
+                model.addAttribute("user", user);
+                model.addAttribute("formMode", user.getId() == null ? "create" : "edit");
+                model.addAttribute("pageTitle", user.getId() == null ? "Tạo" : "Chỉnh sửa");
+                model.addAttribute("allRoles", userService.getAllRoles());
+                model.addAttribute("selectedRoleIds",
+                        roleIds == null ? java.util.Set.of(userService.getDefaultUserRoleId())
+                                : new java.util.HashSet<>(roleIds));
+                return "admin/user_form";
+            }
+
+            // VALIDATE: Phone phải là số, đủ 10 số và bắt đầu bằng 0
+            if (!user.getPhone().matches("^0\\d{9}$")) {
+                model.addAttribute("phoneError", "Số điện thoại phải gồm 10 số và bắt đầu bằng số 0.");
+                model.addAttribute("user", user);
+                model.addAttribute("formMode", user.getId() == null ? "create" : "edit");
+                model.addAttribute("pageTitle", user.getId() == null ? "Tạo" : "Chỉnh sửa");
+                model.addAttribute("allRoles", userService.getAllRoles());
+                model.addAttribute("selectedRoleIds",
+                        roleIds == null ? java.util.Set.of(userService.getDefaultUserRoleId())
+                                : new java.util.HashSet<>(roleIds));
+                return "admin/user_form";
+            }
+
             userService.saveFromAdminWithRoles(user, roleIds);
         } catch (IllegalArgumentException ex) {
             // Chuẩn bị lại dữ liệu cho form
