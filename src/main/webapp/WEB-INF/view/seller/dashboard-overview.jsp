@@ -111,180 +111,177 @@
                             </ul>
 
                             <!-- Filters Section -->
-                            <div class="card mb-4">
-                                <div class="card-header bg-light">
-                                    <h5 class="mb-0"><i class="fas fa-filter"></i> Bộ lọc</h5>
-                                </div>
-                                <div class="card-body">
-                                    <form method="get" action="${pageContext.request.contextPath}/seller/dashboard"
-                                        id="filterForm">
-                                        <div class="d-flex flex-wrap align-items-end gap-3">
-                                            <!-- Time Filter -->
-                                            <div class="form-group mb-0" style="min-width:200px;">
-                                                <label class="form-label">Thời gian</label>
-                                                <select class="form-select" name="timeFilter" id="timeFilter">
-                                                    <option value="today" ${dashboard.timeFilter=='today' ? 'selected'
-                                                        : '' }>Hôm nay</option>
-                                                    <option value="7days" ${dashboard.timeFilter=='7days' ? 'selected'
-                                                        : '' }>7 ngày qua</option>
-                                                    <option value="30days" ${dashboard.timeFilter=='30days' ? 'selected'
-                                                        : '' }>30 ngày qua</option>
-                                                    <option value="custom" ${dashboard.timeFilter=='custom' ? 'selected'
-                                                        : '' }>Tùy chỉnh</option>
-                                                </select>
-                                            </div>
-
-                                            <!-- Custom Date Range -->
-                                            <div class="form-group mb-0" id="customDateRange" <c:if
-                                                test="${dashboard.timeFilter == 'custom'}">style="display: block;
-                                                min-width:180px;"</c:if>
-                                                <c:if test="${dashboard.timeFilter != 'custom'}">style="display: none;
-                                                    min-width:180px;"</c:if>>
-                                                <label class="form-label">Từ ngày</label>
-                                                <input type="date" class="form-control" name="startDate"
-                                                    value="${dashboard.startDate}">
-                                            </div>
-                                            <div class="form-group mb-0" id="customDateRangeEnd" <c:if
-                                                test="${dashboard.timeFilter == 'custom'}">style="display: block;
-                                                min-width:180px;"</c:if>
-                                                <c:if test="${dashboard.timeFilter != 'custom'}">style="display: none;
-                                                    min-width:180px;"</c:if>>
-                                                <label class="form-label">Đến ngày</label>
-                                                <input type="date" class="form-control" name="endDate"
-                                                    value="${dashboard.endDate}">
-                                            </div>
-
-                                            <!-- Action buttons aligned to the right -->
-                                            <div class="ms-auto d-flex gap-2">
-                                                <button type="submit" class="btn btn-primary">
-                                                    <i class="fas fa-search"></i> Áp dụng
-                                                </button>
-                                                <a href="${pageContext.request.contextPath}/seller/dashboard"
-                                                    class="btn btn-secondary">
-                                                    <i class="fas fa-redo"></i> Đặt lại
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
+                            <div class="card mb-4" <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="fas fa-filter"></i> Bộ lọc</h5>
                             </div>
+                            <div class="card-body">
+                                <form method="get" action="${pageContext.request.contextPath}/seller/dashboard"
+                                    id="filterForm">
+                                    <div class="d-flex flex-wrap align-items-end gap-3">
+                                        <!-- Time Filter -->
+                                        <div class="form-group mb-0" style="min-width:200px;">
+                                            <label class="form-label">Thời gian</label>
+                                            <select class="form-select" name="timeFilter" id="timeFilter">
+                                                <option value="today" ${dashboard.timeFilter=='today' ? 'selected' : ''
+                                                    }>Hôm nay</option>
+                                                <option value="7days" ${dashboard.timeFilter=='7days' ? 'selected' : ''
+                                                    }>7 ngày qua</option>
+                                                <option value="30days" ${dashboard.timeFilter=='30days' ? 'selected'
+                                                    : '' }>30 ngày qua</option>
+                                                <option value="custom" ${dashboard.timeFilter=='custom' ? 'selected'
+                                                    : '' }>Tùy chỉnh</option>
+                                            </select>
+                                        </div>
 
-                            <!-- KPI Cards Row -->
-                            <div class="row mb-4">
-                                <!-- Revenue Card -->
-                                <div class="col-xl-3 col-md-6 mb-3">
-                                    <div class="card kpi-card border-left-primary">
-                                        <div class="card-body">
-                                            <div class="row no-gutters align-items-center">
-                                                <div class="col mr-2">
-                                                    <div class="kpi-title">${dashboard.revenue.title}</div>
-                                                    <div class="kpi-value">
-                                                        <fmt:formatNumber value="${dashboard.revenue.value}"
-                                                            type="number" groupingUsed="true" /> VND
-                                                    </div>
-                                                    <div class="kpi-change ${dashboard.revenue.changeDirection}">
-                                                        <i
-                                                            class="fas fa-arrow-${dashboard.revenue.changeDirection == 'up' ? 'up' : 'down'}"></i>
-                                                        <fmt:formatNumber value="${dashboard.revenue.changePercent}"
-                                                            pattern="0.00" />%
-                                                    </div>
-                                                    <small class="text-muted">${dashboard.revenue.description}</small>
-                                                </div>
-                                                <div class="col-auto">
-                                                    <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                                                </div>
-                                            </div>
+                                        <!-- Custom Date Range -->
+                                        <div class="form-group mb-0" id="customDateRange" <c:if
+                                            test="${dashboard.timeFilter == 'custom'}">style="display: block;
+                                            min-width:180px;"</c:if>
+                                            <c:if test="${dashboard.timeFilter != 'custom'}">style="display: none;
+                                                min-width:180px;"</c:if>>
+                                            <label class="form-label">Từ ngày</label>
+                                            <input type="date" class="form-control" name="startDate"
+                                                value="${dashboard.startDate}">
+                                        </div>
+                                        <div class="form-group mb-0" id="customDateRangeEnd" <c:if
+                                            test="${dashboard.timeFilter == 'custom'}">style="display: block;
+                                            min-width:180px;"</c:if>
+                                            <c:if test="${dashboard.timeFilter != 'custom'}">style="display: none;
+                                                min-width:180px;"</c:if>>
+                                            <label class="form-label">Đến ngày</label>
+                                            <input type="date" class="form-control" name="endDate"
+                                                value="${dashboard.endDate}">
+                                        </div>
+
+                                        <!-- Action buttons aligned to the right -->
+                                        <div class="ms-auto d-flex gap-2">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-search"></i> Áp dụng
+                                            </button>
+                                            <a href="${pageContext.request.contextPath}/seller/dashboard"
+                                                class="btn btn-secondary">
+                                                <i class="fas fa-redo"></i> Đặt lại
+                                            </a>
                                         </div>
                                     </div>
-                                </div>
-
-                                <!-- Orders Card -->
-                                <div class="col-xl-3 col-md-6 mb-3">
-                                    <div class="card kpi-card border-left-success">
-                                        <div class="card-body">
-                                            <div class="row no-gutters align-items-center">
-                                                <div class="col mr-2">
-                                                    <div class="kpi-title">${dashboard.orderCount.title}</div>
-                                                    <div class="kpi-value">
-                                                        <fmt:formatNumber value="${dashboard.orderCount.value}"
-                                                            type="number" />
-                                                    </div>
-                                                    <div class="kpi-change ${dashboard.orderCount.changeDirection}">
-                                                        <i
-                                                            class="fas fa-arrow-${dashboard.orderCount.changeDirection == 'up' ? 'up' : 'down'}"></i>
-                                                        <fmt:formatNumber value="${dashboard.orderCount.changePercent}"
-                                                            pattern="0.00" />%
-                                                    </div>
-                                                    <small
-                                                        class="text-muted">${dashboard.orderCount.description}</small>
-                                                </div>
-                                                <div class="col-auto">
-                                                    <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- AOV Card -->
-                                <div class="col-xl-3 col-md-6 mb-3">
-                                    <div class="card kpi-card border-left-info">
-                                        <div class="card-body">
-                                            <div class="row no-gutters align-items-center">
-                                                <div class="col mr-2">
-                                                    <div class="kpi-title">${dashboard.averageOrderValue.title}</div>
-                                                    <div class="kpi-value">
-                                                        <fmt:formatNumber value="${dashboard.averageOrderValue.value}"
-                                                            type="number" groupingUsed="true" /> VND
-                                                    </div>
-                                                    <div
-                                                        class="kpi-change ${dashboard.averageOrderValue.changeDirection}">
-                                                        <i
-                                                            class="fas fa-arrow-${dashboard.averageOrderValue.changeDirection == 'up' ? 'up' : 'down'}"></i>
-                                                        <fmt:formatNumber
-                                                            value="${dashboard.averageOrderValue.changePercent}"
-                                                            pattern="0.00" />%
-                                                    </div>
-                                                    <small
-                                                        class="text-muted">${dashboard.averageOrderValue.description}</small>
-                                                </div>
-                                                <div class="col-auto">
-                                                    <i class="fas fa-chart-bar fa-2x text-gray-300"></i>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                </form>
                             </div>
-
-                            <!-- Charts Row -->
-                            <div class="row mb-4">
-                                <!-- Revenue Chart -->
-                                <div class="col-xl-8 col-lg-7">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h5 class="mb-0"><i class="fas fa-chart-line"></i> Xu hướng doanh thu</h5>
-                                        </div>
-                                        <div class="card-body">
-                                            <canvas id="revenueChart" height="100"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Top Products Chart -->
-                                <div class="col-xl-4 col-lg-5">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h5 class="mb-0"><i class="fas fa-trophy"></i> Sản phẩm bán chạy</h5>
-                                        </div>
-                                        <div class="card-body">
-                                            <canvas id="topProductsChart" height="200"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                         </div>
+
+                        <!-- KPI Cards Row -->
+                        <div class="row mb-4">
+                            <!-- Revenue Card -->
+                            <div class="col-xl-3 col-md-6 mb-3">
+                                <div class="card kpi-card border-left-primary">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="kpi-title">${dashboard.revenue.title}</div>
+                                                <div class="kpi-value">
+                                                    <fmt:formatNumber value="${dashboard.revenue.value}" type="number"
+                                                        groupingUsed="true" /> VND
+                                                </div>
+                                                <div class="kpi-change ${dashboard.revenue.changeDirection}">
+                                                    <i
+                                                        class="fas fa-arrow-${dashboard.revenue.changeDirection == 'up' ? 'up' : 'down'}"></i>
+                                                    <fmt:formatNumber value="${dashboard.revenue.changePercent}"
+                                                        pattern="0.00" />%
+                                                </div>
+                                                <small class="text-muted">${dashboard.revenue.description}</small>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Orders Card -->
+                            <div class="col-xl-3 col-md-6 mb-3">
+                                <div class="card kpi-card border-left-success">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="kpi-title">${dashboard.orderCount.title}</div>
+                                                <div class="kpi-value">
+                                                    <fmt:formatNumber value="${dashboard.orderCount.value}"
+                                                        type="number" />
+                                                </div>
+                                                <div class="kpi-change ${dashboard.orderCount.changeDirection}">
+                                                    <i
+                                                        class="fas fa-arrow-${dashboard.orderCount.changeDirection == 'up' ? 'up' : 'down'}"></i>
+                                                    <fmt:formatNumber value="${dashboard.orderCount.changePercent}"
+                                                        pattern="0.00" />%
+                                                </div>
+                                                <small class="text-muted">${dashboard.orderCount.description}</small>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- AOV Card -->
+                            <div class="col-xl-3 col-md-6 mb-3">
+                                <div class="card kpi-card border-left-info">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="kpi-title">${dashboard.averageOrderValue.title}</div>
+                                                <div class="kpi-value">
+                                                    <fmt:formatNumber value="${dashboard.averageOrderValue.value}"
+                                                        type="number" groupingUsed="true" maxFractionDigits="0" /> VND
+                                                </div>
+                                                <div class="kpi-change ${dashboard.averageOrderValue.changeDirection}">
+                                                    <i
+                                                        class="fas fa-arrow-${dashboard.averageOrderValue.changeDirection == 'up' ? 'up' : 'down'}"></i>
+                                                    <fmt:formatNumber
+                                                        value="${dashboard.averageOrderValue.changePercent}"
+                                                        pattern="0.00" />%
+                                                </div>
+                                                <small
+                                                    class="text-muted">${dashboard.averageOrderValue.description}</small>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-chart-bar fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Row -->
+                        <div class="row mb-4">
+                            <!-- Revenue Chart -->
+                            <div class="col-xl-8 col-lg-7">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="fas fa-chart-line"></i> Xu hướng doanh thu</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="revenueChart" height="100"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Top Products Chart -->
+                            <div class="col-xl-4 col-lg-5">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="fas fa-trophy"></i> Sản phẩm bán chạy</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="topProductsChart" height="200"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
                     </div>
 
                     </div><!-- End container-fluid -->
