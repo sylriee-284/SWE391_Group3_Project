@@ -44,6 +44,15 @@ public class CategoryController {
             @RequestParam(value = "childCategory", required = false) Long childCategoryId,
             Model model) {
 
+        // Validate pagination parameters
+        if (page < 0) {
+            page = 0;
+        }
+
+        if (size <= 0 || size > 100) {
+            size = 12; // Reset to default if invalid
+        }
+
         // Find parent category by name (case insensitive)
         Category parentCategory = categoryService.getParentCategoryByName(categoryName);
 
@@ -96,6 +105,22 @@ public class CategoryController {
             product.setStock((int) dynamicStock); // Convert long to int for existing stock field
         });
 
+        // Validate page number against actual total pages
+        if (page >= products.getTotalPages() && products.getTotalPages() > 0) {
+            // Redirect to last page if current page is beyond available pages
+            int lastPage = products.getTotalPages() - 1;
+            StringBuilder redirectUrl = new StringBuilder("/category/" + categoryName + "?page=" + lastPage + "&size="
+                    + size + "&sort=" + sortBy + "&direction=" + sortDirection);
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                redirectUrl.append("&keyword=")
+                        .append(java.net.URLEncoder.encode(keyword, java.nio.charset.StandardCharsets.UTF_8));
+            }
+            if (childCategoryId != null) {
+                redirectUrl.append("&childCategory=").append(childCategoryId);
+            }
+            return "redirect:" + redirectUrl.toString();
+        }
+
         // Add attributes to model
         model.addAttribute("parentCategory", parentCategory);
         model.addAttribute("childCategories", childCategories);
@@ -117,10 +142,10 @@ public class CategoryController {
         return "category/category-products";
     }
 
-    // ========================= ADMIN ENDPOINTS =========================
+    // ADMIN ENDPOINTS
     // Tất cả các endpoint admin sử dụng prefix /admin/categories
 
-    // ===================== DANH SÁCH CHA =====================
+    // DANH SÁCH CHA
     @GetMapping("/admin/categories")
     public String listParentCategories(
             @RequestParam(defaultValue = "1") int page,
@@ -129,7 +154,31 @@ public class CategoryController {
             @RequestParam(value = "active", required = false) Boolean active, // NEW
             Model model) {
 
+        // Validate pagination parameters
+        if (page < 1) {
+            page = 1;
+        }
+
+        if (size <= 0 || size > 100) {
+            size = 10; // Reset to default if invalid
+        }
+
         var p = categoryService.findParentCategoriesFiltered(page - 1, size, q, active); // NEW
+
+        // Validate page number against actual total pages
+        if (page > p.getTotalPages() && p.getTotalPages() > 0) {
+            // Redirect to last page if current page is beyond available pages
+            int lastPage = p.getTotalPages();
+            StringBuilder redirectUrl = new StringBuilder("/admin/categories?page=" + lastPage + "&size=" + size);
+            if (q != null && !q.trim().isEmpty()) {
+                redirectUrl.append("&q=")
+                        .append(java.net.URLEncoder.encode(q, java.nio.charset.StandardCharsets.UTF_8));
+            }
+            if (active != null) {
+                redirectUrl.append("&active=").append(active);
+            }
+            return "redirect:" + redirectUrl.toString();
+        }
         model.addAttribute("categories", p.getContent());
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", p.getTotalPages());
@@ -166,10 +215,35 @@ public class CategoryController {
             @RequestParam(value = "active", required = false) Boolean active, // NEW
             Model model) {
 
+        // Validate pagination parameters
+        if (page < 1) {
+            page = 1;
+        }
+
+        if (size <= 0 || size > 100) {
+            size = 10; // Reset to default if invalid
+        }
+
         var parent = categoryService.getByIdAnyStatus(parentId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục cha ID: " + parentId));
 
         var p = categoryService.findSubcategoriesFiltered(parentId, page - 1, size, q, active); // NEW
+
+        // Validate page number against actual total pages
+        if (page > p.getTotalPages() && p.getTotalPages() > 0) {
+            // Redirect to last page if current page is beyond available pages
+            int lastPage = p.getTotalPages();
+            StringBuilder redirectUrl = new StringBuilder(
+                    "/admin/categories/" + parentId + "/subcategories?page=" + lastPage + "&size=" + size);
+            if (q != null && !q.trim().isEmpty()) {
+                redirectUrl.append("&q=")
+                        .append(java.net.URLEncoder.encode(q, java.nio.charset.StandardCharsets.UTF_8));
+            }
+            if (active != null) {
+                redirectUrl.append("&active=").append(active);
+            }
+            return "redirect:" + redirectUrl.toString();
+        }
 
         model.addAttribute("parentCategory", parent);
         model.addAttribute("categories", p.getContent());

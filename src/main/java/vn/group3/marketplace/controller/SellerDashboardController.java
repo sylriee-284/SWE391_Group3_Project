@@ -35,6 +35,46 @@ public class SellerDashboardController {
         private final CategoryRepository categoryRepository;
         private final UserService userService;
 
+        // Helper method to build redirect URL for sales analytics with all filter
+        // parameters
+        private String buildDashboardSalesRedirectUrl(int page, int size, String timeFilter,
+                        String startDate, String endDate, String orderStatus, Long productId) {
+                StringBuilder url = new StringBuilder("/seller/dashboard/sales?page=" + page + "&size=" + size);
+
+                if (!timeFilter.equals("30days"))
+                        url.append("&timeFilter=").append(timeFilter);
+                if (startDate != null && !startDate.trim().isEmpty())
+                        url.append("&startDate=").append(startDate);
+                if (endDate != null && !endDate.trim().isEmpty())
+                        url.append("&endDate=").append(endDate);
+                if (orderStatus != null && !orderStatus.trim().isEmpty())
+                        url.append("&orderStatus=").append(orderStatus);
+                if (productId != null)
+                        url.append("&productId=").append(productId);
+
+                return url.toString();
+        }
+
+        // Helper method to build redirect URL for products dashboard with all filter
+        // parameters
+        private String buildDashboardProductsRedirectUrl(int page, int size, String timeFilter,
+                        String startDate, String endDate, Long categoryId, String sortBy) {
+                StringBuilder url = new StringBuilder("/seller/dashboard/products?page=" + page + "&size=" + size);
+
+                if (!timeFilter.equals("30days"))
+                        url.append("&timeFilter=").append(timeFilter);
+                if (startDate != null && !startDate.trim().isEmpty())
+                        url.append("&startDate=").append(startDate);
+                if (endDate != null && !endDate.trim().isEmpty())
+                        url.append("&endDate=").append(endDate);
+                if (categoryId != null)
+                        url.append("&categoryId=").append(categoryId);
+                if (!sortBy.equals("revenue"))
+                        url.append("&sortBy=").append(sortBy);
+
+                return url.toString();
+        }
+
         /**
          * Helper method: Check if store is inactive and redirect to close result page
          */
@@ -132,12 +172,30 @@ public class SellerDashboardController {
                         return redirect;
                 }
 
+                // ===== VALIDATE PAGINATION PARAMETERS =====
+                if (page < 0) {
+                        page = 0;
+                }
+                if (size <= 0 || size > 100) {
+                        size = 5; // Reset to default if invalid
+                }
+
                 log.info("Loading sales analytics with filters: timeFilter={}, status={}, productId={}, page={}",
                                 timeFilter, orderStatus, productId, page);
 
                 try {
                         SalesAnalyticsDTO salesData = dashboardService.getSalesAnalytics(
                                         timeFilter, startDate, endDate, orderStatus, productId, page, size);
+
+                        // ===== VALIDATE PAGE NUMBER AGAINST ACTUAL TOTAL PAGES =====
+                        if (page >= salesData.getOrders().getTotalPages()
+                                        && salesData.getOrders().getTotalPages() > 0) {
+                                // Build redirect URL with all filter parameters
+                                int lastPage = salesData.getOrders().getTotalPages() - 1;
+                                String redirectUrl = buildDashboardSalesRedirectUrl(lastPage, size, timeFilter,
+                                                startDate, endDate, orderStatus, productId);
+                                return "redirect:" + redirectUrl;
+                        }
 
                         log.info("Sales data loaded successfully: {} orders, escrowSummary={}",
                                         salesData.getOrders().getTotalElements(),
@@ -203,12 +261,30 @@ public class SellerDashboardController {
                         return redirect;
                 }
 
+                // ===== VALIDATE PAGINATION PARAMETERS =====
+                if (page < 0) {
+                        page = 0;
+                }
+                if (size <= 0 || size > 100) {
+                        size = 20; // Reset to default if invalid
+                }
+
                 log.info("Loading product inventory with filters: timeFilter={}, categoryId={}, sortBy={}, page={}",
                                 timeFilter, categoryId, sortBy, page);
 
                 try {
                         ProductInventoryDTO productData = dashboardService.getProductInventory(
                                         timeFilter, startDate, endDate, categoryId, sortBy, page, size);
+
+                        // ===== VALIDATE PAGE NUMBER AGAINST ACTUAL TOTAL PAGES =====
+                        if (page >= productData.getProducts().getTotalPages()
+                                        && productData.getProducts().getTotalPages() > 0) {
+                                // Build redirect URL with all filter parameters
+                                int lastPage = productData.getProducts().getTotalPages() - 1;
+                                String redirectUrl = buildDashboardProductsRedirectUrl(lastPage, size, timeFilter,
+                                                startDate, endDate, categoryId, sortBy);
+                                return "redirect:" + redirectUrl;
+                        }
 
                         model.addAttribute("products", productData);
                         return "seller/dashboard-products";

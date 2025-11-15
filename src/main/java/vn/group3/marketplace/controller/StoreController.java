@@ -29,6 +29,47 @@ public class StoreController {
     private final ProductService productService;
     private final CategoryService categoryService;
 
+    // Helper method to build redirect URL with all filter parameters
+    private String buildStoreRedirectUrl(Long storeId, int page, int size, String q, Long parentCategoryId,
+            Long categoryId, String priceMin, String priceMax, Boolean inStock, String ratingGte,
+            String sort, int hotPage, int hotSize, String hotQ, Long hotCategoryId,
+            String hotPriceMin, String hotPriceMax, String hotSort) {
+        StringBuilder url = new StringBuilder("/store/" + storeId + "?page=" + page + "&size=" + size);
+
+        if (q != null && !q.trim().isEmpty())
+            url.append("&q=").append(java.net.URLEncoder.encode(q, java.nio.charset.StandardCharsets.UTF_8));
+        if (parentCategoryId != null)
+            url.append("&parentCategoryId=").append(parentCategoryId);
+        if (categoryId != null)
+            url.append("&categoryId=").append(categoryId);
+        if (priceMin != null && !priceMin.trim().isEmpty())
+            url.append("&priceMin=").append(priceMin);
+        if (priceMax != null && !priceMax.trim().isEmpty())
+            url.append("&priceMax=").append(priceMax);
+        if (inStock != null)
+            url.append("&inStock=").append(inStock);
+        if (ratingGte != null && !ratingGte.trim().isEmpty())
+            url.append("&ratingGte=").append(ratingGte);
+        if (!sort.equals("newest"))
+            url.append("&sort=").append(sort);
+        if (hotPage != 0)
+            url.append("&hotPage=").append(hotPage);
+        if (hotSize != 12)
+            url.append("&hotSize=").append(hotSize);
+        if (hotQ != null && !hotQ.trim().isEmpty())
+            url.append("&hotQ=").append(java.net.URLEncoder.encode(hotQ, java.nio.charset.StandardCharsets.UTF_8));
+        if (hotCategoryId != null)
+            url.append("&hotCategoryId=").append(hotCategoryId);
+        if (hotPriceMin != null && !hotPriceMin.trim().isEmpty())
+            url.append("&hotPriceMin=").append(hotPriceMin);
+        if (hotPriceMax != null && !hotPriceMax.trim().isEmpty())
+            url.append("&hotPriceMax=").append(hotPriceMax);
+        if (!hotSort.equals("best_seller"))
+            url.append("&hotSort=").append(hotSort);
+
+        return url.toString();
+    }
+
     @GetMapping("/{id}")
     public String storeHome(@PathVariable Long id,
             // Main filters
@@ -58,6 +99,20 @@ public class StoreController {
         if (store == null) {
             model.addAttribute("errorMessage", "Cửa hàng không tồn tại");
             return "redirect:/";
+        }
+
+        // ===== 1.5. VALIDATE PAGINATION PARAMETERS =====
+        if (page < 0) {
+            page = 0;
+        }
+        if (size <= 0 || size > 100) {
+            size = 24; // Reset to default if invalid
+        }
+        if (hotPage < 0) {
+            hotPage = 0;
+        }
+        if (hotSize <= 0 || hotSize > 50) {
+            hotSize = 12; // Reset to default if invalid
         }
 
         // ===== 2. KPIs - ONLY ON FIRST PAGE (CACHE-FRIENDLY) =====
@@ -162,6 +217,16 @@ public class StoreController {
                 sortObj);
         org.springframework.data.domain.Page<Product> productsPage = productService.search(id, q, ProductStatus.ACTIVE,
                 categoryId, null, null, null, minPriceDec, maxPriceDec, null, null, pr);
+
+        // ===== 5.5. VALIDATE PAGE NUMBER AGAINST ACTUAL TOTAL PAGES =====
+        if (page >= productsPage.getTotalPages() && productsPage.getTotalPages() > 0) {
+            // Build redirect URL with all filter parameters
+            int lastPage = productsPage.getTotalPages() - 1;
+            String redirectUrl = buildStoreRedirectUrl(id, lastPage, size, q, parentCategoryId, categoryId,
+                    priceMin, priceMax, inStock, ratingGte, sort, hotPage, hotSize, hotQ,
+                    hotCategoryId, hotPriceMin, hotPriceMax, hotSort);
+            return "redirect:" + redirectUrl;
+        }
 
         // ===== 6. COLLECTIONS (ONLY ON FIRST PAGE) =====
         List<Product> newestProducts = java.util.Collections.emptyList();

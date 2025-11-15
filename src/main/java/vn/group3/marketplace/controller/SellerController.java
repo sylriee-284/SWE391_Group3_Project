@@ -597,6 +597,29 @@ public class SellerController {
             RedirectAttributes redirectAttributes) {
 
         try {
+            // Validate input parameters
+            if (storeName == null || storeName.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Tên cửa hàng không được để trống.");
+                return "redirect:/seller/profile";
+            }
+
+            // Trim and validate store name length
+            storeName = storeName.trim();
+            if (storeName.length() > 100) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Tên cửa hàng không được vượt quá 100 ký tự.");
+                return "redirect:/seller/profile";
+            }
+
+            // Validate description length if provided
+            if (description != null) {
+                description = description.trim();
+                if (description.length() > 500) {
+                    redirectAttributes.addFlashAttribute("errorMessage",
+                            "Mô tả cửa hàng không được vượt quá 500 ký tự.");
+                    return "redirect:/seller/profile";
+                }
+            }
+
             // Get current authenticated user
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             User currentUser = userService.getFreshUserByUsername(auth.getName());
@@ -606,6 +629,15 @@ public class SellerController {
             if (store == null) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy cửa hàng của bạn.");
                 return "redirect:/seller/profile";
+            }
+
+            // Check if store name changed and validate uniqueness
+            if (!storeName.equals(store.getStoreName())) {
+                if (sellerStoreService.isStoreNameExists(storeName)) {
+                    redirectAttributes.addFlashAttribute("errorMessage",
+                            "Tên cửa hàng đã tồn tại. Vui lòng chọn tên khác.");
+                    return "redirect:/seller/profile";
+                }
             }
 
             // Update store information

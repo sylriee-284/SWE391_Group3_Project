@@ -452,9 +452,12 @@
                                                                 class="text-danger">*</span>
                                                         </label>
                                                         <input type="text" class="form-control" id="storeName"
-                                                            name="storeName" value="${store.storeName}" required
-                                                            maxlength="100">
-                                                        <div class="form-text">Tên cửa hàng phải là duy nhất</div>
+                                                            name="storeName" value="${store.storeName}" required>
+                                                        <div class="form-text">
+                                                            Tên cửa hàng phải là duy nhất
+                                                            <span id="storeNameCounter" class="text-muted">(0/100 ký
+                                                                tự)</span>
+                                                        </div>
                                                     </div>
 
                                                     <div class="mb-3">
@@ -462,9 +465,12 @@
                                                             <i class="fas fa-align-left me-2"></i>Mô tả cửa hàng
                                                         </label>
                                                         <textarea class="form-control" id="description"
-                                                            name="description" rows="4" maxlength="500"
+                                                            name="description" rows="4"
                                                             placeholder="Mô tả về cửa hàng của bạn...">${store.description}</textarea>
-                                                        <div class="form-text">Tối đa 500 ký tự</div>
+                                                        <div class="form-text">
+                                                            <span id="descriptionCounter" class="text-muted">(0/500 ký
+                                                                tự)</span>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -494,12 +500,109 @@
                         function switchToEditMode() {
                             document.getElementById('viewMode').style.display = 'none';
                             document.getElementById('editMode').style.display = 'block';
+                            // Initialize character counters
+                            updateStoreNameCounter();
+                            updateDescriptionCounter();
                         }
 
                         function cancelEdit() {
                             document.getElementById('editMode').style.display = 'none';
                             document.getElementById('viewMode').style.display = 'block';
                         }
+
+                        // Character counter for store name
+                        function updateStoreNameCounter() {
+                            const input = document.getElementById('storeName');
+                            const counter = document.getElementById('storeNameCounter');
+                            if (input && counter) {
+                                const length = input.value.length;
+                                counter.textContent = `(${length}/100 ký tự)`;
+
+                                if (length > 100) {
+                                    counter.className = 'text-danger fw-bold';
+                                    input.classList.add('is-invalid');
+                                } else if (length > 80) {
+                                    counter.className = 'text-warning fw-bold';
+                                    input.classList.remove('is-invalid');
+                                } else {
+                                    counter.className = 'text-muted';
+                                    input.classList.remove('is-invalid');
+                                }
+                            }
+                        }
+
+                        // Character counter for description
+                        function updateDescriptionCounter() {
+                            const input = document.getElementById('description');
+                            const counter = document.getElementById('descriptionCounter');
+                            if (input && counter) {
+                                const length = input.value.length;
+                                counter.textContent = `(${length}/500 ký tự)`;
+
+                                if (length > 500) {
+                                    counter.className = 'text-danger fw-bold';
+                                    input.classList.add('is-invalid');
+                                } else if (length > 450) {
+                                    counter.className = 'text-warning fw-bold';
+                                    input.classList.remove('is-invalid');
+                                } else {
+                                    counter.className = 'text-muted';
+                                    input.classList.remove('is-invalid');
+                                }
+                            }
+                        }
+
+                        // Form validation before submit
+                        function validateForm() {
+                            const storeName = document.getElementById('storeName').value.trim();
+                            const description = document.getElementById('description').value.trim();
+
+                            if (storeName.length > 100) {
+                                iziToast.error({
+                                    title: 'Lỗi validation',
+                                    message: 'Tên cửa hàng không được vượt quá 100 ký tự',
+                                    position: 'topRight'
+                                });
+                                return false;
+                            }
+
+                            if (description.length > 500) {
+                                iziToast.error({
+                                    title: 'Lỗi validation',
+                                    message: 'Mô tả cửa hàng không được vượt quá 500 ký tự',
+                                    position: 'topRight'
+                                });
+                                return false;
+                            }
+
+                            return true;
+                        }
+
+                        // Event listeners
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const storeNameInput = document.getElementById('storeName');
+                            const descriptionInput = document.getElementById('description');
+
+                            if (storeNameInput) {
+                                storeNameInput.addEventListener('input', updateStoreNameCounter);
+                                updateStoreNameCounter(); // Initial count
+                            }
+
+                            if (descriptionInput) {
+                                descriptionInput.addEventListener('input', updateDescriptionCounter);
+                                updateDescriptionCounter(); // Initial count
+                            }
+
+                            // Add form validation on submit
+                            const form = document.querySelector('#editMode form');
+                            if (form) {
+                                form.addEventListener('submit', function (e) {
+                                    if (!validateForm()) {
+                                        e.preventDefault();
+                                    }
+                                });
+                            }
+                        });
 
                         // Toggle sidebar function
                         function toggleSidebar() {
