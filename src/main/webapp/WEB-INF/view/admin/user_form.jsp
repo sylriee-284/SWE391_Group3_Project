@@ -85,12 +85,14 @@
 
                                 <div class="col-md-6">
                                     <label class="form-label">Phone</label>
-                                    <input name="phone" class="form-control ${not empty phoneError ? 'is-invalid' : ''}"
-                                        value="${user.phone}" maxlength="20" />
-                                    <div class="invalid-feedback">
-                                        <c:out
-                                            value="${empty phoneError ? 'Vui lòng nhập số điện thoại' : phoneError}" />
-                                    </div>
+                                    <input type="text" name="phone" value="${user.phone}"
+                                        class="form-control ${phoneError != null ? 'is-invalid' : ''}" required>
+
+                                    <c:if test="${phoneError != null}">
+                                        <div class="invalid-feedback">
+                                            ${phoneError}
+                                        </div>
+                                    </c:if>
                                 </div>
 
 

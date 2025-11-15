@@ -14,6 +14,46 @@
 
                 <!-- Include common head with all CSS and JS -->
                 <jsp:include page="../common/head.jsp" />
+                <style>
+                    .profile-card {
+                        background: #fff;
+                        border-radius: 15px;
+                        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+                        padding: 30px;
+                        margin-bottom: 30px;
+                    }
+
+                    .profile-header {
+                        text-align: center;
+                        margin-bottom: 30px;
+                        border-bottom: 2px solid #e9ecef;
+                        padding-bottom: 20px;
+                    }
+
+                    .profile-avatar {
+                        width: 100px;
+                        height: 100px;
+                        background: linear-gradient(135deg, #007bff, #6610f2);
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 auto 20px;
+                        font-size: 2.5rem;
+                        color: white;
+                    }
+
+                    .form-section {
+                        margin-bottom: 30px;
+                    }
+
+                    .form-section h4 {
+                        color: #007bff;
+                        border-bottom: 2px solid #e9ecef;
+                        padding-bottom: 10px;
+                        margin-bottom: 20px;
+                    }
+                </style>
             </head>
 
             <body>
@@ -166,7 +206,8 @@
                                                             <i class="fas fa-id-card text-success"></i>
                                                         </span>
                                                         <input type="text" class="form-control" name="fullName"
-                                                            value="${user.fullName}" placeholder="Nhập họ và tên">
+                                                            value="${not empty formFullName ? formFullName : user.fullName}"
+                                                            placeholder="Nhập họ và tên">
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6 mb-3">
@@ -176,7 +217,8 @@
                                                             <i class="fas fa-phone text-info"></i>
                                                         </span>
                                                         <input type="tel" class="form-control" name="phone"
-                                                            value="${user.phone}" placeholder="Nhập số điện thoại">
+                                                            value="${not empty formPhone ? formPhone : user.phone}"
+                                                            placeholder="Nhập số điện thoại">
                                                     </div>
                                                 </div>
                                             </div>
@@ -194,7 +236,7 @@
                                                             <i class="fas fa-birthday-cake text-warning"></i>
                                                         </span>
                                                         <input type="date" class="form-control" name="dateOfBirth"
-                                                            value="${user.dateOfBirth}">
+                                                            value="${not empty formDateOfBirth ? formDateOfBirth : user.dateOfBirth}">
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6 mb-3">
@@ -204,12 +246,13 @@
                                                             <i class="fas fa-venus-mars text-purple"></i>
                                                         </span>
                                                         <select class="form-select" name="gender">
-                                                            <option value="MALE" ${user.gender=='MALE' ? 'selected' : ''
-                                                                }>Nam</option>
-                                                            <option value="FEMALE" ${user.gender=='FEMALE' ? 'selected'
-                                                                : '' }>Nữ</option>
-                                                            <option value="OTHER" ${user.gender=='OTHER' ? 'selected'
-                                                                : '' }>Khác</option>
+                                                            <option value="MALE" ${(not empty formGender ? formGender :
+                                                                user.gender)=='MALE' ? 'selected' : '' }>Nam</option>
+                                                            <option value="FEMALE" ${(not empty formGender ? formGender
+                                                                : user.gender)=='FEMALE' ? 'selected' : '' }>Nữ</option>
+                                                            <option value="OTHER" ${(not empty formGender ? formGender :
+                                                                user.gender)=='OTHER' ? 'selected' : '' }>Điều khác
+                                                            </option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -244,6 +287,13 @@
                                                 profileForm.style.display = 'none';
                                             }
                                         }
+
+                                        // Tự động bật edit mode khi có lỗi
+                                        document.addEventListener('DOMContentLoaded', function () {
+                                            <c:if test="${editMode == true}">
+                                                toggleEditMode();
+                                            </c:if>
+                                        });
                                     </script>
 
 

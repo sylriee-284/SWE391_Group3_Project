@@ -119,19 +119,29 @@
                                     <div class="col-12">
                                         <label class="form-label">Tên danh mục <span
                                                 class="text-danger">*</span></label>
-                                        <input type="text"
-                                            class="form-control ${not empty nameError ? 'is-invalid' : ''}" name="name"
-                                            value="${fn:escapeXml(category.name)}" required minlength="2"
-                                            maxlength="100">
-                                        <div class="invalid-feedback">
-                                            <c:out
-                                                value="${empty nameError ? 'Tên danh mục là bắt buộc (2-100 ký tự).' : nameError}" />
-                                        </div>
+
+                                        <input type="text" name="name" value="${fn:escapeXml(category.name)}"
+                                            class="form-control ${nameError != null ? 'is-invalid' : ''}">
+
+                                        <c:if test="${nameError != null}">
+                                            <div class="invalid-feedback d-block">
+                                                ${nameError}
+                                            </div>
+                                        </c:if>
                                     </div>
                                     <div class="col-12">
                                         <label class="form-label">Mô tả</label>
-                                        <textarea class="form-control" rows="4" name="description"
-                                            maxlength="500">${category.description}</textarea>
+
+                                        <textarea name="description"
+                                            class="form-control ${descriptionError != null ? 'is-invalid' : ''}"
+                                            rows="4" maxlength="500">${category.description}</textarea>
+
+                                        <c:if test="${descriptionError != null}">
+                                            <div class="invalid-feedback d-block">
+                                                ${descriptionError}
+                                            </div>
+                                        </c:if>
+
                                         <div class="form-text">Tối đa 500 ký tự.</div>
                                     </div>
                                     <c:if test="${category.id != null}">
