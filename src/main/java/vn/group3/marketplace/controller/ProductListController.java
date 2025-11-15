@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import vn.group3.marketplace.domain.entity.Product;
 import vn.group3.marketplace.service.ProductService;
+import vn.group3.marketplace.service.ProductStorageService;
 
 /**
  * Controller for all products listing page
@@ -21,6 +22,7 @@ import vn.group3.marketplace.service.ProductService;
 public class ProductListController {
 
     private final ProductService productService;
+    private final ProductStorageService productStorageService;
 
     @GetMapping
     public String getAllProducts(
@@ -77,6 +79,13 @@ public class ProductListController {
             int lastPage = products.getTotalPages() - 1;
             return "redirect:/products?page=" + lastPage + "&size=" + size + "&sort=" + originalSort;
         }
+
+        // Calculate dynamic stock for each product
+        products.getContent().forEach(product -> {
+            long dynamicStock = productStorageService.getAvailableStock(product.getId());
+            // Store dynamic stock in the stock field for JSP access
+            product.setStock((int) dynamicStock);
+        });
 
         // Add attributes to model
         model.addAttribute("products", products);
@@ -158,6 +167,13 @@ public class ProductListController {
             return "redirect:/products/search?page=" + lastPage + "&size=" + size + "&sort=" + originalSort
                     + keywordParam;
         }
+
+        // Calculate dynamic stock for each product
+        products.getContent().forEach(product -> {
+            long dynamicStock = productStorageService.getAvailableStock(product.getId());
+            // Store dynamic stock in the stock field for JSP access
+            product.setStock((int) dynamicStock);
+        });
 
         // Add attributes to model
         model.addAttribute("products", products);

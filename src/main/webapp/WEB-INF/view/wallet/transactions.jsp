@@ -184,25 +184,27 @@
                                                                             </c:choose>
                                                                         </c:when>
                                                                         <c:otherwise>
-                                                                             ${transaction.paymentRef}
+                                                                            ${transaction.paymentRef}
                                                                         </c:otherwise>
                                                                     </c:choose>
                                                                 </td>
                                                                 <td class="text-end">
                                                                     <c:choose>
                                                                         <c:when
-                                                                            test='${transaction.type.name() eq "DEPOSIT" || transaction.type.name() eq "DEPOSIT_REFUND" || transaction.type.name() eq "REFUND" || transaction.type.name() eq "ORDER_RELEASE" || transaction.type.name() eq "SELLER_PAYOUT"}'>
+                                                                            test='${transaction.type.name() eq "DEPOSIT" || transaction.type.name() eq "ADMIN_COMMISSION_FEE" || transaction.type.name() eq "DEPOSIT_REFUND" || transaction.type.name() eq "REFUND" || transaction.type.name() eq "ORDER_RELEASE" || transaction.type.name() eq "SELLER_PAYOUT"}'>
                                                                             <span class="text-success">+
                                                                                 <fmt:formatNumber
                                                                                     value="${transaction.amount}"
-                                                                                    pattern="###,###,###" maxFractionDigits="0" />
+                                                                                    pattern="###,###,###"
+                                                                                    maxFractionDigits="0" />
                                                                             </span>
                                                                         </c:when>
                                                                         <c:otherwise>
                                                                             <span class="text-danger">-
                                                                                 <fmt:formatNumber
                                                                                     value="${transaction.amount}"
-                                                                                    pattern="###,###,###" maxFractionDigits="0" />
+                                                                                    pattern="###,###,###"
+                                                                                    maxFractionDigits="0" />
                                                                             </span>
                                                                         </c:otherwise>
                                                                     </c:choose>

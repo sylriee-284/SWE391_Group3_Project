@@ -1,6 +1,7 @@
 package vn.group3.marketplace.controller;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -450,7 +451,7 @@ public class AdminController {
         int window = 2;
         int start = Math.max(0, currentPage - window);
         int end = Math.min(Math.max(0, totalPages - 1), currentPage + window);
-        java.util.List<Integer> pages = new java.util.ArrayList<>();
+        List<Integer> pages = new ArrayList<>();
         for (int i = start; i <= end; i++) {
             pages.add(i);
         }
@@ -487,14 +488,14 @@ public class AdminController {
         } catch (NumberFormatException ex) {
         }
 
-        java.time.LocalDate from = null;
-        java.time.LocalDate to = null;
+        LocalDate from = null;
+        LocalDate to = null;
         try {
             if (createdFrom != null && !createdFrom.isBlank()) {
-                from = java.time.LocalDate.parse(createdFrom);
+                from = LocalDate.parse(createdFrom);
             }
             if (createdTo != null && !createdTo.isBlank()) {
-                to = java.time.LocalDate.parse(createdTo);
+                to = LocalDate.parse(createdTo);
             }
         } catch (Exception ex) {
         }
@@ -518,7 +519,7 @@ public class AdminController {
         int window = 2;
         int start = Math.max(0, currentPage - window);
         int end = Math.min(Math.max(0, totalPages - 1), currentPage + window);
-        java.util.List<Integer> pages = new java.util.ArrayList<>();
+        List<Integer> pages = new ArrayList<>();
         for (int i = start; i <= end; i++) {
             pages.add(i);
         }
@@ -561,14 +562,14 @@ public class AdminController {
         } catch (NumberFormatException ex) {
         }
 
-        java.time.LocalDate from = null;
-        java.time.LocalDate to = null;
+        LocalDate from = null;
+        LocalDate to = null;
         try {
             if (createdFrom != null && !createdFrom.isBlank()) {
-                from = java.time.LocalDate.parse(createdFrom);
+                from = LocalDate.parse(createdFrom);
             }
             if (createdTo != null && !createdTo.isBlank()) {
-                to = java.time.LocalDate.parse(createdTo);
+                to = LocalDate.parse(createdTo);
             }
         } catch (Exception ex) {
         }
@@ -592,7 +593,7 @@ public class AdminController {
         int window = 2;
         int start = Math.max(0, currentPage - window);
         int end = Math.min(Math.max(0, totalPages - 1), currentPage + window);
-        java.util.List<Integer> pages = new java.util.ArrayList<>();
+        List<Integer> pages = new ArrayList<>();
         for (int i = start; i <= end; i++) {
             pages.add(i);
         }

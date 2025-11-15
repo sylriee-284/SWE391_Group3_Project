@@ -56,7 +56,7 @@ public class OrderProcess {
 
             while (isRunning.get()) {
                 try {
-                    // Take order from queue (blocking)
+                    // Take order from queue
                     OrderTask orderTask = orderQueue.takeOrder();
 
                     // Process order
@@ -98,7 +98,7 @@ public class OrderProcess {
                             order.getTotalAmount(), order);
 
                     try {
-                        // Wait for payment completion (blocking call) - Tăng timeout lên 30 giây
+                        // Wait for payment completion
                         Boolean paymentResult = future.get(30, java.util.concurrent.TimeUnit.SECONDS);
 
                         // Immediately refresh authentication context to update user balance in session

@@ -127,7 +127,7 @@ public class AuthController {
             if (existingUser.isPresent()) {
                 var user = existingUser.get();
                 // Check which field matches to show correct error message
-                if (user.getUsername().equals(username)) {
+                if (user.getUsername().equalsIgnoreCase(username)) {
                     model.addAttribute("errorMessage", "Username already exists!");
                 } else {
                     model.addAttribute("errorMessage", "Email already exists!");
