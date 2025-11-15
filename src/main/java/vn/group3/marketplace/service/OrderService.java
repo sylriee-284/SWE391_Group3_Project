@@ -16,9 +16,7 @@ import vn.group3.marketplace.util.ValidationUtils;
 import vn.group3.marketplace.util.SecurityContextUtils;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -347,10 +345,10 @@ public class OrderService {
 
                 // 4. Convert productStoragesToDeliver to JSON string
                 try {
-                    // Tạo DTO đơn giản để tránh circular reference
-                    List<Map<String, Object>> productStorageData = productStoragesToDeliver.stream()
+                    // Tạo DTO đơn giản để tránh circular reference và lazy loading issues
+                    List<java.util.Map<String, Object>> productStorageData = productStoragesToDeliver.stream()
                             .map(ps -> {
-                                Map<String, Object> data = new HashMap<>();
+                                java.util.Map<String, Object> data = new java.util.HashMap<>();
                                 data.put("id", ps.getId());
                                 data.put("payloadJson", ps.getPayloadJson());
                                 data.put("payloadMask", ps.getPayloadMask());
@@ -391,6 +389,14 @@ public class OrderService {
                 order.setStatus(OrderStatus.PAYMENT_FAILED);
                 orderRepository.save(order);
 
+                break;
+            case SUCCESS:
+            case PENDING:
+            case HELD:
+            case RELEASED:
+            case CANCELLED:
+            case REFUNDED:
+                // These statuses are handled elsewhere or don't require order updates
                 break;
             default:
                 // Unknown status - log warning but don't fail
