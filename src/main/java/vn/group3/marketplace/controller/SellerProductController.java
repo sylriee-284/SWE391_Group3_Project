@@ -43,8 +43,6 @@ public class SellerProductController {
 
     private final ProductService productService;
     private final CategoryRepository categoryRepo;
-    // product storage repository not needed here; use ProductStorageService if
-    // required
     private final SellerStoreRepository storeRepo;
     private final ProductStorageService productStorageService;
 
@@ -352,6 +350,13 @@ public class SellerProductController {
                     categoryId, fromDate, toDate, minPrice, maxPrice, idFrom, idTo, sid);
             return "redirect:" + redirectUrl;
         }
+
+        // Calculate dynamic stock for each product
+        data.getContent().forEach(product -> {
+            long dynamicStock = productStorageService.getAvailableStock(product.getId());
+            // Store dynamic stock in the stock field for JSP access
+            product.setStock((int) dynamicStock);
+        });
 
         // Phục vụ filter ở trang danh sách
         List<Category> allCats = categoryRepo.findByIsDeletedFalse();

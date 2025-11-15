@@ -44,13 +44,13 @@ public interface EscrowTransactionRepository extends JpaRepository<EscrowTransac
         Optional<BigDecimal> sumHeldAmountByStore(@Param("storeId") Long storeId);
 
         // Dashboard: Upcoming release schedule
-        @Query("SELECT MIN(et.holdUntil), SUM(et.sellerAmount), COUNT(et) " +
+        @Query("SELECT et.holdUntil, SUM(et.sellerAmount), COUNT(et) " +
                         "FROM EscrowTransaction et " +
                         "WHERE et.order.sellerStore.id = :storeId " +
                         "AND et.status = 'HELD' " +
                         "AND et.holdUntil BETWEEN :startDate AND :endDate " +
-                        "GROUP BY DATE(et.holdUntil) " +
-                        "ORDER BY MIN(et.holdUntil)")
+                        "GROUP BY et.holdUntil " +
+                        "ORDER BY et.holdUntil")
         List<Object[]> findUpcomingReleaseSchedule(@Param("storeId") Long storeId,
                         @Param("startDate") LocalDateTime startDate,
                         @Param("endDate") LocalDateTime endDate);

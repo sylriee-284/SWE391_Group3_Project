@@ -87,6 +87,13 @@ public class ProductListController {
             return "redirect:/products?page=" + lastPage + "&size=" + size + "&sort=" + originalSort;
         }
 
+        // Calculate dynamic stock for each product
+        products.getContent().forEach(product -> {
+            long dynamicStock = productStorageService.getAvailableStock(product.getId());
+            // Store dynamic stock in the stock field for JSP access
+            product.setStock((int) dynamicStock);
+        });
+
         // Add attributes to model
         model.addAttribute("products", products);
         model.addAttribute("dynamicStockMap", dynamicStockMap);
@@ -175,6 +182,13 @@ public class ProductListController {
             return "redirect:/products/search?page=" + lastPage + "&size=" + size + "&sort=" + originalSort
                     + keywordParam;
         }
+
+        // Calculate dynamic stock for each product
+        products.getContent().forEach(product -> {
+            long dynamicStock = productStorageService.getAvailableStock(product.getId());
+            // Store dynamic stock in the stock field for JSP access
+            product.setStock((int) dynamicStock);
+        });
 
         // Add attributes to model
         model.addAttribute("products", products);

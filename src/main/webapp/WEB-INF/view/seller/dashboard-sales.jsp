@@ -208,26 +208,15 @@
                                             <h3>
                                                 <c:choose>
                                                     <c:when test="${not empty sales.escrowSummary}">
-                                                        <fmt:formatNumber
-                                                            value="${sales.escrowSummary.totalHeldAfterFee}"
+                                                        <fmt:formatNumber value="${sales.escrowSummary.escrowAmount}"
                                                             type="number" groupingUsed="true" /> VND
                                                     </c:when>
                                                     <c:otherwise>0 VND</c:otherwise>
                                                 </c:choose>
                                             </h3>
                                             <small class="text-muted">
-                                                <c:choose>
-                                                    <c:when test="${not empty sales.escrowSummary}">
-                                                        ${sales.escrowSummary.heldCount}</c:when>
-                                                    <c:otherwise>0</c:otherwise>
-                                                </c:choose> đơn hàng
+                                                Số dư ký quỹ hiện tại
                                             </small>
-                                            <!-- Show original amount if different from after-fee amount -->
-                                            <c:if
-                                                test="${not empty sales.escrowSummary 
-                                                and sales.escrowSummary.totalHeld > 0 
-                                                and sales.escrowSummary.totalHeldAfterFee < sales.escrowSummary.totalHeld}">
-                                            </c:if>
                                         </div>
                                     </div>
                                 </div>
