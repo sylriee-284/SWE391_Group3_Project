@@ -342,18 +342,9 @@ public class SellerDashboardService {
                         commissionRate = BigDecimal.ZERO;
                 }
 
-                // Calculate total held amount after fee deduction
-                BigDecimal totalHeldAfterFee = BigDecimal.ZERO;
-                if (totalHeld.compareTo(BigDecimal.ZERO) > 0) {
-                        if (feeModel == SellerStoresType.NO_FEE) {
-                                totalHeldAfterFee = totalHeld;
-                        } else {
-                                BigDecimal commissionAmount = totalHeld
-                                                .multiply(commissionRate)
-                                                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-                                totalHeldAfterFee = totalHeld.subtract(commissionAmount);
-                        }
-                }
+                // Use escrow_amount from seller_stores table directly as "Đang giữ ký quỹ"
+                // This represents the total amount currently held in escrow for this store
+                BigDecimal totalHeldAfterFee = escrowAmount;
 
                 // Calculate total seller amount from RELEASED orders in the selected date range
                 BigDecimal totalSellerAmount = escrowRepository.sumSellerAmountForReleasedOrders(storeId, start, end);

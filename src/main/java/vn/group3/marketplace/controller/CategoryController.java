@@ -301,6 +301,53 @@ public class CategoryController {
     public String save(@ModelAttribute("category") Category cat, Model model, RedirectAttributes ra) {
         boolean isNew = (cat.getId() == null);
         try {
+            // VALIDATE: Tên không được để trống
+            if (cat.getName() == null || cat.getName().trim().isEmpty()) {
+                model.addAttribute("nameError", "Tên danh mục không được để trống.");
+                model.addAttribute("category", cat);
+                model.addAttribute("parentCategory", cat.getParent());
+                model.addAttribute("formMode",
+                        isNew ? (cat.getParent() != null ? "create-child" : "create-parent") : "edit");
+                model.addAttribute("pageTitle",
+                        (isNew ? "Thêm " : "Sửa ") + (cat.getParent() == null ? "danh mục CHA" : "danh mục con"));
+                return "admin/category_form";
+            }
+
+            // VALIDATE: Tên danh mục không được để trống hoặc toàn dấu cách
+            if (cat.getName() == null || cat.getName().trim().isEmpty()) {
+                model.addAttribute("nameError", "Tên danh mục không được để trống.");
+                model.addAttribute("category", cat);
+                model.addAttribute("parentCategory", cat.getParent());
+                model.addAttribute("formMode",
+                        isNew ? (cat.getParent() != null ? "create-child" : "create-parent") : "edit");
+                model.addAttribute("pageTitle",
+                        (isNew ? "Thêm " : "Sửa ") + (cat.getParent() == null ? "danh mục CHA" : "danh mục con"));
+                return "admin/category_form";
+            }
+
+            // VALIDATE: Mô tả không được để trống
+            if (cat.getDescription() == null || cat.getDescription().trim().isEmpty()) {
+                model.addAttribute("descriptionError", "Mô tả không được để trống.");
+                model.addAttribute("category", cat);
+                model.addAttribute("parentCategory", cat.getParent());
+                model.addAttribute("formMode",
+                        isNew ? (cat.getParent() != null ? "create-child" : "create-parent") : "edit");
+                model.addAttribute("pageTitle",
+                        (isNew ? "Thêm " : "Sửa ") + (cat.getParent() == null ? "danh mục CHA" : "danh mục con"));
+                return "admin/category_form";
+            }
+
+            // VALIDATE: Mô tả không được chứa dấu cách
+            if (cat.getDescription().contains(" ")) {
+                model.addAttribute("descriptionError", "Mô tả không được chứa dấu cách.");
+                model.addAttribute("category", cat);
+                model.addAttribute("parentCategory", cat.getParent());
+                model.addAttribute("formMode",
+                        isNew ? (cat.getParent() != null ? "create-child" : "create-parent") : "edit");
+                model.addAttribute("pageTitle",
+                        (isNew ? "Thêm " : "Sửa ") + (cat.getParent() == null ? "danh mục CHA" : "danh mục con"));
+                return "admin/category_form";
+            }
             if (isNew)
                 cat.setIsDeleted(false);
             categoryService.save(cat);

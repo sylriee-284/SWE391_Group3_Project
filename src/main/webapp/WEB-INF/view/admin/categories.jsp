@@ -11,7 +11,7 @@
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>
                         <c:choose>
-                            <c:when test="${parentCategory == null}">Quản lý danh mục (CHA)</c:when>
+                            <c:when test="${parentCategory == null}">Quản lý danh mục</c:when>
                             <c:otherwise>Danh mục con của: ${parentCategory.name}</c:otherwise>
                         </c:choose> - MMO Market System
                     </title>
@@ -38,7 +38,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h4>
                                 <c:choose>
-                                    <c:when test="${parentCategory == null}">Quản lý danh mục (CHA)</c:when>
+                                    <c:when test="${parentCategory == null}">Quản lý danh mục</c:when>
                                     <c:otherwise>
                                         Danh mục con của: <strong>
                                             <c:out value="${parentCategory.name}" />

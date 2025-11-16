@@ -28,7 +28,7 @@ public class UserController {
      */
     private void refreshAuthenticationContext(String username) {
         try {
-            System.out.println("🔄 Refreshing authentication context for: " + username);
+            System.out.println(" Refreshing authentication context for: " + username);
 
             // Get fresh user data from database
             User freshUser = userService.getFreshUserByUsername(username);
@@ -124,73 +124,74 @@ public class UserController {
         System.out.println("===============================");
 
         try {
-            // Validate fullName - chỉ được chứa chữ cái, dấu cách và dấu tiếng Việt
-            String namePattern = "^[a-zA-ZàáảãạầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵĂăĐđĨĩŨũƠơƯưÀÁẢÃẠẦẤẨẪẬÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴ\\s]+$";
-            if (fullName == null || fullName.trim().isEmpty()) {
-                redirectAttributes.addFlashAttribute("errorMessage",
-                        "Lỗi tên: Tên không được để trống. Nguyên nhân: Bạn chưa nhập tên hoặc chỉ nhập khoảng trắng.");
-                return "redirect:/user/profile";
-            }
-            if (!fullName.trim().matches(namePattern)) {
-                // Phân tích nguyên nhân cụ thể
-                String reason = "";
-                if (fullName.trim().matches(".*\\d.*")) {
-                    reason = "Tên chứa số (0-9)";
-                } else if (fullName.trim().matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?].*")) {
-                    reason = "Tên chứa ký tự đặc biệt (!@#$%^&*...)";
-                } else {
-                    reason = "Tên chứa ký tự không được phép";
-                }
-                redirectAttributes.addFlashAttribute("errorMessage",
-                        "Lỗi tên: Tên chỉ được chứa chữ cái và khoảng trắng. Nguyên nhân: " + reason
-                                + ". Bạn đã nhập: \"" + fullName + "\"");
-                return "redirect:/user/profile";
-            }
-
-            // Validate phone - chỉ được chứa số và độ dài 10-11 số
-            if (phone != null && !phone.trim().isEmpty()) {
-                String phonePattern = "^\\d{10,11}$";
-                if (!phone.trim().matches(phonePattern)) {
-                    // Phân tích nguyên nhân cụ thể
-                    String reason = "";
-                    int phoneLength = phone.trim().length();
-
-                    if (phoneLength < 10) {
-                        reason = "Số điện thoại quá ngắn (chỉ có " + phoneLength + " số, cần 10-11 số)";
-                    } else if (phoneLength > 11) {
-                        reason = "Số điện thoại quá dài (có " + phoneLength + " số, chỉ được phép 10-11 số)";
-                    } else if (phone.trim().matches(".*[a-zA-Z].*")) {
-                        reason = "Số điện thoại chứa chữ cái";
-                    } else if (phone.trim().matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?\\s].*")) {
-                        reason = "Số điện thoại chứa ký tự đặc biệt hoặc khoảng trắng";
-                    } else {
-                        reason = "Số điện thoại không đúng định dạng";
-                    }
-
-                    redirectAttributes.addFlashAttribute("errorMessage",
-                            "Lỗi số điện thoại: Chỉ được chứa số và có độ dài từ 10-11 số. Nguyên nhân: " + reason
-                                    + ". Bạn đã nhập: \"" + phone + "\"");
-                    return "redirect:/user/profile";
-                }
-            }
-
-            // Get current authenticated user
+            // Get current authenticated user first
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String username = auth.getName();
+            User user = userService.getFreshUserByUsername(username);
 
-            // Debug current authentication context
-            System.out.println("🔐 BEFORE UPDATE - Authentication Context:");
-            if (auth.getPrincipal() instanceof CustomUserDetails) {
-                CustomUserDetails currentUserDetails = (CustomUserDetails) auth.getPrincipal();
-                System.out.println("🔐 Context User: " + currentUserDetails.getFullName());
-                System.out.println("🔐 Context Email: " + currentUserDetails.getEmail());
+            // Simple validation for fullName
+            if (fullName == null || fullName.trim().isEmpty()) {
+                model.addAttribute("user", user);
+                model.addAttribute("errorMessage", "Tên không được để trống");
+                model.addAttribute("editMode", true);
+                // Preserve form values
+                model.addAttribute("formEmail", email);
+                model.addAttribute("formFullName", fullName);
+                model.addAttribute("formPhone", phone);
+                model.addAttribute("formDateOfBirth", dateOfBirth);
+                model.addAttribute("formGender", gender);
+                return "user/profile";
             }
 
-            // Get fresh user data for update (bypass cache)
-            User user = userService.getFreshUserByUsername(username);
-            if (user == null) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy thông tin người dùng");
-                return "redirect:/user/profile";
+            // Check name length
+            if (fullName.trim().length() > 50) {
+                model.addAttribute("user", user);
+                model.addAttribute("errorMessage", "Tên không được vượt quá 50 ký tự");
+                model.addAttribute("editMode", true);
+                model.addAttribute("formEmail", email);
+                model.addAttribute("formFullName", fullName);
+                model.addAttribute("formPhone", phone);
+                model.addAttribute("formDateOfBirth", dateOfBirth);
+                model.addAttribute("formGender", gender);
+                return "user/profile";
+            }
+
+            // Check if name contains only letters, spaces and Vietnamese characters
+            String namePattern = "^[a-zA-ZàáảãạầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵĂăĐđĨĩŨũƠơƯưÀÁẢÃẠẦẤẨẪẬÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴ\\s]+$";
+            if (!fullName.trim().matches(namePattern)) {
+                model.addAttribute("user", user);
+                model.addAttribute("errorMessage", "Tên chỉ được chứa chữ cái và khoảng trắng");
+                model.addAttribute("editMode", true);
+                model.addAttribute("formEmail", email);
+                model.addAttribute("formFullName", fullName);
+                model.addAttribute("formPhone", phone);
+                model.addAttribute("formDateOfBirth", dateOfBirth);
+                model.addAttribute("formGender", gender);
+                return "user/profile";
+            }
+
+            // Simple validation for phone
+            if (phone != null && !phone.trim().isEmpty()) {
+                String phonePattern = "^0\\d{9,10}$";
+                if (!phone.trim().matches(phonePattern)) {
+                    model.addAttribute("user", user);
+                    model.addAttribute("errorMessage", "Số điện thoại phải bắt đầu bằng số 0 và có 10-11 chữ số");
+                    model.addAttribute("editMode", true);
+                    model.addAttribute("formEmail", email);
+                    model.addAttribute("formFullName", fullName);
+                    model.addAttribute("formPhone", phone);
+                    model.addAttribute("formDateOfBirth", dateOfBirth);
+                    model.addAttribute("formGender", gender);
+                    return "user/profile";
+                }
+            }
+
+            // Debug current authentication context
+            System.out.println(" BEFORE UPDATE - Authentication Context:");
+            if (auth.getPrincipal() instanceof CustomUserDetails) {
+                CustomUserDetails currentUserDetails = (CustomUserDetails) auth.getPrincipal();
+                System.out.println(" Context User: " + currentUserDetails.getFullName());
+                System.out.println(" Context Email: " + currentUserDetails.getEmail());
             }
 
             // Debug BEFORE update
@@ -261,8 +262,21 @@ public class UserController {
         } catch (Exception e) {
             System.out.println("=== UPDATE ERROR ===");
             e.printStackTrace();
-            redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi xảy ra: " + e.getMessage());
-            return "redirect:/user/profile";
+
+            // Get user for error case
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth.getName();
+            User user = userService.getFreshUserByUsername(username);
+
+            model.addAttribute("user", user);
+            model.addAttribute("errorMessage", "Có lỗi xảy ra: " + e.getMessage());
+            model.addAttribute("editMode", true);
+            model.addAttribute("formEmail", email);
+            model.addAttribute("formFullName", fullName);
+            model.addAttribute("formPhone", phone);
+            model.addAttribute("formDateOfBirth", dateOfBirth);
+            model.addAttribute("formGender", gender);
+            return "user/profile";
         }
     }
 }

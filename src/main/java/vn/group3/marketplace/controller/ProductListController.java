@@ -73,6 +73,13 @@ public class ProductListController {
                 sort,
                 sortDirection);
 
+        // Calculate dynamic stock for each product from ProductStorage
+        java.util.Map<Long, Long> dynamicStockMap = new java.util.HashMap<>();
+        products.getContent().forEach(product -> {
+            long dynamicStock = productStorageService.getAvailableStock(product.getId());
+            dynamicStockMap.put(product.getId(), dynamicStock);
+        });
+
         // Validate page number against actual total pages
         if (page >= products.getTotalPages() && products.getTotalPages() > 0) {
             // Redirect to last page if current page is beyond available pages
@@ -89,6 +96,7 @@ public class ProductListController {
 
         // Add attributes to model
         model.addAttribute("products", products);
+        model.addAttribute("dynamicStockMap", dynamicStockMap);
         model.addAttribute("sortBy", sort);
         model.addAttribute("originalSort", originalSort); // For radio button selection
         model.addAttribute("sortDirection", sortDirection);
@@ -157,6 +165,13 @@ public class ProductListController {
                 sort,
                 sortDirection);
 
+        // Calculate dynamic stock for each product from ProductStorage
+        java.util.Map<Long, Long> dynamicStockMap = new java.util.HashMap<>();
+        products.getContent().forEach(product -> {
+            long dynamicStock = productStorageService.getAvailableStock(product.getId());
+            dynamicStockMap.put(product.getId(), dynamicStock);
+        });
+
         // Validate page number against actual total pages
         if (page >= products.getTotalPages() && products.getTotalPages() > 0) {
             // Redirect to last page if current page is beyond available pages
@@ -177,6 +192,7 @@ public class ProductListController {
 
         // Add attributes to model
         model.addAttribute("products", products);
+        model.addAttribute("dynamicStockMap", dynamicStockMap);
         model.addAttribute("keyword", keyword);
         model.addAttribute("sortBy", sort);
         model.addAttribute("originalSort", originalSort); // For radio button selection

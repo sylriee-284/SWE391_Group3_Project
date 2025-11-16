@@ -112,6 +112,11 @@ public class UserService {
         return !userRepository.findByEmail(email).isPresent();
     }
 
+    // check if phone is valid
+    public boolean isValidPhone(String phone) {
+        return phone != null && phone.matches("^0\\d{9}$");
+    }
+
     public void resetPassword(String newPassword, String email) {
         String encodedPassword = passwordEncoder.encode(newPassword);
         userRepository.updatePassword(encodedPassword, email);
