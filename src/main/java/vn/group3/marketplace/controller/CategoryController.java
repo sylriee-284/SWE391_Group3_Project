@@ -150,8 +150,8 @@ public class CategoryController {
     public String listParentCategories(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(value = "q", required = false) String q, // NEW
-            @RequestParam(value = "active", required = false) Boolean active, // NEW
+            @RequestParam(value = "q", required = false) String q,
+            @RequestParam(value = "active", required = false) Boolean active,
             Model model) {
 
         // Validate pagination parameters
