@@ -49,7 +49,7 @@ public class SellerProductController {
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
-    // Trim đầu/cuối; chuỗi toàn khoảng trắng => null (kích hoạt @NotBlank)
+    // Trim đầu/cuối; chuỗi toàn khoảng trắng => null
     @InitBinder
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(String.class, new StringTrimmerEditor(true));
@@ -274,8 +274,8 @@ public class SellerProductController {
             @RequestParam(required = false) ProductStatus status,
             @RequestParam(required = false) Long parentCategoryId,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) String fromDate, // yyyy-MM-dd
-            @RequestParam(required = false) String toDate, // yyyy-MM-dd
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate,
             @RequestParam(required = false) String minPrice,
             @RequestParam(required = false) String maxPrice,
             @RequestParam(required = false) Long idFrom,
@@ -302,7 +302,7 @@ public class SellerProductController {
             page = 0;
         }
         if (size <= 0 || size > 100) {
-            size = 10; // Reset to default if invalid
+            size = 10;
         }
 
         LocalDateTime createdFrom = null;
@@ -394,7 +394,6 @@ public class SellerProductController {
         model.addAttribute("storeMaxListingPrice", getStoreMaxPrice(sid));
 
         // Truyền thông tin trạng thái cửa hàng để kiểm tra có cho phép thêm sản phẩm
-        // không
         storeRepo.findById(sid).ifPresent(store -> {
             model.addAttribute("storeStatus", store.getStatus());
         });
@@ -469,14 +468,14 @@ public class SellerProductController {
             binding.rejectValue("price", "price.min", "Giá phải lớn hơn 0.");
         }
 
-        // Kiểm tra trần giá theo store (nếu có)
+        // Kiểm tra maxprice theo store
         BigDecimal maxPrice = getStoreMaxPrice(sid);
         if (maxPrice != null && form.getPrice() != null && form.getPrice().compareTo(maxPrice) > 0) {
             binding.rejectValue("price", "price.max", "Giá vượt mức tối đa cho phép của cửa hàng.");
         }
 
+        // Đưa dữ liệu về form
         if (binding.hasErrors()) {
-            // nạp lại dropdown khi có lỗi
             model.addAttribute("storeId", sid);
             model.addAttribute("storeMaxListingPrice", maxPrice);
             model.addAttribute("formMode", "CREATE");

@@ -791,12 +791,12 @@ public class SellerController {
             model.addAttribute("result", result);
             model.addAttribute("currentUser", currentUser);
 
-            // Tính toán số tiền hoàn cuối cùng (áp dụng refundPercentageRate nếu có)
+            // Tính toán số tiền hoàn
             try {
                 java.math.BigDecimal finalRefund = null;
                 if (store.getRefundPercentageRate() != null
                         && store.getRefundPercentageRate().compareTo(java.math.BigDecimal.ZERO) > 0) {
-                    // refundPercentageRate được lưu là phần trăm của tiền cọc (ví dụ 50 = 50%)
+                    // refundPercentageRate được lưu là phần trăm của tiền cọc
                     finalRefund = store.getDepositAmount()
                             .multiply(store.getRefundPercentageRate())
                             .divide(new java.math.BigDecimal("100"));
@@ -811,7 +811,7 @@ public class SellerController {
 
             return "seller/close-store-result";
         } catch (Exception e) {
-            e.printStackTrace(); // Log để debug
+            e.printStackTrace();
             model.addAttribute("error", e.getMessage());
             return "error";
         }
